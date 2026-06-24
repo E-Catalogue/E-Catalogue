@@ -1,7 +1,15 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { GlobalErrorType } from '@/core/api/errorHandler';
 
-interface ErrorModalState {
+export type GlobalErrorType =
+  | 'general'
+  | 'network'
+  | 'timeout'
+  | 'server'
+  | 'maintenance'
+  | 'parsing'
+  | 'auth';
+
+interface ToastState {
   isOpen: boolean;
   title: string;
   message: string;
@@ -9,11 +17,11 @@ interface ErrorModalState {
 }
 
 interface UiState {
-  globalErrorModal: ErrorModalState;
+  toast: ToastState;
 }
 
 const initialState: UiState = {
-  globalErrorModal: {
+  toast: {
     isOpen: false,
     title: '',
     message: '',
@@ -25,20 +33,14 @@ export const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    showGlobalError: (
-      state,
-      action: PayloadAction<Omit<ErrorModalState, 'isOpen'>>
-    ) => {
-      state.globalErrorModal = {
-        isOpen: true,
-        ...action.payload,
-      };
+    showToast: (state, action: PayloadAction<Omit<ToastState, 'isOpen'>>) => {
+      state.toast = { isOpen: true, ...action.payload };
     },
-    hideGlobalError: (state) => {
-      state.globalErrorModal.isOpen = false;
+    hideToast: (state) => {
+      state.toast.isOpen = false;
     },
   },
 });
 
-export const { showGlobalError, hideGlobalError } = uiSlice.actions;
+export const { showToast, hideToast } = uiSlice.actions;
 export default uiSlice.reducer;

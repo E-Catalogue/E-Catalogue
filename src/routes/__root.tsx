@@ -1,15 +1,5 @@
-import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import { GlobalErrorModal } from '@/shared/components/GlobalErrorModal';
+import { createRootRoute, Outlet } from '@tanstack/react-router';
 
-interface MyRouterContext {
-  isAuthenticated: boolean;
-}
-
-export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: () => (
-    <>
-      <Outlet />
-      <GlobalErrorModal />
-    </>
-  ),
+export const Route = createRootRoute({
+  component: () => <Outlet />,
 });

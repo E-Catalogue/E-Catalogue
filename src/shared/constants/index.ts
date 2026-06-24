@@ -1,9 +1,19 @@
 // Konstanta statis global lintas fitur.
 
-// Identitas aplikasi (versi diambil dari package.json via Vite define)
-export const APP_NAME = 'Adonara POS';
+export const APP_NAME = 'Cars Showroom';
+export const APP_TAGLINE = 'Used Car Specialist';
 export const APP_VERSION = `v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0'}`;
 
-// Gambar default produk bila API tidak mengirim imageUrl (atau gambar gagal dimuat).
-export const DEFAULT_PRODUCT_IMAGE =
-  'https://images.unsplash.com/photo-1502462041640-b3d7e50d0662?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+// Profil user dummy (login di-skip sementara)
+export const CURRENT_USER = {
+  name: 'Admin Showroom',
+  role: 'Administrator',
+  initials: 'CS',
+  branch: 'Cars Showroom Pusat',
+  avatar:
+    'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=256&auto=format&fit=crop',
+};
+
+// Gambar fallback unit mobil bila gagal dimuat
+export const DEFAULT_CAR_IMAGE =
+  'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1200&auto=format&fit=crop';

@@ -9,104 +9,470 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrackingRouteImport } from './routes/tracking'
-import { Route as PosRouteImport } from './routes/pos'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PublicRouteImport } from './routes/_public'
+import { Route as AdminRouteImport } from './routes/_admin'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicTentangRouteImport } from './routes/_public/tentang'
+import { Route as PublicSimulasiRouteImport } from './routes/_public/simulasi'
+import { Route as PublicKontakRouteImport } from './routes/_public/kontak'
+import { Route as PublicKatalogRouteImport } from './routes/_public/katalog'
+import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
+import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
+import { Route as AdminReadyStockRouteImport } from './routes/_admin/ready-stock'
+import { Route as AdminPenjualanRouteImport } from './routes/_admin/penjualan'
+import { Route as AdminPengaturanRouteImport } from './routes/_admin/pengaturan'
+import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
+import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
+import { Route as AdminLaporanRouteImport } from './routes/_admin/laporan'
+import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
+import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
+import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
+import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog.$id'
 
-const TrackingRoute = TrackingRouteImport.update({
-  id: '/tracking',
-  path: '/tracking',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PosRoute = PosRouteImport.update({
-  id: '/pos',
-  path: '/pos',
+const PublicRoute = PublicRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AdminRoute = AdminRouteImport.update({
+  id: '/_admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicTentangRoute = PublicTentangRouteImport.update({
+  id: '/tentang',
+  path: '/tentang',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicSimulasiRoute = PublicSimulasiRouteImport.update({
+  id: '/simulasi',
+  path: '/simulasi',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicKontakRoute = PublicKontakRouteImport.update({
+  id: '/kontak',
+  path: '/kontak',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicKatalogRoute = PublicKatalogRouteImport.update({
+  id: '/katalog',
+  path: '/katalog',
+  getParentRoute: () => PublicRoute,
+} as any)
+const AdminTestDriveRoute = AdminTestDriveRouteImport.update({
+  id: '/test-drive',
+  path: '/test-drive',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRekondisiRoute = AdminRekondisiRouteImport.update({
+  id: '/rekondisi',
+  path: '/rekondisi',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReadyStockRoute = AdminReadyStockRouteImport.update({
+  id: '/ready-stock',
+  path: '/ready-stock',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPenjualanRoute = AdminPenjualanRouteImport.update({
+  id: '/penjualan',
+  path: '/penjualan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPembelianRoute = AdminPembelianRouteImport.update({
+  id: '/pembelian',
+  path: '/pembelian',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPembayaranRoute = AdminPembayaranRouteImport.update({
+  id: '/pembayaran',
+  path: '/pembayaran',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLaporanRoute = AdminLaporanRouteImport.update({
+  id: '/laporan',
+  path: '/laporan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInventoryRoute = AdminInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCrmRoute = AdminCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PublicKatalogIdRoute = PublicKatalogIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PublicKatalogRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/pos': typeof PosRoute
-  '/tracking': typeof TrackingRoute
+  '/': typeof PublicIndexRoute
+  '/login': typeof LoginRoute
+  '/crm': typeof AdminCrmRoute
+  '/dashboard': typeof AdminDashboardRoute
+  '/inventory': typeof AdminInventoryRoute
+  '/laporan': typeof AdminLaporanRoute
+  '/pembayaran': typeof AdminPembayaranRoute
+  '/pembelian': typeof AdminPembelianRoute
+  '/pengaturan': typeof AdminPengaturanRoute
+  '/penjualan': typeof AdminPenjualanRoute
+  '/ready-stock': typeof AdminReadyStockRoute
+  '/rekondisi': typeof AdminRekondisiRoute
+  '/test-drive': typeof AdminTestDriveRoute
+  '/katalog': typeof PublicKatalogRouteWithChildren
+  '/kontak': typeof PublicKontakRoute
+  '/simulasi': typeof PublicSimulasiRoute
+  '/tentang': typeof PublicTentangRoute
+  '/katalog/$id': typeof PublicKatalogIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/pos': typeof PosRoute
-  '/tracking': typeof TrackingRoute
+  '/': typeof PublicIndexRoute
+  '/login': typeof LoginRoute
+  '/crm': typeof AdminCrmRoute
+  '/dashboard': typeof AdminDashboardRoute
+  '/inventory': typeof AdminInventoryRoute
+  '/laporan': typeof AdminLaporanRoute
+  '/pembayaran': typeof AdminPembayaranRoute
+  '/pembelian': typeof AdminPembelianRoute
+  '/pengaturan': typeof AdminPengaturanRoute
+  '/penjualan': typeof AdminPenjualanRoute
+  '/ready-stock': typeof AdminReadyStockRoute
+  '/rekondisi': typeof AdminRekondisiRoute
+  '/test-drive': typeof AdminTestDriveRoute
+  '/katalog': typeof PublicKatalogRouteWithChildren
+  '/kontak': typeof PublicKontakRoute
+  '/simulasi': typeof PublicSimulasiRoute
+  '/tentang': typeof PublicTentangRoute
+  '/katalog/$id': typeof PublicKatalogIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/pos': typeof PosRoute
-  '/tracking': typeof TrackingRoute
+  '/_admin': typeof AdminRouteWithChildren
+  '/_public': typeof PublicRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_admin/crm': typeof AdminCrmRoute
+  '/_admin/dashboard': typeof AdminDashboardRoute
+  '/_admin/inventory': typeof AdminInventoryRoute
+  '/_admin/laporan': typeof AdminLaporanRoute
+  '/_admin/pembayaran': typeof AdminPembayaranRoute
+  '/_admin/pembelian': typeof AdminPembelianRoute
+  '/_admin/pengaturan': typeof AdminPengaturanRoute
+  '/_admin/penjualan': typeof AdminPenjualanRoute
+  '/_admin/ready-stock': typeof AdminReadyStockRoute
+  '/_admin/rekondisi': typeof AdminRekondisiRoute
+  '/_admin/test-drive': typeof AdminTestDriveRoute
+  '/_public/katalog': typeof PublicKatalogRouteWithChildren
+  '/_public/kontak': typeof PublicKontakRoute
+  '/_public/simulasi': typeof PublicSimulasiRoute
+  '/_public/tentang': typeof PublicTentangRoute
+  '/_public/': typeof PublicIndexRoute
+  '/_public/katalog/$id': typeof PublicKatalogIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/pos' | '/tracking'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/crm'
+    | '/dashboard'
+    | '/inventory'
+    | '/laporan'
+    | '/pembayaran'
+    | '/pembelian'
+    | '/pengaturan'
+    | '/penjualan'
+    | '/ready-stock'
+    | '/rekondisi'
+    | '/test-drive'
+    | '/katalog'
+    | '/kontak'
+    | '/simulasi'
+    | '/tentang'
+    | '/katalog/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/pos' | '/tracking'
-  id: '__root__' | '/' | '/dashboard' | '/pos' | '/tracking'
+  to:
+    | '/'
+    | '/login'
+    | '/crm'
+    | '/dashboard'
+    | '/inventory'
+    | '/laporan'
+    | '/pembayaran'
+    | '/pembelian'
+    | '/pengaturan'
+    | '/penjualan'
+    | '/ready-stock'
+    | '/rekondisi'
+    | '/test-drive'
+    | '/katalog'
+    | '/kontak'
+    | '/simulasi'
+    | '/tentang'
+    | '/katalog/$id'
+  id:
+    | '__root__'
+    | '/_admin'
+    | '/_public'
+    | '/login'
+    | '/_admin/crm'
+    | '/_admin/dashboard'
+    | '/_admin/inventory'
+    | '/_admin/laporan'
+    | '/_admin/pembayaran'
+    | '/_admin/pembelian'
+    | '/_admin/pengaturan'
+    | '/_admin/penjualan'
+    | '/_admin/ready-stock'
+    | '/_admin/rekondisi'
+    | '/_admin/test-drive'
+    | '/_public/katalog'
+    | '/_public/kontak'
+    | '/_public/simulasi'
+    | '/_public/tentang'
+    | '/_public/'
+    | '/_public/katalog/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  PosRoute: typeof PosRoute
-  TrackingRoute: typeof TrackingRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  PublicRoute: typeof PublicRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tracking': {
-      id: '/tracking'
-      path: '/tracking'
-      fullPath: '/tracking'
-      preLoaderRoute: typeof TrackingRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pos': {
-      id: '/pos'
-      path: '/pos'
-      fullPath: '/pos'
-      preLoaderRoute: typeof PosRouteImport
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/_admin': {
+      id: '/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_public/': {
+      id: '/_public/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/tentang': {
+      id: '/_public/tentang'
+      path: '/tentang'
+      fullPath: '/tentang'
+      preLoaderRoute: typeof PublicTentangRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/simulasi': {
+      id: '/_public/simulasi'
+      path: '/simulasi'
+      fullPath: '/simulasi'
+      preLoaderRoute: typeof PublicSimulasiRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/kontak': {
+      id: '/_public/kontak'
+      path: '/kontak'
+      fullPath: '/kontak'
+      preLoaderRoute: typeof PublicKontakRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/katalog': {
+      id: '/_public/katalog'
+      path: '/katalog'
+      fullPath: '/katalog'
+      preLoaderRoute: typeof PublicKatalogRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_admin/test-drive': {
+      id: '/_admin/test-drive'
+      path: '/test-drive'
+      fullPath: '/test-drive'
+      preLoaderRoute: typeof AdminTestDriveRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/rekondisi': {
+      id: '/_admin/rekondisi'
+      path: '/rekondisi'
+      fullPath: '/rekondisi'
+      preLoaderRoute: typeof AdminRekondisiRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/ready-stock': {
+      id: '/_admin/ready-stock'
+      path: '/ready-stock'
+      fullPath: '/ready-stock'
+      preLoaderRoute: typeof AdminReadyStockRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/penjualan': {
+      id: '/_admin/penjualan'
+      path: '/penjualan'
+      fullPath: '/penjualan'
+      preLoaderRoute: typeof AdminPenjualanRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/pengaturan': {
+      id: '/_admin/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof AdminPengaturanRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/pembelian': {
+      id: '/_admin/pembelian'
+      path: '/pembelian'
+      fullPath: '/pembelian'
+      preLoaderRoute: typeof AdminPembelianRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/pembayaran': {
+      id: '/_admin/pembayaran'
+      path: '/pembayaran'
+      fullPath: '/pembayaran'
+      preLoaderRoute: typeof AdminPembayaranRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/laporan': {
+      id: '/_admin/laporan'
+      path: '/laporan'
+      fullPath: '/laporan'
+      preLoaderRoute: typeof AdminLaporanRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/inventory': {
+      id: '/_admin/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AdminInventoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/dashboard': {
+      id: '/_admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/crm': {
+      id: '/_admin/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AdminCrmRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_public/katalog/$id': {
+      id: '/_public/katalog/$id'
+      path: '/$id'
+      fullPath: '/katalog/$id'
+      preLoaderRoute: typeof PublicKatalogIdRouteImport
+      parentRoute: typeof PublicKatalogRoute
     }
   }
 }
 
+interface AdminRouteChildren {
+  AdminCrmRoute: typeof AdminCrmRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminInventoryRoute: typeof AdminInventoryRoute
+  AdminLaporanRoute: typeof AdminLaporanRoute
+  AdminPembayaranRoute: typeof AdminPembayaranRoute
+  AdminPembelianRoute: typeof AdminPembelianRoute
+  AdminPengaturanRoute: typeof AdminPengaturanRoute
+  AdminPenjualanRoute: typeof AdminPenjualanRoute
+  AdminReadyStockRoute: typeof AdminReadyStockRoute
+  AdminRekondisiRoute: typeof AdminRekondisiRoute
+  AdminTestDriveRoute: typeof AdminTestDriveRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCrmRoute: AdminCrmRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminInventoryRoute: AdminInventoryRoute,
+  AdminLaporanRoute: AdminLaporanRoute,
+  AdminPembayaranRoute: AdminPembayaranRoute,
+  AdminPembelianRoute: AdminPembelianRoute,
+  AdminPengaturanRoute: AdminPengaturanRoute,
+  AdminPenjualanRoute: AdminPenjualanRoute,
+  AdminReadyStockRoute: AdminReadyStockRoute,
+  AdminRekondisiRoute: AdminRekondisiRoute,
+  AdminTestDriveRoute: AdminTestDriveRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface PublicKatalogRouteChildren {
+  PublicKatalogIdRoute: typeof PublicKatalogIdRoute
+}
+
+const PublicKatalogRouteChildren: PublicKatalogRouteChildren = {
+  PublicKatalogIdRoute: PublicKatalogIdRoute,
+}
+
+const PublicKatalogRouteWithChildren = PublicKatalogRoute._addFileChildren(
+  PublicKatalogRouteChildren,
+)
+
+interface PublicRouteChildren {
+  PublicKatalogRoute: typeof PublicKatalogRouteWithChildren
+  PublicKontakRoute: typeof PublicKontakRoute
+  PublicSimulasiRoute: typeof PublicSimulasiRoute
+  PublicTentangRoute: typeof PublicTentangRoute
+  PublicIndexRoute: typeof PublicIndexRoute
+}
+
+const PublicRouteChildren: PublicRouteChildren = {
+  PublicKatalogRoute: PublicKatalogRouteWithChildren,
+  PublicKontakRoute: PublicKontakRoute,
+  PublicSimulasiRoute: PublicSimulasiRoute,
+  PublicTentangRoute: PublicTentangRoute,
+  PublicIndexRoute: PublicIndexRoute,
+}
+
+const PublicRouteWithChildren =
+  PublicRoute._addFileChildren(PublicRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
-  PosRoute: PosRoute,
-  TrackingRoute: TrackingRoute,
+  AdminRoute: AdminRouteWithChildren,
+  PublicRoute: PublicRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

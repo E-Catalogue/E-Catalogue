@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,23 +6,81 @@
 
 @layer base {
   :root {
-    --color-primary: #EEEFE9;
-    --color-secondary: #CAAB7F;
-    --color-secondary-dark: #BFA06E;
-    
-    --color-background: #F5F5F5;
+    /* Claude orange brand */
+    --color-primary: #D97757;
+    --color-primary-dark: #BE5D3D;
+    --color-primary-light: #FBEDE6;
+
+    /* Elegant neutrals */
+    --color-ink: #181D2A;
+    --color-ink-soft: #3A4151;
+    --color-muted: #7A8194;
+
+    --color-background: #F4F5F8;
     --color-surface: #FFFFFF;
-    
-    --color-text-primary: #1A1C1E;
-    --color-text-secondary: #757575;
-    
-    --color-divider: #E0E0E0;
+    --color-surface-soft: #F8F9FB;
+
+    --color-border: #EAECF1;
+    --color-divider: #EEF0F4;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-ink);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #D5D8E0 transparent;
   }
 }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
-  font-family: 'Montserrat', sans-serif;
-  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .scrollbar-slim::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-slim::-webkit-scrollbar-thumb { background: #D5D8E0; border-radius: 9999px; }
+  .scrollbar-slim::-webkit-scrollbar-track { background: transparent; }
+}
+
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-float-up { animation: floatUp 0.4s ease-out both; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in { animation: fadeIn 0.2s ease-out both; }
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-modal-in { animation: modalIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scaleIn 0.25s ease-out both; }
+
+/* Staggered list helper */
+.stagger > * { animation: floatUp 0.4s ease-out both; }
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger > *:nth-child(3) { animation-delay: 0.10s; }
+.stagger > *:nth-child(4) { animation-delay: 0.14s; }
+.stagger > *:nth-child(5) { animation-delay: 0.18s; }
+.stagger > *:nth-child(6) { animation-delay: 0.22s; }
+.stagger > *:nth-child(7) { animation-delay: 0.26s; }
+.stagger > *:nth-child(8) { animation-delay: 0.30s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
