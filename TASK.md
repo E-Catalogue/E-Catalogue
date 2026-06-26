@@ -58,11 +58,14 @@
 - [ ] 🟢 Dashboard & Laporan (agregasi dari API)
 
 ### B. RBAC & Multi-user 🔴
-- [ ] 🔴 Filter menu sidebar dari `groupMenus` / `permissionCodes` (`/auth/me`)
-- [ ] 🔴 Guard aksi per-permission (sembunyikan tombol Create/Update/Delete)
-- [ ] 🟠 Halaman manajemen **Role** (CRUD + set permission) — endpoint siap
-- [ ] 🟠 Halaman manajemen **User** (CRUD + set role + set branch) — endpoint siap
-- [ ] 🟠 Halaman manajemen **Menu/Group/Permission** — endpoint siap
+- [x] **Sidebar dinamis** dari `groupMenus` (`/auth/me`) + fallback menu statis
+- [x] Halaman manajemen **Role** (CRUD + set permission)
+- [x] Halaman manajemen **User** (CRUD + set role + set branch)
+- [x] Halaman manajemen **Menu/Group/Permission**
+- [x] **Guard aksi per-permission** — tombol Create/Edit/Delete/Set-Permission disembunyikan sesuai `permissionCodes` (`usePermissions` + `Can`)
+- [x] **Gate halaman per READ permission** — `RequirePermission` (Akses Ditolak bila tak punya `*_READ`), pada Role/User/Menu
+- [ ] 🟠 Terapkan guard aksi yang sama ke modul Master Data begitu kode permission-nya tersedia
+- [ ] 🟢 Guard route `beforeLoad` per-permission (opsional; saat ini cukup gate komponen + enforcement backend)
 
 ### C. Inventory sesuai SRS 🔴
 - [ ] 🔴 Sambungkan dropdown **Merek/Tipe** & **Vendor** (dari Master Data) ke form Inventory/Rekondisi

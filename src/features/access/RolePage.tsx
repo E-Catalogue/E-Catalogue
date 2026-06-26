@@ -13,6 +13,8 @@ import { useRoles, useRoleMutations, useMenuGroups } from './access.hooks';
 import { roleApi } from './access.api';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
+import { usePermissions } from '@/features/auth/usePermissions';
+import { RequirePermission } from '@/features/auth/permissions';
 import type { Role } from './types';
 
 const Badge = ({ active }: { active: boolean }) => (
@@ -60,7 +62,7 @@ const PermissionsModal = ({ open, onClose, role }: { open: boolean; onClose: () 
     }
   }, [open, role]);
 
-  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const save = () => {
     if (!role) return;
@@ -101,12 +103,13 @@ const PermissionsModal = ({ open, onClose, role }: { open: boolean; onClose: () 
   );
 };
 
-export const RolePage = () => {
+const RolePageInner = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
   const { data, isLoading, isError } = useRoles({ page, limit: 10, search: debounced });
   const m = useRoleMutations();
+  const { can } = usePermissions();
 
   const [form, setForm] = useState<{ item: Role | null } | null>(null);
   const [perms, setPerms] = useState<Role | null>(null);
@@ -125,8 +128,13 @@ export const RolePage = () => {
     { header: 'Status', align: 'center', cell: (r) => <Badge active={r.isActive} /> },
     { header: '', align: 'right', cell: (r) => (
       <div className="flex items-center justify-end gap-1">
-        <button onClick={() => setPerms(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors"><KeyRound size={14} /> Permission</button>
-        <RowActions onEdit={() => setForm({ item: r })} onDelete={() => setToDelete(r)} />
+        {can('ROLE_SET_PERMISSION') && (
+          <button onClick={() => setPerms(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors"><KeyRound size={14} /> Permission</button>
+        )}
+        <RowActions
+          onEdit={can('ROLE_UPDATE') ? () => setForm({ item: r }) : undefined}
+          onDelete={can('ROLE_DELETE') ? () => setToDelete(r) : undefined}
+        />
       </div>
     ) },
   ];
@@ -134,7 +142,7 @@ export const RolePage = () => {
   return (
     <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
       <PageHeader title="Role" description="Kelola role & hak akses (permission)"
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Role</Button>} />
+        action={can('ROLE_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Role</Button> : undefined} />
 
       <div className="relative max-w-xs">
         <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -155,3 +163,9 @@ export const RolePage = () => {
     </div>
   );
 };
+
+export const RolePage = () => (
+  <RequirePermission code="ROLE_READ">
+    <RolePageInner />
+  </RequirePermission>
+);

@@ -13,6 +13,8 @@ import { useUsers, useUserMutations, useRoles } from './access.hooks';
 import { useBranches } from '@/features/master/master.hooks';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
+import { usePermissions } from '@/features/auth/usePermissions';
+import { RequirePermission } from '@/features/auth/permissions';
 import type { AccessUser } from './types';
 
 const Badge = ({ active }: { active: boolean }) => (
@@ -63,12 +65,13 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit }: {
   );
 };
 
-export const UserPage = () => {
+const UserPageInner = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
   const { data, isLoading, isError } = useUsers({ page, limit: 10, search: debounced });
   const m = useUserMutations();
+  const { can } = usePermissions();
 
   const [form, setForm] = useState<{ item: AccessUser | null } | null>(null);
   const [toDelete, setToDelete] = useState<AccessUser | null>(null);
@@ -100,13 +103,18 @@ export const UserPage = () => {
     { header: 'Email', cell: (u) => u.email },
     { header: 'Role', cell: (u) => u.role?.name ?? '-' },
     { header: 'Status', align: 'center', cell: (u) => <Badge active={u.isActive} /> },
-    { header: '', align: 'right', cell: (u) => <RowActions onEdit={() => setForm({ item: u })} onDelete={() => setToDelete(u)} /> },
+    { header: '', align: 'right', cell: (u) => (
+      <RowActions
+        onEdit={can('USER_UPDATE') ? () => setForm({ item: u }) : undefined}
+        onDelete={can('USER_DELETE') ? () => setToDelete(u) : undefined}
+      />
+    ) },
   ];
 
   return (
     <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
       <PageHeader title="User" description="Kelola akun pengguna, role, & cabang"
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah User</Button>} />
+        action={can('USER_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah User</Button> : undefined} />
 
       <div className="relative max-w-xs">
         <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -126,3 +134,9 @@ export const UserPage = () => {
     </div>
   );
 };
+
+export const UserPage = () => (
+  <RequirePermission code="USER_READ">
+    <UserPageInner />
+  </RequirePermission>
+);

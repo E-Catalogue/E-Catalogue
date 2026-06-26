@@ -7,6 +7,8 @@ import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useMenuGroups, useMenuMutations } from './access.hooks';
 import { notifyApiError } from '@/core/api/notify';
+import { usePermissions } from '@/features/auth/usePermissions';
+import { RequirePermission } from '@/features/auth/permissions';
 import type { MenuGroup, MenuItem, Permission } from './types';
 
 type Fields = Record<string, string | number | boolean>;
@@ -44,9 +46,14 @@ const FieldsModal = ({ open, onClose, title, fields, initial, submitting, onSubm
   );
 };
 
-export const MenuPage = () => {
+const MenuPageInner = () => {
   const { data, isLoading, isError } = useMenuGroups({ page: 1, limit: 100 });
   const m = useMenuMutations();
+  const { can } = usePermissions();
+  const canCreate = can('MENU_CREATE');
+  const canUpdate = can('MENU_UPDATE');
+  const canDelete = can('MENU_DELETE');
+  const canPerm = can('PERMISSION_MANAGE');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const [groupForm, setGroupForm] = useState<{ item: MenuGroup | null } | null>(null);
@@ -55,13 +62,13 @@ export const MenuPage = () => {
   const [del, setDel] = useState<{ kind: 'group' | 'menu' | 'perm'; label: string; fn: () => void } | null>(null);
 
   const groups = data?.data ?? [];
-  const toggle = (id: string) => setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggle = (id: string) => setExpanded((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const err = (e: unknown) => notifyApiError(e);
 
   return (
     <div className="max-w-[1100px] mx-auto animate-float-up space-y-5">
       <PageHeader title="Menu" description="Kelola group menu, menu, & permission aplikasi"
-        action={<Button icon={<FolderPlus size={17} strokeWidth={2.5} />} onClick={() => setGroupForm({ item: null })}>Tambah Group</Button>} />
+        action={canCreate ? <Button icon={<FolderPlus size={17} strokeWidth={2.5} />} onClick={() => setGroupForm({ item: null })}>Tambah Group</Button> : undefined} />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20 text-muted"><Loader2 size={24} className="animate-spin" /></div>
@@ -79,9 +86,9 @@ export const MenuPage = () => {
                     <p className="font-extrabold text-ink text-[14px]">{g.name} <span className="font-mono text-[11px] text-muted">{g.code}</span></p>
                     <p className="text-[11px] text-muted">{(g.menus ?? []).length} menu</p>
                   </div>
-                  <button onClick={() => setMenuForm({ groupId: g.id, item: null })} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-primary hover:bg-primary-light transition-colors"><Plus size={13} /> Menu</button>
-                  <button onClick={() => setGroupForm({ item: g })} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10"><Pencil size={14} /></button>
-                  <button onClick={() => setDel({ kind: 'group', label: g.name, fn: () => m.removeGroup.mutate(g.id, { onError: err }) })} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>
+                  {canCreate && <button onClick={() => setMenuForm({ groupId: g.id, item: null })} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-primary hover:bg-primary-light transition-colors"><Plus size={13} /> Menu</button>}
+                  {canUpdate && <button onClick={() => setGroupForm({ item: g })} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10"><Pencil size={14} /></button>}
+                  {canDelete && <button onClick={() => setDel({ kind: 'group', label: g.name, fn: () => m.removeGroup.mutate(g.id, { onError: err }) })} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>}
                 </div>
 
                 {open && (
@@ -95,17 +102,17 @@ export const MenuPage = () => {
                             <p className="text-[13px] font-bold text-ink">{menu.name} <span className="font-mono text-[10px] text-muted">{menu.code}</span></p>
                             {menu.path && <p className="text-[11px] text-muted font-mono">{menu.path}</p>}
                           </div>
-                          <button onClick={() => setPermForm({ menuId: menu.id, item: null })} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-accent-blue hover:bg-accent-blue/10"><KeyRound size={12} /> Permission</button>
-                          <button onClick={() => setMenuForm({ groupId: g.id, item: menu })} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10"><Pencil size={13} /></button>
-                          <button onClick={() => setDel({ kind: 'menu', label: menu.name, fn: () => m.removeMenu.mutate(menu.id, { onError: err }) })} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={13} /></button>
+                          {canPerm && <button onClick={() => setPermForm({ menuId: menu.id, item: null })} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-accent-blue hover:bg-accent-blue/10"><KeyRound size={12} /> Permission</button>}
+                          {canUpdate && <button onClick={() => setMenuForm({ groupId: g.id, item: menu })} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10"><Pencil size={13} /></button>}
+                          {canDelete && <button onClick={() => setDel({ kind: 'menu', label: menu.name, fn: () => m.removeMenu.mutate(menu.id, { onError: err }) })} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={13} /></button>}
                         </div>
                         {(menu.permissions ?? []).length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2 pl-7">
                             {menu.permissions!.map((p) => (
                               <span key={p.id} className="group/perm inline-flex items-center gap-1 px-2 py-1 rounded-md bg-surface border border-border text-[10px] font-bold text-ink-soft">
                                 {p.name}
-                                <button onClick={() => setPermForm({ menuId: menu.id, item: p })} className="text-muted hover:text-accent-blue"><Pencil size={10} /></button>
-                                <button onClick={() => setDel({ kind: 'perm', label: p.name, fn: () => m.removePermission.mutate({ menuId: menu.id, permId: p.id }, { onError: err }) })} className="text-muted hover:text-semantic-error"><Trash2 size={10} /></button>
+                                {canPerm && <button onClick={() => setPermForm({ menuId: menu.id, item: p })} className="text-muted hover:text-accent-blue"><Pencil size={10} /></button>}
+                                {canPerm && <button onClick={() => setDel({ kind: 'perm', label: p.name, fn: () => m.removePermission.mutate({ menuId: menu.id, permId: p.id }, { onError: err }) })} className="text-muted hover:text-semantic-error"><Trash2 size={10} /></button>}
                               </span>
                             ))}
                           </div>
@@ -178,3 +185,9 @@ export const MenuPage = () => {
     </div>
   );
 };
+
+export const MenuPage = () => (
+  <RequirePermission code="MENU_READ">
+    <MenuPageInner />
+  </RequirePermission>
+);
