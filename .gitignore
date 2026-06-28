@@ -44,3 +44,4 @@ Thumbs.db
 
 # TanStack Router generated route tree
 # src/routeTree.gen.ts
+.vercel
