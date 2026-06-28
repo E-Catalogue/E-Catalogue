@@ -1,7 +1,12 @@
 import type { UnitStatus } from '@/data/types';
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  // Unit statuses
+  // Unit statuses (Backend)
+  INVENTORY: { label: 'Inventory', className: 'bg-accent-blue/10 text-accent-blue' },
+  READY_STOCK: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
+  HOLD: { label: 'Hold', className: 'bg-accent-amber/10 text-accent-amber' },
+  SOLD: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
+  // Unit statuses (Old/Dummy - keep for compatibility if used elsewhere)
   ready: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
   rekondisi: { label: 'Rekondisi', className: 'bg-accent-amber/10 text-accent-amber' },
   booked: { label: 'Booked', className: 'bg-accent-blue/10 text-accent-blue' },

@@ -1,12 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { Car } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
-import { useAppDispatch } from '@/app/store';
-import { addUnit, updateUnit } from '@/app/store/dataSlice';
-import type { Unit, FuelType, Transmission, UnitStatus } from '@/data/types';
-import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
+import type { Unit, Transmisi, UnitFormData } from '@/features/units/unit.types';
+import { useCreateUnit, useUpdateUnit } from '@/features/units/unit.hooks';
+import { useMereks, useTipes } from '@/features/master/master.hooks';
 
 interface UnitFormModalProps {
   open: boolean;
@@ -14,37 +13,85 @@ interface UnitFormModalProps {
   unit?: Unit | null;
 }
 
-const emptyUnit = (): Omit<Unit, 'id'> => ({
-  code: `CS-${String(Math.floor(1000 + Math.random() * 9000))}`,
-  brand: '', model: '', variant: '', year: new Date().getFullYear(),
-  price: 0, buyPrice: 0, km: 0, fuel: 'Bensin', transmission: 'AT',
-  color: '', plate: '', status: 'ready', isNew: true, image: DEFAULT_CAR_IMAGE,
+const emptyUnitForm = (): UnitFormData => ({
+  merekId: '',
+  tipeId: '',
+  platNomor: '',
+  tahun: new Date().getFullYear(),
+  warna: '',
+  transmisi: 'AUTOMATIC',
+  noRangka: '',
+  noMesin: '',
+  kilometer: 0,
+  tanggalPajak: new Date().toISOString().split('T')[0],
+  hargaBeli: 0,
+  tanggalPembelian: new Date().toISOString().split('T')[0],
+  kelengkapans: [],
+  dokumens: [],
 });
 
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
-  const dispatch = useAppDispatch();
-  const [form, setForm] = useState<Omit<Unit, 'id'>>(unit ?? emptyUnit());
+  const [form, setForm] = useState<UnitFormData>(emptyUnitForm());
 
-  // Re-seed form when the modal target changes.
-  const [seedId, setSeedId] = useState<string | undefined>(unit?.id);
-  if (open && unit?.id !== seedId) {
-    setSeedId(unit?.id);
-    setForm(unit ?? emptyUnit());
-  }
-  if (open && !unit && seedId !== undefined) {
-    setSeedId(undefined);
-    setForm(emptyUnit());
-  }
+  const createUnit = useCreateUnit();
+  const updateUnit = useUpdateUnit();
 
-  const set = <K extends keyof Omit<Unit, 'id'>>(key: K, value: Omit<Unit, 'id'>[K]) =>
-    setForm((f) => ({ ...f, [key]: value }));
+  // Fetch mereks
+  const { data: mereksData } = useMereks({ page: 1, limit: 100 });
+  const mereks = mereksData?.data || [];
+
+  // Fetch tipes based on selected merek
+  const { data: tipesData } = useTipes(form.merekId, { page: 1, limit: 100 });
+  const tipes = tipesData?.data || [];
+
+  useEffect(() => {
+    if (open) {
+      if (unit) {
+        setForm({
+          merekId: unit.merekId,
+          tipeId: unit.tipeId,
+          platNomor: unit.platNomor,
+          tahun: unit.tahun,
+          warna: unit.warna,
+          transmisi: unit.transmisi,
+          noRangka: unit.noRangka,
+          noMesin: unit.noMesin,
+          kilometer: unit.kilometer,
+          tanggalPajak: unit.tanggalPajak ? new Date(unit.tanggalPajak).toISOString().split('T')[0] : '',
+          hargaBeli: unit.hargaBeli,
+          tanggalPembelian: unit.tanggalPembelian ? new Date(unit.tanggalPembelian).toISOString().split('T')[0] : '',
+          kelengkapans: unit.unitKelengkapans?.map(k => k.perlengkapanId) || [],
+          dokumens: unit.unitDokumens?.map(d => d.dokumenId) || [],
+        });
+      } else {
+        setForm(emptyUnitForm());
+      }
+    }
+  }, [open, unit]);
+
+  const set = <K extends keyof UnitFormData>(key: K, value: UnitFormData[K]) => {
+    setForm((f) => {
+      const next = { ...f, [key]: value };
+      if (key === 'merekId' && f.merekId !== value) {
+        next.tipeId = ''; // Reset tipe when merek changes
+      }
+      return next;
+    });
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (unit) dispatch(updateUnit({ ...form, id: unit.id }));
-    else dispatch(addUnit(form));
-    onClose();
+    if (unit) {
+      updateUnit.mutate(
+        { id: unit.id, data: form },
+        { onSuccess: onClose }
+      );
+    } else {
+      createUnit.mutate(form, { onSuccess: onClose });
+    }
   };
+
+  const isPending = createUnit.isPending || updateUnit.isPending;
 
   return (
     <Modal
@@ -52,62 +99,55 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       onClose={onClose}
       icon={<Car size={20} />}
       title={unit ? 'Edit Unit' : 'Tambah Unit Baru'}
-      subtitle={unit ? unit.code : 'Lengkapi data unit mobil'}
+      subtitle={unit ? unit.platNomor : 'Lengkapi data unit mobil'}
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Batal</Button>
-          <Button type="submit" form="unit-form">{unit ? 'Simpan Perubahan' : 'Tambah Unit'}</Button>
+          <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>
+          <Button type="submit" form="unit-form" disabled={isPending}>
+            {unit ? 'Simpan Perubahan' : 'Tambah Unit'}
+          </Button>
         </>
       }
     >
       <form id="unit-form" onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TextField label="Merek" required value={form.brand} onChange={(e) => set('brand', e.target.value)} placeholder="Toyota" />
-        <TextField label="Model" required value={form.model} onChange={(e) => set('model', e.target.value)} placeholder="Fortuner" />
-        <TextField label="Varian" value={form.variant} onChange={(e) => set('variant', e.target.value)} placeholder="2.4 G AT" />
-        <TextField label="Tahun" type="number" value={form.year} onChange={(e) => set('year', Number(e.target.value))} />
-        <TextField label="Harga Jual (Rp)" type="number" value={form.price} onChange={(e) => set('price', Number(e.target.value))} />
-        <TextField label="Harga Beli (Rp)" type="number" value={form.buyPrice ?? 0} onChange={(e) => set('buyPrice', Number(e.target.value))} />
-        <TextField label="Kilometer" type="number" value={form.km} onChange={(e) => set('km', Number(e.target.value))} />
-        <TextField label="Warna" value={form.color} onChange={(e) => set('color', e.target.value)} placeholder="Hitam" />
         <SelectField
-          label="Bahan Bakar"
-          value={form.fuel}
-          onChange={(e) => set('fuel', e.target.value as FuelType)}
-          options={[{ value: 'Bensin', label: 'Bensin' }, { value: 'Diesel', label: 'Diesel' }, { value: 'Hybrid', label: 'Hybrid' }, { value: 'Listrik', label: 'Listrik' }]}
+          label="Merek"
+          required
+          value={form.merekId}
+          onChange={(e) => set('merekId', e.target.value)}
+          options={[{ value: '', label: 'Pilih Merek' }, ...mereks.map(m => ({ value: m.id, label: m.name }))]}
         />
+        <SelectField
+          label="Tipe / Model"
+          required
+          value={form.tipeId}
+          onChange={(e) => set('tipeId', e.target.value)}
+          options={[{ value: '', label: 'Pilih Tipe' }, ...tipes.map(t => ({ value: t.id, label: t.name }))]}
+          disabled={!form.merekId}
+        />
+        <TextField label="Tahun" required type="number" value={form.tahun} onChange={(e) => set('tahun', Number(e.target.value))} />
+        <TextField label="Warna" required value={form.warna} onChange={(e) => set('warna', e.target.value)} placeholder="Hitam" />
+        
         <SelectField
           label="Transmisi"
-          value={form.transmission}
-          onChange={(e) => set('transmission', e.target.value as Transmission)}
-          options={[{ value: 'AT', label: 'Automatic (AT)' }, { value: 'MT', label: 'Manual (MT)' }, { value: 'CVT', label: 'CVT' }]}
-        />
-        <TextField label="Plat Nomor" value={form.plate} onChange={(e) => set('plate', e.target.value)} placeholder="B 1234 ABC" />
-        <SelectField
-          label="Status"
-          value={form.status}
-          onChange={(e) => set('status', e.target.value as UnitStatus)}
+          value={form.transmisi}
+          onChange={(e) => set('transmisi', e.target.value as Transmisi)}
           options={[
-            { value: 'ready', label: 'Ready' },
-            { value: 'rekondisi', label: 'Rekondisi' },
-            { value: 'booked', label: 'Booked' },
-            { value: 'sold', label: 'Terjual' },
-            { value: 'pembelian', label: 'Pembelian' },
+            { value: 'AUTOMATIC', label: 'Automatic (AT)' },
+            { value: 'MANUAL', label: 'Manual (MT)' }
           ]}
         />
-        <TextField label="URL Foto" wrapClass="sm:col-span-2" value={form.image} onChange={(e) => set('image', e.target.value)} placeholder="https://..." />
+        <TextField label="Kilometer" required type="number" value={form.kilometer} onChange={(e) => set('kilometer', Number(e.target.value))} />
+        
+        <TextField label="Plat Nomor" required value={form.platNomor} onChange={(e) => set('platNomor', e.target.value)} placeholder="B 1234 ABC" />
+        <TextField label="Tanggal Pajak" required type="date" value={form.tanggalPajak} onChange={(e) => set('tanggalPajak', e.target.value)} />
+        
+        <TextField label="No Rangka" required value={form.noRangka} onChange={(e) => set('noRangka', e.target.value)} />
+        <TextField label="No Mesin" required value={form.noMesin} onChange={(e) => set('noMesin', e.target.value)} />
 
-        {form.status === 'rekondisi' && (
-          <>
-            <TextField label="Progress Rekondisi (%)" type="number" value={form.rekondisiProgress ?? 0} onChange={(e) => set('rekondisiProgress', Number(e.target.value))} />
-            <TextField label="Estimasi Selesai" type="date" value={form.rekondisiEta ?? ''} onChange={(e) => set('rekondisiEta', e.target.value)} />
-          </>
-        )}
-
-        <label className="sm:col-span-2 flex items-center gap-2.5 cursor-pointer select-none">
-          <input type="checkbox" checked={!!form.isNew} onChange={(e) => set('isNew', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" />
-          <span className="text-[13px] font-semibold text-ink-soft">Tandai sebagai unit baru masuk (badge "BARU")</span>
-        </label>
+        <TextField label="Harga Beli (Rp)" required type="number" value={form.hargaBeli} onChange={(e) => set('hargaBeli', Number(e.target.value))} />
+        <TextField label="Tanggal Pembelian" required type="date" value={form.tanggalPembelian} onChange={(e) => set('tanggalPembelian', e.target.value)} />
       </form>
     </Modal>
   );

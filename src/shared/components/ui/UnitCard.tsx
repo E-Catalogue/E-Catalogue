@@ -1,18 +1,45 @@
-import { Heart, Gauge, Fuel, Calendar, Pencil, Trash2, Eye } from 'lucide-react';
-import type { Unit } from '@/data/types';
+import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge } from 'lucide-react';
+import type { Unit as BackendUnit } from '@/features/units/unit.types';
+import type { Unit as MockUnit } from '@/data/types';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { StatusBadge } from './StatusBadge';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 
+type UnitCardUnit = BackendUnit | MockUnit;
+
 interface UnitCardProps {
-  unit: Unit;
-  onView?: (unit: Unit) => void;
-  onEdit?: (unit: Unit) => void;
-  onDelete?: (unit: Unit) => void;
+  unit: UnitCardUnit;
+  onView?: (unit: any) => void;
+  onEdit?: (unit: any) => void;
+  onDelete?: (unit: any) => void;
 }
 
 export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
   const clickable = !!onView;
+  const isMock = 'brand' in unit;
+  
+  const imageUrl = isMock 
+    ? (unit as MockUnit).image 
+    : (((unit as BackendUnit).unitImages && (unit as BackendUnit).unitImages.length > 0)
+      ? `${import.meta.env.VITE_API_URL}/public/unit/${(unit as BackendUnit).unitImages[0].filename}`
+      : DEFAULT_CAR_IMAGE);
+
+  const displayPrice = isMock 
+    ? (unit as MockUnit).price 
+    : ((unit as BackendUnit).hargaOtrSaatIni || (unit as BackendUnit).hargaTargetJual || (unit as BackendUnit).hargaBeli || 0);
+
+  const createdAt = isMock ? undefined : (unit as BackendUnit).createdAt;
+  const isNew = isMock 
+    ? (unit as MockUnit).isNew 
+    : (createdAt && new Date().getTime() - new Date(createdAt).getTime() < 7 * 24 * 60 * 60 * 1000);
+
+  const brandName = isMock ? (unit as MockUnit).brand : (unit as BackendUnit).merek?.name;
+  const modelName = isMock ? `${(unit as MockUnit).model} ${(unit as MockUnit).variant}` : (unit as BackendUnit).tipe?.name;
+  const tahun = isMock ? (unit as MockUnit).year : (unit as BackendUnit).tahun;
+  const transmisi = isMock ? (unit as MockUnit).transmission : ((unit as BackendUnit).transmisi === 'AUTOMATIC' ? 'AT' : 'MT');
+  const km = isMock ? (unit as MockUnit).km : (unit as BackendUnit).kilometer;
+  const statusUnit = isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit;
+
   return (
     <div
       onClick={() => onView?.(unit)}
@@ -20,13 +47,13 @@ export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
         <img
-          src={unit.image}
-          alt={`${unit.brand} ${unit.model}`}
+          src={imageUrl}
+          alt={`${brandName} ${modelName}`}
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {unit.isNew && (
+        {isNew && (
           <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-lg shadow-glow">
             Baru
           </span>
@@ -59,16 +86,16 @@ export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
 
       <div className="p-4">
         <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate">
-          {unit.brand} {unit.model} {unit.variant}
+          {brandName} {modelName}
         </h3>
         <div className="flex items-center gap-3 mt-2 text-[11px] font-semibold text-muted">
-          <span className="flex items-center gap-1"><Calendar size={12} /> {unit.year}</span>
-          <span className="flex items-center gap-1"><Fuel size={12} /> {unit.fuel}</span>
-          <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(unit.km)} KM</span>
+          <span className="flex items-center gap-1"><Calendar size={12} /> {tahun}</span>
+          <span className="flex items-center gap-1"><GitMerge size={12} /> {transmisi}</span>
+          <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(km)} KM</span>
         </div>
         <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-divider">
-          <span className="font-extrabold text-primary text-[14px] truncate">{formatCurrency(unit.price)}</span>
-          <StatusBadge status={unit.status} />
+          <span className="font-extrabold text-primary text-[14px] truncate">{formatCurrency(displayPrice)}</span>
+          <StatusBadge status={statusUnit as any} />
         </div>
       </div>
     </div>
