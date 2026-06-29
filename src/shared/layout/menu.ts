@@ -39,7 +39,7 @@ export interface MenuItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'main', code: 'DASHBOARD' },
-  { path: '/inventory', label: 'Inventory / Stok', icon: Car, group: 'operasional', code: 'INVENTORY' },
+  { path: '/inventory', label: 'Inventori', icon: Car, group: 'operasional', code: 'INVENTORI' },
   { path: '/pembelian', label: 'Pembelian Unit', icon: ShoppingCart, group: 'operasional', code: 'PEMBELIAN' },
   { path: '/rekondisi', label: 'Rekondisi', icon: Wrench, group: 'operasional', code: 'REKONDISI' },
   { path: '/ready-stock', label: 'Ready Stock', icon: BadgeCheck, group: 'operasional', code: 'READY_STOCK' },
