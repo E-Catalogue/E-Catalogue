@@ -76,7 +76,6 @@ export const KatalogPage = () => {
   const reset = () => { setBrand('Semua'); setTrans('Semua'); setFuel('Semua'); setPriceIdx(0); setQuery(''); };
   const openDetail = (u: Unit) => navigate({ to: '/katalog/$id', params: { id: u.id } });
 
-  // Ringkasan filter aktif (chip yang bisa dihapus)
   const activeFilters = [
     brand !== 'Semua' && { label: brand, clear: () => setBrand('Semua') },
     trans !== 'Semua' && { label: trans, clear: () => setTrans('Semua') },
@@ -135,7 +134,7 @@ export const KatalogPage = () => {
         </div>
 
         <div className="flex gap-6 lg:gap-8">
-          {/* RESULTS (kiri) */}
+          {/* RESULTS */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <p className="text-[13px] font-semibold text-muted">
@@ -167,7 +166,7 @@ export const KatalogPage = () => {
             )}
           </div>
 
-          {/* FILTER SIDEBAR (kanan) */}
+          {/* FILTER SIDEBAR */}
           <aside className="hidden lg:block w-72 shrink-0 order-last">
             <div className="sticky top-20 bg-surface rounded-2xl border border-border p-5">
               <div className="flex items-center justify-between mb-5">
@@ -185,7 +184,7 @@ export const KatalogPage = () => {
         </div>
       </div>
 
-      {/* Mobile filter drawer (kanan) */}
+      {/* Mobile filter drawer */}
       {showFilter && (
         <div className="fixed inset-0 z-[80] lg:hidden">
           <div className="absolute inset-0 bg-ink/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowFilter(false)} />

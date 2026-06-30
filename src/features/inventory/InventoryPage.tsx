@@ -1,231 +1,347 @@
-import { useState, useRef, useEffect } from 'react';
-import { Plus, Search, Filter, X } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { UnitCard } from '@/shared/components/ui/UnitCard';
+import { SectionCard } from '@/shared/components/ui/SectionCard';
+import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
+import { Modal } from '@/shared/components/ui/Modal';
+import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { useUnits } from '@/features/units/unit.hooks';
-import type { StatusUnit } from '@/features/units/unit.types';
+import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
+import type { Unit, StatusUnit } from '@/features/units/unit.types';
 
-const FILTERS: { key: StatusUnit | 'all'; label: string }[] = [
-  { key: 'all', label: 'Semua' },
-  { key: 'INVENTORY', label: 'Inventory' },
+const TABS: { key: StatusUnit | 'all'; label: string }[] = [
+  { key: 'all',         label: 'Semua' },
+  { key: 'INVENTORY',   label: 'Inventory' },
   { key: 'READY_STOCK', label: 'Ready Stock' },
-  { key: 'HOLD', label: 'Hold' },
-  { key: 'SOLD', label: 'Terjual' },
+  { key: 'HOLD',        label: 'Hold' },
+  { key: 'SOLD',        label: 'Terjual' },
 ];
 
-export const InventoryPage = () => {
-  const [filter, setFilter] = useState<StatusUnit | 'all'>('all');
-  const [query, setQuery] = useState('');
-  const debouncedQuery = useDebouncedValue(query, 500);
+const TX_LABEL: Record<string, string> = { AUTOMATIC: 'AT', MANUAL: 'MT' };
 
-  // Extra filter state
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [txFilter, setTxFilter] = useState<'ALL' | 'MANUAL' | 'AUTOMATIC'>('ALL');
-  const [tahunMin, setTahunMin] = useState('');
-  const [tahunMax, setTahunMax] = useState('');
-  const [merekFilter, setMerekFilter] = useState('');
-  const filterRef = useRef<HTMLDivElement>(null);
+const idr = (n?: number | null) =>
+  n == null ? '—' : formatCurrency(n, { compact: true });
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setFilterOpen(false);
+/* ── Filter Modal ── */
+interface FilterState {
+  tx: 'ALL' | 'MANUAL' | 'AUTOMATIC';
+  tahunMin: string;
+  tahunMax: string;
+  merek: string;
+}
+
+const FILTER_DEFAULT: FilterState = { tx: 'ALL', tahunMin: '', tahunMax: '', merek: '' };
+
+const FilterModal = ({
+  open, onClose, value, onApply, merkList,
+}: {
+  open: boolean; onClose: () => void;
+  value: FilterState; onApply: (f: FilterState) => void;
+  merkList: string[];
+}) => {
+  const [draft, setDraft] = useState<FilterState>(value);
+
+  const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) =>
+    setDraft((prev) => ({ ...prev, [k]: v }));
+
+  const handleOpen = () => setDraft(value);
+  const handleApply = () => { onApply(draft); onClose(); };
+  const handleReset = () => setDraft(FILTER_DEFAULT);
+
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(FILTER_DEFAULT);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Filter Lanjutan"
+      subtitle="Saring unit berdasarkan transmisi, tahun, atau merek"
+      icon={<SlidersHorizontal size={18} />}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Batal</Button>
+          {hasChanges && (
+            <Button variant="ghost" onClick={handleReset} className="!text-semantic-error hover:!bg-semantic-error/10">
+              Reset
+            </Button>
+          )}
+          <Button onClick={handleApply}>Terapkan Filter</Button>
+        </>
       }
-    };
-    if (filterOpen) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [filterOpen]);
+    >
+      {/* Sync draft with current value when modal opens */}
+      {open && draft === value ? null : null}
+      <div className="space-y-5">
+        {/* Transmisi */}
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Transmisi</p>
+          <div className="flex gap-2">
+            {(['ALL', 'AUTOMATIC', 'MANUAL'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => set('tx', t)}
+                className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold border transition-colors ${
+                  draft.tx === t
+                    ? 'bg-primary text-white border-primary shadow-glow'
+                    : 'bg-surface-soft border-border text-ink-soft hover:border-primary'
+                }`}
+              >
+                {t === 'ALL' ? 'Semua' : t === 'AUTOMATIC' ? 'AT (Matic)' : 'MT (Manual)'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tahun */}
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Rentang Tahun</p>
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div>
+              <label className="block text-[10px] text-muted font-semibold mb-1">Dari</label>
+              <input
+                type="number"
+                placeholder="mis. 2019"
+                value={draft.tahunMin}
+                onChange={(e) => set('tahunMin', e.target.value)}
+                className="w-full h-10 px-3 rounded-xl border border-border bg-surface-soft text-[13px] font-semibold text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
+            <span className="text-muted font-bold text-[14px] mt-5">–</span>
+            <div>
+              <label className="block text-[10px] text-muted font-semibold mb-1">Sampai</label>
+              <input
+                type="number"
+                placeholder="mis. 2024"
+                value={draft.tahunMax}
+                onChange={(e) => set('tahunMax', e.target.value)}
+                className="w-full h-10 px-3 rounded-xl border border-border bg-surface-soft text-[13px] font-semibold text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Merek */}
+        {merkList.length > 0 && (
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Merek</p>
+            <select
+              value={draft.merek}
+              onChange={(e) => set('merek', e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-border bg-surface-soft text-[13px] font-semibold text-ink focus:outline-none focus:border-primary"
+            >
+              <option value="">Semua Merek</option>
+              {merkList.map((mk) => <option key={mk} value={mk}>{mk}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+/* ── Main Page ── */
+export const InventoryPage = () => {
+  const [tab,       setTab]     = useState<StatusUnit | 'all'>('all');
+  const [query,     setQuery]   = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter]     = useState<FilterState>(FILTER_DEFAULT);
+  const debounced = useDebouncedValue(query, 400);
 
   const { data, isLoading, isError } = useUnits({
-    page: 1,
-    limit: 100,
-    search: debouncedQuery || undefined,
+    page: 1, limit: 100, search: debounced || undefined,
   });
 
-  const units = data?.data || [];
-  const total = data?.meta?.total || 0;
+  const all: Unit[] = data?.data ?? [];
+  const merkList = [...new Set(all.map((u) => u.merek?.name).filter(Boolean))].sort() as string[];
 
-  // Unique merek list from loaded units
-  const merkList = [...new Set(units.map((u: any) => u.merek?.name).filter(Boolean))].sort() as string[];
+  let rows = tab !== 'all' ? all.filter((u) => u.statusUnit === tab) : [...all];
+  if (filter.tx !== 'ALL')   rows = rows.filter((u) => u.transmisi === filter.tx);
+  if (filter.merek)          rows = rows.filter((u) => u.merek?.name === filter.merek);
+  if (filter.tahunMin)       rows = rows.filter((u) => u.tahun >= Number(filter.tahunMin));
+  if (filter.tahunMax)       rows = rows.filter((u) => u.tahun <= Number(filter.tahunMax));
 
-  // Client-side filtering chain
-  let displayUnits: any[] = filter !== 'all' ? units.filter((u: any) => u.statusUnit === filter) : [...units];
-  if (txFilter !== 'ALL') displayUnits = displayUnits.filter((u: any) => u.transmisi === txFilter);
-  if (merekFilter) displayUnits = displayUnits.filter((u: any) => u.merek?.name === merekFilter);
-  if (tahunMin) displayUnits = displayUnits.filter((u: any) => u.tahun >= Number(tahunMin));
-  if (tahunMax) displayUnits = displayUnits.filter((u: any) => u.tahun <= Number(tahunMax));
-
-  const activeExtraFilters = [txFilter !== 'ALL', !!merekFilter, !!tahunMin || !!tahunMax].filter(Boolean).length;
-  const resetExtraFilters = () => { setTxFilter('ALL'); setMerekFilter(''); setTahunMin(''); setTahunMax(''); };
+  const activeFilters = [
+    filter.tx !== 'ALL',
+    !!filter.merek,
+    !!(filter.tahunMin || filter.tahunMax),
+  ].filter(Boolean).length;
 
   const m = useUnitModals();
 
+  const columns: Column<Unit>[] = [
+    {
+      header: 'Unit',
+      cell: (u) => (
+        <div>
+          <p className="font-bold text-ink text-[13px]">{u.platNomor}</p>
+          <p className="text-[11px] text-muted font-medium mt-0.5">
+            {u.merek?.name ?? '—'} {u.tipe?.name ?? ''}
+          </p>
+        </div>
+      ),
+    },
+    {
+      header: 'Tahun / KM',
+      align: 'right',
+      cell: (u) => (
+        <div className="text-right">
+          <p className="font-bold text-ink text-[13px]">{u.tahun}</p>
+          <p className="text-[11px] text-muted font-medium">{formatNumber(u.kilometer)} KM</p>
+        </div>
+      ),
+    },
+    {
+      header: 'Transmisi',
+      align: 'center',
+      cell: (u) => (
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+          u.transmisi === 'AUTOMATIC' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted/10 text-muted'
+        }`}>
+          {TX_LABEL[u.transmisi] ?? u.transmisi}
+        </span>
+      ),
+    },
+    {
+      header: 'Harga Beli',
+      align: 'right',
+      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.hargaBeli)}</span>,
+    },
+    {
+      header: 'OTR / Target',
+      align: 'right',
+      cell: (u) => (
+        <span className="font-bold text-primary text-[13px]">
+          {idr(u.hargaOtrSaatIni ?? u.hargaTargetJual)}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      align: 'center',
+      cell: (u) => <StatusBadge status={u.statusUnit} />,
+    },
+    {
+      header: '',
+      align: 'right',
+      cell: (u) => (
+        <RowActions
+          onView={() => m.openDetail(u)}
+          onEdit={() => m.openEdit(u)}
+          onDelete={() => m.openDelete(u)}
+        />
+      ),
+    },
+  ];
+
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up">
+    <div className="max-w-[1600px] mx-auto animate-float-up space-y-5">
       <PageHeader
         title="Inventori"
-        description={`${displayUnits.length} unit ditampilkan dari total ${total} unit`}
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={m.openCreate}>Tambah Unit</Button>}
+        description={`${rows.length} dari ${all.length} unit`}
+        action={<Button icon={<Plus size={16} strokeWidth={2.5} />} onClick={m.openCreate}>Tambah Unit</Button>}
       />
 
-      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-5">
-        {/* Status filters */}
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => {
-            const count = f.key === 'all' ? units.length : units.filter((u: any) => u.statusUnit === f.key).length;
+      {/* ── Tab + toolbar ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {TABS.map((t) => {
+            const count = t.key === 'all' ? all.length : all.filter((u) => u.statusUnit === t.key).length;
+            const active = tab === t.key;
             return (
               <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-bold transition-colors ${
-                  filter === f.key
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-xl text-[12px] font-bold transition-all ${
+                  active
                     ? 'bg-primary text-white shadow-glow'
                     : 'bg-surface border border-border text-ink-soft hover:border-primary'
                 }`}
               >
-                {f.label}
+                {t.label}
                 {!isLoading && (
-                  <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
-                    filter === f.key ? 'bg-white/20 text-white' : 'bg-surface-soft text-muted'
-                  }`}>
-                    {count}
-                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                    active ? 'bg-white/20 text-white' : 'bg-surface-soft text-muted'
+                  }`}>{count}</span>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Search + Filter */}
-        <div className="flex items-center gap-2 md:ml-auto">
-          <div className="relative md:w-72">
-            <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+        <div className="flex items-center gap-2.5 sm:ml-auto">
+          <div className="relative">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari plat nomor..."
-              className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+              placeholder="Cari plat nomor, merek..."
+              className="w-full sm:w-64 h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
             />
           </div>
-
-          {/* Filter button with dropdown */}
-          <div className="relative shrink-0" ref={filterRef}>
-            <button
-              onClick={() => setFilterOpen((v) => !v)}
-              className={`flex items-center justify-center gap-2 h-11 px-4 rounded-xl border font-bold text-[12px] transition-colors ${
-                filterOpen || activeExtraFilters > 0
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-surface border-border text-ink-soft hover:border-primary'
-              }`}
-            >
-              <Filter size={16} />
-              Filter
-              {activeExtraFilters > 0 && (
-                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-white/20 text-white">
-                  {activeExtraFilters}
-                </span>
-              )}
-            </button>
-
-            {filterOpen && (
-              <div className="absolute right-0 top-full mt-2 w-64 bg-surface border border-border rounded-2xl shadow-xl z-50 p-4 space-y-4">
-                {/* Panel header */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-bold text-ink">Filter Lanjutan</span>
-                  <div className="flex items-center gap-2">
-                    {activeExtraFilters > 0 && (
-                      <button onClick={resetExtraFilters} className="text-[11px] text-primary font-bold hover:underline">
-                        Reset
-                      </button>
-                    )}
-                    <button onClick={() => setFilterOpen(false)}>
-                      <X size={14} className="text-muted hover:text-ink" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Transmisi */}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-2">Transmisi</p>
-                  <div className="flex gap-1.5">
-                    {(['ALL', 'AUTOMATIC', 'MANUAL'] as const).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setTxFilter(t)}
-                        className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${
-                          txFilter === t
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-surface-soft border-border text-ink-soft hover:border-primary'
-                        }`}
-                      >
-                        {t === 'ALL' ? 'Semua' : t === 'AUTOMATIC' ? 'AT' : 'MT'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tahun */}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-2">Tahun</p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      value={tahunMin}
-                      onChange={(e) => setTahunMin(e.target.value)}
-                      className="flex-1 h-9 px-3 rounded-lg bg-surface-soft border border-border text-[12px] font-medium focus:outline-none focus:border-primary"
-                    />
-                    <span className="text-muted text-[12px] shrink-0">—</span>
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      value={tahunMax}
-                      onChange={(e) => setTahunMax(e.target.value)}
-                      className="flex-1 h-9 px-3 rounded-lg bg-surface-soft border border-border text-[12px] font-medium focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                </div>
-
-                {/* Merek */}
-                {merkList.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-2">Merek</p>
-                    <select
-                      value={merekFilter}
-                      onChange={(e) => setMerekFilter(e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg bg-surface-soft border border-border text-[12px] font-medium focus:outline-none focus:border-primary"
-                    >
-                      <option value="">Semua Merek</option>
-                      {merkList.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
+          <button
+            onClick={() => setFilterOpen(true)}
+            className={`relative inline-flex items-center gap-2 h-11 px-4 rounded-xl border font-bold text-[12px] transition-colors shrink-0 ${
+              activeFilters > 0
+                ? 'bg-primary text-white border-primary shadow-glow'
+                : 'bg-surface border-border text-ink-soft hover:border-primary'
+            }`}
+          >
+            <SlidersHorizontal size={15} />
+            Filter
+            {activeFilters > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-white text-primary text-[10px] font-extrabold shadow">
+                {activeFilters}
+              </span>
             )}
-          </div>
+          </button>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-20 text-muted font-semibold animate-pulse">Memuat data...</div>
-      ) : isError ? (
-        <div className="text-center py-20 text-semantic-error font-semibold">Gagal memuat data.</div>
-      ) : displayUnits.length === 0 ? (
-        <div className="text-center py-20 text-muted font-semibold">Tidak ada unit yang cocok.</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger">
-          {displayUnits.map((u: any) => (
-            <UnitCard key={u.id} unit={u} onView={m.openDetail} onEdit={m.openEdit} onDelete={m.openDelete} />
-          ))}
-        </div>
-      )}
+      {/* ── Table ── */}
+      <SectionCard
+        title={`Daftar Unit (${rows.length})`}
+        icon={<Boxes size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={activeFilters > 0 && (
+          <button
+            onClick={() => setFilter(FILTER_DEFAULT)}
+            className="text-[11px] font-bold text-primary hover:underline"
+          >
+            Reset Filter
+          </button>
+        )}
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16 text-muted gap-2">
+            <Loader2 size={22} className="animate-spin" />
+          </div>
+        ) : isError ? (
+          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
+        ) : rows.length === 0 ? (
+          <div className="text-center py-16">
+            <Boxes size={32} className="text-muted mx-auto mb-3" />
+            <p className="font-bold text-ink text-[14px]">Tidak ada unit yang cocok</p>
+            <p className="text-muted text-[12px] font-medium mt-1">Coba ubah filter atau tambahkan unit baru.</p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
+        )}
+      </SectionCard>
 
       {m.modals}
+
+      <FilterModal
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        value={filter}
+        onApply={setFilter}
+        merkList={merkList}
+      />
     </div>
   );
 };

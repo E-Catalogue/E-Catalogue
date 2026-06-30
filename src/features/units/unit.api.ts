@@ -56,4 +56,14 @@ export const unitApi = {
     const res = await apiClient.delete<ApiResponse<any>>(`/units/${id}/image/${imageId}`);
     return res.data;
   },
+
+  rekondisiStatusCheck: async (id: string) => {
+    const res = await apiClient.get<ApiResponse<{ hasUnfinishedRekondisi: boolean }>>(`/units/${id}/rekondisi-status-check`);
+    return res.data;
+  },
+
+  createRekondisi: async (id: string) => {
+    const res = await apiClient.post<ApiResponse<any>>(`/units/${id}/rekondisi`);
+    return res.data;
+  },
 };

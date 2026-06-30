@@ -65,6 +65,26 @@ export function useDeleteUnit() {
   });
 }
 
+export function useRekondisiStatusCheck(id?: string) {
+  return useQuery({
+    queryKey: ['unit-rekondisi-check', id],
+    queryFn: () => unitApi.rekondisiStatusCheck(id!),
+    enabled: !!id,
+    staleTime: 0,
+  });
+}
+
+export function useCreateRekondisi() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unitApi.createRekondisi(id),
+    onSuccess: () => {
+      store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Rekondisi baru dibuat' }));
+      qc.invalidateQueries({ queryKey: ['rekondisis'] });
+    },
+  });
+}
+
 export function useMasterKelengkapan() {
   return useQuery({
     queryKey: ['master-kelengkapans'],

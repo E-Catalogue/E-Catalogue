@@ -16,7 +16,6 @@ import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicTentangRouteImport } from './routes/_public/tentang'
 import { Route as PublicSimulasiRouteImport } from './routes/_public/simulasi'
 import { Route as PublicKontakRouteImport } from './routes/_public/kontak'
-import { Route as PublicKatalogRouteImport } from './routes/_public/katalog'
 import { Route as AdminVendorRouteImport } from './routes/_admin/vendor'
 import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
 import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
@@ -33,7 +32,9 @@ import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
 import { Route as AdminCashflowRouteImport } from './routes/_admin/cashflow'
 import { Route as AdminBranchRouteImport } from './routes/_admin/branch'
-import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog.$id'
+import { Route as AdminSplatRouteImport } from './routes/_admin/$'
+import { Route as PublicKatalogIndexRouteImport } from './routes/_public/katalog/index'
+import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog/$id'
 import { Route as AdminMasterSumberLeadRouteImport } from './routes/_admin/master.sumber-lead'
 import { Route as AdminMasterPerlengkapanRouteImport } from './routes/_admin/master.perlengkapan'
 import { Route as AdminMasterPengecekanRouteImport } from './routes/_admin/master.pengecekan'
@@ -77,11 +78,6 @@ const PublicSimulasiRoute = PublicSimulasiRouteImport.update({
 const PublicKontakRoute = PublicKontakRouteImport.update({
   id: '/kontak',
   path: '/kontak',
-  getParentRoute: () => PublicRoute,
-} as any)
-const PublicKatalogRoute = PublicKatalogRouteImport.update({
-  id: '/katalog',
-  path: '/katalog',
   getParentRoute: () => PublicRoute,
 } as any)
 const AdminVendorRoute = AdminVendorRouteImport.update({
@@ -164,10 +160,20 @@ const AdminBranchRoute = AdminBranchRouteImport.update({
   path: '/branch',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSplatRoute = AdminSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PublicKatalogIndexRoute = PublicKatalogIndexRouteImport.update({
+  id: '/katalog/',
+  path: '/katalog/',
+  getParentRoute: () => PublicRoute,
+} as any)
 const PublicKatalogIdRoute = PublicKatalogIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => PublicKatalogRoute,
+  id: '/katalog/$id',
+  path: '/katalog/$id',
+  getParentRoute: () => PublicRoute,
 } as any)
 const AdminMasterSumberLeadRoute = AdminMasterSumberLeadRouteImport.update({
   id: '/master/sumber-lead',
@@ -230,6 +236,7 @@ const AdminAccessControlMenusRoute = AdminAccessControlMenusRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/login': typeof LoginRoute
+  '/$': typeof AdminSplatRoute
   '/branch': typeof AdminBranchRoute
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
@@ -246,7 +253,6 @@ export interface FileRoutesByFullPath {
   '/rekondisi': typeof AdminRekondisiRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
-  '/katalog': typeof PublicKatalogRouteWithChildren
   '/kontak': typeof PublicKontakRoute
   '/simulasi': typeof PublicSimulasiRoute
   '/tentang': typeof PublicTentangRoute
@@ -262,10 +268,12 @@ export interface FileRoutesByFullPath {
   '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
   '/katalog/$id': typeof PublicKatalogIdRoute
+  '/katalog/': typeof PublicKatalogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/login': typeof LoginRoute
+  '/$': typeof AdminSplatRoute
   '/branch': typeof AdminBranchRoute
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
@@ -282,7 +290,6 @@ export interface FileRoutesByTo {
   '/rekondisi': typeof AdminRekondisiRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
-  '/katalog': typeof PublicKatalogRouteWithChildren
   '/kontak': typeof PublicKontakRoute
   '/simulasi': typeof PublicSimulasiRoute
   '/tentang': typeof PublicTentangRoute
@@ -298,12 +305,14 @@ export interface FileRoutesByTo {
   '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
   '/katalog/$id': typeof PublicKatalogIdRoute
+  '/katalog': typeof PublicKatalogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_admin': typeof AdminRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/login': typeof LoginRoute
+  '/_admin/$': typeof AdminSplatRoute
   '/_admin/branch': typeof AdminBranchRoute
   '/_admin/cashflow': typeof AdminCashflowRoute
   '/_admin/crm': typeof AdminCrmRoute
@@ -320,7 +329,6 @@ export interface FileRoutesById {
   '/_admin/rekondisi': typeof AdminRekondisiRoute
   '/_admin/test-drive': typeof AdminTestDriveRoute
   '/_admin/vendor': typeof AdminVendorRoute
-  '/_public/katalog': typeof PublicKatalogRouteWithChildren
   '/_public/kontak': typeof PublicKontakRoute
   '/_public/simulasi': typeof PublicSimulasiRoute
   '/_public/tentang': typeof PublicTentangRoute
@@ -337,12 +345,14 @@ export interface FileRoutesById {
   '/_admin/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/_admin/master/sumber-lead': typeof AdminMasterSumberLeadRoute
   '/_public/katalog/$id': typeof PublicKatalogIdRoute
+  '/_public/katalog/': typeof PublicKatalogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/$'
     | '/branch'
     | '/cashflow'
     | '/crm'
@@ -359,7 +369,6 @@ export interface FileRouteTypes {
     | '/rekondisi'
     | '/test-drive'
     | '/vendor'
-    | '/katalog'
     | '/kontak'
     | '/simulasi'
     | '/tentang'
@@ -375,10 +384,12 @@ export interface FileRouteTypes {
     | '/master/perlengkapan'
     | '/master/sumber-lead'
     | '/katalog/$id'
+    | '/katalog/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/$'
     | '/branch'
     | '/cashflow'
     | '/crm'
@@ -395,7 +406,6 @@ export interface FileRouteTypes {
     | '/rekondisi'
     | '/test-drive'
     | '/vendor'
-    | '/katalog'
     | '/kontak'
     | '/simulasi'
     | '/tentang'
@@ -411,11 +421,13 @@ export interface FileRouteTypes {
     | '/master/perlengkapan'
     | '/master/sumber-lead'
     | '/katalog/$id'
+    | '/katalog'
   id:
     | '__root__'
     | '/_admin'
     | '/_public'
     | '/login'
+    | '/_admin/$'
     | '/_admin/branch'
     | '/_admin/cashflow'
     | '/_admin/crm'
@@ -432,7 +444,6 @@ export interface FileRouteTypes {
     | '/_admin/rekondisi'
     | '/_admin/test-drive'
     | '/_admin/vendor'
-    | '/_public/katalog'
     | '/_public/kontak'
     | '/_public/simulasi'
     | '/_public/tentang'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/_admin/master/perlengkapan'
     | '/_admin/master/sumber-lead'
     | '/_public/katalog/$id'
+    | '/_public/katalog/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -506,13 +518,6 @@ declare module '@tanstack/react-router' {
       path: '/kontak'
       fullPath: '/kontak'
       preLoaderRoute: typeof PublicKontakRouteImport
-      parentRoute: typeof PublicRoute
-    }
-    '/_public/katalog': {
-      id: '/_public/katalog'
-      path: '/katalog'
-      fullPath: '/katalog'
-      preLoaderRoute: typeof PublicKatalogRouteImport
       parentRoute: typeof PublicRoute
     }
     '/_admin/vendor': {
@@ -627,12 +632,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBranchRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/$': {
+      id: '/_admin/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AdminSplatRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_public/katalog/': {
+      id: '/_public/katalog/'
+      path: '/katalog'
+      fullPath: '/katalog/'
+      preLoaderRoute: typeof PublicKatalogIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
     '/_public/katalog/$id': {
       id: '/_public/katalog/$id'
-      path: '/$id'
+      path: '/katalog/$id'
       fullPath: '/katalog/$id'
       preLoaderRoute: typeof PublicKatalogIdRouteImport
-      parentRoute: typeof PublicKatalogRoute
+      parentRoute: typeof PublicRoute
     }
     '/_admin/master/sumber-lead': {
       id: '/_admin/master/sumber-lead'
@@ -715,6 +734,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminSplatRoute: typeof AdminSplatRoute
   AdminBranchRoute: typeof AdminBranchRoute
   AdminCashflowRoute: typeof AdminCashflowRoute
   AdminCrmRoute: typeof AdminCrmRoute
@@ -745,6 +765,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminSplatRoute: AdminSplatRoute,
   AdminBranchRoute: AdminBranchRoute,
   AdminCashflowRoute: AdminCashflowRoute,
   AdminCrmRoute: AdminCrmRoute,
@@ -776,32 +797,22 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface PublicKatalogRouteChildren {
-  PublicKatalogIdRoute: typeof PublicKatalogIdRoute
-}
-
-const PublicKatalogRouteChildren: PublicKatalogRouteChildren = {
-  PublicKatalogIdRoute: PublicKatalogIdRoute,
-}
-
-const PublicKatalogRouteWithChildren = PublicKatalogRoute._addFileChildren(
-  PublicKatalogRouteChildren,
-)
-
 interface PublicRouteChildren {
-  PublicKatalogRoute: typeof PublicKatalogRouteWithChildren
   PublicKontakRoute: typeof PublicKontakRoute
   PublicSimulasiRoute: typeof PublicSimulasiRoute
   PublicTentangRoute: typeof PublicTentangRoute
   PublicIndexRoute: typeof PublicIndexRoute
+  PublicKatalogIdRoute: typeof PublicKatalogIdRoute
+  PublicKatalogIndexRoute: typeof PublicKatalogIndexRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
-  PublicKatalogRoute: PublicKatalogRouteWithChildren,
   PublicKontakRoute: PublicKontakRoute,
   PublicSimulasiRoute: PublicSimulasiRoute,
   PublicTentangRoute: PublicTentangRoute,
   PublicIndexRoute: PublicIndexRoute,
+  PublicKatalogIdRoute: PublicKatalogIdRoute,
+  PublicKatalogIndexRoute: PublicKatalogIndexRoute,
 }
 
 const PublicRouteWithChildren =
