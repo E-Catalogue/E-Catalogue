@@ -6,6 +6,9 @@ import { LeadFormModal } from '@/features/crm/LeadFormModal';
 import { TestDriveFormModal } from '@/features/test-drive/TestDriveFormModal';
 import { SaleFormModal } from '@/features/penjualan/SaleFormModal';
 import { PaymentFormModal } from '@/features/pembayaran/PaymentFormModal';
+import { useLeadMutations } from '@/features/crm/crm.hooks';
+import { notifyApiError } from '@/core/api/notify';
+import type { Lead } from '@/features/crm/crm.types';
 
 type Action = 'unit' | 'lead' | 'testdrive' | 'sale' | 'payment';
 
@@ -24,8 +27,16 @@ interface QuickInputProps {
 export const QuickInput = ({ expanded }: QuickInputProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState<Action | null>(null);
+  const leadM = useLeadMutations();
 
   const launch = (a: Action) => { setMenuOpen(false); setActive(a); };
+
+  const handleLeadSubmit = (values: Partial<Lead>) => {
+    leadM.create.mutate(values, {
+      onError: (e: unknown) => notifyApiError(e),
+      onSuccess: () => setActive(null),
+    });
+  };
 
   return (
     <>
@@ -62,7 +73,7 @@ export const QuickInput = ({ expanded }: QuickInputProps) => {
       </Modal>
 
       <UnitFormModal open={active === 'unit'} onClose={() => setActive(null)} />
-      <LeadFormModal open={active === 'lead'} onClose={() => setActive(null)} />
+      <LeadFormModal open={active === 'lead'} onClose={() => setActive(null)} submitting={leadM.create.isPending} onSubmit={handleLeadSubmit} />
       <TestDriveFormModal open={active === 'testdrive'} onClose={() => setActive(null)} />
       <SaleFormModal open={active === 'sale'} onClose={() => setActive(null)} />
       <PaymentFormModal open={active === 'payment'} onClose={() => setActive(null)} />

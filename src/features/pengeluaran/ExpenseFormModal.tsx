@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Wallet } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField, SelectField, NumericField } from '@/shared/components/ui/Field';
 import { useAppDispatch } from '@/app/store';
 import { addExpense, updateExpense } from '@/app/store/dataSlice';
 import type { Expense, ExpenseCategory } from '@/data/types';
@@ -45,7 +45,7 @@ export const ExpenseFormModal = ({ open, onClose, item }: Props) => {
         <SelectField label="Kategori" wrapClass="sm:col-span-2" value={form.category} onChange={(e) => set('category', e.target.value as ExpenseCategory)}
           options={CATEGORIES.map((c) => ({ value: c, label: c }))} />
         <TextField label="Nama / Keterangan" required wrapClass="sm:col-span-2" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="mis. Gaji Karyawan" />
-        <TextField label="Nominal (Rp)" type="number" value={form.amount} onChange={(e) => set('amount', Number(e.target.value))} />
+        <NumericField label="Nominal" value={form.amount} onChange={(v) => set('amount', v)} prefix="Rp" placeholder="0" min={0} />
         <TextField label="Tanggal" type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
         <TextField label="Catatan" wrapClass="sm:col-span-2" value={form.note ?? ''} onChange={(e) => set('note', e.target.value)} placeholder="Opsional" />
       </form>

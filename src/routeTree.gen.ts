@@ -16,7 +16,6 @@ import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicTentangRouteImport } from './routes/_public/tentang'
 import { Route as PublicSimulasiRouteImport } from './routes/_public/simulasi'
 import { Route as PublicKontakRouteImport } from './routes/_public/kontak'
-import { Route as PublicKatalogRouteImport } from './routes/_public/katalog'
 import { Route as AdminVendorRouteImport } from './routes/_admin/vendor'
 import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
 import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
@@ -34,7 +33,9 @@ import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
 import { Route as AdminCashflowRouteImport } from './routes/_admin/cashflow'
 import { Route as AdminBranchRouteImport } from './routes/_admin/branch'
-import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog.$id'
+import { Route as AdminSplatRouteImport } from './routes/_admin/$'
+import { Route as PublicKatalogIndexRouteImport } from './routes/_public/katalog/index'
+import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog/$id'
 import { Route as AdminMasterSumberLeadRouteImport } from './routes/_admin/master.sumber-lead'
 import { Route as AdminMasterPerlengkapanRouteImport } from './routes/_admin/master.perlengkapan'
 import { Route as AdminMasterPengecekanRouteImport } from './routes/_admin/master.pengecekan'
@@ -43,6 +44,11 @@ import { Route as AdminMasterLeasingRouteImport } from './routes/_admin/master.l
 import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_admin/master.kategori-pengeluaran'
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
+import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
+import { Route as AdminCmsProfilRouteImport } from './routes/_admin/cms.profil'
+import { Route as AdminCmsKontakRouteImport } from './routes/_admin/cms.kontak'
+import { Route as AdminCmsKatalogRouteImport } from './routes/_admin/cms.katalog'
+import { Route as AdminCmsBannerRouteImport } from './routes/_admin/cms.banner'
 import { Route as AdminAccessControlUsersRouteImport } from './routes/_admin/access-control.users'
 import { Route as AdminAccessControlRolesRouteImport } from './routes/_admin/access-control.roles'
 import { Route as AdminAccessControlMenusRouteImport } from './routes/_admin/access-control.menus'
@@ -78,11 +84,6 @@ const PublicSimulasiRoute = PublicSimulasiRouteImport.update({
 const PublicKontakRoute = PublicKontakRouteImport.update({
   id: '/kontak',
   path: '/kontak',
-  getParentRoute: () => PublicRoute,
-} as any)
-const PublicKatalogRoute = PublicKatalogRouteImport.update({
-  id: '/katalog',
-  path: '/katalog',
   getParentRoute: () => PublicRoute,
 } as any)
 const AdminVendorRoute = AdminVendorRouteImport.update({
@@ -170,10 +171,20 @@ const AdminBranchRoute = AdminBranchRouteImport.update({
   path: '/branch',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSplatRoute = AdminSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PublicKatalogIndexRoute = PublicKatalogIndexRouteImport.update({
+  id: '/katalog/',
+  path: '/katalog/',
+  getParentRoute: () => PublicRoute,
+} as any)
 const PublicKatalogIdRoute = PublicKatalogIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => PublicKatalogRoute,
+  id: '/katalog/$id',
+  path: '/katalog/$id',
+  getParentRoute: () => PublicRoute,
 } as any)
 const AdminMasterSumberLeadRoute = AdminMasterSumberLeadRouteImport.update({
   id: '/master/sumber-lead',
@@ -217,6 +228,31 @@ const AdminMasterDokumenRoute = AdminMasterDokumenRouteImport.update({
   path: '/master/dokumen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCmsTestimoniRoute = AdminCmsTestimoniRouteImport.update({
+  id: '/cms/testimoni',
+  path: '/cms/testimoni',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsProfilRoute = AdminCmsProfilRouteImport.update({
+  id: '/cms/profil',
+  path: '/cms/profil',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsKontakRoute = AdminCmsKontakRouteImport.update({
+  id: '/cms/kontak',
+  path: '/cms/kontak',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsKatalogRoute = AdminCmsKatalogRouteImport.update({
+  id: '/cms/katalog',
+  path: '/cms/katalog',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsBannerRoute = AdminCmsBannerRouteImport.update({
+  id: '/cms/banner',
+  path: '/cms/banner',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAccessControlUsersRoute = AdminAccessControlUsersRouteImport.update({
   id: '/access-control/users',
   path: '/access-control/users',
@@ -236,6 +272,7 @@ const AdminAccessControlMenusRoute = AdminAccessControlMenusRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/login': typeof LoginRoute
+  '/$': typeof AdminSplatRoute
   '/branch': typeof AdminBranchRoute
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
@@ -253,13 +290,17 @@ export interface FileRoutesByFullPath {
   '/rekondisi': typeof AdminRekondisiRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
-  '/katalog': typeof PublicKatalogRouteWithChildren
   '/kontak': typeof PublicKontakRoute
   '/simulasi': typeof PublicSimulasiRoute
   '/tentang': typeof PublicTentangRoute
   '/access-control/menus': typeof AdminAccessControlMenusRoute
   '/access-control/roles': typeof AdminAccessControlRolesRoute
   '/access-control/users': typeof AdminAccessControlUsersRoute
+  '/cms/banner': typeof AdminCmsBannerRoute
+  '/cms/katalog': typeof AdminCmsKatalogRoute
+  '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/profil': typeof AdminCmsProfilRoute
+  '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
@@ -269,10 +310,12 @@ export interface FileRoutesByFullPath {
   '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
   '/katalog/$id': typeof PublicKatalogIdRoute
+  '/katalog/': typeof PublicKatalogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/login': typeof LoginRoute
+  '/$': typeof AdminSplatRoute
   '/branch': typeof AdminBranchRoute
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
@@ -290,13 +333,17 @@ export interface FileRoutesByTo {
   '/rekondisi': typeof AdminRekondisiRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
-  '/katalog': typeof PublicKatalogRouteWithChildren
   '/kontak': typeof PublicKontakRoute
   '/simulasi': typeof PublicSimulasiRoute
   '/tentang': typeof PublicTentangRoute
   '/access-control/menus': typeof AdminAccessControlMenusRoute
   '/access-control/roles': typeof AdminAccessControlRolesRoute
   '/access-control/users': typeof AdminAccessControlUsersRoute
+  '/cms/banner': typeof AdminCmsBannerRoute
+  '/cms/katalog': typeof AdminCmsKatalogRoute
+  '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/profil': typeof AdminCmsProfilRoute
+  '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
@@ -306,12 +353,14 @@ export interface FileRoutesByTo {
   '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
   '/katalog/$id': typeof PublicKatalogIdRoute
+  '/katalog': typeof PublicKatalogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_admin': typeof AdminRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/login': typeof LoginRoute
+  '/_admin/$': typeof AdminSplatRoute
   '/_admin/branch': typeof AdminBranchRoute
   '/_admin/cashflow': typeof AdminCashflowRoute
   '/_admin/crm': typeof AdminCrmRoute
@@ -329,7 +378,6 @@ export interface FileRoutesById {
   '/_admin/rekondisi': typeof AdminRekondisiRoute
   '/_admin/test-drive': typeof AdminTestDriveRoute
   '/_admin/vendor': typeof AdminVendorRoute
-  '/_public/katalog': typeof PublicKatalogRouteWithChildren
   '/_public/kontak': typeof PublicKontakRoute
   '/_public/simulasi': typeof PublicSimulasiRoute
   '/_public/tentang': typeof PublicTentangRoute
@@ -337,6 +385,11 @@ export interface FileRoutesById {
   '/_admin/access-control/menus': typeof AdminAccessControlMenusRoute
   '/_admin/access-control/roles': typeof AdminAccessControlRolesRoute
   '/_admin/access-control/users': typeof AdminAccessControlUsersRoute
+  '/_admin/cms/banner': typeof AdminCmsBannerRoute
+  '/_admin/cms/katalog': typeof AdminCmsKatalogRoute
+  '/_admin/cms/kontak': typeof AdminCmsKontakRoute
+  '/_admin/cms/profil': typeof AdminCmsProfilRoute
+  '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
   '/_admin/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
@@ -346,12 +399,14 @@ export interface FileRoutesById {
   '/_admin/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/_admin/master/sumber-lead': typeof AdminMasterSumberLeadRoute
   '/_public/katalog/$id': typeof PublicKatalogIdRoute
+  '/_public/katalog/': typeof PublicKatalogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/$'
     | '/branch'
     | '/cashflow'
     | '/crm'
@@ -369,13 +424,17 @@ export interface FileRouteTypes {
     | '/rekondisi'
     | '/test-drive'
     | '/vendor'
-    | '/katalog'
     | '/kontak'
     | '/simulasi'
     | '/tentang'
     | '/access-control/menus'
     | '/access-control/roles'
     | '/access-control/users'
+    | '/cms/banner'
+    | '/cms/katalog'
+    | '/cms/kontak'
+    | '/cms/profil'
+    | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/kategori-pengeluaran'
@@ -385,10 +444,12 @@ export interface FileRouteTypes {
     | '/master/perlengkapan'
     | '/master/sumber-lead'
     | '/katalog/$id'
+    | '/katalog/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/$'
     | '/branch'
     | '/cashflow'
     | '/crm'
@@ -406,13 +467,17 @@ export interface FileRouteTypes {
     | '/rekondisi'
     | '/test-drive'
     | '/vendor'
-    | '/katalog'
     | '/kontak'
     | '/simulasi'
     | '/tentang'
     | '/access-control/menus'
     | '/access-control/roles'
     | '/access-control/users'
+    | '/cms/banner'
+    | '/cms/katalog'
+    | '/cms/kontak'
+    | '/cms/profil'
+    | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/kategori-pengeluaran'
@@ -422,11 +487,13 @@ export interface FileRouteTypes {
     | '/master/perlengkapan'
     | '/master/sumber-lead'
     | '/katalog/$id'
+    | '/katalog'
   id:
     | '__root__'
     | '/_admin'
     | '/_public'
     | '/login'
+    | '/_admin/$'
     | '/_admin/branch'
     | '/_admin/cashflow'
     | '/_admin/crm'
@@ -444,7 +511,6 @@ export interface FileRouteTypes {
     | '/_admin/rekondisi'
     | '/_admin/test-drive'
     | '/_admin/vendor'
-    | '/_public/katalog'
     | '/_public/kontak'
     | '/_public/simulasi'
     | '/_public/tentang'
@@ -452,6 +518,11 @@ export interface FileRouteTypes {
     | '/_admin/access-control/menus'
     | '/_admin/access-control/roles'
     | '/_admin/access-control/users'
+    | '/_admin/cms/banner'
+    | '/_admin/cms/katalog'
+    | '/_admin/cms/kontak'
+    | '/_admin/cms/profil'
+    | '/_admin/cms/testimoni'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
     | '/_admin/master/kategori-pengeluaran'
@@ -461,6 +532,7 @@ export interface FileRouteTypes {
     | '/_admin/master/perlengkapan'
     | '/_admin/master/sumber-lead'
     | '/_public/katalog/$id'
+    | '/_public/katalog/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -518,13 +590,6 @@ declare module '@tanstack/react-router' {
       path: '/kontak'
       fullPath: '/kontak'
       preLoaderRoute: typeof PublicKontakRouteImport
-      parentRoute: typeof PublicRoute
-    }
-    '/_public/katalog': {
-      id: '/_public/katalog'
-      path: '/katalog'
-      fullPath: '/katalog'
-      preLoaderRoute: typeof PublicKatalogRouteImport
       parentRoute: typeof PublicRoute
     }
     '/_admin/vendor': {
@@ -646,12 +711,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBranchRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/$': {
+      id: '/_admin/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AdminSplatRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_public/katalog/': {
+      id: '/_public/katalog/'
+      path: '/katalog'
+      fullPath: '/katalog/'
+      preLoaderRoute: typeof PublicKatalogIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
     '/_public/katalog/$id': {
       id: '/_public/katalog/$id'
-      path: '/$id'
+      path: '/katalog/$id'
       fullPath: '/katalog/$id'
       preLoaderRoute: typeof PublicKatalogIdRouteImport
-      parentRoute: typeof PublicKatalogRoute
+      parentRoute: typeof PublicRoute
     }
     '/_admin/master/sumber-lead': {
       id: '/_admin/master/sumber-lead'
@@ -709,6 +788,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterDokumenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/cms/testimoni': {
+      id: '/_admin/cms/testimoni'
+      path: '/cms/testimoni'
+      fullPath: '/cms/testimoni'
+      preLoaderRoute: typeof AdminCmsTestimoniRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/profil': {
+      id: '/_admin/cms/profil'
+      path: '/cms/profil'
+      fullPath: '/cms/profil'
+      preLoaderRoute: typeof AdminCmsProfilRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/kontak': {
+      id: '/_admin/cms/kontak'
+      path: '/cms/kontak'
+      fullPath: '/cms/kontak'
+      preLoaderRoute: typeof AdminCmsKontakRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/katalog': {
+      id: '/_admin/cms/katalog'
+      path: '/cms/katalog'
+      fullPath: '/cms/katalog'
+      preLoaderRoute: typeof AdminCmsKatalogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/banner': {
+      id: '/_admin/cms/banner'
+      path: '/cms/banner'
+      fullPath: '/cms/banner'
+      preLoaderRoute: typeof AdminCmsBannerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/access-control/users': {
       id: '/_admin/access-control/users'
       path: '/access-control/users'
@@ -734,6 +848,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminSplatRoute: typeof AdminSplatRoute
   AdminBranchRoute: typeof AdminBranchRoute
   AdminCashflowRoute: typeof AdminCashflowRoute
   AdminCrmRoute: typeof AdminCrmRoute
@@ -754,6 +869,11 @@ interface AdminRouteChildren {
   AdminAccessControlMenusRoute: typeof AdminAccessControlMenusRoute
   AdminAccessControlRolesRoute: typeof AdminAccessControlRolesRoute
   AdminAccessControlUsersRoute: typeof AdminAccessControlUsersRoute
+  AdminCmsBannerRoute: typeof AdminCmsBannerRoute
+  AdminCmsKatalogRoute: typeof AdminCmsKatalogRoute
+  AdminCmsKontakRoute: typeof AdminCmsKontakRoute
+  AdminCmsProfilRoute: typeof AdminCmsProfilRoute
+  AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
   AdminMasterKategoriPengeluaranRoute: typeof AdminMasterKategoriPengeluaranRoute
@@ -765,6 +885,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminSplatRoute: AdminSplatRoute,
   AdminBranchRoute: AdminBranchRoute,
   AdminCashflowRoute: AdminCashflowRoute,
   AdminCrmRoute: AdminCrmRoute,
@@ -785,6 +906,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccessControlMenusRoute: AdminAccessControlMenusRoute,
   AdminAccessControlRolesRoute: AdminAccessControlRolesRoute,
   AdminAccessControlUsersRoute: AdminAccessControlUsersRoute,
+  AdminCmsBannerRoute: AdminCmsBannerRoute,
+  AdminCmsKatalogRoute: AdminCmsKatalogRoute,
+  AdminCmsKontakRoute: AdminCmsKontakRoute,
+  AdminCmsProfilRoute: AdminCmsProfilRoute,
+  AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,
   AdminMasterKategoriPengeluaranRoute: AdminMasterKategoriPengeluaranRoute,
@@ -797,32 +923,22 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface PublicKatalogRouteChildren {
-  PublicKatalogIdRoute: typeof PublicKatalogIdRoute
-}
-
-const PublicKatalogRouteChildren: PublicKatalogRouteChildren = {
-  PublicKatalogIdRoute: PublicKatalogIdRoute,
-}
-
-const PublicKatalogRouteWithChildren = PublicKatalogRoute._addFileChildren(
-  PublicKatalogRouteChildren,
-)
-
 interface PublicRouteChildren {
-  PublicKatalogRoute: typeof PublicKatalogRouteWithChildren
   PublicKontakRoute: typeof PublicKontakRoute
   PublicSimulasiRoute: typeof PublicSimulasiRoute
   PublicTentangRoute: typeof PublicTentangRoute
   PublicIndexRoute: typeof PublicIndexRoute
+  PublicKatalogIdRoute: typeof PublicKatalogIdRoute
+  PublicKatalogIndexRoute: typeof PublicKatalogIndexRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
-  PublicKatalogRoute: PublicKatalogRouteWithChildren,
   PublicKontakRoute: PublicKontakRoute,
   PublicSimulasiRoute: PublicSimulasiRoute,
   PublicTentangRoute: PublicTentangRoute,
   PublicIndexRoute: PublicIndexRoute,
+  PublicKatalogIdRoute: PublicKatalogIdRoute,
+  PublicKatalogIndexRoute: PublicKatalogIndexRoute,
 }
 
 const PublicRouteWithChildren =

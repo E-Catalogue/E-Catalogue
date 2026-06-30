@@ -41,6 +41,21 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+  /* Keyboard shortcut hint key */
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
   .scrollbar-slim::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-slim::-webkit-scrollbar-thumb { background: #D5D8E0; border-radius: 9999px; }
   .scrollbar-slim::-webkit-scrollbar-track { background: transparent; }

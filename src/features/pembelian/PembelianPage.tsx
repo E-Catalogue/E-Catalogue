@@ -26,7 +26,7 @@ export const PembelianPage = () => {
     { header: 'Harga Beli', cell: (u) => <span className="font-bold text-ink">{u.buyPrice ? formatCurrency(u.buyPrice) : '-'}</span>, align: 'right' },
     { header: 'Status', cell: (u) => <StatusBadge status={u.status} />, align: 'center' },
     { header: 'Tanggal', cell: () => formatDate('2024-05-21'), align: 'right' },
-    { header: '', align: 'right', cell: (u) => <RowActions onView={() => m.openDetail(u)} onEdit={() => m.openEdit(u)} onDelete={() => m.openDelete(u)} /> },
+    { header: '', align: 'right', cell: (u) => <RowActions onView={() => m.openDetail(u as never)} onEdit={() => m.openEdit(u as never)} onDelete={() => m.openDelete(u as never)} /> },
   ];
 
   return (

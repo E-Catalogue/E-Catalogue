@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from '@tanstack/react-router';
-import { Menu, Search, Bell, CalendarDays, ChevronDown, Store, LogOut, ShieldOff } from 'lucide-react';
+import { Menu, Search, Bell, CalendarDays, ChevronDown, Store, LogOut, ShieldOff, Command } from 'lucide-react';
 import { MENU_ITEMS } from './menu';
 import { CURRENT_USER } from '@/shared/constants';
 import { useAppSelector, useAppDispatch } from '@/app/store';
@@ -8,6 +8,7 @@ import { queryClient } from '@/app/queryClient';
 import { clearCredentials } from '@/app/store/authSlice';
 import { authApi } from '@/features/auth/auth.api';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { MenuSearchModal } from '@/shared/components/ui/MenuSearchModal';
 
 interface HeaderProps {
   onOpenMobileSidebar: () => void;
@@ -32,21 +33,26 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmLogoutAll, setConfirmLogoutAll] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  const askLogout = () => {
-    onToggleProfile(); // tutup dropdown profil
-    setConfirmLogout(true);
-  };
+  // Global shortcut: Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
-  const askLogoutAll = () => {
-    onToggleProfile();
-    setConfirmLogoutAll(true);
-  };
+  const askLogout = () => { onToggleProfile(); setConfirmLogout(true); };
+  const askLogoutAll = () => { onToggleProfile(); setConfirmLogoutAll(true); };
 
-  // Bersihkan sesi lokal & arahkan ke login (dipakai logout & logout-all).
   const finishLogout = () => {
     dispatch(clearCredentials());
-    queryClient.clear(); // bersihkan cache profil & data sesi (guide §4)
+    queryClient.clear();
     setConfirmLogout(false);
     setConfirmLogoutAll(false);
     setLoggingOut(false);
@@ -55,106 +61,122 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    try {
-      await authApi.logout();
-    } catch {
-      /* abaikan error logout; tetap bersihkan sesi lokal */
-    }
+    try { await authApi.logout(); } catch { /* ignore */ }
     finishLogout();
   };
 
   const handleLogoutAll = async () => {
     setLoggingOut(true);
-    try {
-      await authApi.logoutAll();
-    } catch {
-      /* abaikan error; tetap bersihkan sesi lokal */
-    }
+    try { await authApi.logoutAll(); } catch { /* ignore */ }
     finishLogout();
   };
 
+  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
+
   return (
-    <header className="px-4 md:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4 shrink-0 bg-surface border-b border-border z-30">
-      {/* LEFT: title */}
-      <div className="flex items-center gap-3 min-w-0">
-        <button
-          onClick={onOpenMobileSidebar}
-          className="lg:hidden p-2 bg-surface-soft rounded-xl text-muted hover:text-ink transition-colors shrink-0"
-        >
-          <Menu size={22} strokeWidth={2.5} />
-        </button>
-        <div className="min-w-0">
-          <h1 className="text-lg md:text-xl font-extrabold text-ink tracking-tight leading-none truncate">{title}</h1>
-          {isDashboard && (
-            <p className="text-[11px] md:text-xs text-muted font-medium mt-1 truncate">
-              Selamat datang kembali, <span className="text-primary font-bold">{name}</span>
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* CENTER: search */}
-      <div className="hidden md:flex flex-1 max-w-md mx-auto">
-        <div className="relative w-full">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" strokeWidth={2.2} />
-          <input
-            type="text"
-            placeholder="Cari unit, pelanggan, transaksi..."
-            className="w-full h-11 pl-11 pr-4 rounded-2xl bg-surface-soft border border-border text-sm font-medium placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all"
-          />
-        </div>
-      </div>
-
-      {/* RIGHT: actions */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        <Link to="/" className="hidden lg:inline-flex items-center gap-2 rounded-xl bg-surface-soft border border-border text-ink-soft hover:text-primary hover:border-primary font-bold text-[12px] px-3 py-2.5 transition-colors" title="Lihat katalog publik">
-          <Store size={16} /> Katalog
-        </Link>
-        <button className="relative p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
-          <Bell size={20} strokeWidth={2.2} />
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-surface">8</span>
-        </button>
-        <button className="hidden sm:flex p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
-          <CalendarDays size={20} strokeWidth={2.2} />
-        </button>
-
-        <div className="relative">
+    <>
+      <header className="px-4 md:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4 shrink-0 bg-surface border-b border-border z-30">
+        {/* LEFT: title */}
+        <div className="flex items-center gap-3 min-w-0">
           <button
-            onClick={onToggleProfile}
-            className="flex items-center gap-2.5 pl-1.5 pr-2 md:pr-3 py-1.5 rounded-full bg-surface-soft border border-border hover:border-primary transition-colors"
+            onClick={onOpenMobileSidebar}
+            className="lg:hidden p-2 bg-surface-soft rounded-xl text-muted hover:text-ink transition-colors shrink-0"
           >
-            <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-[12px] font-extrabold shrink-0">{initials}</span>
-            <div className="hidden md:flex flex-col items-start leading-none">
-              <span className="text-[12px] font-bold text-ink">{name}</span>
-              <span className="text-[10px] text-muted font-medium mt-0.5">{role}</span>
-            </div>
-            <ChevronDown size={16} className="text-muted hidden md:block" />
+            <Menu size={22} strokeWidth={2.5} />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-xl font-extrabold text-ink tracking-tight leading-none truncate">{title}</h1>
+            {isDashboard && (
+              <p className="text-[11px] md:text-xs text-muted font-medium mt-1 truncate">
+                Selamat datang kembali, <span className="text-primary font-bold">{name}</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* CENTER: search trigger (looks like input, opens modal) */}
+        <div className="hidden md:flex flex-1 max-w-md mx-auto">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="group relative w-full flex items-center h-11 pl-11 pr-4 rounded-2xl bg-surface-soft border border-border hover:border-primary/40 hover:bg-primary/[0.03] transition-all text-left"
+          >
+            <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-hover:text-primary transition-colors" strokeWidth={2.2} />
+            <span className="text-sm font-medium text-muted flex-1">Cari menu...</span>
+            <kbd className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[10px] font-bold text-muted/60 shrink-0">
+              <Command size={9} />
+              <span>{isMac ? '⌘' : 'Ctrl'} K</span>
+            </kbd>
+          </button>
+        </div>
+
+        {/* RIGHT: actions */}
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Mobile search trigger */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="md:hidden p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors"
+          >
+            <Search size={20} strokeWidth={2.2} />
           </button>
 
-          {isProfileOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-surface border border-border rounded-2xl shadow-card-hover z-50 overflow-hidden animate-float-up">
-              <div className="p-4 border-b border-divider flex items-center gap-3 bg-surface-soft">
-                <span className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">{initials}</span>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-ink leading-tight truncate">{name}</p>
-                  <p className="text-[10px] text-muted font-semibold uppercase tracking-wider mt-0.5 truncate">{role}</p>
+          <Link
+            to="/"
+            className="hidden lg:inline-flex items-center gap-2 rounded-xl bg-surface-soft border border-border text-ink-soft hover:text-primary hover:border-primary font-bold text-[12px] px-3 py-2.5 transition-colors"
+            title="Lihat katalog publik"
+          >
+            <Store size={16} /> Katalog
+          </Link>
+
+          <button className="relative p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
+            <Bell size={20} strokeWidth={2.2} />
+            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-surface">8</span>
+          </button>
+
+          <button className="hidden sm:flex p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
+            <CalendarDays size={20} strokeWidth={2.2} />
+          </button>
+
+          <div className="relative">
+            <button
+              onClick={onToggleProfile}
+              className="flex items-center gap-2.5 pl-1.5 pr-2 md:pr-3 py-1.5 rounded-full bg-surface-soft border border-border hover:border-primary transition-colors"
+            >
+              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-[12px] font-extrabold shrink-0">{initials}</span>
+              <div className="hidden md:flex flex-col items-start leading-none">
+                <span className="text-[12px] font-bold text-ink">{name}</span>
+                <span className="text-[10px] text-muted font-medium mt-0.5">{role}</span>
+              </div>
+              <ChevronDown size={16} className="text-muted hidden md:block" />
+            </button>
+
+            {isProfileOpen && (
+              <div className="absolute right-0 mt-3 w-56 bg-surface border border-border rounded-2xl shadow-card-hover z-50 overflow-hidden animate-float-up">
+                <div className="p-4 border-b border-divider flex items-center gap-3 bg-surface-soft">
+                  <span className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">{initials}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink leading-tight truncate">{name}</p>
+                    <p className="text-[10px] text-muted font-semibold uppercase tracking-wider mt-0.5 truncate">{role}</p>
+                  </div>
+                </div>
+                <div className="p-2">
+                  <Link to="/pengaturan" onClick={onToggleProfile} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-ink-soft hover:bg-surface-soft transition-colors">
+                    Pengaturan
+                  </Link>
+                  <button onClick={askLogout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-semantic-error hover:bg-semantic-error/10 transition-colors">
+                    <LogOut size={16} /> Keluar
+                  </button>
+                  <button onClick={askLogoutAll} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-ink-soft hover:bg-surface-soft transition-colors">
+                    <ShieldOff size={16} /> Keluar dari Semua Perangkat
+                  </button>
                 </div>
               </div>
-              <div className="p-2">
-                <Link to="/pengaturan" onClick={onToggleProfile} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-ink-soft hover:bg-surface-soft transition-colors">
-                  Pengaturan
-                </Link>
-                <button onClick={askLogout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-semantic-error hover:bg-semantic-error/10 transition-colors">
-                  <LogOut size={16} /> Keluar
-                </button>
-                <button onClick={askLogoutAll} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-ink-soft hover:bg-surface-soft transition-colors">
-                  <ShieldOff size={16} /> Keluar dari Semua Perangkat
-                </button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      </header>
+
+      {/* Menu search modal */}
+      <MenuSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       <ConfirmDialog
         open={confirmLogout}
@@ -169,7 +191,6 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
         loading={loggingOut}
         closeOnConfirm={false}
       />
-
       <ConfirmDialog
         open={confirmLogoutAll}
         onClose={() => !loggingOut && setConfirmLogoutAll(false)}
@@ -183,6 +204,6 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
         loading={loggingOut}
         closeOnConfirm={false}
       />
-    </header>
+    </>
   );
 };

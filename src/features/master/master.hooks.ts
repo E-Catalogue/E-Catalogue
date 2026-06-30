@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { merekApi, tipeApi, vendorApi, branchApi, investorApi, investorModalApi } from './master.api';
+import { pengecekanApi } from './simpleMaster.api';
 import type { ListParams, Investor, InvestorModal } from './types';
 
 // ---------- Merek ----------
@@ -67,6 +68,10 @@ export const useBranchMutations = () => {
     deleteImage: useMutation({ mutationFn: (v: { branchId: string; imageId: string }) => branchApi.deleteImage(v.branchId, v.imageId), onSuccess: (_d, v) => { inval(); invalOne(v.branchId); } }),
   };
 };
+
+// ---------- Pengecekan (dropdown for rekondisi) ----------
+export const usePengecekan = (params: ListParams) =>
+  useQuery({ queryKey: ['pengecekans', params], queryFn: () => pengecekanApi.list(params) });
 
 // ---------- Investor ----------
 export const useInvestors = (params: ListParams) =>

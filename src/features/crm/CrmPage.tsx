@@ -1,90 +1,100 @@
 import { useState } from 'react';
-import { Plus, Phone, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Loader2, Users, Phone, Mail } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { SectionCard } from '@/shared/components/ui/SectionCard';
+import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
-import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { Pagination } from '@/shared/components/ui/Pagination';
 import { LeadFormModal } from './LeadFormModal';
-import { useAppSelector, useAppDispatch } from '@/app/store';
-import { removeLead } from '@/app/store/dataSlice';
-import { formatCurrency, formatDate } from '@/core/utils/format';
-import type { Lead, LeadStage } from '@/data/types';
-
-const COLUMNS: { key: LeadStage; label: string; accent: string }[] = [
-  { key: 'lead', label: 'Lead / Prospek', accent: 'border-t-primary' },
-  { key: 'test_drive', label: 'Test Drive', accent: 'border-t-accent-orange' },
-  { key: 'negosiasi', label: 'Negosiasi', accent: 'border-t-accent-amber' },
-  { key: 'spk', label: 'SPK / Deal', accent: 'border-t-accent-green' },
-];
-
-const SOURCE_COLOR: Record<string, string> = {
-  Instagram: 'bg-pink-100 text-pink-600',
-  Facebook: 'bg-blue-100 text-blue-600',
-  'Walk-in': 'bg-green-100 text-green-600',
-  Referral: 'bg-purple-100 text-purple-600',
-  OLX: 'bg-emerald-100 text-emerald-600',
-  Website: 'bg-orange-100 text-orange-600',
-};
+import { useLeads, useLeadMutations } from './crm.hooks';
+import { notifyApiError } from '@/core/api/notify';
+import { useDebouncedValue } from '@/features/master/useDebouncedValue';
+import type { Lead } from './crm.types';
 
 export const CrmPage = () => {
-  const leads = useAppSelector((s) => s.data.leads);
-  const dispatch = useAppDispatch();
-  const [form, setForm] = useState<{ lead: Lead | null } | null>(null);
-  const [toDelete, setToDelete] = useState<Lead | null>(null);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const debounced = useDebouncedValue(search, 350);
+  const { data, isLoading, isError } = useLeads({ page, limit: 15, search: debounced });
+  const m = useLeadMutations();
+
+  const [form, setForm] = useState<{ item: Lead | null } | null>(null);
+  const leads = data?.data ?? [];
+
+  const handleSubmit = (values: Partial<Lead>) => {
+    const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setForm(null) };
+    if (form?.item) m.update.mutate({ id: form.item.id, body: values }, opts);
+    else m.create.mutate(values, opts);
+  };
+
+  const columns: Column<Lead>[] = [
+    {
+      header: 'Customer',
+      cell: (r) => (
+        <div>
+          <p className="font-bold text-ink">{r.nama}</p>
+          {r.nik && <p className="text-[11px] font-medium text-muted">NIK: {r.nik}</p>}
+        </div>
+      ),
+    },
+    {
+      header: 'Kontak',
+      cell: (r) => (
+        <div className="space-y-0.5">
+          {r.noHp && <p className="flex items-center gap-1.5 text-[12px] text-ink-soft"><Phone size={11} /> {r.noHp}</p>}
+          {r.email && <p className="flex items-center gap-1.5 text-[12px] text-ink-soft"><Mail size={11} /> {r.email}</p>}
+        </div>
+      ),
+    },
+    { header: 'Sumber', cell: (r) => r.sumberLead?.name ?? <span className="text-muted">-</span> },
+    { header: 'Pekerjaan', cell: (r) => r.pekerjaan ?? <span className="text-muted">-</span> },
+    {
+      header: '',
+      align: 'right',
+      cell: (r) => <RowActions onEdit={() => setForm({ item: r })} />,
+    },
+  ];
 
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up">
+    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
       <PageHeader
         title="CRM / Lead"
-        description={`${leads.length} prospek aktif dalam pipeline penjualan`}
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ lead: null })}>Tambah Lead</Button>}
+        description="Data customer & prospek penjualan"
+        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Lead</Button>}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {COLUMNS.map((col) => {
-          const items = leads.filter((l) => l.stage === col.key);
-          return (
-            <div key={col.key} className={`bg-surface-soft rounded-2xl border border-border border-t-4 ${col.accent} p-3`}>
-              <div className="flex items-center justify-between px-1 mb-3">
-                <h3 className="text-[12px] font-extrabold uppercase tracking-wide text-ink">{col.label}</h3>
-                <span className="text-[11px] font-bold text-muted bg-surface border border-border rounded-lg px-2 py-0.5">{items.length}</span>
-              </div>
-              <div className="space-y-2.5">
-                {items.map((l) => (
-                  <div key={l.id} className="group bg-surface rounded-xl border border-border p-3.5 shadow-sm hover:shadow-card transition-all">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[13px] font-extrabold text-ink truncate">{l.name}</p>
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${SOURCE_COLOR[l.source] ?? 'bg-muted/10 text-muted'}`}>{l.source}</span>
-                    </div>
-                    <p className="text-[11px] text-muted font-semibold mt-1 truncate">{l.interestedUnit}</p>
-                    <p className="text-[12px] font-extrabold text-primary mt-2">{formatCurrency(l.budget, { compact: true })}</p>
-                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-divider">
-                      <span className="flex items-center gap-1 text-[10px] font-semibold text-muted truncate"><Phone size={11} /> {l.phone}</span>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button onClick={() => setForm({ lead: l })} className="p-1.5 rounded-md text-muted hover:text-accent-blue hover:bg-accent-blue/10" title="Edit"><Pencil size={13} /></button>
-                        <button onClick={() => setToDelete(l)} className="p-1.5 rounded-md text-muted hover:text-semantic-error hover:bg-semantic-error/10" title="Hapus"><Trash2 size={13} /></button>
-                      </div>
-                    </div>
-                    {l.followUpAt && (
-                      <p className="text-[10px] font-semibold text-accent-blue mt-1.5">Follow up: {formatDate(l.followUpAt)}</p>
-                    )}
-                  </div>
-                ))}
-                <button onClick={() => setForm({ lead: null })} className="w-full py-2 rounded-xl border border-dashed border-border text-[11px] font-bold text-muted hover:text-primary hover:border-primary transition-colors">
-                  + Tambah
-                </button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="relative w-full sm:max-w-xs">
+        <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+        <input
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Cari nama, NIK, HP, email..."
+          className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+        />
       </div>
 
-      <LeadFormModal open={!!form} lead={form?.lead} onClose={() => setForm(null)} />
-      <ConfirmDialog
-        open={!!toDelete}
-        onClose={() => setToDelete(null)}
-        onConfirm={() => toDelete && dispatch(removeLead(toDelete.id))}
-        title="Hapus Lead"
-        message={toDelete ? `Hapus lead ${toDelete.name}?` : ''}
+      <SectionCard title="Daftar Lead" icon={<Users size={16} />} bodyClassName="p-0 md:p-0">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
+        ) : isError ? (
+          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
+        ) : leads.length === 0 ? (
+          <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada lead.</div>
+        ) : (
+          <>
+            <DataTable columns={columns} data={leads} rowKey={(r) => r.id} />
+            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+          </>
+        )}
+      </SectionCard>
+
+      <LeadFormModal
+        open={!!form}
+        onClose={() => setForm(null)}
+        item={form?.item}
+        submitting={m.create.isPending || m.update.isPending}
+        onSubmit={handleSubmit}
       />
     </div>
   );

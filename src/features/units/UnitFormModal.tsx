@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { Car } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -24,19 +24,10 @@ const emptyUnit = (): Omit<Unit, 'id'> => ({
 });
 
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
-  const dispatch = useAppDispatch();
-  const [form, setForm] = useState<Omit<Unit, 'id'>>(unit ?? emptyUnit());
+  const [form, setForm] = useState<UnitFormData>(emptyUnitForm());
 
-  // Re-seed form when the modal target changes.
-  const [seedId, setSeedId] = useState<string | undefined>(unit?.id);
-  if (open && unit?.id !== seedId) {
-    setSeedId(unit?.id);
-    setForm(unit ?? emptyUnit());
-  }
-  if (open && !unit && seedId !== undefined) {
-    setSeedId(undefined);
-    setForm(emptyUnit());
-  }
+  const createUnit = useCreateUnit();
+  const updateUnit = useUpdateUnit();
 
   const set = <K extends keyof Omit<Unit, 'id'>>(key: K, value: Omit<Unit, 'id'>[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -44,10 +35,14 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (unit) dispatch(updateUnit({ ...form, id: unit.id }));
-    else dispatch(addUnit(form));
-    onClose();
+    if (unit) {
+      updateUnit.mutate({ id: unit.id, data: form }, { onSuccess: onClose });
+    } else {
+      createUnit.mutate(form, { onSuccess: onClose });
+    }
   };
+
+  const isPending = createUnit.isPending || updateUnit.isPending;
 
   return (
     <Modal
@@ -55,12 +50,14 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       onClose={onClose}
       icon={<Car size={20} />}
       title={unit ? 'Edit Unit' : 'Tambah Unit Baru'}
-      subtitle={unit ? unit.code : 'Lengkapi data unit mobil'}
+      subtitle={unit ? unit.platNomor : 'Lengkapi data unit mobil'}
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Batal</Button>
-          <Button type="submit" form="unit-form">{unit ? 'Simpan Perubahan' : 'Tambah Unit'}</Button>
+          <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>
+          <Button type="submit" form="unit-form" disabled={isPending}>
+            {unit ? 'Simpan Perubahan' : 'Tambah Unit'}
+          </Button>
         </>
       }
     >
@@ -76,43 +73,101 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
         <TextField label="Kilometer" type="number" value={form.km} onChange={(e) => set('km', Number(e.target.value))} />
         <TextField label="Warna" value={form.color} onChange={(e) => set('color', e.target.value)} placeholder="Hitam" />
         <SelectField
-          label="Bahan Bakar"
-          value={form.fuel}
-          onChange={(e) => set('fuel', e.target.value as FuelType)}
-          options={[{ value: 'Bensin', label: 'Bensin' }, { value: 'Diesel', label: 'Diesel' }, { value: 'Hybrid', label: 'Hybrid' }, { value: 'Listrik', label: 'Listrik' }]}
+          label="Merek"
+          required
+          value={form.merekId}
+          onChange={(e) => set('merekId', e.target.value)}
+          options={[{ value: '', label: 'Pilih Merek' }, ...mereks.map(m => ({ value: m.id, label: m.name }))]}
         />
+        <SelectField
+          label="Tipe / Model"
+          required
+          value={form.tipeId}
+          onChange={(e) => set('tipeId', e.target.value)}
+          options={[{ value: '', label: form.merekId ? 'Pilih Tipe' : 'Pilih Merek dahulu' }, ...tipes.map(t => ({ value: t.id, label: t.name }))]}
+          disabled={!form.merekId}
+        />
+
+        <NumericField
+          label="Tahun"
+          required
+          value={form.tahun}
+          onChange={(v) => set('tahun', v)}
+          placeholder={String(new Date().getFullYear())}
+          min={1980}
+          max={new Date().getFullYear() + 1}
+        />
+        <TextField
+          label="Warna"
+          required
+          value={form.warna}
+          onChange={(e) => set('warna', e.target.value)}
+          placeholder="mis. Hitam Metalik"
+        />
+
         <SelectField
           label="Transmisi"
-          value={form.transmission}
-          onChange={(e) => set('transmission', e.target.value as Transmission)}
-          options={[{ value: 'AT', label: 'Automatic (AT)' }, { value: 'MT', label: 'Manual (MT)' }, { value: 'CVT', label: 'CVT' }]}
-        />
-        <TextField label="Plat Nomor" value={form.plate} onChange={(e) => set('plate', e.target.value)} placeholder="B 1234 ABC" />
-        <SelectField
-          label="Status"
-          value={form.status}
-          onChange={(e) => set('status', e.target.value as UnitStatus)}
+          value={form.transmisi}
+          onChange={(e) => set('transmisi', e.target.value as Transmisi)}
           options={[
-            { value: 'ready', label: 'Ready' },
-            { value: 'rekondisi', label: 'Rekondisi' },
-            { value: 'booked', label: 'Booked' },
-            { value: 'sold', label: 'Terjual' },
-            { value: 'pembelian', label: 'Pembelian' },
+            { value: 'AUTOMATIC', label: 'Automatic (AT)' },
+            { value: 'MANUAL', label: 'Manual (MT)' },
           ]}
         />
-        <TextField label="URL Foto" wrapClass="sm:col-span-2" value={form.image} onChange={(e) => set('image', e.target.value)} placeholder="https://..." />
+        <NumericField
+          label="Kilometer"
+          required
+          value={form.kilometer}
+          onChange={(v) => set('kilometer', v)}
+          suffix="km"
+          placeholder="0"
+          min={0}
+        />
 
-        {form.status === 'rekondisi' && (
-          <>
-            <TextField label="Progress Rekondisi (%)" type="number" value={form.rekondisiProgress ?? 0} onChange={(e) => set('rekondisiProgress', Number(e.target.value))} />
-            <TextField label="Estimasi Selesai" type="date" value={form.rekondisiEta ?? ''} onChange={(e) => set('rekondisiEta', e.target.value)} />
-          </>
-        )}
+        <TextField
+          label="Plat Nomor"
+          required
+          value={form.platNomor}
+          onChange={(e) => set('platNomor', e.target.value)}
+          placeholder="B 1234 ABC"
+        />
+        <TextField
+          label="Tanggal Pajak"
+          required
+          type="date"
+          value={form.tanggalPajak}
+          onChange={(e) => set('tanggalPajak', e.target.value)}
+        />
 
-        <label className="sm:col-span-2 flex items-center gap-2.5 cursor-pointer select-none">
-          <input type="checkbox" checked={!!form.isNew} onChange={(e) => set('isNew', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" />
-          <span className="text-[13px] font-semibold text-ink-soft">Tandai sebagai unit baru masuk (badge "BARU")</span>
-        </label>
+        <TextField
+          label="No Rangka"
+          required
+          value={form.noRangka}
+          onChange={(e) => set('noRangka', e.target.value)}
+        />
+        <TextField
+          label="No Mesin"
+          required
+          value={form.noMesin}
+          onChange={(e) => set('noMesin', e.target.value)}
+        />
+
+        <NumericField
+          label="Harga Beli"
+          required
+          value={form.hargaBeli}
+          onChange={(v) => set('hargaBeli', v)}
+          prefix="Rp"
+          placeholder="0"
+          min={0}
+        />
+        <TextField
+          label="Tanggal Pembelian"
+          required
+          type="date"
+          value={form.tanggalPembelian}
+          onChange={(e) => set('tanggalPembelian', e.target.value)}
+        />
       </form>
     </Modal>
   );
