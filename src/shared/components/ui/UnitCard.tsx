@@ -18,10 +18,11 @@ export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
   const clickable = !!onView;
   const isMock = 'brand' in unit;
   
-  const imageUrl = isMock 
-    ? (unit as MockUnit).image 
-    : (((unit as BackendUnit).unitImages && (unit as BackendUnit).unitImages.length > 0)
-      ? `${import.meta.env.VITE_API_URL}/public/unit/${(unit as BackendUnit).unitImages[0].filename}`
+  const _backendImg = (unit as BackendUnit).unitImages?.[0];
+  const imageUrl = isMock
+    ? (unit as MockUnit).image
+    : (_backendImg
+      ? `${import.meta.env.VITE_API_URL}/public/unit/${_backendImg.filename}`
       : DEFAULT_CAR_IMAGE);
 
   const displayPrice = isMock 

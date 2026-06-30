@@ -1,4 +1,4 @@
-import { Calendar, Gauge, Cog, Palette, Hash, Clock, TrendingUp, Pencil, Receipt } from 'lucide-react';
+import { Calendar, Gauge, Cog, Palette, Hash, TrendingUp, Pencil, Receipt } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
