@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 30 Juni 2026 (rev 2)
+> **Terakhir diperbarui:** 30 Juni 2026 (rev 3)
 
 ---
 
@@ -65,6 +65,19 @@
 - [x] `iconMap.ts` — ikon grup (`ACCESS_CONTROL`, `INVENTORY_OPERATIONAL`, `CRM_SALES`, `MASTER_DATA`) dan per-menu (`LEAD`, `LEAD_ORDER`, `LEAD_PAYMENT`, `UNIT`, `REKONDISI`)
 - [x] `INVESTOR_MODAL` backend-menu difilter otomatis (path punya param URL → null → disembunyikan dari sidebar; diakses via InvestorPage)
 
+### Unit (API nyata) — *rev 3*
+- [x] `unit.types.ts` — `Unit`, `UnitFormData`, `UnitStatusUpdate`, `MasterKelengkapan`, `MasterDokumen`, `UnitImage`, status enums
+- [x] `unit.api.ts` — list/get/create/update/updateStatus/delete, upload/delete image, `rekondisiStatusCheck`, `createRekondisi`
+- [x] `unit.hooks.ts` — `useUnits`, `useUnit`, `useCreateUnit`, `useUpdateUnit`, `useUpdateUnitStatus`, `useDeleteUnit`, `useRekondisiStatusCheck`, `useCreateRekondisi`, `useMasterKelengkapan`, `useMasterDokumen`
+
+### Rekondisi (API nyata) — *rev 3*
+- [x] `rekondisi.types.ts` — `Rekondisi`, `RekondisiDetail`, form types, status labels/colors
+- [x] `rekondisi.api.ts` — list/get/update/progress/done (multipart), detail CRUD
+- [x] `rekondisi.hooks.ts` — `useRekondisis`, `useRekondisi`, `useRekondisiMutations`, `useRekondisiDetails`, `useRekondisiDetailMutations`
+- [x] `RekondisiDetailModal.tsx` — modal manajemen rekondisi per-unit (accordion, inline item edit, progress/done flow, DoneForm + invoice upload)
+- [x] `RekondisiPage.tsx` — klik card buka `RekondisiDetailModal` (bukan `UnitDetailModal`)
+- [x] `master.hooks.ts` — tambah `usePengecekan` (dropdown item rekondisi)
+
 ### Modul admin (dummy — masih dipakai)
 - [x] Dashboard (stat, ready stock, grafik, pipeline, rekondisi, aktivitas)
 - [x] Inventory, Pembelian, Rekondisi, Ready Stock (CRUD unit)
@@ -99,9 +112,9 @@
 | **Lead / CRM** | `leadApi` | ✅ |
 | **Sales Order** | `leadOrderApi` (list/get/create/update/updateStatus) | ✅ |
 | **Pembayaran Order** | `leadPaymentApi` (nested under order) | ✅ |
-| Unit (dropdown READY_STOCK) | `unitApi` | 🟡 (list only, full CRUD tersisa) |
+| Unit (full CRUD + images + status) | `unitApi` | ✅ |
 | Test Drive | — | ⬜ |
-| Rekondisi | — | ⬜ |
+| Rekondisi (list/progress/done + detail items) | `rekondisiApi` | ✅ |
 | Pengeluaran | — | ⬜ |
 | Laporan | — | ⬜ |
 
@@ -110,9 +123,10 @@
 ## 🚧 BELUM / SEBAGIAN (To Do)
 
 ### A. Integrasi API modul bisnis (sisa) 🔴
-- [ ] 🔴 **Inventory/Unit** — list + CRUD + upload foto + formula HPP/OTR
+- [x] **Unit** — list + CRUD + upload foto (API layer selesai; UI InventoryPage masih perlu wire ke real API)
+- [x] **Rekondisi** — entri biaya per unit, detail item, progress/done (API + modal selesai)
+- [ ] 🟠 **Unit Inventory UI** — hubungkan InventoryPage / UnitFormModal ke real API (ganti dummy data)
 - [ ] 🟠 **Test Drive** — form (upload KTP+SIM), sales pendamping, link lead
-- [ ] 🟠 **Rekondisi** — entri biaya per unit, akumulasi ke HPP
 - [ ] 🟠 **Pengeluaran & Cash Flow** — CRUD transaksi, per kategori
 - [ ] 🟢 **Dashboard & Laporan** — data agregasi dari API (bukan dummy)
 

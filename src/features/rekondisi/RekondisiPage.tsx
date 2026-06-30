@@ -1,53 +1,62 @@
 import { useState } from 'react';
-import { Wrench, Eye, Pencil, Search, Loader2, Gauge, Tag } from 'lucide-react';
+import { Wrench, Pencil, Plus, Search, Loader2, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
-import { useUnits } from '@/features/units/unit.hooks';
+import { useUnits, useCreateRekondisi } from '@/features/units/unit.hooks';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
+import { formatCurrency, formatNumber } from '@/core/utils/format';
+import { RekondisiDetailModal } from './RekondisiDetailModal';
 import type { Unit } from '@/features/units/unit.types';
 
 const idr = (n?: number | null) =>
-  n == null
-    ? '-'
-    : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+  n == null ? '—' : formatCurrency(n, { compact: true });
 
-const mediaUrl = (filename: string) =>
-  `${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') ?? ''}/m/${filename}`;
+const HPP_COLOR = (hpp?: number | null, beli?: number) => {
+  if (!hpp || !beli) return 'text-ink';
+  const pct = (hpp - beli) / beli;
+  if (pct > 0.15) return 'text-semantic-error font-extrabold';
+  if (pct > 0.08) return 'text-accent-amber font-bold';
+  return 'text-ink font-bold';
+};
 
-const UnitThumb = ({ unit }: { unit: Unit }) => {
-  const img = unit.unitImages?.[0];
+/* ── Row-level create button — needs own hook instance ── */
+const CreateBtn = ({ unitId, onDone }: { unitId: string; onDone: () => void }) => {
+  const m = useCreateRekondisi();
   return (
-    <img
-      src={img ? mediaUrl(img.filename) : DEFAULT_CAR_IMAGE}
-      alt=""
-      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
-      className="w-28 h-20 rounded-xl object-cover bg-surface-soft shrink-0"
-    />
+    <button
+      onClick={() => m.mutate(unitId, { onSuccess: onDone })}
+      disabled={m.isPending}
+      title="Buat Rekondisi Baru"
+      className="p-2 rounded-lg text-muted hover:text-accent-green hover:bg-accent-green/10 transition-colors disabled:opacity-40"
+    >
+      {m.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2.3} />}
+    </button>
   );
 };
 
 export const RekondisiPage = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery]             = useState('');
+  const [rekondisiUnit, setRekondisiUnit] = useState<Unit | null>(null);
   const debounced = useDebouncedValue(query, 400);
 
   const { data, isLoading, isError } = useUnits({
-    page: 1,
-    limit: 50,
+    page: 1, limit: 100,
     statusUnit: 'INVENTORY',
     search: debounced || undefined,
   });
 
-  const units = data?.data ?? [];
+  const units: Unit[] = data?.data ?? [];
   const total = data?.meta?.total ?? 0;
   const m = useUnitModals();
+
+  const openRekondisi = (u: Unit) => setRekondisiUnit(u);
 
   return (
     <div className="max-w-[1600px] mx-auto animate-float-up">
       <PageHeader
         title="Rekondisi"
-        description={`${total} unit dalam proses inventori & rekondisi`}
+        description={`${total} unit dalam tahap inventori & rekondisi`}
         action={
           <Button icon={<Wrench size={16} strokeWidth={2.5} />} onClick={m.openCreate}>
             Tambah Unit
@@ -55,109 +64,165 @@ export const RekondisiPage = () => {
         }
       />
 
+      {/* Info banner */}
+      <div className="flex items-start gap-3 p-3.5 mb-5 rounded-xl bg-accent-amber/8 border border-accent-amber/25">
+        <AlertCircle size={16} className="text-accent-amber shrink-0 mt-0.5" />
+        <p className="text-[12px] font-semibold text-ink-soft leading-relaxed">
+          Halaman ini menampilkan unit berstatus <strong>Inventory</strong>. Gunakan tombol <strong>Kelola Rekondisi</strong> untuk mencatat biaya perbaikan per unit, lalu selesaikan agar HPP terhitung otomatis sebelum unit dipindah ke Ready Stock.
+        </p>
+      </div>
+
       {/* Search */}
-      <div className="relative max-w-xs mb-5">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+      <div className="relative max-w-sm mb-5">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari plat / merek / tipe..."
-          className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+          value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder="Cari plat / merek / tipe…"
+          className="w-full h-10 pl-10 pr-3 rounded-xl bg-surface border border-border text-[13px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
         />
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-24 text-muted">
-          <Loader2 size={26} className="animate-spin" />
-        </div>
-      ) : isError ? (
-        <div className="text-center py-24 text-semantic-error font-semibold">Gagal memuat data.</div>
-      ) : units.length === 0 ? (
-        <div className="text-center py-24 text-muted font-semibold">
-          {query ? 'Tidak ada unit yang cocok.' : 'Tidak ada unit dalam rekondisi.'}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
-          {units.map((u) => (
-            <RekondisiCard key={u.id} unit={u} onView={() => m.openDetail(u)} onEdit={() => m.openEdit(u)} />
-          ))}
-        </div>
-      )}
+      {/* ── Table ── */}
+      <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-card">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20 gap-2 text-muted">
+            <Loader2 size={20} className="animate-spin" /> <span className="text-[13px] font-semibold">Memuat data…</span>
+          </div>
+        ) : isError ? (
+          <div className="py-20 text-center text-semantic-error font-semibold text-[13px]">Gagal memuat data.</div>
+        ) : units.length === 0 ? (
+          <div className="py-20 text-center">
+            <Wrench size={32} className="text-muted mx-auto mb-3" />
+            <p className="text-[14px] font-bold text-ink">{query ? 'Tidak ada unit yang cocok.' : 'Tidak ada unit dalam rekondisi.'}</p>
+            <p className="text-[12px] text-muted font-medium mt-1">Unit berstatus Inventory akan muncul di sini.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto scrollbar-slim">
+            <table className="w-full border-collapse min-w-[820px]">
+              <thead>
+                <tr className="bg-surface-soft border-b border-border">
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-left w-10">#</th>
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-left">Unit</th>
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-right">Tahun / KM</th>
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-center">Transmisi</th>
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-right">Harga Beli</th>
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-right">
+                    HPP
+                    <span className="ml-1 text-[9px] normal-case tracking-normal font-normal text-muted/70">(akum.)</span>
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {units.map((u, i) => {
+                  const merek = u.merek?.name ?? '—';
+                  const tipe  = u.tipe?.name ?? '';
+                  const hpp   = u.hpp;
+                  const margin = hpp && u.hargaBeli ? hpp - u.hargaBeli : null;
 
-      {m.modals}
-    </div>
-  );
-};
+                  return (
+                    <tr key={u.id} className="border-b border-divider last:border-0 hover:bg-surface-soft/60 transition-colors group">
+                      <td className="px-4 py-3.5 text-[12px] text-muted font-semibold">{i + 1}</td>
 
-const RekondisiCard = ({
-  unit, onView, onEdit,
-}: { unit: Unit; onView: () => void; onEdit: () => void }) => {
-  const merek = unit.merek?.name ?? '—';
-  const tipe = unit.tipe?.name ?? '—';
+                      {/* Unit */}
+                      <td className="px-4 py-3.5">
+                        <p className="text-[13px] font-extrabold text-ink">{u.platNomor}</p>
+                        <p className="text-[11px] text-muted font-semibold mt-0.5">{merek} {tipe}</p>
+                      </td>
 
-  return (
-    <div
-      onClick={onView}
-      className="bg-surface rounded-2xl border border-border shadow-card overflow-hidden group hover:shadow-card-hover hover:border-primary/30 transition-all duration-200 cursor-pointer"
-    >
-      <div className="flex gap-4 p-4">
-        <UnitThumb unit={unit} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="font-extrabold text-ink text-[14px] truncate">{merek} {tipe}</h3>
-              <p className="text-[11px] text-muted font-semibold mt-0.5">{unit.tahun} · {unit.transmisi}</p>
-            </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(); }}
-                className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-primary-light transition-colors"
-                title="Detail"
-              >
-                <Eye size={14} />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10 transition-colors"
-                title="Edit"
-              >
-                <Pencil size={13} />
-              </button>
+                      {/* Tahun / KM */}
+                      <td className="px-4 py-3.5 text-right">
+                        <p className="text-[13px] font-bold text-ink">{u.tahun}</p>
+                        <p className="text-[11px] text-muted font-semibold">{formatNumber(u.kilometer)} KM</p>
+                      </td>
+
+                      {/* Transmisi */}
+                      <td className="px-4 py-3.5 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                          u.transmisi === 'AUTOMATIC' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted/10 text-muted'
+                        }`}>
+                          {u.transmisi === 'AUTOMATIC' ? 'AT' : 'MT'}
+                        </span>
+                      </td>
+
+                      {/* Harga Beli */}
+                      <td className="px-4 py-3.5 text-right">
+                        <span className="text-[13px] font-bold text-ink">{idr(u.hargaBeli)}</span>
+                      </td>
+
+                      {/* HPP */}
+                      <td className="px-4 py-3.5 text-right">
+                        {hpp ? (
+                          <div>
+                            <span className={`text-[13px] ${HPP_COLOR(hpp, u.hargaBeli)}`}>{idr(hpp)}</span>
+                            {margin !== null && (
+                              <p className="text-[10px] font-semibold text-muted mt-0.5">
+                                +{idr(margin)} rekondisi
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[12px] text-muted/60 font-medium">Belum ada</span>
+                        )}
+                      </td>
+
+                      {/* Aksi */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                          {/* Kelola Rekondisi — primary action */}
+                          <button
+                            onClick={() => openRekondisi(u)}
+                            title="Kelola Rekondisi"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-amber/10 text-accent-amber hover:bg-accent-amber/20 font-bold text-[11px] transition-colors"
+                          >
+                            <Wrench size={13} strokeWidth={2.3} /> Kelola
+                          </button>
+
+                          {/* Buat rekondisi baru */}
+                          <CreateBtn unitId={u.id} onDone={() => openRekondisi(u)} />
+
+                          {/* Edit unit */}
+                          <button
+                            onClick={() => m.openEdit(u)}
+                            title="Edit Unit"
+                            className="p-2 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10 transition-colors"
+                          >
+                            <Pencil size={14} strokeWidth={2.2} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* Table footer: summary */}
+            <div className="border-t border-border px-4 py-3 flex items-center justify-between bg-surface-soft/40">
+              <p className="text-[12px] text-muted font-semibold">
+                {units.length} unit · Total HPP:{' '}
+                <span className="text-ink font-bold">
+                  {idr(units.reduce((s, u) => s + (u.hpp ?? u.hargaBeli ?? 0), 0))}
+                </span>
+              </p>
+              <p className="text-[11px] text-muted font-medium">Klik <strong>Kelola</strong> untuk detail biaya rekondisi</p>
             </div>
           </div>
-
-          {/* Status badge */}
-          <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide">
-            <Wrench size={9} strokeWidth={2.5} /> Rekondisi
-          </span>
-        </div>
+        )}
       </div>
 
-      {/* Details row */}
-      <div className="border-t border-divider px-4 py-3 grid grid-cols-3 gap-2">
-        <Detail icon={<Tag size={11} />} label="Plat" value={unit.platNomor} />
-        <Detail icon={<Gauge size={11} />} label="KM" value={unit.kilometer.toLocaleString('id-ID')} />
-        <Detail icon={null} label="Harga Beli" value={idr(unit.hargaBeli)} />
-      </div>
+      {m.modals}
 
-      {/* Warna strip */}
-      <div className="px-4 pb-3">
-        <p className="text-[11px] text-muted font-medium">
-          Warna: <span className="text-ink-soft font-semibold">{unit.warna}</span>
-          {unit.hargaOtrSaatIni && (
-            <> · OTR: <span className="text-primary font-bold">{idr(unit.hargaOtrSaatIni)}</span></>
-          )}
-        </p>
-      </div>
+      <RekondisiDetailModal
+        open={!!rekondisiUnit}
+        onClose={() => setRekondisiUnit(null)}
+        unitId={rekondisiUnit?.id ?? null}
+        unitLabel={
+          rekondisiUnit
+            ? `${rekondisiUnit.platNomor} · ${rekondisiUnit.merek?.name ?? ''} ${rekondisiUnit.tipe?.name ?? ''}`
+            : undefined
+        }
+      />
     </div>
   );
 };
-
-const Detail = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <div>
-    <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-muted mb-0.5">
-      {icon}{label}
-    </p>
-    <p className="text-[12px] font-bold text-ink truncate">{value}</p>
-  </div>
-);
