@@ -1,12 +1,14 @@
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
 import { Button } from '@/shared/components/ui/Button';
-import { useAppSelector } from '@/app/store';
 import { useUnitModals } from '@/features/units/useUnitModals';
+import { useUnits } from '@/features/units/unit.hooks';
+import type { Unit } from '@/features/units/unit.types';
 
 export const ReadyStockPage = () => {
-  const units = useAppSelector((s) => s.data.units.filter((u) => u.status === 'ready'));
+  const { data, isLoading, isError } = useUnits({ page: 1, limit: 100, statusUnit: 'READY_STOCK' });
+  const units: Unit[] = data?.data ?? [];
   const m = useUnitModals();
 
   return (
@@ -16,7 +18,11 @@ export const ReadyStockPage = () => {
         description={`${units.length} unit siap dipasarkan & test drive`}
         action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={m.openCreate}>Tambah Unit</Button>}
       />
-      {units.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20 text-muted"><Loader2 size={24} className="animate-spin" /></div>
+      ) : isError ? (
+        <div className="text-center py-20 text-semantic-error font-semibold">Gagal memuat ready stock.</div>
+      ) : units.length === 0 ? (
         <div className="text-center py-20 text-muted font-semibold">Belum ada unit ready.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger">

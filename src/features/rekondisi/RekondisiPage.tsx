@@ -3,11 +3,16 @@ import { useMutation } from '@tanstack/react-query';
 import { Wrench, Pencil, Wallet, Plus, Search, Loader2, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
+import { Modal } from '@/shared/components/ui/Modal';
+import { TextField } from '@/shared/components/ui/Field';
+import { CashAccountSelect } from '@/features/finance/components';
 import { useUnits, useCreateRekondisi } from '@/features/units/unit.hooks';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { RekondisiDetailModal } from './RekondisiDetailModal';
+import { apiClient } from '@/core/api/client';
+import { notifyApiError } from '@/core/api/notify';
 import type { Unit } from '@/features/units/unit.types';
 
 const idr = (n?: number | null) =>
@@ -35,13 +40,6 @@ const CreateBtn = ({ unitId, onDone }: { unitId: string; onDone: () => void }) =
     </button>
   );
 };
-import { Modal } from '@/shared/components/ui/Modal';
-import { Button } from '@/shared/components/ui/Button';
-import { TextField } from '@/shared/components/ui/Field';
-import { CashAccountSelect } from '@/features/finance/components';
-import { apiClient } from '@/core/api/client';
-import { notifyApiError } from '@/core/api/notify';
-import type { Unit } from '@/data/types';
 
 const PayRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) => {
   const [form, setForm] = useState({ cashAccountId: '', paidDate: new Date().toISOString().slice(0, 10) });
@@ -56,7 +54,10 @@ const PayRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
   return (
     <Modal open onClose={onClose} title="Bayar Rekondisi" icon={<Wallet size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="pay-rekondisi-form" disabled={pay.isPending}>Bayar</Button></>}>
       <form id="pay-rekondisi-form" onSubmit={submit} className="space-y-4">
-        <div className="rounded-xl bg-surface-soft border border-border p-4"><p className="text-[11px] font-bold uppercase text-muted">{unit.brand} {unit.model}</p><p className="text-sm font-semibold text-ink-soft mt-1">Pembayaran rekondisi akan dicatat sebagai kas keluar.</p></div>
+        <div className="rounded-xl bg-surface-soft border border-border p-4">
+          <p className="text-[11px] font-bold uppercase text-muted">{unit.platNomor}</p>
+          <p className="text-sm font-semibold text-ink-soft mt-1">Pembayaran rekondisi akan dicatat sebagai kas keluar.</p>
+        </div>
         <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} />
         <TextField label="Tanggal Bayar" required type="date" value={form.paidDate} onChange={(e) => setForm((f) => ({ ...f, paidDate: e.target.value }))} />
       </form>
@@ -219,6 +220,18 @@ export const RekondisiPage = () => {
                           >
                             <Pencil size={14} strokeWidth={2.2} />
                           </button>
+
+                          {u.paidAt ? (
+                            <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Dibayar</span>
+                          ) : u.hpp ? (
+                            <button
+                              onClick={() => setPayUnit(u)}
+                              title="Bayar Rekondisi"
+                              className="p-2 rounded-lg text-muted hover:text-accent-green hover:bg-accent-green/10 transition-colors"
+                            >
+                              <Wallet size={14} strokeWidth={2.2} />
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -235,13 +248,6 @@ export const RekondisiPage = () => {
                   {idr(units.reduce((s, u) => s + (u.hpp ?? u.hargaBeli ?? 0), 0))}
                 </span>
               </p>
-                <div className="mt-3">
-                  {u.paidAt ? (
-                    <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Sudah Dibayar</span>
-                  ) : (u.rekondisiProgress ?? 0) >= 100 ? (
-                    <Button icon={<Wallet size={14} />} onClick={() => setPayUnit(u)}>Bayar Rekondisi</Button>
-                  ) : null}
-                </div>
               <p className="text-[11px] text-muted font-medium">Klik <strong>Kelola</strong> untuk detail biaya rekondisi</p>
             </div>
           </div>

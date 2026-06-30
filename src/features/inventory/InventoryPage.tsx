@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Loader2, SlidersHorizontal, Boxes } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -48,7 +48,6 @@ const FilterModal = ({
   const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) =>
     setDraft((prev) => ({ ...prev, [k]: v }));
 
-  const handleOpen = () => setDraft(value);
   const handleApply = () => { onApply(draft); onClose(); };
   const handleReset = () => setDraft(FILTER_DEFAULT);
 

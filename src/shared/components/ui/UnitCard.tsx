@@ -7,14 +7,14 @@ import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 
 type UnitCardUnit = BackendUnit | MockUnit;
 
-interface UnitCardProps {
-  unit: UnitCardUnit;
-  onView?: (unit: unknown) => void;
-  onEdit?: (unit: unknown) => void;
-  onDelete?: (unit: unknown) => void;
+interface UnitCardProps<T extends UnitCardUnit> {
+  unit: T;
+  onView?: (unit: T) => void;
+  onEdit?: (unit: T) => void;
+  onDelete?: (unit: T) => void;
 }
 
-export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
+export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelete }: UnitCardProps<T>) => {
   const clickable = !!onView;
   const isMock = 'brand' in unit;
   

@@ -17,6 +17,9 @@ export interface Unit {
   tanggalPajak: string;
   hargaBeli: number;
   tanggalPembelian: string;
+  cashAccountId?: string;
+  purchaseCashTransactionId?: string | null;
+  paidAt?: string | null;
   hpp?: number | null;
   hargaTargetJual?: number | null;
   hargaOtrSaatIni?: number | null;
@@ -58,6 +61,7 @@ export interface UnitFormData {
   tanggalPajak: string; // ISO String
   hargaBeli: number;
   tanggalPembelian: string; // ISO String
+  cashAccountId?: string;
   kelengkapans: string[];
   dokumens: string[];
 }
