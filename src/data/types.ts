@@ -24,6 +24,10 @@ export interface Unit {
   rekondisiProgress?: number;
   rekondisiEta?: string;
   daysInStock?: number;
+  cashAccountId?: string;
+  tanggalPembelian?: string;
+  purchaseCashTransactionId?: string | null;
+  paidAt?: string | null;
 }
 
 export type LeadStage = 'lead' | 'test_drive' | 'negosiasi' | 'spk';
@@ -79,6 +83,10 @@ export interface Payment {
   amount: number;
   date: string;
   status: 'Sukses' | 'Pending' | 'Gagal';
+  cashAccountId?: string;
+  cashTransactionId?: string | null;
+  description?: string;
+  buktiUrl?: string;
 }
 
 export type ExpenseCategory =

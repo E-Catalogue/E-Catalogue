@@ -26,6 +26,7 @@ import { Route as AdminPengeluaranRouteImport } from './routes/_admin/pengeluara
 import { Route as AdminPengaturanRouteImport } from './routes/_admin/pengaturan'
 import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
 import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
+import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
 import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
 import { Route as AdminLaporanRouteImport } from './routes/_admin/laporan'
 import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
@@ -127,6 +128,11 @@ const AdminPembelianRoute = AdminPembelianRouteImport.update({
 const AdminPembayaranRoute = AdminPembayaranRouteImport.update({
   id: '/pembayaran',
   path: '/pembayaran',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPayrollRoute = AdminPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMerekRoute = AdminMerekRouteImport.update({
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof AdminInventoryRoute
   '/laporan': typeof AdminLaporanRoute
   '/merek': typeof AdminMerekRoute
+  '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
   '/pembelian': typeof AdminPembelianRoute
   '/pengaturan': typeof AdminPengaturanRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof AdminInventoryRoute
   '/laporan': typeof AdminLaporanRoute
   '/merek': typeof AdminMerekRoute
+  '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
   '/pembelian': typeof AdminPembelianRoute
   '/pengaturan': typeof AdminPengaturanRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/_admin/inventory': typeof AdminInventoryRoute
   '/_admin/laporan': typeof AdminLaporanRoute
   '/_admin/merek': typeof AdminMerekRoute
+  '/_admin/payroll': typeof AdminPayrollRoute
   '/_admin/pembayaran': typeof AdminPembayaranRoute
   '/_admin/pembelian': typeof AdminPembelianRoute
   '/_admin/pengaturan': typeof AdminPengaturanRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/laporan'
     | '/merek'
+    | '/payroll'
     | '/pembayaran'
     | '/pembelian'
     | '/pengaturan'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/laporan'
     | '/merek'
+    | '/payroll'
     | '/pembayaran'
     | '/pembelian'
     | '/pengaturan'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/_admin/inventory'
     | '/_admin/laporan'
     | '/_admin/merek'
+    | '/_admin/payroll'
     | '/_admin/pembayaran'
     | '/_admin/pembelian'
     | '/_admin/pengaturan'
@@ -578,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPembayaranRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/payroll': {
+      id: '/_admin/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AdminPayrollRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/merek': {
       id: '/_admin/merek'
       path: '/merek'
@@ -722,6 +741,7 @@ interface AdminRouteChildren {
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminLaporanRoute: typeof AdminLaporanRoute
   AdminMerekRoute: typeof AdminMerekRoute
+  AdminPayrollRoute: typeof AdminPayrollRoute
   AdminPembayaranRoute: typeof AdminPembayaranRoute
   AdminPembelianRoute: typeof AdminPembelianRoute
   AdminPengaturanRoute: typeof AdminPengaturanRoute
@@ -752,6 +772,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInventoryRoute: AdminInventoryRoute,
   AdminLaporanRoute: AdminLaporanRoute,
   AdminMerekRoute: AdminMerekRoute,
+  AdminPayrollRoute: AdminPayrollRoute,
   AdminPembayaranRoute: AdminPembayaranRoute,
   AdminPembelianRoute: AdminPembelianRoute,
   AdminPengaturanRoute: AdminPengaturanRoute,

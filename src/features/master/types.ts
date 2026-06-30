@@ -59,6 +59,8 @@ export interface InvestorModal {
   shareStart: string; // "YYYY-MM"
   shareEnd?: string | null; // "YYYY-MM" | null (ongoing)
   isActive: boolean;
+  cashAccountId?: string;
+  cashTransactionId?: string | null;
 }
 
 export interface ListParams {

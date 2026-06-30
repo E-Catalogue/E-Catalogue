@@ -8,6 +8,7 @@ import { ActiveBadge } from './ActiveBadge';
 import { useInvestorModals, useInvestorModalMutations } from './master.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import type { Investor, InvestorModal, ProfitSharingType } from './types';
+import { CashAccountSelect } from '@/features/finance/components';
 
 interface Props {
   open: boolean;
@@ -31,6 +32,7 @@ interface FormState {
   shareStart: string; // YYYY-MM
   shareEnd: string; // YYYY-MM | ''
   isActive: boolean;
+  cashAccountId: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -41,6 +43,7 @@ const emptyForm = (): FormState => ({
   shareStart: '',
   shareEnd: '',
   isActive: true,
+  cashAccountId: '',
 });
 
 const toForm = (m: InvestorModal): FormState => ({
@@ -51,6 +54,7 @@ const toForm = (m: InvestorModal): FormState => ({
   shareStart: m.shareStart ?? '',
   shareEnd: m.shareEnd ?? '',
   isActive: m.isActive,
+  cashAccountId: m.cashAccountId ?? '',
 });
 
 const TYPE_OPTIONS = [
@@ -83,8 +87,10 @@ const ModalFormModal = ({ open, onClose, item, submitting, onSubmit }: FormModal
       shareStart: form.shareStart.trim(),
       shareEnd: form.shareEnd.trim() ? form.shareEnd.trim() : null,
       isActive: form.isActive,
+      cashAccountId: form.cashAccountId,
     });
   };
+  const amountLocked = !!item?.cashTransactionId;
 
   return (
     <Modal
@@ -94,7 +100,8 @@ const ModalFormModal = ({ open, onClose, item, submitting, onSubmit }: FormModal
       footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="modal-form" disabled={submitting}>{submitting ? 'Menyimpan...' : 'Simpan'}</Button></>}
     >
       <form id="modal-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TextField label="Nominal Modal (Rp)" required type="number" min={0} value={form.amount} onChange={(e) => set('amount', e.target.value)} placeholder="100000000" />
+        <TextField label="Nominal Modal (Rp)" required type="number" min={0} disabled={amountLocked} value={form.amount} onChange={(e) => set('amount', e.target.value)} placeholder="100000000" />
+        {!item && <CashAccountSelect label="Akun Kas Modal" required value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} />}
         <SelectField label="Tipe Bagi Hasil" required value={form.profitSharingType} onChange={(e) => set('profitSharingType', e.target.value as ProfitSharingType)} options={TYPE_OPTIONS} />
         <TextField label={form.profitSharingType === 'percentage' ? 'Bagi Hasil (%)' : 'Bagi Hasil (Rp)'} required type="number" min={0} step="any" value={form.profitSharing} onChange={(e) => set('profitSharing', e.target.value)} placeholder={form.profitSharingType === 'percentage' ? '15.5' : '2000000'} />
         <TextField label="Tgl Pembagian (opsional)" type="date" value={form.profitSharingDate} onChange={(e) => set('profitSharingDate', e.target.value)} />

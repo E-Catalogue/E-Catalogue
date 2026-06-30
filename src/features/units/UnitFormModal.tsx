@@ -7,6 +7,7 @@ import { useAppDispatch } from '@/app/store';
 import { addUnit, updateUnit } from '@/app/store/dataSlice';
 import type { Unit, FuelType, Transmission, UnitStatus } from '@/data/types';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
+import { CashAccountSelect } from '@/features/finance/components';
 
 interface UnitFormModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ const emptyUnit = (): Omit<Unit, 'id'> => ({
   brand: '', model: '', variant: '', year: new Date().getFullYear(),
   price: 0, buyPrice: 0, km: 0, fuel: 'Bensin', transmission: 'AT',
   color: '', plate: '', status: 'ready', isNew: true, image: DEFAULT_CAR_IMAGE,
+  cashAccountId: '', tanggalPembelian: new Date().toISOString().slice(0, 10), purchaseCashTransactionId: null,
 });
 
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
@@ -38,6 +40,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
   const set = <K extends keyof Omit<Unit, 'id'>>(key: K, value: Omit<Unit, 'id'>[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+  const purchaseLocked = !!unit?.purchaseCashTransactionId;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -67,7 +70,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
         <TextField label="Varian" value={form.variant} onChange={(e) => set('variant', e.target.value)} placeholder="2.4 G AT" />
         <TextField label="Tahun" type="number" value={form.year} onChange={(e) => set('year', Number(e.target.value))} />
         <TextField label="Harga Jual (Rp)" type="number" value={form.price} onChange={(e) => set('price', Number(e.target.value))} />
-        <TextField label="Harga Beli (Rp)" type="number" value={form.buyPrice ?? 0} onChange={(e) => set('buyPrice', Number(e.target.value))} />
+        <TextField label="Harga Beli (Rp)" type="number" disabled={purchaseLocked} value={form.buyPrice ?? 0} onChange={(e) => set('buyPrice', Number(e.target.value))} />
+        <TextField label="Tanggal Pembelian" type="date" disabled={purchaseLocked} value={form.tanggalPembelian ?? ''} onChange={(e) => set('tanggalPembelian', e.target.value)} />
+        {!unit && <CashAccountSelect label="Akun Kas Pembelian" required value={form.cashAccountId ?? ''} onChange={(v) => set('cashAccountId', v)} />}
         <TextField label="Kilometer" type="number" value={form.km} onChange={(e) => set('km', Number(e.target.value))} />
         <TextField label="Warna" value={form.color} onChange={(e) => set('color', e.target.value)} placeholder="Hitam" />
         <SelectField
