@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, Loader2, Wallet } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField, SelectField, NumericField } from '@/shared/components/ui/Field';
 import { ActiveBadge } from './ActiveBadge';
 import { useInvestorModals, useInvestorModalMutations } from './master.hooks';
 import { notifyApiError } from '@/core/api/notify';
@@ -94,9 +94,39 @@ const ModalFormModal = ({ open, onClose, item, submitting, onSubmit }: FormModal
       footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="modal-form" disabled={submitting}>{submitting ? 'Menyimpan...' : 'Simpan'}</Button></>}
     >
       <form id="modal-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TextField label="Nominal Modal (Rp)" required type="number" min={0} value={form.amount} onChange={(e) => set('amount', e.target.value)} placeholder="100000000" />
+        <NumericField
+          label="Nominal Modal"
+          required
+          value={Number(form.amount) || 0}
+          onChange={(v) => set('amount', String(v))}
+          prefix="Rp"
+          placeholder="0"
+          min={0}
+        />
         <SelectField label="Tipe Bagi Hasil" required value={form.profitSharingType} onChange={(e) => set('profitSharingType', e.target.value as ProfitSharingType)} options={TYPE_OPTIONS} />
-        <TextField label={form.profitSharingType === 'percentage' ? 'Bagi Hasil (%)' : 'Bagi Hasil (Rp)'} required type="number" min={0} step="any" value={form.profitSharing} onChange={(e) => set('profitSharing', e.target.value)} placeholder={form.profitSharingType === 'percentage' ? '15.5' : '2000000'} />
+        {form.profitSharingType === 'percentage' ? (
+          <NumericField
+            label="Bagi Hasil (%)"
+            required
+            value={Number(form.profitSharing) || 0}
+            onChange={(v) => set('profitSharing', String(v))}
+            suffix="%"
+            placeholder="0"
+            decimal
+            min={0}
+            max={100}
+          />
+        ) : (
+          <NumericField
+            label="Bagi Hasil"
+            required
+            value={Number(form.profitSharing) || 0}
+            onChange={(v) => set('profitSharing', String(v))}
+            prefix="Rp"
+            placeholder="0"
+            min={0}
+          />
+        )}
         <TextField label="Tgl Pembagian (opsional)" type="date" value={form.profitSharingDate} onChange={(e) => set('profitSharingDate', e.target.value)} />
         <TextField label="Mulai Bagi Hasil" required type="month" value={form.shareStart} onChange={(e) => set('shareStart', e.target.value)} />
         <TextField label="Selesai (kosong = ongoing)" type="month" value={form.shareEnd} onChange={(e) => set('shareEnd', e.target.value)} />

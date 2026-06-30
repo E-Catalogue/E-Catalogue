@@ -68,10 +68,14 @@ export const MENU_ITEMS: MenuItem[] = [
 ];
 
 /** Peta kode menu backend → route frontend nyata (agar menu dinamis tidak 404). */
-export const PATH_BY_CODE: Record<string, string> = MENU_ITEMS.reduce(
-  (acc, m) => (m.code ? { ...acc, [m.code]: m.path } : acc),
-  {} as Record<string, string>,
-);
+export const PATH_BY_CODE: Record<string, string> = {
+  ...MENU_ITEMS.reduce((acc, m) => (m.code ? { ...acc, [m.code]: m.path } : acc), {} as Record<string, string>),
+  // Alias kode backend yang berbeda dari kode static menu
+  UNIT: '/inventory',
+  LEAD: '/crm',
+  LEAD_ORDER: '/penjualan',
+  LEAD_PAYMENT: '/pembayaran',
+};
 
 /** Set seluruh path frontend yang valid. */
 export const VALID_PATHS = new Set(MENU_ITEMS.map((m) => m.path));

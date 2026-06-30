@@ -2,7 +2,7 @@ import { useState, type FormEvent, useEffect } from 'react';
 import { Car } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField, SelectField, NumericField } from '@/shared/components/ui/Field';
 import type { Unit, Transmisi, UnitFormData } from '@/features/units/unit.types';
 import { useCreateUnit, useUpdateUnit } from '@/features/units/unit.hooks';
 import { useMereks, useTipes } from '@/features/master/master.hooks';
@@ -36,11 +36,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const createUnit = useCreateUnit();
   const updateUnit = useUpdateUnit();
 
-  // Fetch mereks
   const { data: mereksData } = useMereks({ page: 1, limit: 100 });
   const mereks = mereksData?.data || [];
 
-  // Fetch tipes based on selected merek
   const { data: tipesData } = useTipes(form.merekId, { page: 1, limit: 100 });
   const tipes = tipesData?.data || [];
 
@@ -73,7 +71,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     setForm((f) => {
       const next = { ...f, [key]: value };
       if (key === 'merekId' && f.merekId !== value) {
-        next.tipeId = ''; // Reset tipe when merek changes
+        next.tipeId = '';
       }
       return next;
     });
@@ -82,10 +80,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (unit) {
-      updateUnit.mutate(
-        { id: unit.id, data: form },
-        { onSuccess: onClose }
-      );
+      updateUnit.mutate({ id: unit.id, data: form }, { onSuccess: onClose });
     } else {
       createUnit.mutate(form, { onSuccess: onClose });
     }
@@ -123,31 +118,90 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
           required
           value={form.tipeId}
           onChange={(e) => set('tipeId', e.target.value)}
-          options={[{ value: '', label: 'Pilih Tipe' }, ...tipes.map(t => ({ value: t.id, label: t.name }))]}
+          options={[{ value: '', label: form.merekId ? 'Pilih Tipe' : 'Pilih Merek dahulu' }, ...tipes.map(t => ({ value: t.id, label: t.name }))]}
           disabled={!form.merekId}
         />
-        <TextField label="Tahun" required type="number" value={form.tahun} onChange={(e) => set('tahun', Number(e.target.value))} />
-        <TextField label="Warna" required value={form.warna} onChange={(e) => set('warna', e.target.value)} placeholder="Hitam" />
-        
+
+        <NumericField
+          label="Tahun"
+          required
+          value={form.tahun}
+          onChange={(v) => set('tahun', v)}
+          placeholder={String(new Date().getFullYear())}
+          min={1980}
+          max={new Date().getFullYear() + 1}
+        />
+        <TextField
+          label="Warna"
+          required
+          value={form.warna}
+          onChange={(e) => set('warna', e.target.value)}
+          placeholder="mis. Hitam Metalik"
+        />
+
         <SelectField
           label="Transmisi"
           value={form.transmisi}
           onChange={(e) => set('transmisi', e.target.value as Transmisi)}
           options={[
             { value: 'AUTOMATIC', label: 'Automatic (AT)' },
-            { value: 'MANUAL', label: 'Manual (MT)' }
+            { value: 'MANUAL', label: 'Manual (MT)' },
           ]}
         />
-        <TextField label="Kilometer" required type="number" value={form.kilometer} onChange={(e) => set('kilometer', Number(e.target.value))} />
-        
-        <TextField label="Plat Nomor" required value={form.platNomor} onChange={(e) => set('platNomor', e.target.value)} placeholder="B 1234 ABC" />
-        <TextField label="Tanggal Pajak" required type="date" value={form.tanggalPajak} onChange={(e) => set('tanggalPajak', e.target.value)} />
-        
-        <TextField label="No Rangka" required value={form.noRangka} onChange={(e) => set('noRangka', e.target.value)} />
-        <TextField label="No Mesin" required value={form.noMesin} onChange={(e) => set('noMesin', e.target.value)} />
+        <NumericField
+          label="Kilometer"
+          required
+          value={form.kilometer}
+          onChange={(v) => set('kilometer', v)}
+          suffix="km"
+          placeholder="0"
+          min={0}
+        />
 
-        <TextField label="Harga Beli (Rp)" required type="number" value={form.hargaBeli} onChange={(e) => set('hargaBeli', Number(e.target.value))} />
-        <TextField label="Tanggal Pembelian" required type="date" value={form.tanggalPembelian} onChange={(e) => set('tanggalPembelian', e.target.value)} />
+        <TextField
+          label="Plat Nomor"
+          required
+          value={form.platNomor}
+          onChange={(e) => set('platNomor', e.target.value)}
+          placeholder="B 1234 ABC"
+        />
+        <TextField
+          label="Tanggal Pajak"
+          required
+          type="date"
+          value={form.tanggalPajak}
+          onChange={(e) => set('tanggalPajak', e.target.value)}
+        />
+
+        <TextField
+          label="No Rangka"
+          required
+          value={form.noRangka}
+          onChange={(e) => set('noRangka', e.target.value)}
+        />
+        <TextField
+          label="No Mesin"
+          required
+          value={form.noMesin}
+          onChange={(e) => set('noMesin', e.target.value)}
+        />
+
+        <NumericField
+          label="Harga Beli"
+          required
+          value={form.hargaBeli}
+          onChange={(v) => set('hargaBeli', v)}
+          prefix="Rp"
+          placeholder="0"
+          min={0}
+        />
+        <TextField
+          label="Tanggal Pembelian"
+          required
+          type="date"
+          value={form.tanggalPembelian}
+          onChange={(e) => set('tanggalPembelian', e.target.value)}
+        />
       </form>
     </Modal>
   );

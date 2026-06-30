@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 28 Juni 2026
+> **Terakhir diperbarui:** 30 Juni 2026 (rev 2)
 
 ---
 
@@ -13,8 +13,11 @@
 - [x] Setup project (Vite + React 19 + TS + Tailwind + TanStack Router)
 - [x] Tema "Claude Orange" + token warna (CSS vars)
 - [x] UI kit reusable (Modal, ConfirmDialog, DetailModal, Button, Field, DataTable, RowActions, Pagination, Tooltip, SectionCard, StatusBadge, UnitCard, PageHeader)
-- [x] Layout admin (Sidebar grup, Header, MainLayout) + Quick Input
+- [x] Layout admin (Sidebar accordion, Header, MainLayout) + Quick Input
 - [x] Animasi halus (float-up, stagger, modal-in) + reduce-motion
+- [x] **Sidebar accordion** — grup menu collapsible, active state otomatis, mode ikon-only flat, teks tidak terpotong, hierarki font group > item
+- [x] **NumericField** — input angka tanpa masalah leading-zero (type text + inputMode numeric, format id-ID on blur, prefix/suffix)
+- [x] **Header menu search** — command palette (Ctrl+K / ⌘K), keyboard nav ↑↓ Enter Esc, filter dinamis dari groupMenus
 
 ### Situs Publik (Customer)
 - [x] Beranda marketing (hero, keunggulan, cara kerja, unggulan, testimoni, CTA)
@@ -41,99 +44,95 @@
 - [x] Master sederhana via komponen generik `SimpleMasterPage` (`code` **wajib** + auto-uppercase): **Leasing, Sumber Lead, Pengecekan, Kategori Pengeluaran, Metode Pembayaran, Dokumen, Perlengkapan**
 - [x] **Investor + Modal Investor (nested)** CRUD — investor (nama/kode/bank/rekening) + rincian modal (nominal, tipe bagi hasil %/nominal, periode `YYYY-MM` start/end ongoing, tgl pembagian)
 
-### Modul admin (dummy)
+### CRM / Lead (API nyata) — *new*
+- [x] `crm.types.ts` — `OrderStatus`, `PaymentType`, `JenisPembayaran`, label/warna map, interface `Lead`, `LeadOrder`, `LeadPayment`, `UnitSummary`
+- [x] `crm.api.ts` — `leadApi`, `leadOrderApi`, `leadPaymentApi`, `unitApi`
+- [x] `crm.hooks.ts` — `useLeads`, `useLead`, `useLeadMutations`, `useLeadOrders`, `useLeadOrder`, `useLeadOrderMutations` (incl. `updateStatus`), `useLeadPayments`, `useLeadPaymentMutations`, `useReadyStockUnits`
+- [x] `CrmPage.tsx` — tabel lead real API, search debounced, no-delete (lead wajib tersimpan per PRD)
+- [x] `LeadFormModal.tsx` — form lead (nama/NIK/HP/email/pekerjaan/alamat/sumber lead dropdown API)
+
+### Sales Order / Penjualan (API nyata) — *new*
+- [x] `SalesOrderFormModal.tsx` — pilih lead (search live), pilih unit READY_STOCK, tipe Cash/Kredit, leasing/SLIK/approval (kredi), diskon, tanggal, catatan
+- [x] `PenjualanPage.tsx` — tabel order real API, filter status, klik status badge untuk ubah status, view detail, pagination
+- [x] `OrderStatusModal.tsx` — ubah status order (grid pilih status + validasi beda dari saat ini)
+- [x] `OrderDetailModal.tsx` — detail order + ringkasan bayar + riwayat pembayaran CRUD inline (PaymentFormModal bersarang)
+
+### Pembayaran (API nyata) — *new*
+- [x] `PembayaranPage.tsx` — view order dengan kolom totalTerbayar/sisa/isPaid, filter belum/lunas, summary card, klik Detail buka OrderDetailModal
+
+### Sidebar & Routing dinamis
+- [x] `PATH_BY_CODE` — alias kode backend (`UNIT`, `LEAD`, `LEAD_ORDER`, `LEAD_PAYMENT`) ke route frontend
+- [x] `iconMap.ts` — ikon grup (`ACCESS_CONTROL`, `INVENTORY_OPERATIONAL`, `CRM_SALES`, `MASTER_DATA`) dan per-menu (`LEAD`, `LEAD_ORDER`, `LEAD_PAYMENT`, `UNIT`, `REKONDISI`)
+- [x] `INVESTOR_MODAL` backend-menu difilter otomatis (path punya param URL → null → disembunyikan dari sidebar; diakses via InvestorPage)
+
+### Modul admin (dummy — masih dipakai)
 - [x] Dashboard (stat, ready stock, grafik, pipeline, rekondisi, aktivitas)
 - [x] Inventory, Pembelian, Rekondisi, Ready Stock (CRUD unit)
-- [x] CRM/Lead (kanban), Test Drive, Penjualan, Pembayaran (CRUD)
-- [x] Pengeluaran & Cash Flow
+- [x] Test Drive, Pengeluaran & Cash Flow
 - [x] Laporan (ringkasan) & Pengaturan
 
 ---
 
-## 📊 Status Integrasi API (`master_prd.md` §3–§20)
+## 📊 Status Integrasi API
 
-> Audit endpoint-per-endpoint dokumen API vs kode. **Semua endpoint sudah terintegrasi.** Indikator: ✅ penuh · 🟡 sebagian/belum di-UI · ⬜ belum.
+> Audit endpoint-per-endpoint. **Indikator:** ✅ penuh · 🟡 sebagian/belum di-UI · ⬜ belum.
 
-| Module | API frontend | Endpoint | Status |
-|--------|--------------|:--------:|:------:|
-| Role (+ set permission) | `roleApi` | 6/6 | ✅ |
-| User (+ set role/branch, soft-delete) | `userApi` | 7/7 | ✅ |
-| Menu / Group / Permission | `menuApi` | 12/12 | ✅ |
-| Auth (login/refresh/me/logout/logout-all) | `authApi` + interceptor | 5/5 | ✅ |
-| Merek | `merekApi` | 4/5 | ✅ |
-| Tipe (nested) | `tipeApi` | 4/5 | ✅ |
-| Vendor | `vendorApi` | 4/5 | ✅ |
-| Branch & Media | `branchApi` | 8/8 | ✅ |
-| Leasing | `leasingApi` | 4/5 | ✅ |
-| Sumber Lead | `sumberLeadApi` | 4/5 | ✅ |
-| Pengecekan | `pengecekanApi` | 4/5 | ✅ |
-| Kategori Pengeluaran | `kategoriPengeluaranApi` | 4/5 | ✅ |
-| Metode Pembayaran | `metodePembayaranApi` | 4/5 | ✅ |
-| Dokumen | `dokumenApi` | 4/5 | ✅ |
-| Perlengkapan | `perlengkapanApi` | 4/5 | ✅ |
-| Investor | `investorApi` | 4/5 | ✅ |
-| Investor Modal (nested) | `investorModalApi` | 4/5 | ✅ |
-
-> *4/5 = endpoint detail `GET /:id` belum dipakai karena data sudah lengkap dari endpoint list — bukan kekurangan.*
->
-> **Penyempurnaan opsional (bukan endpoint baru):** filter list User via `roleId`/`isActive` (belum ada kontrol UI), endpoint detail `GET /:id` bila kelak dibutuhkan.
+| Module | API frontend | Status |
+|--------|--------------|:------:|
+| Role (+ set permission) | `roleApi` | ✅ |
+| User (+ set role/branch, soft-delete) | `userApi` | ✅ |
+| Menu / Group / Permission | `menuApi` | ✅ |
+| Auth (login/refresh/me/logout/logout-all) | `authApi` + interceptor | ✅ |
+| Merek | `merekApi` | ✅ |
+| Tipe (nested) | `tipeApi` | ✅ |
+| Vendor | `vendorApi` | ✅ |
+| Branch & Media | `branchApi` | ✅ |
+| Leasing | `leasingApi` | ✅ |
+| Sumber Lead | `sumberLeadApi` | ✅ |
+| Pengecekan | `pengecekanApi` | ✅ |
+| Kategori Pengeluaran | `kategoriPengeluaranApi` | ✅ |
+| Metode Pembayaran | `metodePembayaranApi` | ✅ |
+| Dokumen | `dokumenApi` | ✅ |
+| Perlengkapan | `perlengkapanApi` | ✅ |
+| Investor | `investorApi` | ✅ |
+| Investor Modal (nested) | `investorModalApi` | ✅ |
+| **Lead / CRM** | `leadApi` | ✅ |
+| **Sales Order** | `leadOrderApi` (list/get/create/update/updateStatus) | ✅ |
+| **Pembayaran Order** | `leadPaymentApi` (nested under order) | ✅ |
+| Unit (dropdown READY_STOCK) | `unitApi` | 🟡 (list only, full CRUD tersisa) |
+| Test Drive | — | ⬜ |
+| Rekondisi | — | ⬜ |
+| Pengeluaran | — | ⬜ |
+| Laporan | — | ⬜ |
 
 ---
 
 ## 🚧 BELUM / SEBAGIAN (To Do)
 
-### A. Integrasi API modul bisnis (ganti dummy) 🔴
-> Menunggu endpoint backend. Pola: service `*.api.ts` + React Query hooks + ganti `useAppSelector` dummy.
-- [ ] 🔴 Inventory/Unit — list, CRUD, detail
-- [ ] 🔴 Sales Order (Penjualan)
-- [ ] 🔴 Pembayaran (cash/kredit)
-- [ ] 🟠 CRM/Lead
-- [ ] 🟠 Test Drive
-- [ ] 🟠 Rekondisi (biaya)
-- [ ] 🟠 Pengeluaran & Cash Flow
-- [ ] 🟢 Dashboard & Laporan (agregasi dari API)
+### A. Integrasi API modul bisnis (sisa) 🔴
+- [ ] 🔴 **Inventory/Unit** — list + CRUD + upload foto + formula HPP/OTR
+- [ ] 🟠 **Test Drive** — form (upload KTP+SIM), sales pendamping, link lead
+- [ ] 🟠 **Rekondisi** — entri biaya per unit, akumulasi ke HPP
+- [ ] 🟠 **Pengeluaran & Cash Flow** — CRUD transaksi, per kategori
+- [ ] 🟢 **Dashboard & Laporan** — data agregasi dari API (bukan dummy)
 
-### B. RBAC & Multi-user 🔴
-- [x] **Sidebar dinamis** dari `groupMenus` (`/auth/me`) + fallback menu statis — path backend di-resolve ke route frontend nyata via `PATH_BY_CODE` (anti-404), grup **Akses Kontrol** (Role/User/Menu) kini tampil di sidebar
-- [x] Halaman manajemen **Role** (CRUD + set permission)
-- [x] Halaman manajemen **User** (CRUD + set role + set branch)
-- [x] Halaman manajemen **Menu/Group/Permission**
-- [x] **Guard aksi per-permission** — tombol Create/Edit/Delete/Set-Permission disembunyikan sesuai `permissionCodes` (`usePermissions` + `Can`)
-- [x] **Gate halaman per READ permission** — `RequirePermission` (Akses Ditolak bila tak punya `*_READ`), pada Role/User/Menu
-- [ ] 🟠 Terapkan guard aksi yang sama ke modul Master Data begitu kode permission-nya tersedia
-- [ ] 🟢 Guard route `beforeLoad` per-permission (opsional; saat ini cukup gate komponen + enforcement backend)
+### B. Penyempurnaan CRM/Sales 🟠
+- [ ] 🟠 Upload foto KTP di form Lead (`multipart`)
+- [ ] 🟠 Harga penawaran unit di Sales Order (ambil OTR dari unit terpilih)
+- [ ] 🟠 Notifikasi/validasi unit tidak boleh double-order
+- [ ] 🟢 Filter lead by sumber, sales, tanggal
 
-### C. Inventory sesuai SRS 🔴
-- [ ] 🔴 Sambungkan dropdown **Merek/Tipe** & **Vendor** (dari Master Data) ke form Inventory/Rekondisi
-- [ ] 🔴 Formula harga: HPP = Beli + Rekondisi; Target = HPP+22%; **OTR = HPP+25%**
-- [ ] 🟠 Field: Pilihan Stok (Investor/GM), No Rangka, No Mesin, Tgl Pajak, Status BPKB
-- [ ] 🟠 Kelengkapan (checkbox: kunci serep, manual book, buku service, dongkrak, kunci roda, ban serep)
-- [ ] 🟢 Barcode auto-generate + scan
+### C. RBAC & Guard Halaman 🟠
+- [x] Sidebar dinamis dari `groupMenus` (`/auth/me`) + `PATH_BY_CODE`
+- [x] Guard aksi per-permission (Role/User/Menu module)
+- [ ] 🟠 Terapkan `Can`/`RequirePermission` ke modul CRM, Penjualan, Pembayaran
 
-### D. Rekondisi berbasis biaya 🔴
-- [ ] 🔴 Entri biaya rekondisi (unit, tanggal, jenis, vendor, nominal) + akumulasi
-- [ ] 🟠 Update HPP otomatis saat rekondisi disimpan
-- [ ] 🟠 Upload invoice rekondisi
-- [ ] 🟢 Tambah rekondisi pada unit Ready Stock (OTR tetap)
-
-### E. CRM / Test Drive sesuai SRS 🟠
-- [ ] 🟠 Lead: alamat, pekerjaan, upload KTP, sales auto, info kredit (leasing/SLIK/approval)
-- [ ] 🟠 Status flow lengkap (New→Follow Up→TD→Approved/Cash→Booking→Deal / Reject/Cancel)
-- [ ] 🟠 Aturan lead tidak boleh dihapus
-- [ ] 🟠 Test Drive: upload KTP & SIM + validasi wajib, sales pendamping auto
-
-### F. Sales Order & Pembayaran sesuai SRS 🟠
-- [ ] 🟠 Sales Order: OTR auto dari unit, Diskon Showroom, Harga Final
-- [ ] 🟠 Pembayaran Cash (booking + pelunasan) & Kredit (DP/refund/pencairan)
-- [ ] 🟠 Status Lunas/Belum Lunas otomatis vs OTR + pembayaran ter-link order
-
-### G. Laporan & Audit 🟠
+### D. Laporan & Audit 🟠
 - [ ] 🟠 Laporan: inventory/aging, sales per sales, closing rate, rekondisi, cashflow periodik, profit unit
 - [ ] 🟠 Export PDF/Excel
 - [ ] 🔴 **Audit Log** (siapa, sebelum, sesudah, waktu)
 
-### H. Lain-lain 🟢
-- [x] **Halaman 404** (`NotFound`) ber-branding + `defaultNotFoundComponent` di router (tombol Kembali / Dashboard / Katalog)
+### E. Lain-lain 🟢
 - [ ] 🟢 Fungsikan wishlist/favorit (tombol hati) & bandingkan mobil
 - [ ] 🟢 Validasi form menyeluruh (Zod)
 - [ ] 🟢 Code-splitting (chunk > 500kB) + optimasi gambar
@@ -142,7 +141,7 @@
 ---
 
 ## 🎯 Saran urutan berikutnya
-1. **C** — sambungkan Master Data (Merek/Tipe/Vendor) ke form Inventory + formula HPP/OTR.
-2. **D** — rekondisi berbasis biaya yang update HPP (fondasi profit).
-3. **B** — RBAC: filter menu dari `/auth/me` + halaman Role/User.
-4. **A** — integrasi API modul bisnis begitu endpoint tersedia.
+1. **A** — Inventory/Unit full CRUD + formula HPP (fondasi semua modul lain).
+2. **A** — Test Drive API integration (form upload KTP+SIM + link lead).
+3. **A** — Rekondisi biaya → update HPP otomatis.
+4. **B** — Upload KTP lead + ambil OTR unit ke Sales Order form.
