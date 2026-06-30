@@ -9,9 +9,9 @@ type UnitCardUnit = BackendUnit | MockUnit;
 
 interface UnitCardProps {
   unit: UnitCardUnit;
-  onView?: (unit: any) => void;
-  onEdit?: (unit: any) => void;
-  onDelete?: (unit: any) => void;
+  onView?: (unit: unknown) => void;
+  onEdit?: (unit: unknown) => void;
+  onDelete?: (unit: unknown) => void;
 }
 
 export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
@@ -96,7 +96,7 @@ export const UnitCard = ({ unit, onView, onEdit, onDelete }: UnitCardProps) => {
         </div>
         <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-divider">
           <span className="font-extrabold text-primary text-[14px] truncate">{formatCurrency(displayPrice)}</span>
-          <StatusBadge status={statusUnit as any} />
+          <StatusBadge status={statusUnit as never} />
         </div>
       </div>
     </div>

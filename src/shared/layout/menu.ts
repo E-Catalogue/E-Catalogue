@@ -75,6 +75,11 @@ export const PATH_BY_CODE: Record<string, string> = {
   LEAD: '/crm',
   LEAD_ORDER: '/penjualan',
   LEAD_PAYMENT: '/pembayaran',
+  CMS_KATALOG: '/cms/katalog',
+  CMS_BANNER: '/cms/banner',
+  CMS_TESTIMONI: '/cms/testimoni',
+  CMS_KONTAK: '/cms/kontak',
+  CMS_PROFIL: '/cms/profil',
 };
 
 /** Set seluruh path frontend yang valid. */

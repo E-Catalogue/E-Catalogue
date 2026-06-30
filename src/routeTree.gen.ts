@@ -42,6 +42,11 @@ import { Route as AdminMasterLeasingRouteImport } from './routes/_admin/master.l
 import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_admin/master.kategori-pengeluaran'
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
+import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
+import { Route as AdminCmsProfilRouteImport } from './routes/_admin/cms.profil'
+import { Route as AdminCmsKontakRouteImport } from './routes/_admin/cms.kontak'
+import { Route as AdminCmsKatalogRouteImport } from './routes/_admin/cms.katalog'
+import { Route as AdminCmsBannerRouteImport } from './routes/_admin/cms.banner'
 import { Route as AdminAccessControlUsersRouteImport } from './routes/_admin/access-control.users'
 import { Route as AdminAccessControlRolesRouteImport } from './routes/_admin/access-control.roles'
 import { Route as AdminAccessControlMenusRouteImport } from './routes/_admin/access-control.menus'
@@ -211,6 +216,31 @@ const AdminMasterDokumenRoute = AdminMasterDokumenRouteImport.update({
   path: '/master/dokumen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCmsTestimoniRoute = AdminCmsTestimoniRouteImport.update({
+  id: '/cms/testimoni',
+  path: '/cms/testimoni',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsProfilRoute = AdminCmsProfilRouteImport.update({
+  id: '/cms/profil',
+  path: '/cms/profil',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsKontakRoute = AdminCmsKontakRouteImport.update({
+  id: '/cms/kontak',
+  path: '/cms/kontak',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsKatalogRoute = AdminCmsKatalogRouteImport.update({
+  id: '/cms/katalog',
+  path: '/cms/katalog',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsBannerRoute = AdminCmsBannerRouteImport.update({
+  id: '/cms/banner',
+  path: '/cms/banner',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAccessControlUsersRoute = AdminAccessControlUsersRouteImport.update({
   id: '/access-control/users',
   path: '/access-control/users',
@@ -253,6 +283,11 @@ export interface FileRoutesByFullPath {
   '/access-control/menus': typeof AdminAccessControlMenusRoute
   '/access-control/roles': typeof AdminAccessControlRolesRoute
   '/access-control/users': typeof AdminAccessControlUsersRoute
+  '/cms/banner': typeof AdminCmsBannerRoute
+  '/cms/katalog': typeof AdminCmsKatalogRoute
+  '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/profil': typeof AdminCmsProfilRoute
+  '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
@@ -289,6 +324,11 @@ export interface FileRoutesByTo {
   '/access-control/menus': typeof AdminAccessControlMenusRoute
   '/access-control/roles': typeof AdminAccessControlRolesRoute
   '/access-control/users': typeof AdminAccessControlUsersRoute
+  '/cms/banner': typeof AdminCmsBannerRoute
+  '/cms/katalog': typeof AdminCmsKatalogRoute
+  '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/profil': typeof AdminCmsProfilRoute
+  '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
@@ -328,6 +368,11 @@ export interface FileRoutesById {
   '/_admin/access-control/menus': typeof AdminAccessControlMenusRoute
   '/_admin/access-control/roles': typeof AdminAccessControlRolesRoute
   '/_admin/access-control/users': typeof AdminAccessControlUsersRoute
+  '/_admin/cms/banner': typeof AdminCmsBannerRoute
+  '/_admin/cms/katalog': typeof AdminCmsKatalogRoute
+  '/_admin/cms/kontak': typeof AdminCmsKontakRoute
+  '/_admin/cms/profil': typeof AdminCmsProfilRoute
+  '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
   '/_admin/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
@@ -366,6 +411,11 @@ export interface FileRouteTypes {
     | '/access-control/menus'
     | '/access-control/roles'
     | '/access-control/users'
+    | '/cms/banner'
+    | '/cms/katalog'
+    | '/cms/kontak'
+    | '/cms/profil'
+    | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/kategori-pengeluaran'
@@ -402,6 +452,11 @@ export interface FileRouteTypes {
     | '/access-control/menus'
     | '/access-control/roles'
     | '/access-control/users'
+    | '/cms/banner'
+    | '/cms/katalog'
+    | '/cms/kontak'
+    | '/cms/profil'
+    | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/kategori-pengeluaran'
@@ -440,6 +495,11 @@ export interface FileRouteTypes {
     | '/_admin/access-control/menus'
     | '/_admin/access-control/roles'
     | '/_admin/access-control/users'
+    | '/_admin/cms/banner'
+    | '/_admin/cms/katalog'
+    | '/_admin/cms/kontak'
+    | '/_admin/cms/profil'
+    | '/_admin/cms/testimoni'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
     | '/_admin/master/kategori-pengeluaran'
@@ -690,6 +750,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterDokumenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/cms/testimoni': {
+      id: '/_admin/cms/testimoni'
+      path: '/cms/testimoni'
+      fullPath: '/cms/testimoni'
+      preLoaderRoute: typeof AdminCmsTestimoniRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/profil': {
+      id: '/_admin/cms/profil'
+      path: '/cms/profil'
+      fullPath: '/cms/profil'
+      preLoaderRoute: typeof AdminCmsProfilRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/kontak': {
+      id: '/_admin/cms/kontak'
+      path: '/cms/kontak'
+      fullPath: '/cms/kontak'
+      preLoaderRoute: typeof AdminCmsKontakRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/katalog': {
+      id: '/_admin/cms/katalog'
+      path: '/cms/katalog'
+      fullPath: '/cms/katalog'
+      preLoaderRoute: typeof AdminCmsKatalogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/banner': {
+      id: '/_admin/cms/banner'
+      path: '/cms/banner'
+      fullPath: '/cms/banner'
+      preLoaderRoute: typeof AdminCmsBannerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/access-control/users': {
       id: '/_admin/access-control/users'
       path: '/access-control/users'
@@ -734,6 +829,11 @@ interface AdminRouteChildren {
   AdminAccessControlMenusRoute: typeof AdminAccessControlMenusRoute
   AdminAccessControlRolesRoute: typeof AdminAccessControlRolesRoute
   AdminAccessControlUsersRoute: typeof AdminAccessControlUsersRoute
+  AdminCmsBannerRoute: typeof AdminCmsBannerRoute
+  AdminCmsKatalogRoute: typeof AdminCmsKatalogRoute
+  AdminCmsKontakRoute: typeof AdminCmsKontakRoute
+  AdminCmsProfilRoute: typeof AdminCmsProfilRoute
+  AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
   AdminMasterKategoriPengeluaranRoute: typeof AdminMasterKategoriPengeluaranRoute
@@ -764,6 +864,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccessControlMenusRoute: AdminAccessControlMenusRoute,
   AdminAccessControlRolesRoute: AdminAccessControlRolesRoute,
   AdminAccessControlUsersRoute: AdminAccessControlUsersRoute,
+  AdminCmsBannerRoute: AdminCmsBannerRoute,
+  AdminCmsKatalogRoute: AdminCmsKatalogRoute,
+  AdminCmsKontakRoute: AdminCmsKontakRoute,
+  AdminCmsProfilRoute: AdminCmsProfilRoute,
+  AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,
   AdminMasterKategoriPengeluaranRoute: AdminMasterKategoriPengeluaranRoute,

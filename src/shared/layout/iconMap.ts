@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Car, ShoppingCart, Wrench, BadgeCheck, Users, KeyRound,
   ReceiptText, Wallet, TrendingDown, ArrowLeftRight, BarChart3, Settings,
   Tag, Building2, Database, ShieldCheck, SquareMenu, Folder, UserCog, PiggyBank,
-  Warehouse,
+  Warehouse, LayoutGrid, BookOpen, Image, Quote, Phone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,6 +23,9 @@ const BY_KEY: Record<string, LucideIcon> = {
   INVENTORY_OPERATIONAL: Warehouse, CRM_SALES: Users,
   // CRM & Sales per-menu codes
   LEAD: Users, LEAD_ORDER: ReceiptText, LEAD_PAYMENT: Wallet, UNIT: Car,
+  // CMS
+  CMS: LayoutGrid, CMS_KATALOG: BookOpen,
+  CMS_BANNER: Image, CMS_TESTIMONI: Quote, CMS_KONTAK: Phone, CMS_PROFIL: Building2,
 };
 
 export const resolveIcon = (opts: { icon?: string | null; code?: string; path?: string | null }): LucideIcon => {

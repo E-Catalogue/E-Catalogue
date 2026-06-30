@@ -45,6 +45,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   useEffect(() => {
     if (open) {
       if (unit) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm({
           merekId: unit.merekId,
           tipeId: unit.tipeId,

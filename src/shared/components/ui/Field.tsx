@@ -1,4 +1,4 @@
-import { useState, useRef, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
+import { useState, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
 
 const baseInput =
   'w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold text-ink placeholder:text-muted placeholder:font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all';
@@ -87,12 +87,6 @@ export const NumericField = ({
   const [focused, setFocused] = useState(false);
   // raw: what the user is typing while focused
   const [raw, setRaw] = useState('');
-  const prevExternal = useRef(value);
-
-  // Sync external value changes (e.g. modal reset) into raw
-  if (prevExternal.current !== value && !focused) {
-    prevExternal.current = value;
-  }
 
   const displayValue = focused ? raw : fmt(value);
 
@@ -115,14 +109,12 @@ export const NumericField = ({
     const num = parseNum(input, decimal);
     if (min !== undefined && num < min) return;
     if (max !== undefined && num > max) return;
-    prevExternal.current = num;
     onChange(num);
   };
 
   const handleBlur = () => {
     setFocused(false);
     setRaw('');
-    prevExternal.current = value;
   };
 
   const hasPre = !!prefix;

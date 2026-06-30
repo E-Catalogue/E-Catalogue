@@ -95,6 +95,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
       g.items.some((item) => location.pathname.startsWith(item.path))
     )?.key;
     if (activeKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpenGroups((prev) => {
         if (prev.has(activeKey)) return prev;
         return new Set([...prev, activeKey]);

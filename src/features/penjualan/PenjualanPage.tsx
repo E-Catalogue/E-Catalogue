@@ -45,7 +45,7 @@ export const PenjualanPage = () => {
   const handleSubmit = (values: Partial<LeadOrder>) => {
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setForm(null) };
     if (form?.item) m.update.mutate({ id: form.item.id, body: values }, opts);
-    else m.create.mutate(values as any, opts);
+    else m.create.mutate(values as never, opts);
   };
 
   const columns: Column<LeadOrder>[] = [

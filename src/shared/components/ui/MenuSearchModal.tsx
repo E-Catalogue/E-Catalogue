@@ -91,6 +91,7 @@ export const MenuSearchModal = ({ open, onClose }: Props) => {
   // Reset on open
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery('');
       setActive(0);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -99,6 +100,7 @@ export const MenuSearchModal = ({ open, onClose }: Props) => {
 
   // Clamp active index when results shrink
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActive((a) => Math.min(a, Math.max(results.length - 1, 0)));
   }, [results.length]);
 
