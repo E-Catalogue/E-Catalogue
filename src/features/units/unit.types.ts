@@ -34,7 +34,11 @@ export interface Unit {
     filename: string;
     originalName: string;
     extension: string;
+    sequence?: number;
+    isMain?: boolean;
     unitId: string;
+    createdAt?: string;
+    updatedAt?: string;
   }>;
   unitKelengkapans?: Array<{
     id: string;
@@ -82,4 +86,9 @@ export interface MasterDokumen {
   name: string;
   code: string;
   isActive: boolean;
+}
+
+export interface UnitImageReorderItem {
+  id: string;
+  sequence: number;
 }

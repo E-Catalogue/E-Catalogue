@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { cashAccountApi, cashTransactionApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
+import { cashAccountApi, cashTransactionApi, financeLookupApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
 import type { CashAccount, OperationalExpense, PayrollBaseSalary, RecurringExpense, SalesIncentive, ListParams } from './types';
 
 export const useCashAccounts = (params: ListParams & { isActive?: string } = { page: 1, limit: 100 }) =>
@@ -118,3 +118,33 @@ export const usePayrollRunMutations = () => {
     pay: useMutation({ mutationFn: (v: { id: string; body: { cashAccountId: string; paidDate: string; description?: string } }) => payrollApi.runs.pay(v.id, v.body), onSuccess: inval }),
   };
 };
+
+export const useLookupCashAccounts = (params: { search?: string; type?: string; isActive?: string } = { isActive: 'true' }) =>
+  useQuery({ queryKey: ['finance-lookups', 'cash-accounts', params], queryFn: () => financeLookupApi.cashAccounts(params) });
+
+export const useLookupExpenseCategories = (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+  useQuery({ queryKey: ['finance-lookups', 'expense-categories', params], queryFn: () => financeLookupApi.expenseCategories(params) });
+
+export const useLookupPayrollUsers = (params: { search?: string; isActive?: string; role?: string } = { isActive: 'true' }) =>
+  useQuery({ queryKey: ['finance-lookups', 'payroll-users', params], queryFn: () => financeLookupApi.payrollUsers(params) });
+
+export const useLookupSales = (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+  useQuery({ queryKey: ['finance-lookups', 'sales', params], queryFn: () => financeLookupApi.sales(params) });
+
+export const useLookupDealOrders = (params: { search?: string; salesId?: string; period?: string; withoutIncentive?: string } = {}) =>
+  useQuery({ queryKey: ['finance-lookups', 'deal-orders', params], queryFn: () => financeLookupApi.dealOrders(params) });
+
+export const useLookupRecurringExpenses = (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+  useQuery({ queryKey: ['finance-lookups', 'recurring-expenses', params], queryFn: () => financeLookupApi.recurringExpenses(params) });
+
+export const useLookupPayrollRuns = (params: { period?: string; status?: string } = {}) =>
+  useQuery({ queryKey: ['finance-lookups', 'payroll-runs', params], queryFn: () => financeLookupApi.payrollRuns(params) });
+
+export const useLookupUnits = (params: { search?: string; statusUnit?: string } = {}) =>
+  useQuery({ queryKey: ['finance-lookups', 'units', params], queryFn: () => financeLookupApi.units(params) });
+
+export const useLookupRekondisisPayable = (params: { search?: string; unitId?: string } = {}) =>
+  useQuery({ queryKey: ['finance-lookups', 'rekondisis-payable', params], queryFn: () => financeLookupApi.rekondisisPayable(params) });
+
+export const useLookupInvestors = (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+  useQuery({ queryKey: ['finance-lookups', 'investors', params], queryFn: () => financeLookupApi.investors(params) });

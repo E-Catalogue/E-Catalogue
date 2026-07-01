@@ -1,9 +1,9 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { Unit, UnitFormData, UnitStatusUpdate, MasterKelengkapan, MasterDokumen } from './unit.types';
+import type { Unit, UnitFormData, UnitImageReorderItem, UnitStatusUpdate, MasterKelengkapan, MasterDokumen } from './unit.types';
 
 export const unitApi = {
-  list: async (params?: Record<string, any>) => {
+  list: async (params?: Record<string, unknown>) => {
     const res = await apiClient.get<ApiResponse<Unit[]>>('/units', { params });
     return res.data;
   },
@@ -43,17 +43,29 @@ export const unitApi = {
     return res.data;
   },
   
-  uploadImage: async (id: string, file: File) => {
+  uploadImage: async (id: string, file: File, opts?: { sequence?: number; isMain?: boolean }) => {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await apiClient.post<ApiResponse<any>>(`/units/${id}/image`, formData, {
+    if (opts?.sequence !== undefined) formData.append('sequence', String(opts.sequence));
+    if (opts?.isMain !== undefined) formData.append('isMain', String(opts.isMain));
+    const res = await apiClient.post<ApiResponse<Unit>>(`/units/${id}/image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
   },
 
   deleteImage: async (id: string, imageId: string) => {
-    const res = await apiClient.delete<ApiResponse<any>>(`/units/${id}/image/${imageId}`);
+    const res = await apiClient.delete<ApiResponse<Unit>>(`/units/${id}/image/${imageId}`);
+    return res.data;
+  },
+
+  reorderImages: async (id: string, images: UnitImageReorderItem[]) => {
+    const res = await apiClient.patch<ApiResponse<Unit>>(`/units/${id}/images/reorder`, { images });
+    return res.data;
+  },
+
+  setMainImage: async (id: string, imageId: string) => {
+    const res = await apiClient.patch<ApiResponse<Unit>>(`/units/${id}/image/${imageId}/main`);
     return res.data;
   },
 
@@ -63,7 +75,7 @@ export const unitApi = {
   },
 
   createRekondisi: async (id: string) => {
-    const res = await apiClient.post<ApiResponse<any>>(`/units/${id}/rekondisi`);
+    const res = await apiClient.post<ApiResponse<unknown>>(`/units/${id}/rekondisi`);
     return res.data;
   },
 };

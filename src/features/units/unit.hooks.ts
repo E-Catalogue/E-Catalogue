@@ -4,7 +4,7 @@ import type { UnitFormData, UnitStatusUpdate } from './unit.types';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 
-export function useUnits(params?: Record<string, any>) {
+export function useUnits(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: ['units', params],
     queryFn: () => unitApi.list(params),
@@ -83,6 +83,32 @@ export function useCreateRekondisi() {
       qc.invalidateQueries({ queryKey: ['rekondisis'] });
     },
   });
+}
+
+export function useUnitImageMutations(unitId: string) {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['unit', unitId] });
+    qc.invalidateQueries({ queryKey: ['units'] });
+  };
+  return {
+    upload: useMutation({
+      mutationFn: (v: { file: File; sequence?: number; isMain?: boolean }) => unitApi.uploadImage(unitId, v.file, { sequence: v.sequence, isMain: v.isMain }),
+      onSuccess: invalidate,
+    }),
+    remove: useMutation({
+      mutationFn: (imageId: string) => unitApi.deleteImage(unitId, imageId),
+      onSuccess: invalidate,
+    }),
+    reorder: useMutation({
+      mutationFn: (images: { id: string; sequence: number }[]) => unitApi.reorderImages(unitId, images),
+      onSuccess: invalidate,
+    }),
+    setMain: useMutation({
+      mutationFn: (imageId: string) => unitApi.setMainImage(unitId, imageId),
+      onSuccess: invalidate,
+    }),
+  };
 }
 
 export function useMasterKelengkapan() {

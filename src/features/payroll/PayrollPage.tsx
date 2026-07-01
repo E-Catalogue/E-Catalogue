@@ -11,7 +11,7 @@ import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can } from '@/features/auth/permissions';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
-import { CashAccountSelect, CurrencyField, FinanceStatusBadge } from '@/features/finance/components';
+import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect, SalesSelect } from '@/features/finance/components';
 import { usePayrollBaseSalaries, usePayrollBaseSalaryMutations, usePayrollRun, usePayrollRunMutations, usePayrollRuns, useSalesIncentiveMutations, useSalesIncentives } from '@/features/finance/finance.hooks';
 import { fromIsoDate, showName, toIsoDate } from '@/features/finance/finance.utils';
 import type { PayrollBaseSalary, PayrollItem, PayrollRun, SalesIncentive } from '@/features/finance/types';
@@ -35,7 +35,7 @@ const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onC
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Master Gapok' : 'Tambah Master Gapok'} icon={<Users size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="base-salary-form" disabled={mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
       <form id="base-salary-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TextField label="User ID" required value={form.userId} onChange={(e) => set('userId', e.target.value)} />
+        <PayrollUserSelect required value={form.userId} onChange={(value) => set('userId', value)} />
         <CurrencyField label="Gapok" required value={form.amount} onChange={(e) => set('amount', e.target.value)} />
         <TextField label="Berlaku Mulai" required type="date" value={form.effectiveStart} onChange={(e) => set('effectiveStart', e.target.value)} />
         <TextField label="Berlaku Sampai" type="date" value={form.effectiveEnd} onChange={(e) => set('effectiveEnd', e.target.value)} />
@@ -60,8 +60,8 @@ const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Insentif Sales' : 'Tambah Insentif Sales'} icon={<ReceiptText size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="incentive-form" disabled={readonly || mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
       <form id="incentive-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TextField label="Sales ID" required disabled={readonly} value={form.salesId} onChange={(e) => set('salesId', e.target.value)} />
-        <TextField label="Sales Order ID" required disabled={readonly} value={form.leadOrderId} onChange={(e) => set('leadOrderId', e.target.value)} />
+        <SalesSelect required disabled={readonly} value={form.salesId} onChange={(value) => setForm((f) => ({ ...f, salesId: value, leadOrderId: '' }))} />
+        <DealOrderSelect required disabled={readonly || !form.salesId} value={form.leadOrderId} salesId={form.salesId} period={form.period} onChange={(value) => set('leadOrderId', value)} />
         <CurrencyField label="Nominal" required disabled={readonly} value={form.amount} onChange={(e) => set('amount', e.target.value)} />
         <TextField label="Periode" required type="month" disabled={readonly} value={form.period} onChange={(e) => set('period', e.target.value)} />
         {item && <SelectField label="Status" disabled={readonly} value={form.status} onChange={(e) => set('status', e.target.value)} options={[{ value: 'DRAFT', label: 'Draft' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />}

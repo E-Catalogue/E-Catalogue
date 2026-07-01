@@ -141,3 +141,81 @@ export interface PayrollRun {
   cashTransactionId?: string | null;
   items?: PayrollItem[];
 }
+
+export interface LookupCashAccount {
+  id: string;
+  name: string;
+  code: string;
+  type: CashAccountType;
+  isActive: boolean;
+}
+
+export interface LookupExpenseCategory {
+  id: string;
+  name: string;
+  code?: string | null;
+  isActive: boolean;
+}
+
+export interface LookupUser {
+  id: string;
+  name: string;
+  username: string;
+  roleName?: string | null;
+  isActive: boolean;
+}
+
+export interface LookupDealOrder {
+  id: string;
+  nomorOrder: string;
+  salesId: string;
+  salesName: string;
+  customerName?: string | null;
+  status: 'DEAL';
+  hargaFinal: number;
+  dealDate?: string | null;
+  hasIncentive: boolean;
+}
+
+export interface LookupRecurringExpense {
+  id: string;
+  name: string;
+  kategoriPengeluaranId: string;
+  kategoriName: string;
+  defaultAmount: number;
+  isActive: boolean;
+}
+
+export interface LookupPayrollRun {
+  id: string;
+  period: string;
+  status: FinanceStatus;
+  totalPaid: number;
+}
+
+export interface LookupUnit {
+  id: string;
+  platNomor: string;
+  merekName: string;
+  tipeName: string;
+  hargaBeli: number;
+  tanggalPembelian: string;
+  purchaseCashTransactionId?: string | null;
+}
+
+export interface LookupRekondisiPayable {
+  id: string;
+  unitId: string;
+  platNomor: string;
+  unitName: string;
+  totalCost: number;
+  status: 'COMPLETED';
+  paidAt: string | null;
+}
+
+export interface LookupInvestor {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+}

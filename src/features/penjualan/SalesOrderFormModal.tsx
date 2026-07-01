@@ -7,7 +7,7 @@ import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { leasingApi } from '@/features/master/simpleMaster.api';
 import { leadApi, unitApi } from '@/features/crm/crm.api';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import type { LeadOrder, PaymentType } from '@/features/crm/crm.types';
+import type { LeadOrder, PaymentType, StatusApproval } from '@/features/crm/crm.types';
 
 const PAYMENT_OPTIONS = [
   { value: 'CASH', label: 'Cash' },
@@ -21,6 +21,13 @@ const SLIK_OPTIONS = [
   { value: 'REJECT', label: 'Ditolak' },
 ];
 
+const APPROVAL_OPTIONS = [
+  { value: '', label: '(tidak ada)' },
+  { value: 'PENDING', label: 'Menunggu Approval' },
+  { value: 'APPROVED', label: 'Disetujui' },
+  { value: 'REJECTED', label: 'Ditolak' },
+];
+
 interface FormState {
   leadId: string;
   unitId: string;
@@ -28,7 +35,7 @@ interface FormState {
   leasingId: string;
   diskonShowroom: string;
   statusSlik: string;
-  statusApproval: string;
+  statusApproval: '' | StatusApproval;
   tanggalOrder: string;
   catatan: string;
 }
@@ -45,7 +52,7 @@ const toForm = (o: LeadOrder): FormState => ({
   leasingId: o.leasingId ?? '',
   diskonShowroom: String(o.diskonShowroom ?? 0),
   statusSlik: o.statusSlik ?? '',
-  statusApproval: o.statusApproval ?? '',
+  statusApproval: (o.statusApproval as StatusApproval | null) ?? '',
   tanggalOrder: o.tanggalOrder ? o.tanggalOrder.slice(0, 10) : '',
   catatan: o.catatan ?? '',
 });
@@ -106,10 +113,10 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit 
       leadId: form.leadId || undefined,
       unitId: form.unitId || undefined,
       paymentType: form.paymentType,
-      leasingId: form.leasingId || undefined,
+      leasingId: form.paymentType === 'KREDIT' ? form.leasingId || undefined : null,
       diskonShowroom: Number(form.diskonShowroom || 0),
-      statusSlik: form.statusSlik || undefined,
-      statusApproval: form.statusApproval?.trim() || undefined,
+      statusSlik: form.paymentType === 'KREDIT' ? form.statusSlik || undefined : null,
+      statusApproval: form.paymentType === 'KREDIT' ? form.statusApproval || null : null,
       tanggalOrder: form.tanggalOrder ? new Date(form.tanggalOrder).toISOString() : undefined,
       catatan: form.catatan?.trim() || undefined,
     });
@@ -155,7 +162,7 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit 
           <>
             <SelectField label="Leasing" value={form.leasingId} onChange={(e) => set('leasingId', e.target.value)} options={leasingOptions} />
             <SelectField label="Status SLIK" value={form.statusSlik} onChange={(e) => set('statusSlik', e.target.value)} options={SLIK_OPTIONS} />
-            <TextField label="Status Approval" wrapClass="sm:col-span-2" value={form.statusApproval} onChange={(e) => set('statusApproval', e.target.value)} placeholder="mis. Menunggu approval" />
+            <SelectField label="Status Approval" wrapClass="sm:col-span-2" value={form.statusApproval} onChange={(e) => set('statusApproval', e.target.value as FormState['statusApproval'])} options={APPROVAL_OPTIONS} />
           </>
         )}
 

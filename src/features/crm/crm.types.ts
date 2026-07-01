@@ -4,6 +4,7 @@ export type OrderStatus =
   | 'REJECT_SLIK' | 'CANCEL';
 
 export type PaymentType = 'CASH' | 'KREDIT';
+export type StatusApproval = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type JenisPembayaran =
   | 'BOOKING_FEE' | 'DP' | 'PELUNASAN' | 'LEASING' | 'REFUND_LEASING';
@@ -82,7 +83,7 @@ export interface LeadOrder {
   leasingId?: string | null;
   leasing?: { id: string; name: string } | null;
   statusSlik?: string | null;
-  statusApproval?: string | null;
+  statusApproval?: StatusApproval | null;
   status: OrderStatus;
   tanggalOrder?: string | null;
   catatan?: string | null;

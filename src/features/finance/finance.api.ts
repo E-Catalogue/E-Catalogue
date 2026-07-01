@@ -11,6 +11,15 @@ import type {
   RecurringExpense,
   SalesIncentive,
   ListParams,
+  LookupCashAccount,
+  LookupDealOrder,
+  LookupExpenseCategory,
+  LookupInvestor,
+  LookupPayrollRun,
+  LookupRecurringExpense,
+  LookupRekondisiPayable,
+  LookupUnit,
+  LookupUser,
 } from './types';
 
 export const cashAccountApi = {
@@ -75,4 +84,27 @@ export const payrollApi = {
     pay: (id: string, body: { cashAccountId: string; paidDate: string; description?: string }) =>
       apiClient.post<ApiResponse<PayrollRun>>(`/payroll/runs/${id}/pay`, body).then((r) => r.data),
   },
+};
+
+export const financeLookupApi = {
+  cashAccounts: (params: { search?: string; type?: string; isActive?: string } = { isActive: 'true' }) =>
+    apiClient.get<ApiResponse<LookupCashAccount[]>>('/finance/lookups/cash-accounts', { params }).then((r) => r.data),
+  expenseCategories: (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+    apiClient.get<ApiResponse<LookupExpenseCategory[]>>('/finance/lookups/expense-categories', { params }).then((r) => r.data),
+  payrollUsers: (params: { search?: string; isActive?: string; role?: string } = { isActive: 'true' }) =>
+    apiClient.get<ApiResponse<LookupUser[]>>('/finance/lookups/payroll-users', { params }).then((r) => r.data),
+  sales: (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+    apiClient.get<ApiResponse<LookupUser[]>>('/finance/lookups/sales', { params }).then((r) => r.data),
+  dealOrders: (params: { search?: string; salesId?: string; period?: string; withoutIncentive?: string } = {}) =>
+    apiClient.get<ApiResponse<LookupDealOrder[]>>('/finance/lookups/deal-orders', { params }).then((r) => r.data),
+  recurringExpenses: (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+    apiClient.get<ApiResponse<LookupRecurringExpense[]>>('/finance/lookups/recurring-expenses', { params }).then((r) => r.data),
+  payrollRuns: (params: { period?: string; status?: string } = {}) =>
+    apiClient.get<ApiResponse<LookupPayrollRun[]>>('/finance/lookups/payroll-runs', { params }).then((r) => r.data),
+  units: (params: { search?: string; statusUnit?: string } = {}) =>
+    apiClient.get<ApiResponse<LookupUnit[]>>('/finance/lookups/units', { params }).then((r) => r.data),
+  rekondisisPayable: (params: { search?: string; unitId?: string } = {}) =>
+    apiClient.get<ApiResponse<LookupRekondisiPayable[]>>('/finance/lookups/rekondisis-payable', { params }).then((r) => r.data),
+  investors: (params: { search?: string; isActive?: string } = { isActive: 'true' }) =>
+    apiClient.get<ApiResponse<LookupInvestor[]>>('/finance/lookups/investors', { params }).then((r) => r.data),
 };

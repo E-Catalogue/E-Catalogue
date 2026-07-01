@@ -1,0 +1,296 @@
+{
+  "metadata": {
+    "title": "Frontend Menu and Permission Reference",
+    "generatedDate": "2026-07-01",
+    "notes": [
+      "menuCode digunakan untuk mapping groupMenus dari /auth/me ke route frontend.",
+      "permissionRead digunakan untuk akses halaman utama.",
+      "actionPermissions digunakan untuk tombol atau aksi spesifik di halaman.",
+      "Beberapa permission non-finance masih berupa rekomendasi penamaan agar konsisten dengan pola backend."
+    ]
+  },
+  "menus": [
+    {
+      "group": "main",
+      "label": "Dashboard",
+      "path": "/dashboard",
+      "menuCode": "DASHBOARD",
+      "permissionRead": "DASHBOARD_READ",
+      "actionPermissions": []
+    },
+    {
+      "group": "operasional",
+      "label": "Inventori",
+      "path": "/inventory",
+      "menuCode": "INVENTORI",
+      "permissionRead": "UNIT_READ",
+      "actionPermissions": ["UNIT_CREATE", "UNIT_UPDATE", "UNIT_DELETE"]
+    },
+    {
+      "group": "operasional",
+      "label": "Pembelian Unit",
+      "path": "/pembelian",
+      "menuCode": "PEMBELIAN",
+      "permissionRead": "UNIT_READ",
+      "actionPermissions": ["UNIT_CREATE", "UNIT_UPDATE"]
+    },
+    {
+      "group": "operasional",
+      "label": "Rekondisi",
+      "path": "/rekondisi",
+      "menuCode": "REKONDISI",
+      "permissionRead": "REKONDISI_READ",
+      "actionPermissions": ["REKONDISI_CREATE", "REKONDISI_UPDATE", "REKONDISI_DELETE", "REKONDISI_PAY"]
+    },
+    {
+      "group": "operasional",
+      "label": "Ready Stock",
+      "path": "/ready-stock",
+      "menuCode": "READY_STOCK",
+      "permissionRead": "UNIT_READ",
+      "actionPermissions": ["UNIT_UPDATE"]
+    },
+    {
+      "group": "operasional",
+      "label": "CRM / Lead",
+      "path": "/crm",
+      "menuCode": "CRM",
+      "permissionRead": "LEAD_READ",
+      "actionPermissions": ["LEAD_CREATE", "LEAD_UPDATE", "LEAD_DELETE"]
+    },
+    {
+      "group": "operasional",
+      "label": "Test Drive",
+      "path": "/test-drive",
+      "menuCode": "TEST_DRIVE",
+      "permissionRead": "TEST_DRIVE_READ",
+      "actionPermissions": ["TEST_DRIVE_CREATE", "TEST_DRIVE_UPDATE", "TEST_DRIVE_DELETE"]
+    },
+    {
+      "group": "operasional",
+      "label": "Penjualan",
+      "path": "/penjualan",
+      "menuCode": "PENJUALAN",
+      "permissionRead": "LEAD_ORDER_READ",
+      "actionPermissions": ["LEAD_ORDER_CREATE", "LEAD_ORDER_UPDATE", "LEAD_ORDER_DELETE"]
+    },
+    {
+      "group": "operasional",
+      "label": "Pembayaran",
+      "path": "/pembayaran",
+      "menuCode": "PEMBAYARAN",
+      "permissionRead": "LEAD_PAYMENT_READ",
+      "actionPermissions": ["LEAD_PAYMENT_CREATE", "LEAD_PAYMENT_UPDATE", "LEAD_PAYMENT_DELETE"]
+    },
+    {
+      "group": "operasional",
+      "label": "Pengeluaran",
+      "path": "/pengeluaran",
+      "menuCode": "PENGELUARAN",
+      "permissionRead": "OPERATIONAL_EXPENSE_READ",
+      "actionPermissions": [
+        "OPERATIONAL_EXPENSE_CREATE",
+        "OPERATIONAL_EXPENSE_UPDATE",
+        "OPERATIONAL_EXPENSE_DELETE",
+        "OPERATIONAL_EXPENSE_PAY",
+        "RECURRING_EXPENSE_READ",
+        "RECURRING_EXPENSE_CREATE",
+        "RECURRING_EXPENSE_UPDATE",
+        "RECURRING_EXPENSE_DELETE"
+      ]
+    },
+    {
+      "group": "operasional",
+      "label": "Payroll",
+      "path": "/payroll",
+      "menuCode": "PAYROLL",
+      "permissionRead": "PAYROLL_READ",
+      "actionPermissions": ["PAYROLL_CREATE", "PAYROLL_UPDATE", "PAYROLL_DELETE", "PAYROLL_PAY"]
+    },
+    {
+      "group": "master",
+      "label": "Merek & Tipe",
+      "path": "/merek",
+      "menuCode": "MEREK",
+      "permissionRead": "MEREK_READ",
+      "actionPermissions": ["MEREK_CREATE", "MEREK_UPDATE", "MEREK_DELETE", "TIPE_CREATE", "TIPE_UPDATE", "TIPE_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Vendor",
+      "path": "/vendor",
+      "menuCode": "VENDOR",
+      "permissionRead": "VENDOR_READ",
+      "actionPermissions": ["VENDOR_CREATE", "VENDOR_UPDATE", "VENDOR_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Cabang",
+      "path": "/branch",
+      "menuCode": "BRANCH",
+      "permissionRead": "BRANCH_READ",
+      "actionPermissions": ["BRANCH_CREATE", "BRANCH_UPDATE", "BRANCH_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Leasing",
+      "path": "/master/leasing",
+      "menuCode": "LEASING",
+      "permissionRead": "LEASING_READ",
+      "actionPermissions": ["LEASING_CREATE", "LEASING_UPDATE", "LEASING_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Sumber Lead",
+      "path": "/master/sumber-lead",
+      "menuCode": "SUMBER_LEAD",
+      "permissionRead": "SUMBER_LEAD_READ",
+      "actionPermissions": ["SUMBER_LEAD_CREATE", "SUMBER_LEAD_UPDATE", "SUMBER_LEAD_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Pengecekan",
+      "path": "/master/pengecekan",
+      "menuCode": "PENGECEKAN",
+      "permissionRead": "PENGECEKAN_READ",
+      "actionPermissions": ["PENGECEKAN_CREATE", "PENGECEKAN_UPDATE", "PENGECEKAN_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Kategori Pengeluaran",
+      "path": "/master/kategori-pengeluaran",
+      "menuCode": "KATEGORI_PENGELUARAN",
+      "permissionRead": "KATEGORI_PENGELUARAN_READ",
+      "actionPermissions": ["KATEGORI_PENGELUARAN_CREATE", "KATEGORI_PENGELUARAN_UPDATE", "KATEGORI_PENGELUARAN_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Metode Pembayaran",
+      "path": "/master/metode-pembayaran",
+      "menuCode": "METODE_PEMBAYARAN",
+      "permissionRead": "METODE_PEMBAYARAN_READ",
+      "actionPermissions": ["METODE_PEMBAYARAN_CREATE", "METODE_PEMBAYARAN_UPDATE", "METODE_PEMBAYARAN_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Dokumen",
+      "path": "/master/dokumen",
+      "menuCode": "DOKUMEN",
+      "permissionRead": "DOKUMEN_READ",
+      "actionPermissions": ["DOKUMEN_CREATE", "DOKUMEN_UPDATE", "DOKUMEN_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Perlengkapan",
+      "path": "/master/perlengkapan",
+      "menuCode": "PERLENGKAPAN",
+      "permissionRead": "PERLENGKAPAN_READ",
+      "actionPermissions": ["PERLENGKAPAN_CREATE", "PERLENGKAPAN_UPDATE", "PERLENGKAPAN_DELETE"]
+    },
+    {
+      "group": "master",
+      "label": "Investor",
+      "path": "/master/investor",
+      "menuCode": "INVESTOR",
+      "permissionRead": "INVESTOR_READ",
+      "actionPermissions": ["INVESTOR_CREATE", "INVESTOR_UPDATE", "INVESTOR_DELETE", "INVESTOR_MODAL_CREATE", "INVESTOR_MODAL_UPDATE", "INVESTOR_MODAL_DELETE"]
+    },
+    {
+      "group": "akses",
+      "label": "Role",
+      "path": "/access-control/roles",
+      "menuCode": "ROLE",
+      "permissionRead": "ROLE_READ",
+      "actionPermissions": ["ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE", "ROLE_PERMISSION_UPDATE"]
+    },
+    {
+      "group": "akses",
+      "label": "User",
+      "path": "/access-control/users",
+      "menuCode": "USER",
+      "permissionRead": "USER_READ",
+      "actionPermissions": ["USER_CREATE", "USER_UPDATE", "USER_DELETE", "USER_ROLE_UPDATE", "USER_BRANCH_UPDATE"]
+    },
+    {
+      "group": "akses",
+      "label": "Menu & Permission",
+      "path": "/access-control/menus",
+      "menuCode": "MENU",
+      "permissionRead": "MENU_READ",
+      "actionPermissions": ["MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE"]
+    },
+    {
+      "group": "lainnya",
+      "label": "Cash Flow",
+      "path": "/cashflow",
+      "menuCode": "CASHFLOW",
+      "permissionRead": "CASH_TRANSACTION_READ",
+      "actionPermissions": [
+        "CASH_ACCOUNT_READ",
+        "CASH_ACCOUNT_CREATE",
+        "CASH_ACCOUNT_UPDATE",
+        "CASH_ACCOUNT_DELETE",
+        "CASH_TRANSACTION_CREATE"
+      ]
+    },
+    {
+      "group": "lainnya",
+      "label": "Laporan",
+      "path": "/laporan",
+      "menuCode": "LAPORAN",
+      "permissionRead": "LAPORAN_READ",
+      "actionPermissions": ["LAPORAN_EXPORT"]
+    },
+    {
+      "group": "lainnya",
+      "label": "Pengaturan",
+      "path": "/pengaturan",
+      "menuCode": "PENGATURAN",
+      "permissionRead": "PENGATURAN_READ",
+      "actionPermissions": ["PENGATURAN_UPDATE"]
+    }
+  ],
+  "featurePermissions": {
+    "cashFlow": {
+      "dashboard": "CASH_TRANSACTION_READ",
+      "ledger": "CASH_TRANSACTION_READ",
+      "cashAccountRead": "CASH_ACCOUNT_READ",
+      "cashAccountCreate": "CASH_ACCOUNT_CREATE",
+      "cashAccountUpdate": "CASH_ACCOUNT_UPDATE",
+      "cashAccountDelete": "CASH_ACCOUNT_DELETE",
+      "manualCashIn": "CASH_TRANSACTION_CREATE",
+      "manualCashOut": "CASH_TRANSACTION_CREATE",
+      "transfer": "CASH_TRANSACTION_CREATE",
+      "adjustment": "CASH_TRANSACTION_CREATE"
+    },
+    "operational": {
+      "expenseRead": "OPERATIONAL_EXPENSE_READ",
+      "expenseCreate": "OPERATIONAL_EXPENSE_CREATE",
+      "expenseUpdate": "OPERATIONAL_EXPENSE_UPDATE",
+      "expenseDelete": "OPERATIONAL_EXPENSE_DELETE",
+      "expensePay": "OPERATIONAL_EXPENSE_PAY",
+      "recurringRead": "RECURRING_EXPENSE_READ",
+      "recurringCreate": "RECURRING_EXPENSE_CREATE",
+      "recurringUpdate": "RECURRING_EXPENSE_UPDATE",
+      "recurringDelete": "RECURRING_EXPENSE_DELETE"
+    },
+    "payroll": {
+      "read": "PAYROLL_READ",
+      "create": "PAYROLL_CREATE",
+      "update": "PAYROLL_UPDATE",
+      "delete": "PAYROLL_DELETE",
+      "pay": "PAYROLL_PAY"
+    }
+  },
+  "backendCodeAliases": {
+    "UNIT": "/inventory",
+    "LEAD": "/crm",
+    "LEAD_ORDER": "/penjualan",
+    "LEAD_PAYMENT": "/pembayaran",
+    "CMS_KATALOG": "/cms/katalog",
+    "CMS_BANNER": "/cms/banner",
+    "CMS_TESTIMONI": "/cms/testimoni",
+    "CMS_KONTAK": "/cms/kontak",
+    "CMS_PROFIL": "/cms/profil"
+  }
+}

@@ -1,6 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { CalendarClock, Plus, ReceiptText, Wallet } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -10,26 +9,19 @@ import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can } from '@/features/auth/permissions';
-import { kategoriPengeluaranApi } from '@/features/master/simpleMaster.api';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
-import { CashAccountSelect, CurrencyField, FinanceStatusBadge } from '@/features/finance/components';
-import { useOperationalExpenseMutations, useOperationalExpenses, useRecurringExpenseMutations, useRecurringExpenses } from '@/features/finance/finance.hooks';
+import { CashAccountSelect, CurrencyField, ExpenseCategorySelect, FinanceStatusBadge } from '@/features/finance/components';
+import { useLookupRecurringExpenses, useOperationalExpenseMutations, useOperationalExpenses, useRecurringExpenseMutations, useRecurringExpenses } from '@/features/finance/finance.hooks';
 import { fromIsoDate, toIsoDate } from '@/features/finance/finance.utils';
-import type { OperationalExpense, OperationalExpenseType, RecurringExpense } from '@/features/finance/types';
+import type { LookupRecurringExpense, OperationalExpense, OperationalExpenseType, RecurringExpense } from '@/features/finance/types';
 
 type Tab = 'expenses' | 'recurring';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const month = () => new Date().toISOString().slice(0, 7);
 
-const useKategoriOptions = () => {
-  const { data, isLoading } = useQuery({ queryKey: ['kategori-pengeluarans', { page: 1, limit: 100 }], queryFn: () => kategoriPengeluaranApi.list({ page: 1, limit: 100 }) });
-  return [{ value: '', label: isLoading ? 'Memuat kategori...' : 'Pilih kategori' }, ...(data?.data ?? []).filter((x) => x.isActive).map((x) => ({ value: x.id, label: x.name }))];
-};
-
 const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClose: () => void }) => {
-  const categories = useKategoriOptions();
   const mutations = useOperationalExpenseMutations();
   const locked = item?.status === 'PAID' || !!item?.cashTransactionId;
   const [form, setForm] = useState({
@@ -66,7 +58,7 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
       <form id="expense-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <SelectField label="Tipe" value={form.type} disabled={!!locked} onChange={(e) => set('type', e.target.value)} options={[{ value: 'NORMAL', label: 'Normal' }, { value: 'BACKDATE', label: 'Backdate' }]} />
         <TextField label="Judul" required disabled={!!locked} value={form.title} onChange={(e) => set('title', e.target.value)} />
-        <SelectField label="Kategori" required disabled={!!locked} value={form.kategoriPengeluaranId} onChange={(e) => set('kategoriPengeluaranId', e.target.value)} options={categories} />
+        <ExpenseCategorySelect required disabled={!!locked} value={form.kategoriPengeluaranId} onChange={(value) => set('kategoriPengeluaranId', value)} />
         <CurrencyField label="Nominal" required disabled={!!locked} value={form.amount} onChange={(e) => set('amount', e.target.value)} />
         <TextField label={form.type === 'BACKDATE' ? 'Tanggal Pencatatan' : 'Tanggal Pengeluaran'} required type="date" disabled={!!locked} value={form.expenseDate} onChange={(e) => set('expenseDate', e.target.value)} />
         {form.type === 'BACKDATE' && (
@@ -106,7 +98,6 @@ const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: 
 };
 
 const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClose: () => void }) => {
-  const categories = useKategoriOptions();
   const mutations = useRecurringExpenseMutations();
   const [form, setForm] = useState({ name: item?.name ?? '', kategoriPengeluaranId: item?.kategoriPengeluaranId ?? '', defaultAmount: String(item?.defaultAmount ?? ''), description: item?.description ?? '', isActive: item?.isActive ?? true });
   const set = (key: keyof typeof form, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
@@ -121,7 +112,7 @@ const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClo
     <Modal open onClose={onClose} title={item ? 'Edit Pengeluaran Rutin' : 'Tambah Pengeluaran Rutin'} icon={<CalendarClock size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="recurring-form" disabled={mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
       <form id="recurring-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TextField label="Nama" required value={form.name} onChange={(e) => set('name', e.target.value)} />
-        <SelectField label="Kategori" required value={form.kategoriPengeluaranId} onChange={(e) => set('kategoriPengeluaranId', e.target.value)} options={categories} />
+        <ExpenseCategorySelect required value={form.kategoriPengeluaranId} onChange={(value) => set('kategoriPengeluaranId', value)} />
         <CurrencyField label="Nominal Default" required value={form.defaultAmount} onChange={(e) => set('defaultAmount', e.target.value)} />
         <TextField label="Keterangan" value={form.description} onChange={(e) => set('description', e.target.value)} />
         <label className="sm:col-span-2 flex items-center gap-2.5 text-[13px] font-semibold text-ink-soft"><input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" /> Aktif</label>
@@ -130,28 +121,41 @@ const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClo
   );
 };
 
-const GenerateRecurringForm = ({ items, onClose }: { items: RecurringExpense[]; onClose: () => void }) => {
+const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
   const mutations = useRecurringExpenseMutations();
+  const { data, isLoading, isError, refetch } = useLookupRecurringExpenses({ isActive: 'true' });
+  const items = data?.data ?? [];
   const [period, setPeriod] = useState(month());
-  const [selected, setSelected] = useState<Record<string, { checked: boolean; amount: string }>>(() => Object.fromEntries(items.filter((i) => i.isActive).map((i) => [i.id, { checked: true, amount: String(i.defaultAmount) }])));
+  const [selected, setSelected] = useState<Record<string, { checked: boolean; amount: string }>>({});
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const chosen = Object.entries(selected).filter(([, v]) => v.checked).map(([id, v]) => ({ recurringExpenseId: id, amount: Number(v.amount || 0) }));
+    const chosen = items
+      .filter((item) => selected[item.id]?.checked ?? true)
+      .map((item) => ({ recurringExpenseId: item.id, amount: Number(selected[item.id]?.amount || item.defaultAmount || 0) }));
     mutations.generate.mutate({ period, items: chosen }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
   };
+  const rowAmount = (item: LookupRecurringExpense) => selected[item.id]?.amount ?? String(item.defaultAmount);
   return (
     <Modal open onClose={onClose} title="Generate Pengeluaran Rutin" icon={<CalendarClock size={20} />} size="lg" footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="generate-recurring-form" disabled={mutations.generate.isPending}>Generate</Button></>}>
       <form id="generate-recurring-form" onSubmit={submit} className="space-y-4">
         <TextField label="Periode" required type="month" value={period} onChange={(e) => setPeriod(e.target.value)} />
+        {isError ? (
+          <div className="rounded-xl border border-border bg-surface-soft p-4 text-sm font-semibold text-muted">
+            Gagal memuat template. <button type="button" className="font-bold text-primary" onClick={() => refetch()}>Coba lagi</button>
+          </div>
+        ) : (
         <div className="divide-y divide-divider border border-border rounded-2xl overflow-hidden">
-          {items.filter((i) => i.isActive).map((item) => (
+          {isLoading && <div className="px-4 py-6 text-center text-sm font-semibold text-muted">Memuat template...</div>}
+          {!isLoading && items.length === 0 && <div className="px-4 py-6 text-center text-sm font-semibold text-muted">Data tidak ditemukan.</div>}
+          {!isLoading && items.map((item) => (
             <div key={item.id} className="grid grid-cols-[auto_1fr_160px] gap-3 items-center px-4 py-3">
-              <input type="checkbox" checked={!!selected[item.id]?.checked} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: e.target.checked, amount: s[item.id]?.amount ?? String(item.defaultAmount) } }))} className="w-4 h-4 accent-[color:var(--color-primary)]" />
-              <div><p className="font-bold text-ink text-[13px]">{item.name}</p><p className="text-[11px] text-muted">{item.kategoriPengeluaran?.name ?? '-'}</p></div>
-              <input type="number" min={0} value={selected[item.id]?.amount ?? item.defaultAmount} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: s[item.id]?.checked ?? true, amount: e.target.value } }))} className="h-10 px-3 rounded-xl bg-surface-soft border border-border text-sm font-semibold" />
+              <input type="checkbox" checked={selected[item.id]?.checked ?? true} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: e.target.checked, amount: s[item.id]?.amount ?? String(item.defaultAmount) } }))} className="w-4 h-4 accent-[color:var(--color-primary)]" />
+              <div><p className="font-bold text-ink text-[13px]">{item.name}</p><p className="text-[11px] text-muted">{item.kategoriName}</p></div>
+              <input type="number" min={0} value={rowAmount(item)} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: s[item.id]?.checked ?? true, amount: e.target.value } }))} className="h-10 px-3 rounded-xl bg-surface-soft border border-border text-sm font-semibold" />
             </div>
           ))}
         </div>
+        )}
       </form>
     </Modal>
   );
@@ -204,7 +208,7 @@ export const PengeluaranPage = () => {
       {expenseForm !== undefined && <ExpenseForm item={expenseForm} onClose={() => setExpenseForm(undefined)} />}
       {payExpense && <PayExpenseForm item={payExpense} onClose={() => setPayExpense(null)} />}
       {recurringForm !== undefined && <RecurringForm item={recurringForm} onClose={() => setRecurringForm(undefined)} />}
-      {generate && <GenerateRecurringForm items={recurring.data?.data ?? []} onClose={() => setGenerate(false)} />}
+      {generate && <GenerateRecurringForm onClose={() => setGenerate(false)} />}
       <ConfirmDialog open={!!cancelExpense} onClose={() => setCancelExpense(null)} onConfirm={() => cancelExpense && expenseMutations.remove.mutate(cancelExpense.id, { onError: (e) => notifyApiError(e), onSuccess: () => setCancelExpense(null) })} title="Batalkan Pengeluaran" message={cancelExpense ? `Batalkan pengeluaran "${cancelExpense.title}"?` : ''} />
       <ConfirmDialog open={!!removeRecurring} onClose={() => setRemoveRecurring(null)} onConfirm={() => removeRecurring && recurringMutations.remove.mutate(removeRecurring.id, { onError: (e) => notifyApiError(e), onSuccess: () => setRemoveRecurring(null) })} title="Nonaktifkan Pengeluaran Rutin" message={removeRecurring ? `Nonaktifkan template "${removeRecurring.name}"?` : ''} />
     </div>
