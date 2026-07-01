@@ -3,8 +3,9 @@ import { KeyRound } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
-import { useAppDispatch, useAppSelector } from '@/app/store';
+import { useAppDispatch } from '@/app/store';
 import { addTestDrive, updateTestDrive } from '@/app/store/dataSlice';
+import { useUnits } from '@/features/units/unit.hooks';
 import type { TestDrive } from '@/data/types';
 
 interface Props {
@@ -19,7 +20,8 @@ const empty = (): Omit<TestDrive, 'id'> => ({
 
 export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
   const dispatch = useAppDispatch();
-  const units = useAppSelector((s) => s.data.units);
+  const { data: unitData } = useUnits({ page: 1, limit: 100 });
+  const units = unitData?.data ?? [];
   const [form, setForm] = useState<Omit<TestDrive, 'id'>>(item ?? empty());
   const [seedId, setSeedId] = useState<string | undefined>(item?.id);
   if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ?? empty()); }
@@ -34,7 +36,13 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     onClose();
   };
 
-  const unitOptions = [{ value: '', label: '— Pilih unit —' }, ...units.map((u) => ({ value: `${u.brand} ${u.model} ${u.variant}`, label: `${u.brand} ${u.model} ${u.variant}` }))];
+  const unitOptions = [
+    { value: '', label: '— Pilih unit —' },
+    ...units.map((u) => {
+      const label = `${u.merek?.name ?? ''} ${u.tipe?.name ?? ''} · ${u.platNomor}`.trim();
+      return { value: label, label };
+    }),
+  ];
 
   return (
     <Modal

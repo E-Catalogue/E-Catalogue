@@ -1,58 +1,75 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  MapPin, Phone, Mail, Clock, MessageCircle, Save, ExternalLink, Globe,
+  MapPin, Phone, Mail, Clock, MessageCircle, Save, ExternalLink, Globe, Loader2,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
+import { notifyApiError } from '@/core/api/notify';
+import { useSiteSettings, useSiteSettingsMutations } from './cms.hooks';
+import type { SiteSettingsUpdate } from './cms.types';
 
-/* ── Dummy data (akan diganti API) ────────────────────────── */
-interface KontakData {
-  alamat: string;
-  telepon: string;
-  email: string;
-  jamBuka: string;
-  whatsappNumber: string;
-  whatsappMessage: string;
-  mapsEmbedUrl: string;
-  instagram: string;
-  facebook: string;
-}
-
-const INITIAL: KontakData = {
-  alamat: 'Jl. Raya Otomotif No. 88, Jakarta Selatan',
-  telepon: '021-1500-888',
-  email: 'halo@gmmobilindo.id',
-  jamBuka: 'Senin–Sabtu, 09.00–18.00 WIB',
-  whatsappNumber: '628000000000',
-  whatsappMessage: 'Halo GM Mobilindo, saya tertarik dengan unit...',
-  mapsEmbedUrl: 'https://www.openstreetmap.org/export/embed.html?bbox=106.78%2C-6.30%2C106.86%2C-6.22&layer=mapnik',
-  instagram: '@gmmobilindo',
-  facebook: 'GM Mobilindo',
+type FormState = {
+  address: string; phone: string; email: string; businessHours: string;
+  whatsappNumber: string; mapEmbedUrl: string;
+  socialInstagram: string; socialFacebook: string;
 };
 
-const INFO_ICONS = [
-  { key: 'alamat' as const, icon: MapPin, label: 'Alamat', color: 'text-primary bg-primary/10' },
-  { key: 'telepon' as const, icon: Phone, label: 'Telepon', color: 'text-accent-green bg-accent-green/10' },
-  { key: 'email' as const, icon: Mail, label: 'Email', color: 'text-accent-blue bg-accent-blue/10' },
-  { key: 'jamBuka' as const, icon: Clock, label: 'Jam Buka', color: 'text-accent-amber bg-accent-amber/10' },
-];
+const EMPTY: FormState = {
+  address: '', phone: '', email: '', businessHours: '',
+  whatsappNumber: '', mapEmbedUrl: '', socialInstagram: '', socialFacebook: '',
+};
 
 export const KontakCmsPage = () => {
-  const [data, setData] = useState<KontakData>(INITIAL);
-  const [saved, setSaved] = useState(false);
+  const { data, isLoading, isError } = useSiteSettings();
+  const { update } = useSiteSettingsMutations();
+  const [form, setForm] = useState<FormState>(EMPTY);
 
-  const update = (key: keyof KontakData, value: string) => {
-    setData(prev => ({ ...prev, [key]: value }));
-    setSaved(false);
-  };
+  // Seed form saat data pertama kali dimuat.
+  useEffect(() => {
+    if (!data) return;
+    setForm({
+      address: data.address ?? '',
+      phone: data.phone ?? '',
+      email: data.email ?? '',
+      businessHours: data.businessHours ?? '',
+      whatsappNumber: data.whatsappNumber ?? '',
+      mapEmbedUrl: data.mapEmbedUrl ?? '',
+      socialInstagram: data.social?.instagram ?? '',
+      socialFacebook: data.social?.facebook ?? '',
+    });
+  }, [data]);
+
+  const set = (key: keyof FormState, value: string) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSave = () => {
-    // TODO: Kirim ke API backend
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    const body: SiteSettingsUpdate = {
+      address: form.address,
+      phone: form.phone,
+      email: form.email,
+      businessHours: form.businessHours,
+      whatsappNumber: form.whatsappNumber,
+      mapEmbedUrl: form.mapEmbedUrl || null,
+      socialInstagram: form.socialInstagram || null,
+      socialFacebook: form.socialFacebook || null,
+    };
+    update.mutate(body, { onError: (err) => notifyApiError(err) });
   };
+
+  const INFO_ICONS = [
+    { key: 'address' as const, icon: MapPin, label: 'Alamat', color: 'text-primary bg-primary/10' },
+    { key: 'phone' as const, icon: Phone, label: 'Telepon', color: 'text-accent-green bg-accent-green/10' },
+    { key: 'email' as const, icon: Mail, label: 'Email', color: 'text-accent-blue bg-accent-blue/10' },
+    { key: 'businessHours' as const, icon: Clock, label: 'Jam Buka', color: 'text-accent-amber bg-accent-amber/10' },
+  ];
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center py-24 text-muted"><Loader2 size={24} className="animate-spin" /></div>;
+  }
+  if (isError) {
+    return <div className="text-center py-24 text-muted font-semibold text-sm">Gagal memuat pengaturan situs.</div>;
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
@@ -64,102 +81,72 @@ export const KontakCmsPage = () => {
             <a href="/kontak" target="_blank" rel="noopener noreferrer">
               <Button variant="secondary" icon={<ExternalLink size={16} />}>Preview</Button>
             </a>
-            <Button icon={<Save size={16} />} onClick={handleSave}>
-              {saved ? '✓ Tersimpan' : 'Simpan'}
+            <Button icon={<Save size={16} />} onClick={handleSave} disabled={update.isPending}>
+              {update.isPending ? 'Menyimpan…' : 'Simpan'}
             </Button>
           </div>
         }
       />
 
-      {/* ── Preview Cards ──────────────────────────────────── */}
+      {/* Preview cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {INFO_ICONS.map(info => {
+        {INFO_ICONS.map((info) => {
           const Icon = info.icon;
           return (
             <div key={info.key} className="bg-surface rounded-2xl border border-border p-4">
-              <div className={`w-10 h-10 rounded-xl ${info.color} flex items-center justify-center mb-3`}>
-                <Icon size={18} />
-              </div>
+              <div className={`w-10 h-10 rounded-xl ${info.color} flex items-center justify-center mb-3`}><Icon size={18} /></div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{info.label}</p>
-              <p className="text-[13px] font-bold text-ink mt-0.5 leading-snug line-clamp-2">{data[info.key]}</p>
+              <p className="text-[13px] font-bold text-ink mt-0.5 leading-snug line-clamp-2">{form[info.key] || '—'}</p>
             </div>
           );
         })}
       </div>
 
-      {/* ── Contact Info ───────────────────────────────────── */}
+      {/* Contact info */}
       <SectionCard title="Informasi Utama" icon={<Globe size={16} />}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <TextField label="Alamat Lengkap" value={data.alamat} onChange={e => update('alamat', e.target.value)} placeholder="Jl. Raya..." />
+            <TextField label="Alamat Lengkap" value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="Jl. Raya..." />
           </div>
-          <TextField label="Nomor Telepon" value={data.telepon} onChange={e => update('telepon', e.target.value)} placeholder="021-xxx" />
-          <TextField label="Email" value={data.email} onChange={e => update('email', e.target.value)} placeholder="email@domain.com" />
-          <TextField label="Jam Operasional" value={data.jamBuka} onChange={e => update('jamBuka', e.target.value)} placeholder="Senin–Sabtu, 09.00–18.00" />
+          <TextField label="Nomor Telepon" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="021-xxx" />
+          <TextField label="Email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="email@domain.com" />
+          <TextField label="Jam Operasional" value={form.businessHours} onChange={(e) => set('businessHours', e.target.value)} placeholder="Senin–Sabtu, 09.00–18.00" />
         </div>
       </SectionCard>
 
-      {/* ── WhatsApp ───────────────────────────────────────── */}
+      {/* WhatsApp */}
       <SectionCard title="WhatsApp" icon={<MessageCircle size={16} />}>
         <div className="space-y-4">
-          <TextField
-            label="Nomor WhatsApp (tanpa +)"
-            value={data.whatsappNumber}
-            onChange={e => update('whatsappNumber', e.target.value)}
-            placeholder="628xxx"
-          />
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Pesan Default</label>
-            <textarea
-              value={data.whatsappMessage}
-              onChange={e => update('whatsappMessage', e.target.value)}
-              rows={3}
-              className="w-full p-3 rounded-xl bg-surface-soft border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light resize-y"
-              placeholder="Halo, saya tertarik..."
-            />
-          </div>
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-accent-green/5 border border-accent-green/20">
-            <MessageCircle size={18} className="text-accent-green shrink-0" />
-            <div className="text-[12px]">
-              <span className="font-bold text-ink">Link WA: </span>
-              <a
-                href={`https://wa.me/${data.whatsappNumber}?text=${encodeURIComponent(data.whatsappMessage)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-accent-green font-semibold hover:underline break-all"
-              >
-                wa.me/{data.whatsappNumber}
-              </a>
+          <TextField label="Nomor WhatsApp (tanpa +)" value={form.whatsappNumber} onChange={(e) => set('whatsappNumber', e.target.value)} placeholder="628xxx" />
+          {form.whatsappNumber && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-accent-green/5 border border-accent-green/20">
+              <MessageCircle size={18} className="text-accent-green shrink-0" />
+              <div className="text-[12px]">
+                <span className="font-bold text-ink">Link WA: </span>
+                <a href={`https://wa.me/${form.whatsappNumber}`} target="_blank" rel="noreferrer" className="text-accent-green font-semibold hover:underline break-all">
+                  wa.me/{form.whatsappNumber}
+                </a>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </SectionCard>
 
-      {/* ── Social Media ───────────────────────────────────── */}
+      {/* Social */}
       <SectionCard title="Media Sosial" icon={<Globe size={16} />}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextField label="Instagram" value={data.instagram} onChange={e => update('instagram', e.target.value)} placeholder="@username" />
-          <TextField label="Facebook" value={data.facebook} onChange={e => update('facebook', e.target.value)} placeholder="Nama Page" />
+          <TextField label="Instagram (URL)" value={form.socialInstagram} onChange={(e) => set('socialInstagram', e.target.value)} placeholder="https://instagram.com/..." />
+          <TextField label="Facebook (URL)" value={form.socialFacebook} onChange={(e) => set('socialFacebook', e.target.value)} placeholder="https://facebook.com/..." />
         </div>
       </SectionCard>
 
-      {/* ── Maps ───────────────────────────────────────────── */}
+      {/* Map */}
       <SectionCard title="Peta Lokasi" icon={<MapPin size={16} />}>
         <div className="space-y-4">
-          <TextField
-            label="URL Embed Peta (OpenStreetMap / Google Maps)"
-            value={data.mapsEmbedUrl}
-            onChange={e => update('mapsEmbedUrl', e.target.value)}
-            placeholder="https://..."
-          />
-          {data.mapsEmbedUrl && (
+          <TextField label="URL Embed Peta (OpenStreetMap / Google Maps)" value={form.mapEmbedUrl} onChange={(e) => set('mapEmbedUrl', e.target.value)} placeholder="https://..." />
+          {form.mapEmbedUrl && (
             <div className="rounded-2xl overflow-hidden border border-border h-64 bg-surface-soft">
-              <iframe
-                title="Preview Lokasi"
-                src={data.mapsEmbedUrl}
-                className="w-full h-full"
-                loading="lazy"
-              />
+              <iframe title="Preview Lokasi" src={form.mapEmbedUrl} className="w-full h-full" loading="lazy" />
             </div>
           )}
         </div>

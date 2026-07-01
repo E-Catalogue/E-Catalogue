@@ -10,6 +10,7 @@ import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 import { kategoriPengeluaranApi } from '@/features/master/simpleMaster.api';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
@@ -158,6 +159,7 @@ const GenerateRecurringForm = ({ items, onClose }: { items: RecurringExpense[]; 
 };
 
 export const PengeluaranPage = () => {
+  const { can } = usePermissions();
   const [tab, setTab] = useState<Tab>('expenses');
   const [status, setStatus] = useState('');
   const [expenseForm, setExpenseForm] = useState<OperationalExpense | null | undefined>();
@@ -178,7 +180,7 @@ export const PengeluaranPage = () => {
     { header: 'Tipe', cell: (e) => e.type },
     { header: 'Status', cell: (e) => <FinanceStatusBadge status={e.status} /> },
     { header: 'Nominal', align: 'right', cell: (e) => <span className="font-bold text-semantic-error">{formatCurrency(e.amount)}</span> },
-    { header: '', align: 'right', cell: (e) => <div className="flex justify-end gap-2"><Can code="OPERATIONAL_EXPENSE_PAY">{e.status === 'DRAFT' && <button className="font-bold text-accent-green" onClick={() => setPayExpense(e)}>Bayar</button>}</Can><RowActions onEdit={() => setExpenseForm(e)} onDelete={e.status === 'DRAFT' ? () => setCancelExpense(e) : undefined} /></div> },
+    { header: '', align: 'right', cell: (e) => <RowActions onEdit={() => setExpenseForm(e)} onDelete={e.status === 'DRAFT' ? () => setCancelExpense(e) : undefined} extra={e.status === 'DRAFT' && can('OPERATIONAL_EXPENSE_PAY') ? [{ label: 'Bayar', icon: <Wallet size={13} />, onClick: () => setPayExpense(e), variant: 'primary' }] : undefined} /> },
   ];
   const recurringColumns: Column<RecurringExpense>[] = [
     { header: 'Nama', cell: (r) => <span className="font-bold text-ink">{r.name}</span> },
