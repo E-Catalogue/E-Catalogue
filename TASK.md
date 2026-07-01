@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 30 Juni 2026 (rev 3)
+> **Terakhir diperbarui:** 1 Juli 2026 (rev 4 — audit hardcode)
 
 ---
 
@@ -117,6 +117,35 @@
 | Rekondisi (list/progress/done + detail items) | `rekondisiApi` | ✅ |
 | Pengeluaran | — | ⬜ |
 | Laporan | — | ⬜ |
+
+---
+
+## 🔍 AUDIT HARDCODE / DATA STATIS (cross-check modul admin — rev 1 Jul 2026)
+
+> Hasil telusur pemakaian Redux store statis (`s.data.*` / `dataSlice`) & tipe `@/data/types` di seluruh modul admin.
+> Legenda: **API ada** = master/endpoint sudah tersedia, tinggal wire. **API belum** = backend belum siap.
+
+### Sudah diperbaiki ✅
+- [x] **Test Drive — dropdown Unit** → sekarang ambil dari API (`useUnits`) di `TestDriveFormModal`, bukan `s.data.units`.
+- [x] **Rekondisi** → tombol "Tambah Unit" dihapus dari `RekondisiPage` (unit dibuat dari modul Inventory, bukan di sini).
+
+### Masih hardcode — API SUDAH ADA (tinggal wire) 🟠
+- [ ] 🟠 **Pembelian** (`PembelianPage.tsx`) — daftar & sumber unit masih `s.data.units`. → pakai `useUnits`.
+- [ ] 🟠 **Penjualan — form** (`SaleFormModal.tsx`) — dropdown unit `s.data.units`. → `useUnits` (ambil OTR unit terpilih).
+- [ ] 🟠 **Pembayaran — form** (`PaymentFormModal.tsx`) — tulis ke `dataSlice` (dipakai QuickInput & OrderDetailModal). → wire ke finance/penjualan API.
+- [ ] 🟠 **Dashboard** (`DashboardPage`, `BottomStats`, `PipelineFunnel`, `RecentActivity`, `RekondisiList`, `SalesChart`) — semua baca `s.data.*` (units/leads/sales/payments). → agregasi dari API (units, crm, finance).
+- [ ] 🟠 **Laporan** (`LaporanPage.tsx`) — `s.data.units`. → API units + agregasi.
+
+### Masih hardcode — API BELUM ADA (butuh backend dulu) 🔴
+- [ ] 🔴 **Test Drive — list & CRUD** (`TestDrivePage` → `s.data.testDrives`, `addTestDrive/updateTestDrive/removeTestDrive`). Belum ada `test-drive.api.ts`. → butuh endpoint Test Drive.
+- [ ] 🔴 **Simulasi kredit config** (landing) — parameter tenor/bunga hardcode (lihat [cms_prd.md](cms_prd.md) §8).
+
+### Dead code / legacy (bersihkan) 🟢
+- [ ] 🟢 **`ExpenseFormModal.tsx`** — tidak direferensikan di mana pun (PengeluaranPage sudah pakai finance API). Hapus atau arsipkan.
+- [ ] 🟢 **`SaleFormModal.tsx` / `PaymentFormModal.tsx`** — hanya dipakai `QuickInput` (shortcut lama). Setelah wire ke API, evaluasi ulang.
+
+### Sengaja statis (bukan target sekarang) ⚪
+- Halaman **publik/customer** (`landing/*`: LandingPage, KatalogPage, KatalogDetailPage, SimulasiPage) — sesuai keputusan sebelumnya pakai data dummy sampai API CMS/katalog publik siap (lihat [cms_prd.md](cms_prd.md)).
 
 ---
 
