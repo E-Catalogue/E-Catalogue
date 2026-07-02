@@ -3,7 +3,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { Search, SlidersHorizontal, X, Car, RotateCcw } from 'lucide-react';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
 import { PublicHeader } from './PublicHeader';
+import { PriceRangeSlider } from './PriceRangeSlider';
 import { useAppSelector } from '@/app/store';
+import { formatCurrency } from '@/core/utils/format';
 import type { Unit, Transmission, FuelType } from '@/data/types';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'km_asc';
@@ -15,13 +17,8 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'km_asc', label: 'KM Terendah' },
 ];
 
-const PRICE_RANGES = [
-  { label: 'Semua Harga', min: 0, max: Infinity },
-  { label: '< Rp 200 Jt', min: 0, max: 200_000_000 },
-  { label: 'Rp 200–350 Jt', min: 200_000_000, max: 350_000_000 },
-  { label: 'Rp 350–500 Jt', min: 350_000_000, max: 500_000_000 },
-  { label: '> Rp 500 Jt', min: 500_000_000, max: Infinity },
-];
+const PRICE_STEP = 5_000_000;
+const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
 
 const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
   <button
@@ -49,19 +46,26 @@ export const KatalogPage = () => {
   const [brand, setBrand] = useState('Semua');
   const [trans, setTrans] = useState<'Semua' | Transmission>('Semua');
   const [fuel, setFuel] = useState<'Semua' | FuelType>('Semua');
-  const [priceIdx, setPriceIdx] = useState(0);
+  const [price, setPrice] = useState<{ min: number; max: number } | null>(null);
   const [sort, setSort] = useState<SortKey>('newest');
   const [showFilter, setShowFilter] = useState(false);
 
   const brands = ['Semua', ...Array.from(new Set(units.map((u) => u.brand)))];
 
+  const priceBounds = useMemo(() => {
+    const prices = units.map((u) => u.price);
+    const hi = prices.length ? roundUp(Math.max(...prices), PRICE_STEP) : 1_000_000_000;
+    return { min: 0, max: hi };
+  }, [units]);
+  const pMin = price?.min ?? priceBounds.min;
+  const pMax = price?.max ?? priceBounds.max;
+
   const result = useMemo(() => {
-    const range = PRICE_RANGES[priceIdx];
     const list = units.filter((u) => {
       const mb = brand === 'Semua' || u.brand === brand;
       const mt = trans === 'Semua' || u.transmission === trans;
       const mf = fuel === 'Semua' || u.fuel === fuel;
-      const mp = u.price >= range.min && u.price < range.max;
+      const mp = u.price >= pMin && u.price <= pMax;
       const text = `${u.brand} ${u.model} ${u.variant}`.toLowerCase();
       return mb && mt && mf && mp && text.includes(query.toLowerCase());
     });
@@ -71,16 +75,17 @@ export const KatalogPage = () => {
       if (sort === 'km_asc') return a.km - b.km;
       return b.year - a.year;
     });
-  }, [units, brand, trans, fuel, priceIdx, sort, query]);
+  }, [units, brand, trans, fuel, pMin, pMax, sort, query]);
 
-  const reset = () => { setBrand('Semua'); setTrans('Semua'); setFuel('Semua'); setPriceIdx(0); setQuery(''); };
+  const reset = () => { setBrand('Semua'); setTrans('Semua'); setFuel('Semua'); setPrice(null); setQuery(''); };
   const openDetail = (u: Unit) => navigate({ to: '/katalog/$id', params: { id: u.id } });
 
+  const priceActive = price !== null && (pMin > priceBounds.min || pMax < priceBounds.max);
   const activeFilters = [
     brand !== 'Semua' && { label: brand, clear: () => setBrand('Semua') },
     trans !== 'Semua' && { label: trans, clear: () => setTrans('Semua') },
     fuel !== 'Semua' && { label: fuel, clear: () => setFuel('Semua') },
-    priceIdx !== 0 && { label: PRICE_RANGES[priceIdx].label, clear: () => setPriceIdx(0) },
+    priceActive && { label: `${formatCurrency(pMin, { compact: true })} – ${formatCurrency(pMax, { compact: true })}`, clear: () => setPrice(null) },
   ].filter(Boolean) as { label: string; clear: () => void }[];
 
   const FilterPanel = (
@@ -89,7 +94,13 @@ export const KatalogPage = () => {
         {brands.map((b) => <Chip key={b} active={brand === b} onClick={() => setBrand(b)}>{b}</Chip>)}
       </FilterGroup>
       <FilterGroup label="Rentang Harga">
-        {PRICE_RANGES.map((r, i) => <Chip key={r.label} active={priceIdx === i} onClick={() => setPriceIdx(i)}>{r.label}</Chip>)}
+        <div className="w-full">
+          <PriceRangeSlider
+            min={priceBounds.min} max={priceBounds.max} step={PRICE_STEP}
+            valueMin={pMin} valueMax={pMax}
+            onChange={(next) => setPrice(next)}
+          />
+        </div>
       </FilterGroup>
       <FilterGroup label="Transmisi">
         {(['Semua', 'AT', 'MT', 'CVT'] as const).map((t) => <Chip key={t} active={trans === t} onClick={() => setTrans(t)}>{t}</Chip>)}

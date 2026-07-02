@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 1 Juli 2026 (rev 4 — audit hardcode)
+> **Terakhir diperbarui:** 2 Juli 2026 (rev 6 — CMS v2 per-section + polish UI)
 
 ---
 
@@ -59,6 +59,26 @@
 
 ### Pembayaran (API nyata) — *new*
 - [x] `PembayaranPage.tsx` — view order dengan kolom totalTerbayar/sisa/isPaid, filter belum/lunas, summary card, klik Detail buka OrderDetailModal
+
+### CMS (API nyata) — *rev 6: v2 per-section* (acuan docs/frontend/cms_frontend_integration.md)
+- [x] `cms.types.ts` — v2 per-section (SiteSettings + navLinks, Homepage sections hero/brands/whyUs/howItWorks/featured/testimonials/cta, About sections, ContactPage, CatalogPage, Testimonial, ContactMessage, CreditSimConfig, CmsCatalogRow)
+- [x] `cms.api.ts` — `sectionApi.get/update(page,section)` generik + `/cms/{page}/hero-image` + `uploadCmsImage(folder)` + site-settings/contact-page/catalog-page/testimonials/contact-messages/credit-sim/catalog. **Modul Banner dihapus (v2).**
+- [x] `cms.hooks.ts` — `useCmsSection`/`useUpdateCmsSection` generik, `usePublicSiteSettings`, dll (toast `variant:'success'`)
+- [x] **ImageUpload** — komponen upload dengan **preview gambar** (drag/drop, validasi 5MB JPG/PNG, preview instan)
+- [x] **BannerPage** → `/cms/homepage/hero` + `/cms/homepage/cta` (per-section, upload hero pakai ImageUpload)
+- [x] **ProfilPage** → `/cms/about/visi-misi` + `/stats` + `/values` (per-section)
+- [x] **TestimoniPage** → `/cms/testimonials` (CRUD + publish + avatar)
+- [x] **KatalogPage (CMS)** → `/cms/catalog` (publish/isNew/statusKatalog)
+- [x] **KontakCmsPage** → `/cms/site-settings`
+
+### Polish UI global — *rev 6*
+- [x] **Modal notifikasi** — ikon sukses = ceklis hijau (`CheckCircle2`), gagal/peringatan = tanda seru (`AlertTriangle`), via `variant` di `uiSlice` + derivasi title
+- [x] **Halaman 404** dipercantik (angka 404 besar + kartu ikon mobil + ambient glow)
+- [x] **Branding dinamis** — Logo sidebar & kartu footer ambil nama/tagline/logo dari `usePublicSiteSettings()`
+- [x] **Rekondisi = stepper modal** — Kelola Rekondisi jadi stepper (Buat→Isi Item→Pengerjaan→Selesai), tombol "Buat Rekondisi" pindah ke dalam modal, riwayat selesai collapsible
+- [x] **Filter katalog publik** — `PriceRangeSlider` (dual range + input min/max kustom + nilai rupiah)
+- [x] **Landing** — animasi scroll-reveal **sekali** (`Reveal` + IntersectionObserver unobserve) di section Keunggulan/Cara Kerja/Unggulan/Testimoni/CTA
+- [x] **Tabel seragam** — cross-check: 18 halaman DataTable, tanpa `<table>` manual & tanpa gambar di sel (kecuali Menu & Permission)
 
 ### Sidebar & Routing dinamis
 - [x] `PATH_BY_CODE` — alias kode backend (`UNIT`, `LEAD`, `LEAD_ORDER`, `LEAD_PAYMENT`) ke route frontend
@@ -117,6 +137,17 @@
 | Rekondisi (list/progress/done + detail items) | `rekondisiApi` | ✅ |
 | Pengeluaran | — | ⬜ |
 | Laporan | — | ⬜ |
+| **CMS — Homepage Hero/CTA (per-section)** | `sectionApi('homepage')` | ✅ |
+| **CMS — About visi-misi/stats/values** | `sectionApi('about')` | ✅ |
+| **CMS — Testimoni** | `testimonialApi` | ✅ |
+| **CMS — Katalog (tayang)** | `cmsCatalogApi` | ✅ |
+| **CMS — Site Settings (Kontak)** | `siteSettingsApi` | ✅ |
+| CMS — Homepage why-us/how-it-works/brands/featured | `sectionApi` (layer siap, belum ada halaman) | 🟡 |
+| CMS — About hero/cta | `sectionApi` (layer siap, belum ada halaman) | 🟡 |
+| CMS — Pesan Kontak (inbox) | `contactMessageApi` (layer siap, belum ada halaman) | 🟡 |
+| CMS — Simulasi Kredit config | `creditSimApi` (layer siap, belum ada editor) | 🟡 |
+| CMS — contact-page / catalog-page header | `contactPageApi` / `catalogPageApi` (layer siap) | 🟡 |
+| Situs publik consume `/public/*` | — (masih data dummy) | ⬜ |
 
 ---
 
@@ -174,6 +205,17 @@
 - [ ] 🟠 Laporan: inventory/aging, sales per sales, closing rate, rekondisi, cashflow periodik, profit unit
 - [ ] 🟠 Export PDF/Excel
 - [ ] 🔴 **Audit Log** (siapa, sebelum, sesudah, waktu)
+
+### F. CMS per-section (v2) — acuan [docs/frontend/cms_frontend_integration.md](docs/frontend/cms_frontend_integration.md) 🟠
+> Foundation v2 per-section **selesai** (`sectionApi`, hooks generik, ImageUpload preview). Sisa = halaman untuk section yang belum ada UI + migrasi situs publik ke API.
+- [x] Pecah wiring monolitik → per-section (BannerPage `/cms/homepage/*`, ProfilPage `/cms/about/*`)
+- [ ] 🟠 **Beranda — section belum ada UI**: Keunggulan (`why-us`), Cara Kerja (`how-it-works`), Brand chips (`brands`), Unit Unggulan (`featured`) — tambah tab/halaman di CMS (hook `useCmsSection('homepage', …)` sudah siap).
+- [ ] 🟠 **Tentang — section belum ada UI**: Hero (`about/hero`) & CTA (`about/cta`).
+- [ ] 🟠 **Inbox Pesan Kontak** — halaman baru `useContactMessages` (list + filter status + badge count-new + ubah/hapus).
+- [ ] 🟠 **Editor Simulasi Kredit** — form `useCreditSimConfig` (tenor/dp/bunga/method/faktor cicilan/disclaimer).
+- [ ] 🟠 **Header halaman** Kontak & Katalog (`useContactPage`/`useCatalogPage` + priceRanges).
+- [ ] 🟢 **Pengaturan Situs (umum)** — companyName, tagline, logo, favicon, footer, sosial (subset `siteSettings` di luar Kontak).
+- [ ] 🔴 **Situs publik consume `/public/*`** — migrasi `landing/*` (LandingPage 7 section, Tentang, Kontak, Simulasi, Katalog, Detail) dari data dummy Redux ke endpoint publik (`/public/homepage` agregat, `/public/catalog`, `/public/about`, `/public/credit-simulation/config+calculate`). *Besar — perlu backend aktif untuk verifikasi.*
 
 ### E. Lain-lain 🟢
 - [ ] 🟢 Fungsikan wishlist/favorit (tombol hati) & bandingkan mobil

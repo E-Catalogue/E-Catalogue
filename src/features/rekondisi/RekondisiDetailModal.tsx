@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useMemo, type FormEvent } from 'react';
 import {
-  Wrench, Plus, Pencil, Trash2, Play, CheckCircle, Loader2,
-  ChevronDown, ChevronUp, Receipt,
+  Wrench, Plus, Pencil, Trash2, PlayCircle, CheckCircle2, Loader2,
+  Receipt, FilePlus2, ListChecks, ChevronDown, ChevronUp, Check, Car,
 } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -22,7 +22,7 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import {
   REKONDISI_STATUS_LABEL, REKONDISI_STATUS_COLOR,
-  type Rekondisi, type RekondisiDetail, type RekondisiDoneFormData,
+  type Rekondisi, type RekondisiDetail, type RekondisiDoneFormData, type RekondisiStatus,
 } from './rekondisi.types';
 
 const idr = (n?: number | null) =>
@@ -46,35 +46,23 @@ const DetailItemRow = ({
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    m.update.mutate(
-      { id: item.id, data: { description: desc || undefined, nominal: Number(nom) } },
-      { onSuccess: () => setEditing(false) },
-    );
+    m.update.mutate({ id: item.id, data: { description: desc || undefined, nominal: Number(nom) } },
+      { onSuccess: () => setEditing(false), onError: (err) => notifyApiError(err) });
   };
 
   if (editing) {
     return (
       <form onSubmit={submit} className="flex items-center gap-2 px-4 py-2.5 bg-surface-soft/60 border-b border-divider">
         <span className="text-[12px] font-semibold text-muted shrink-0 w-28 truncate">{item.pengecekan?.name}</span>
-        <input
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          placeholder="Deskripsi"
-          className="flex-1 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary"
-        />
-        <input
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          type="number" min={0} required
-          placeholder="Nominal"
-          className="w-32 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary"
-        />
+        <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Deskripsi"
+          className="flex-1 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
+        <input value={nom} onChange={(e) => setNom(e.target.value)} type="number" min={0} required placeholder="Nominal"
+          className="w-32 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
         <button type="submit" disabled={m.update.isPending} className="px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold">Simpan</button>
         <button type="button" onClick={() => setEditing(false)} className="px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-bold text-muted">Batal</button>
       </form>
     );
   }
-
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-soft/50 border-b border-divider last:border-0 transition-colors">
       <div className="flex-1 min-w-0">
@@ -84,20 +72,84 @@ const DetailItemRow = ({
       <span className="font-bold text-ink text-[13px] shrink-0">{idr(item.nominal)}</span>
       {canEdit && (
         <div className="flex gap-1 shrink-0">
-          <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10 transition-colors">
-            <Pencil size={13} />
-          </button>
-          <button onClick={() => onDelete(item.id)} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10 transition-colors">
-            <Trash2 size={13} />
-          </button>
+          <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10 transition-colors"><Pencil size={13} /></button>
+          <button onClick={() => onDelete(item.id)} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10 transition-colors"><Trash2 size={13} /></button>
         </div>
       )}
     </div>
   );
 };
 
+/* ── Item list + add (dipakai step Isi Item & Pengerjaan) ── */
+const ItemsPanel = ({ rekondisiId, canEdit }: { rekondisiId: string; canEdit: boolean }) => {
+  const { data: itemsRes } = useRekondisiDetails(rekondisiId);
+  const items: RekondisiDetail[] = itemsRes?.data ?? [];
+  const { data: pengecekanRes } = usePengecekan({ limit: 100 });
+  const pengecekans = (pengecekanRes?.data ?? []) as { id: string; name: string }[];
+  const dm = useRekondisiDetailMutations(rekondisiId);
+
+  const [addForm, setAddForm] = useState(false);
+  const [pid, setPid] = useState('');
+  const [desc, setDesc] = useState('');
+  const [nom, setNom] = useState('');
+  const [toDelete, setToDelete] = useState<string | null>(null);
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    dm.create.mutate({ pengecekanId: pid, description: desc || undefined, nominal: Number(nom) },
+      { onSuccess: () => { setPid(''); setDesc(''); setNom(''); setAddForm(false); }, onError: (err) => notifyApiError(err) });
+  };
+
+  const total = items.reduce((s, it) => s + (it.nominal ?? 0), 0);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[12px] font-bold text-ink">Item Pekerjaan ({items.length})</p>
+        {canEdit && (
+          <button onClick={() => setAddForm((v) => !v)} className="inline-flex items-center gap-1 text-[12px] font-bold text-primary hover:underline">
+            <Plus size={13} /> Tambah Item
+          </button>
+        )}
+      </div>
+
+      {addForm && (
+        <form onSubmit={submit} className="flex flex-wrap items-center gap-2 mb-3 p-3 bg-surface border border-border rounded-xl">
+          <select required value={pid} onChange={(e) => setPid(e.target.value)}
+            className="flex-1 min-w-[140px] h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary">
+            <option value="">Pilih pengecekan...</option>
+            {pengecekans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Deskripsi (opsional)"
+            className="w-40 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
+          <input required type="number" min={0} value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Nominal"
+            className="w-28 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
+          <button type="submit" disabled={dm.create.isPending} className="h-8 px-3 rounded-lg bg-primary text-white text-[11px] font-bold">
+            {dm.create.isPending ? <Loader2 size={12} className="animate-spin" /> : 'Tambah'}
+          </button>
+        </form>
+      )}
+
+      {items.length === 0 ? (
+        <p className="text-center py-6 text-[12px] text-muted border border-dashed border-border rounded-xl">Belum ada item pekerjaan.</p>
+      ) : (
+        <div className="border border-border rounded-xl overflow-hidden">
+          {items.map((it) => <DetailItemRow key={it.id} item={it} rekondisiId={rekondisiId} canEdit={canEdit} onDelete={setToDelete} />)}
+          <div className="px-4 py-2.5 bg-surface border-t border-border flex justify-between text-[13px] font-extrabold text-ink">
+            <span>Subtotal Pekerjaan</span><span>{idr(total)}</span>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && dm.remove.mutate(toDelete, { onSuccess: () => setToDelete(null), onError: (err) => notifyApiError(err) })}
+        title="Hapus Item" message="Hapus item pekerjaan ini?" tone="danger" />
+    </div>
+  );
+};
+
 /* ── Done form ── */
-const DoneForm = ({ rekondisiId, onClose }: { rekondisiId: string; onClose: () => void }) => {
+const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => void }) => {
   const [tax, setTax] = useState('');
   const [adminFee, setAdminFee] = useState('');
   const [additionalFee, setAdditionalFee] = useState('');
@@ -111,11 +163,11 @@ const DoneForm = ({ rekondisiId, onClose }: { rekondisiId: string; onClose: () =
     if (adminFee) data.adminFee = Number(adminFee);
     if (additionalFee) data.additionalFee = Number(additionalFee);
     if (invoice) data.invoice = invoice;
-    m.done.mutate({ id: rekondisiId, data }, { onSuccess: onClose });
+    m.done.mutate({ id: rekondisiId, data }, { onSuccess: onDone, onError: (err) => notifyApiError(err) });
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3 p-4 bg-surface-soft rounded-xl border border-border mt-2">
+    <form onSubmit={submit} className="space-y-3 p-4 bg-surface-soft rounded-xl border border-border">
       <p className="text-[12px] font-bold text-ink">Selesaikan &amp; hitung total biaya</p>
       <div className="grid grid-cols-3 gap-2">
         {[
@@ -125,13 +177,8 @@ const DoneForm = ({ rekondisiId, onClose }: { rekondisiId: string; onClose: () =
         ].map((f) => (
           <div key={f.label}>
             <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">{f.label}</p>
-            <input
-              type="number" min={0}
-              value={f.val}
-              onChange={(e) => f.set(e.target.value)}
-              placeholder="0"
-              className="w-full h-9 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary"
-            />
+            <input type="number" min={0} value={f.val} onChange={(e) => f.set(e.target.value)} placeholder="0"
+              className="w-full h-9 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
           </div>
         ))}
       </div>
@@ -411,15 +458,6 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
           )}
         </div>
       )}
-
-      <ConfirmDialog
-        open={!!toDelete}
-        onClose={() => setToDelete(null)}
-        onConfirm={() => toDelete && dm.remove.mutate(toDelete, { onSuccess: () => setToDelete(null) })}
-        title="Hapus Item"
-        message="Hapus item pekerjaan ini?"
-        tone="danger"
-      />
     </div>
   );
 };
@@ -477,20 +515,45 @@ export const RekondisiDetailModal = ({ open, onClose, unitId, unitLabel }: Props
       }
     >
       {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 size={24} className="animate-spin text-muted" />
-        </div>
-      ) : rekondisiList.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border rounded-2xl">
-          <Wrench size={32} className="text-muted mx-auto mb-3" />
-          <p className="font-bold text-ink">Belum ada rekondisi</p>
-          <p className="text-muted text-[13px] font-medium mt-1">Klik "Buat Rekondisi" untuk memulai entri biaya.</p>
-        </div>
+        <div className="flex items-center justify-center py-16"><Loader2 size={24} className="animate-spin text-muted" /></div>
       ) : (
-        <div className="space-y-3">
-          {rekondisiList.map((r) => (
-            <RekondisiCard key={r.id} r={r} />
-          ))}
+        <div className="space-y-5">
+          {/* Stepper */}
+          <div className="pt-1"><Stepper current={currentStep} /></div>
+
+          {/* Step content */}
+          {!active ? (
+            <div className="text-center py-10 border border-dashed border-border rounded-2xl">
+              <div className="w-14 h-14 rounded-2xl bg-primary-light flex items-center justify-center mx-auto mb-3">
+                <Car size={26} className="text-primary" />
+              </div>
+              <p className="font-extrabold text-ink text-[15px]">
+                {list.length === 0 ? 'Belum ada rekondisi' : 'Semua rekondisi selesai'}
+              </p>
+              <p className="text-muted text-[13px] font-medium mt-1 max-w-xs mx-auto leading-relaxed">
+                Mulai rekondisi baru untuk mencatat vendor, item pekerjaan, dan biaya perbaikan unit ini.
+              </p>
+              <Button icon={<Plus size={15} />} onClick={handleCreate} disabled={createM.isPending} className="mt-4">
+                {createM.isPending ? 'Membuat…' : 'Buat Rekondisi Baru'}
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-bold text-muted">Rekondisi #{active.seq}</span>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${REKONDISI_STATUS_COLOR[active.status]}`}>{REKONDISI_STATUS_LABEL[active.status]}</span>
+              </div>
+              <ActivePanel rekondisi={active} />
+            </div>
+          )}
+
+          {/* History */}
+          {history.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[12px] font-bold text-muted uppercase tracking-wide">Riwayat Selesai ({history.length})</p>
+              {history.map((r) => <HistoryCard key={r.id} r={r} />)}
+            </div>
+          )}
         </div>
       )}
     </Modal>

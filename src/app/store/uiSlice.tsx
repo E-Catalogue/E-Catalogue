@@ -9,11 +9,15 @@ export type GlobalErrorType =
   | 'parsing'
   | 'auth';
 
+export type ToastVariant = 'success' | 'error' | 'info';
+
 interface ToastState {
   isOpen: boolean;
   title: string;
   message: string;
   type: GlobalErrorType;
+  /** Menentukan ikon & warna. Bila kosong, diturunkan dari title/type di komponen. */
+  variant?: ToastVariant;
 }
 
 interface UiState {

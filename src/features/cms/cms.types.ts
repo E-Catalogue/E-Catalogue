@@ -1,4 +1,4 @@
-// Tipe data modul CMS (sesuai cms_frontend_integration.md).
+// Tipe data modul CMS v2 (per-section) — sesuai docs/frontend/cms_frontend_integration.md.
 
 export interface CmsIconItem {
   icon: string;   // nama lucide-react, mis. "shield-check"
@@ -7,18 +7,26 @@ export interface CmsIconItem {
 }
 
 export interface CmsStat {
-  value: string;  // boleh "auto" (di-resolve server untuk publik)
+  value: string;  // boleh "auto" (di-resolve server)
   label: string;
   icon?: string;
 }
 
+export interface SectionMeta {
+  isVisible?: boolean;
+}
+
 /* ── Site Settings (singleton) ── */
+export interface NavLink { label: string; path: string; }
+
 export interface SiteSettings {
   companyName: string;
   tagline: string;
   logoFilename: string | null;
   faviconFilename: string | null;
   footerDescription: string;
+  navContactLabel: string;
+  navLinks: NavLink[];
   whatsappNumber: string;
   phone: string;
   email: string;
@@ -27,20 +35,16 @@ export interface SiteSettings {
   mapEmbedUrl: string | null;
   mapLat: number | null;
   mapLng: number | null;
-  social: {
-    instagram: string | null;
-    facebook: string | null;
-    tiktok: string | null;
-    website: string | null;
-  };
+  social: { instagram: string | null; facebook: string | null; tiktok: string | null; website: string | null };
   copyrightText: string | null;
 }
 
-/** Body PUT site-settings — sosial di-flatten sesuai API. */
 export interface SiteSettingsUpdate {
   companyName?: string;
   tagline?: string;
   footerDescription?: string;
+  navContactLabel?: string;
+  navLinks?: NavLink[];
   whatsappNumber?: string;
   phone?: string;
   email?: string;
@@ -56,8 +60,8 @@ export interface SiteSettingsUpdate {
   copyrightText?: string | null;
 }
 
-/* ── Homepage (singleton) ── */
-export interface HomepageHero {
+/* ── Homepage sections ── */
+export interface HomepageHero extends SectionMeta {
   badgeText: string;
   titleHtml: string;
   subtitle: string;
@@ -66,72 +70,61 @@ export interface HomepageHero {
   secondaryCtaLabel: string;
   secondaryCtaLink: string;
   imageFilename: string | null;
+  floatingCard: { icon: string; title: string; subtitle: string };
   stats: CmsStat[];
 }
-export interface HomepageSection {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  items?: CmsIconItem[];
-  steps?: CmsIconItem[];
-}
-export interface HomepageFeatured {
-  eyebrow: string;
-  title: string;
+export interface HomepageBrands extends SectionMeta {
+  label: string;
   mode: 'auto' | 'manual';
+  brandIds: string[];
   limit: number;
-  unitIds?: string[];
 }
-export interface HomepageCta {
-  title: string;
-  subtitle: string;
-  primaryLabel: string;
-  primaryLink: string;
-  secondaryLabel: string;
-  secondaryLink: string;
+export interface HomepageWhyUs extends SectionMeta {
+  eyebrow: string; title: string; subtitle: string;
+  items: CmsIconItem[];
 }
-export interface Homepage {
-  hero: HomepageHero;
-  whyUs: HomepageSection;
-  howItWorks: HomepageSection;
-  featured: HomepageFeatured;
-  cta: HomepageCta;
+export interface HomepageHowItWorks extends SectionMeta {
+  eyebrow: string; title: string; subtitle: string;
+  steps: CmsIconItem[];
+}
+export interface HomepageFeatured extends SectionMeta {
+  eyebrow: string; title: string;
+  seeAllLabel: string; seeAllLink: string;
+  mode: 'auto' | 'manual';
+  unitIds: string[];
+  limit: number;
+}
+export interface HomepageTestimonialsHeader extends SectionMeta {
+  eyebrow: string; title: string; subtitle: string; limit: number;
+}
+export interface HomepageCta extends SectionMeta {
+  title: string; subtitle: string;
+  primaryLabel: string; primaryLink: string;
+  secondaryLabel: string; secondaryLink: string;
 }
 
-/* ── About (singleton) ── */
-export interface AboutHero {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
+/* ── About sections ── */
+export interface AboutHero extends SectionMeta {
+  eyebrow: string; title: string; subtitle: string;
   imageFilename: string | null;
-  ctaLabel: string;
-  ctaLink: string;
+  ctaLabel: string; ctaLink: string;
 }
-export interface About {
-  hero: AboutHero;
-  stats: CmsStat[];
-  visi: string;
-  misi: string;
-  values: CmsIconItem[];
-  cta: HomepageCta;
+export interface AboutStats extends SectionMeta { items: CmsStat[]; }
+export interface AboutVisiMisi extends SectionMeta {
+  visiTitle: string; visiIcon: string; visi: string;
+  misiTitle: string; misiIcon: string; misi: string;
 }
+export interface AboutValues extends SectionMeta {
+  eyebrow: string; title: string; items: CmsIconItem[];
+}
+export interface AboutCta extends HomepageCta {}
 
-/* ── Banner (collection) ── */
-export interface Banner {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  imageFilename: string;
-  ctaLabel: string | null;
-  ctaLink: string | null;
-  sortOrder: number;
-  isActive: boolean;
-  startDate: string | null;
-  endDate: string | null;
-}
-export type BannerForm = Omit<Banner, 'id'>;
+/* ── Header halaman ── */
+export interface ContactPage extends SectionMeta { eyebrow: string; title: string; subtitle: string; }
+export interface PriceRange { label: string; min: number; max: number | null; }
+export interface CatalogPage extends SectionMeta { eyebrow: string; title: string; subtitle: string; priceRanges: PriceRange[]; }
 
-/* ── Testimoni (collection) ── */
+/* ── Testimoni (koleksi) ── */
 export interface Testimonial {
   id: string;
   name: string;
@@ -167,17 +160,14 @@ export interface CreditSimConfig {
   rateMax: number;
   rateDefault: number;
   rateStep: number;
-  method: 'FLAT';
+  method: 'FLAT' | 'EFEKTIF' | 'ANUITAS';
+  installmentFromFactor: number;
   disclaimer: string;
 }
 
 /* ── Katalog CMS (kelola tayang) ── */
 export type StatusKatalog = 'READY' | 'BOOKED';
-export interface CmsCatalogImage {
-  id: string;
-  filename: string;
-  sortOrder: number;
-}
+export interface CmsCatalogImage { id: string; filename: string; sortOrder: number; }
 export interface CmsCatalogRow {
   id: string;
   merek: { id: string; name: string } | null;
@@ -208,9 +198,7 @@ export interface CmsCatalogPublishBody {
   deskripsi?: string;
 }
 
-export interface CmsListParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  [key: string]: unknown;
-}
+export interface CmsListParams { page?: number; limit?: number; search?: string; [key: string]: unknown; }
+
+/** Folder gambar CMS. */
+export type CmsUploadFolder = 'page' | 'site' | 'testimoni';

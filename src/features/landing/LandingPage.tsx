@@ -4,6 +4,7 @@ import {
   FileSearch, Car, CheckCircle2, Star, Quote,
 } from 'lucide-react';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
+import { Reveal } from '@/shared/components/Reveal';
 import { useAppSelector } from '@/app/store';
 import { WHATSAPP_URL } from './publicNav';
 import type { Unit } from '@/data/types';
@@ -109,12 +110,12 @@ export const LandingPage = () => {
       {/* WHY US */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
-          <div className="text-center max-w-xl mx-auto mb-10">
+          <Reveal className="text-center max-w-xl mx-auto mb-10">
             <p className="text-primary font-bold text-[13px] uppercase tracking-wide">Kenapa GM Mobilindo</p>
             <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">Beli Mobil Bekas Jadi Tenang</h2>
             <p className="text-muted font-medium mt-2">Kami menghilangkan keraguan terbesar saat membeli mobil bekas.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
+          </Reveal>
+          <Reveal delay={120} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
@@ -127,18 +128,18 @@ export const LandingPage = () => {
                 </div>
               );
             })}
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
-        <div className="text-center max-w-xl mx-auto mb-10">
+        <Reveal className="text-center max-w-xl mx-auto mb-10">
           <p className="text-primary font-bold text-[13px] uppercase tracking-wide">Cara Kerja</p>
           <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">4 Langkah Mudah</h2>
           <p className="text-muted font-medium mt-2">Dari cari mobil sampai jadi milik Anda — semua simpel.</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
+        </Reveal>
+        <Reveal delay={120} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             return (
@@ -152,13 +153,13 @@ export const LandingPage = () => {
               </div>
             );
           })}
-        </div>
+        </Reveal>
       </section>
 
       {/* FEATURED */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
-          <div className="flex items-end justify-between gap-4 mb-8">
+          <Reveal className="flex items-end justify-between gap-4 mb-8">
             <div>
               <p className="text-primary font-bold text-[13px] uppercase tracking-wide">Pilihan Terbaik</p>
               <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">Unit Unggulan</h2>
@@ -166,21 +167,21 @@ export const LandingPage = () => {
             <Link to="/katalog" className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:gap-2.5 transition-all shrink-0">
               Lihat Semua <ArrowRight size={16} />
             </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
+          </Reveal>
+          <Reveal delay={120} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {featured.map((u) => <UnitCard key={u.id} unit={u} onView={openDetail} />)}
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* TESTIMONIALS */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
-        <div className="text-center max-w-xl mx-auto mb-10">
+        <Reveal className="text-center max-w-xl mx-auto mb-10">
           <p className="text-primary font-bold text-[13px] uppercase tracking-wide">Testimoni</p>
           <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">Kata Mereka</h2>
           <p className="text-muted font-medium mt-2">Ribuan pelanggan telah mempercayai kami.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 stagger">
+        </Reveal>
+        <Reveal delay={120} className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {TESTIMONIALS.map((t) => (
             <div key={t.name} className="bg-surface rounded-2xl border border-border p-6">
               <Quote size={28} className="text-primary/30" />
@@ -197,12 +198,12 @@ export const LandingPage = () => {
               </div>
             </div>
           ))}
-        </div>
+        </Reveal>
       </section>
 
       {/* CTA */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 pb-16">
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark p-8 md:p-14 text-center text-white">
+        <Reveal className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark p-8 md:p-14 text-center text-white">
           <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
           <h2 className="relative text-2xl md:text-4xl font-extrabold leading-tight">Siap Membawa Pulang Mobil Idaman?</h2>
           <p className="relative text-white/85 font-medium mt-3 max-w-lg mx-auto">Jelajahi katalog atau konsultasi gratis dengan sales kami untuk penawaran terbaik hari ini.</p>
@@ -214,7 +215,7 @@ export const LandingPage = () => {
               Hubungi Sales <ArrowRight size={16} />
             </a>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );
