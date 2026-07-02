@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 1 Juli 2026 (rev 4 — audit hardcode)
+> **Terakhir diperbarui:** 2 Juli 2026 (rev 5 — integrasi CMS)
 
 ---
 
@@ -59,6 +59,16 @@
 
 ### Pembayaran (API nyata) — *new*
 - [x] `PembayaranPage.tsx` — view order dengan kolom totalTerbayar/sisa/isPaid, filter belum/lunas, summary card, klik Detail buka OrderDetailModal
+
+### CMS (API nyata) — *rev 5*
+- [x] `cms.types.ts` — SiteSettings, Homepage, About, Banner, Testimonial, ContactMessage, CreditSimConfig, CmsCatalogRow + form types
+- [x] `cms.api.ts` — semua endpoint `/cms/*` (site-settings, homepage, about, banners, testimonials, contact-messages, credit-simulation, catalog) + `cmsImageUrl(folder, filename)` helper (pakai `API_ORIGIN`)
+- [x] `cms.hooks.ts` — query + mutation hooks per entitas (toast sukses, invalidate)
+- [x] **TestimoniPage** → `/cms/testimonials` (CRUD + publish toggle + avatar fallback, search debounced)
+- [x] **KatalogPage (CMS)** → `/cms/catalog` (list + filter tayang + publish/isNew/statusKatalog via PATCH)
+- [x] **KontakCmsPage** → `/cms/site-settings` (GET seed + PUT subset kontak/sosial/peta/WA)
+- [x] **BannerPage** → `/cms/homepage` (hero + stats + CTA; upload hero image; preview `<em>` aman tanpa `dangerouslySetInnerHTML`)
+- [x] **ProfilPage** → `/cms/about` (visi/misi + stats + core values; edit by index, PUT full object)
 
 ### Sidebar & Routing dinamis
 - [x] `PATH_BY_CODE` — alias kode backend (`UNIT`, `LEAD`, `LEAD_ORDER`, `LEAD_PAYMENT`) ke route frontend
@@ -117,6 +127,14 @@
 | Rekondisi (list/progress/done + detail items) | `rekondisiApi` | ✅ |
 | Pengeluaran | — | ⬜ |
 | Laporan | — | ⬜ |
+| **CMS — Testimoni** | `testimonialApi` | ✅ |
+| **CMS — Katalog (tayang)** | `cmsCatalogApi` | ✅ |
+| **CMS — Site Settings (Kontak)** | `siteSettingsApi` | ✅ |
+| **CMS — Homepage (Banner/Hero)** | `homepageApi` | ✅ |
+| **CMS — About (Profil)** | `aboutApi` | ✅ |
+| CMS — Banner slides (collection) | `bannerApi` (layer siap, belum ada halaman) | 🟡 |
+| CMS — Pesan Kontak (inbox) | `contactMessageApi` (layer siap, belum ada halaman) | 🟡 |
+| CMS — Simulasi Kredit config | `creditSimApi` (layer siap, belum ada editor) | 🟡 |
 
 ---
 
@@ -174,6 +192,13 @@
 - [ ] 🟠 Laporan: inventory/aging, sales per sales, closing rate, rekondisi, cashflow periodik, profit unit
 - [ ] 🟠 Export PDF/Excel
 - [ ] 🔴 **Audit Log** (siapa, sebelum, sesudah, waktu)
+
+### F. CMS — sisa (layer API sudah siap di `cms.api.ts`/`cms.hooks.ts`) 🟠
+- [ ] 🟠 **Halaman Banner Slides** — CRUD `bannerApi` (list/create/update/delete + upload + toggle aktif). Menu "Banner" saat ini mengedit hero beranda; slide promo perlu halaman/tab sendiri.
+- [ ] 🟠 **Inbox Pesan Kontak** — halaman baru `contactMessageApi` (list + filter status + badge count-new + ubah status + hapus).
+- [ ] 🟢 **Editor Simulasi Kredit** — form `creditSimApi` (tenor/dp/bunga/disclaimer).
+- [ ] 🟢 **Pengaturan Situs (umum)** — companyName, tagline, logo, favicon, footer (subset `siteSettingsApi` di luar Kontak).
+- [ ] 🟠 **Situs publik consume API** — ganti data dummy `landing/*` ke endpoint `/public/*` (site-settings, homepage, catalog, about, testimonials, credit-config) sesuai [cms_frontend_integration.md](cms_frontend_integration.md).
 
 ### E. Lain-lain 🟢
 - [ ] 🟢 Fungsikan wishlist/favorit (tombol hati) & bandingkan mobil
