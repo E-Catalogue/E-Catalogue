@@ -111,8 +111,8 @@ export const InboxPage = () => {
               { icon: <CheckCircle2 size={14} />, label: 'Tandai Dibaca', onClick: () => handleSetStatus(r, 'READ'), hidden: !canUpdate || r.status === 'READ' || r.status === 'REPLIED' },
               { icon: <Reply size={14} />, label: 'Tandai Dibalas', onClick: () => handleSetStatus(r, 'REPLIED'), hidden: !canUpdate || r.status === 'REPLIED' },
               { icon: <Archive size={14} />, label: 'Arsipkan', onClick: () => handleSetStatus(r, 'ARCHIVED'), hidden: !canUpdate || r.status === 'ARCHIVED' },
-              { icon: <Trash2 size={14} />, label: 'Hapus', onClick: () => setToDelete(r), variant: 'danger', separator: true, hidden: !can('KONTAK_DELETE') },
-            ].filter(x => !x.hidden)} />
+              { icon: <Trash2 size={14} />, label: 'Hapus', onClick: () => setToDelete(r), variant: 'danger' as const, dividerAfter: true, hidden: !can('KONTAK_DELETE') },
+            ].filter(x => !x.hidden) as any} />
           </div>
         );
       },

@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Wrench, Database, ShieldCheck, Settings,
   type LucideIcon,
 } from 'lucide-react';
-import { MENU_ITEMS, PATH_BY_CODE, VALID_PATHS, resolveFrontendPath } from './menu';
+import { MENU_ITEMS, resolveFrontendPath } from './menu';
 import { Logo } from './Logo';
 import { QuickInput } from './QuickInput';
 import { Tooltip } from '@/shared/components/ui/Tooltip';

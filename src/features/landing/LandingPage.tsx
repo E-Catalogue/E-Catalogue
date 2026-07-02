@@ -8,7 +8,7 @@ import { Reveal } from '@/shared/components/Reveal';
 import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
 import { WHATSAPP_URL } from './publicNav';
 import type { Unit } from '@/data/types';
-import { motion } from 'framer-motion';
+
 
 const FEATURES = [
   { icon: ShieldCheck, title: 'Bergaransi & Terpercaya', desc: 'Setiap unit lolos inspeksi 150+ titik dan bergaransi mesin hingga 1 tahun.' },

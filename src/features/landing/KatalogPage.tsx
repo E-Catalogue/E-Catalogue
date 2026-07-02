@@ -7,7 +7,7 @@ import { PriceRangeSlider } from './PriceRangeSlider';
 import { formatCurrency } from '@/core/utils/format';
 import type { Unit, Transmission, FuelType } from '@/data/types';
 import { usePublicCatalog } from './landing.hooks';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'km_asc';
 

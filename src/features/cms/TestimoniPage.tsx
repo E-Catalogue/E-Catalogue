@@ -121,8 +121,8 @@ export const TestimoniPage = () => {
             icon: <Trash2 size={14} />,
             label: 'Hapus',
             onClick: () => setDeleteTarget(r),
-            variant: 'danger',
-            separator: true,
+            variant: 'danger' as const,
+            dividerAfter: true,
           },
         ]} />
       ),

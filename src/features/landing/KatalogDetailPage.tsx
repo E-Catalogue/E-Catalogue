@@ -13,7 +13,7 @@ import { DEFAULT_CAR_IMAGE, APP_NAME } from '@/shared/constants';
 import { WHATSAPP_URL } from './publicNav';
 import { usePublicCatalogUnit, usePublicCatalog, usePublicSiteSettings } from './landing.hooks';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Unit } from '@/data/types';
+
 
 const TENORS = [12, 24, 36, 48, 60];
 
