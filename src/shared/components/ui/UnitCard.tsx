@@ -1,4 +1,5 @@
 import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Unit as BackendUnit } from '@/features/units/unit.types';
 import type { Unit as MockUnit } from '@/data/types';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
@@ -43,17 +44,21 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
   const statusUnit = isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit;
 
   return (
-    <div
+    <motion.div
       onClick={() => onView?.(unit)}
-      className={`group bg-surface rounded-2xl border border-border overflow-hidden hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 ${clickable ? 'cursor-pointer' : ''}`}
+      whileHover={clickable ? { y: -6, transition: { duration: 0.2 } } : {}}
+      whileTap={clickable ? { scale: 0.98 } : {}}
+      className={`group bg-surface rounded-2xl border border-border overflow-hidden hover:shadow-card-hover ${clickable ? 'cursor-pointer' : ''}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
-        <img
+        <motion.img
           src={imageUrl}
           alt={`${brandName} ${modelName}`}
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover"
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         />
         {isNew && (
           <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-lg shadow-glow">
@@ -113,6 +118,6 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
           <StatusBadge status={statusUnit as never} />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

@@ -32,7 +32,7 @@ export const Tooltip = ({ label, children, enabled = true, side = 'right' }: Too
         createPortal(
           <div
             style={{ left: coords.x, top: coords.y }}
-            className={`fixed z-[200] pointer-events-none bg-ink text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap animate-fade-in ${
+            className={`fixed z-[200] pointer-events-none bg-ink text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap  ${
               side === 'right' ? '-translate-y-1/2' : '-translate-x-1/2 -translate-y-full'
             }`}
           >

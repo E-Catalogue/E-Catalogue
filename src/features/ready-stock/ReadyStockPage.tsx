@@ -12,7 +12,7 @@ export const ReadyStockPage = () => {
   const m = useUnitModals();
 
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up">
+    <div className="max-w-[1600px] mx-auto ">
       <PageHeader
         title="Ready Stock"
         description={`${units.length} unit siap dipasarkan & test drive`}

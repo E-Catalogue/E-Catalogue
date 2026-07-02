@@ -14,6 +14,8 @@ import { ActiveBadge } from './ActiveBadge';
 import { useDebouncedValue } from './useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import type { SimpleMaster, SimpleMasterApi } from './simpleMaster.api';
+import { RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 
 interface SimpleMasterPageProps {
   api: SimpleMasterApi;
@@ -21,6 +23,7 @@ interface SimpleMasterPageProps {
   description?: string;
   icon?: ReactNode;
   withCode?: boolean;
+  permCode?: string;
 }
 
 interface FormValues { name: string; code: string; isActive: boolean }
@@ -53,8 +56,14 @@ const FormModal = ({ open, onClose, item, withCode, submitting, onSubmit }: {
   );
 };
 
-export const SimpleMasterPage = ({ api, title, description, icon, withCode }: SimpleMasterPageProps) => {
+export const SimpleMasterPage = ({ api, title, description, icon, withCode, permCode }: SimpleMasterPageProps) => {
   const qc = useQueryClient();
+  const { can } = usePermissions();
+  const pc = permCode ? `${permCode}_` : '';
+  const canCreate = !permCode || can(`${pc}CREATE`);
+  const canUpdate = !permCode || can(`${pc}UPDATE`);
+  const canDelete = !permCode || can(`${pc}DELETE`);
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
@@ -85,13 +94,18 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode }: Si
     { header: 'Nama', cell: (r) => <span className="font-bold text-ink">{r.name}</span> },
     ...(withCode ? [{ header: 'Kode', cell: (r: SimpleMaster) => <span className="font-mono text-[12px]">{r.code || '-'}</span> }] : []),
     { header: 'Status', align: 'center' as const, cell: (r: SimpleMaster) => <ActiveBadge active={r.isActive} /> },
-    { header: '', align: 'right' as const, cell: (r: SimpleMaster) => <RowActions onEdit={() => setForm({ item: r })} onDelete={() => setToDelete(r)} /> },
+    { header: '', align: 'right' as const, cell: (r: SimpleMaster) => (
+      <RowActions 
+        onEdit={canUpdate ? () => setForm({ item: r }) : undefined} 
+        onDelete={canDelete ? () => setToDelete(r) : undefined} 
+      />
+    ) },
   ];
 
-  return (
-    <div className="max-w-[1100px] mx-auto animate-float-up space-y-5">
+  const content = (
+    <div className="max-w-[1100px] mx-auto  space-y-5">
       <PageHeader title={title} description={description}
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah</Button>} />
+        action={canCreate && <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah</Button>} />
 
       <div className="relative max-w-xs">
         <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -110,4 +124,11 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode }: Si
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })} title={`Hapus ${title}`} message={toDelete ? `Hapus "${toDelete.name}"?` : ''} />
     </div>
   );
+
+  if (permCode) {
+    return <RequirePermission code={`${pc}READ`}>{content}</RequirePermission>;
+  }
+
+  return content;
 };
+

@@ -48,7 +48,7 @@ export const MerekPage = () => {
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1200px] mx-auto  space-y-5">
       <PageHeader
         title="Merek"
         description="Master merek kendaraan & tipe/varian-nya"

@@ -45,9 +45,11 @@ import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_ad
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
 import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
+import { Route as AdminCmsSiteSettingRouteImport } from './routes/_admin/cms.site-setting'
 import { Route as AdminCmsProfilRouteImport } from './routes/_admin/cms.profil'
 import { Route as AdminCmsKontakRouteImport } from './routes/_admin/cms.kontak'
 import { Route as AdminCmsKatalogRouteImport } from './routes/_admin/cms.katalog'
+import { Route as AdminCmsCreditSimRouteImport } from './routes/_admin/cms.credit-sim'
 import { Route as AdminCmsBannerRouteImport } from './routes/_admin/cms.banner'
 import { Route as AdminAccessControlUsersRouteImport } from './routes/_admin/access-control.users'
 import { Route as AdminAccessControlRolesRouteImport } from './routes/_admin/access-control.roles'
@@ -233,6 +235,11 @@ const AdminCmsTestimoniRoute = AdminCmsTestimoniRouteImport.update({
   path: '/cms/testimoni',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCmsSiteSettingRoute = AdminCmsSiteSettingRouteImport.update({
+  id: '/cms/site-setting',
+  path: '/cms/site-setting',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCmsProfilRoute = AdminCmsProfilRouteImport.update({
   id: '/cms/profil',
   path: '/cms/profil',
@@ -246,6 +253,11 @@ const AdminCmsKontakRoute = AdminCmsKontakRouteImport.update({
 const AdminCmsKatalogRoute = AdminCmsKatalogRouteImport.update({
   id: '/cms/katalog',
   path: '/cms/katalog',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsCreditSimRoute = AdminCmsCreditSimRouteImport.update({
+  id: '/cms/credit-sim',
+  path: '/cms/credit-sim',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCmsBannerRoute = AdminCmsBannerRouteImport.update({
@@ -297,9 +309,11 @@ export interface FileRoutesByFullPath {
   '/access-control/roles': typeof AdminAccessControlRolesRoute
   '/access-control/users': typeof AdminAccessControlUsersRoute
   '/cms/banner': typeof AdminCmsBannerRoute
+  '/cms/credit-sim': typeof AdminCmsCreditSimRoute
   '/cms/katalog': typeof AdminCmsKatalogRoute
   '/cms/kontak': typeof AdminCmsKontakRoute
   '/cms/profil': typeof AdminCmsProfilRoute
+  '/cms/site-setting': typeof AdminCmsSiteSettingRoute
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
@@ -340,9 +354,11 @@ export interface FileRoutesByTo {
   '/access-control/roles': typeof AdminAccessControlRolesRoute
   '/access-control/users': typeof AdminAccessControlUsersRoute
   '/cms/banner': typeof AdminCmsBannerRoute
+  '/cms/credit-sim': typeof AdminCmsCreditSimRoute
   '/cms/katalog': typeof AdminCmsKatalogRoute
   '/cms/kontak': typeof AdminCmsKontakRoute
   '/cms/profil': typeof AdminCmsProfilRoute
+  '/cms/site-setting': typeof AdminCmsSiteSettingRoute
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
@@ -386,9 +402,11 @@ export interface FileRoutesById {
   '/_admin/access-control/roles': typeof AdminAccessControlRolesRoute
   '/_admin/access-control/users': typeof AdminAccessControlUsersRoute
   '/_admin/cms/banner': typeof AdminCmsBannerRoute
+  '/_admin/cms/credit-sim': typeof AdminCmsCreditSimRoute
   '/_admin/cms/katalog': typeof AdminCmsKatalogRoute
   '/_admin/cms/kontak': typeof AdminCmsKontakRoute
   '/_admin/cms/profil': typeof AdminCmsProfilRoute
+  '/_admin/cms/site-setting': typeof AdminCmsSiteSettingRoute
   '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
@@ -431,9 +449,11 @@ export interface FileRouteTypes {
     | '/access-control/roles'
     | '/access-control/users'
     | '/cms/banner'
+    | '/cms/credit-sim'
     | '/cms/katalog'
     | '/cms/kontak'
     | '/cms/profil'
+    | '/cms/site-setting'
     | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
@@ -474,9 +494,11 @@ export interface FileRouteTypes {
     | '/access-control/roles'
     | '/access-control/users'
     | '/cms/banner'
+    | '/cms/credit-sim'
     | '/cms/katalog'
     | '/cms/kontak'
     | '/cms/profil'
+    | '/cms/site-setting'
     | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
@@ -519,9 +541,11 @@ export interface FileRouteTypes {
     | '/_admin/access-control/roles'
     | '/_admin/access-control/users'
     | '/_admin/cms/banner'
+    | '/_admin/cms/credit-sim'
     | '/_admin/cms/katalog'
     | '/_admin/cms/kontak'
     | '/_admin/cms/profil'
+    | '/_admin/cms/site-setting'
     | '/_admin/cms/testimoni'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
@@ -795,6 +819,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCmsTestimoniRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/cms/site-setting': {
+      id: '/_admin/cms/site-setting'
+      path: '/cms/site-setting'
+      fullPath: '/cms/site-setting'
+      preLoaderRoute: typeof AdminCmsSiteSettingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/cms/profil': {
       id: '/_admin/cms/profil'
       path: '/cms/profil'
@@ -814,6 +845,13 @@ declare module '@tanstack/react-router' {
       path: '/cms/katalog'
       fullPath: '/cms/katalog'
       preLoaderRoute: typeof AdminCmsKatalogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/cms/credit-sim': {
+      id: '/_admin/cms/credit-sim'
+      path: '/cms/credit-sim'
+      fullPath: '/cms/credit-sim'
+      preLoaderRoute: typeof AdminCmsCreditSimRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/cms/banner': {
@@ -870,9 +908,11 @@ interface AdminRouteChildren {
   AdminAccessControlRolesRoute: typeof AdminAccessControlRolesRoute
   AdminAccessControlUsersRoute: typeof AdminAccessControlUsersRoute
   AdminCmsBannerRoute: typeof AdminCmsBannerRoute
+  AdminCmsCreditSimRoute: typeof AdminCmsCreditSimRoute
   AdminCmsKatalogRoute: typeof AdminCmsKatalogRoute
   AdminCmsKontakRoute: typeof AdminCmsKontakRoute
   AdminCmsProfilRoute: typeof AdminCmsProfilRoute
+  AdminCmsSiteSettingRoute: typeof AdminCmsSiteSettingRoute
   AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
@@ -907,9 +947,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccessControlRolesRoute: AdminAccessControlRolesRoute,
   AdminAccessControlUsersRoute: AdminAccessControlUsersRoute,
   AdminCmsBannerRoute: AdminCmsBannerRoute,
+  AdminCmsCreditSimRoute: AdminCmsCreditSimRoute,
   AdminCmsKatalogRoute: AdminCmsKatalogRoute,
   AdminCmsKontakRoute: AdminCmsKontakRoute,
   AdminCmsProfilRoute: AdminCmsProfilRoute,
+  AdminCmsSiteSettingRoute: AdminCmsSiteSettingRoute,
   AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,

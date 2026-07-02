@@ -112,7 +112,7 @@ const UserPageInner = () => {
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1200px] mx-auto  space-y-5">
       <PageHeader title="User" description="Kelola akun pengguna, role, & cabang"
         action={can('USER_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah User</Button> : undefined} />
 

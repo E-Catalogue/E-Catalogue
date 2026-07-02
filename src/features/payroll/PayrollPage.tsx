@@ -178,7 +178,7 @@ export const PayrollPage = () => {
     { header: '', align: 'right', cell: (x) => <RowActions onView={() => setDetailId(x.id)} /> },
   ];
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1600px] mx-auto  space-y-5">
       <PageHeader title="Payroll" description="Master gapok, insentif sales, dan pembayaran payroll" action={tab === 'base' ? <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setBaseForm(null)}>Tambah Gapok</Button></Can> : tab === 'incentives' ? <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setIncentiveForm(null)}>Tambah Insentif</Button></Can> : <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setGenerate(true)}>Generate Payroll</Button></Can>} />
       <div className="flex flex-wrap gap-2">{[{ id: 'base', label: 'Master Gapok' }, { id: 'incentives', label: 'Insentif Sales' }, { id: 'runs', label: 'Pembayaran Payroll' }].map((x) => <button key={x.id} onClick={() => setTab(x.id as Tab)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === x.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>{x.label}</button>)}</div>
       {tab === 'base' && <SectionCard title="Master Gapok" icon={<Users size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={baseColumns} data={base.data?.data ?? []} rowKey={(x) => x.id} /></SectionCard>}

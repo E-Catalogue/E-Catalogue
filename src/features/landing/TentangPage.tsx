@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ShieldCheck, Heart, Eye, Award, Users, Car, Target, ArrowRight } from 'lucide-react';
+import { Reveal } from '@/shared/components/Reveal';
 
 const VALUES = [
   { icon: ShieldCheck, title: 'Transparan', desc: 'Kondisi & riwayat mobil kami sampaikan apa adanya. Tanpa biaya tersembunyi.' },
@@ -20,7 +21,7 @@ export const TentangPage = () => (
     <section className="relative overflow-hidden bg-surface border-b border-border">
       <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-primary/10 blur-3xl" />
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 grid lg:grid-cols-2 gap-10 items-center relative">
-        <div className="animate-float-up">
+        <Reveal className="animate-float-up">
           <p className="text-primary font-bold text-[13px] uppercase tracking-wide">Tentang Kami</p>
           <h1 className="text-3xl md:text-5xl font-extrabold text-ink leading-tight mt-3">
             Partner Terpercaya untuk Mobil Bekas Anda
@@ -32,16 +33,16 @@ export const TentangPage = () => (
           <Link to="/katalog" className="inline-flex items-center gap-2 mt-6 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark transition-colors">
             Lihat Katalog <ArrowRight size={16} />
           </Link>
-        </div>
-        <div className="relative animate-scale-in">
+        </Reveal>
+        <Reveal delay={200} className="relative animate-scale-in">
           <img src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?q=80&w=1400&auto=format&fit=crop" alt="" className="rounded-[2.5rem] shadow-card-hover w-full object-cover aspect-[4/3]" />
-        </div>
+        </Reveal>
       </div>
     </section>
 
     {/* Stats */}
     <section className="max-w-7xl mx-auto px-4 md:px-6 py-12">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <Reveal delay={100} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => {
           const Icon = s.icon;
           return (
@@ -52,32 +53,32 @@ export const TentangPage = () => (
             </div>
           );
         })}
-      </div>
+      </Reveal>
     </section>
 
     {/* Visi Misi */}
     <section className="bg-surface border-y border-border">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-14 grid md:grid-cols-2 gap-6">
-        <div className="bg-background rounded-2xl border border-border p-7">
+        <Reveal className="bg-background rounded-2xl border border-border p-7">
           <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow mb-4"><Eye size={24} /></div>
           <h2 className="text-xl font-extrabold text-ink">Visi</h2>
           <p className="text-muted font-medium mt-2 leading-relaxed">Menjadi showroom mobil bekas paling terpercaya dan transparan di Indonesia, pilihan utama setiap keluarga.</p>
-        </div>
-        <div className="bg-background rounded-2xl border border-border p-7">
+        </Reveal>
+        <Reveal delay={100} className="bg-background rounded-2xl border border-border p-7">
           <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow mb-4"><Target size={24} /></div>
           <h2 className="text-xl font-extrabold text-ink">Misi</h2>
           <p className="text-muted font-medium mt-2 leading-relaxed">Menyediakan mobil bekas berkualitas yang terinspeksi & bergaransi, dengan harga jujur dan layanan yang memudahkan setiap pelanggan.</p>
-        </div>
+        </Reveal>
       </div>
     </section>
 
     {/* Values */}
     <section className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
-      <div className="text-center max-w-xl mx-auto mb-10">
+      <Reveal className="text-center max-w-xl mx-auto mb-10">
         <p className="text-primary font-bold text-[13px] uppercase tracking-wide">Nilai Kami</p>
         <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">Yang Kami Pegang Teguh</h2>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 stagger">
+      </Reveal>
+      <Reveal delay={100} className="grid grid-cols-1 md:grid-cols-3 gap-5 stagger">
         {VALUES.map((v) => {
           const Icon = v.icon;
           return (
@@ -88,12 +89,12 @@ export const TentangPage = () => (
             </div>
           );
         })}
-      </div>
+      </Reveal>
     </section>
 
     {/* CTA */}
     <section className="max-w-7xl mx-auto px-4 md:px-6 pb-16">
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark p-8 md:p-14 text-center text-white">
+      <Reveal className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark p-8 md:p-14 text-center text-white">
         <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
         <h2 className="relative text-2xl md:text-3xl font-extrabold leading-tight">Mulai Perjalanan Mobil Anda</h2>
         <p className="relative text-white/85 font-medium mt-3 max-w-lg mx-auto">Telusuri katalog kami atau hubungi tim untuk konsultasi gratis.</p>
@@ -105,7 +106,7 @@ export const TentangPage = () => (
             Hubungi Kami
           </Link>
         </div>
-      </div>
+      </Reveal>
     </section>
   </div>
 );

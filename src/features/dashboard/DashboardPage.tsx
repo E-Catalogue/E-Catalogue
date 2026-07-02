@@ -25,7 +25,7 @@ export const DashboardPage = () => {
   const goToStock = () => navigate({ to: '/inventory' });
 
   return (
-    <div className="space-y-5 max-w-[1600px] mx-auto animate-float-up">
+    <div className="space-y-5 max-w-[1600px] mx-auto ">
       {/* Date selector */}
       <div className="flex justify-end">
         <button className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3.5 py-2 text-[12px] font-bold text-ink-soft shadow-card">

@@ -150,7 +150,7 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
             </button>
 
             {isProfileOpen && (
-              <div className="absolute right-0 mt-3 w-56 bg-surface border border-border rounded-2xl shadow-card-hover z-50 overflow-hidden animate-float-up">
+              <div className="absolute right-0 mt-3 w-56 bg-surface border border-border rounded-2xl shadow-card-hover z-50 overflow-hidden ">
                 <div className="p-4 border-b border-divider flex items-center gap-3 bg-surface-soft">
                   <span className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">{initials}</span>
                   <div className="min-w-0">

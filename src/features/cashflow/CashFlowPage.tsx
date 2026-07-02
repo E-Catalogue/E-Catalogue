@@ -138,7 +138,7 @@ export const CashFlowPage = () => {
   ], [dashboard.data]);
 
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1600px] mx-auto  space-y-5">
       <PageHeader
         title="Cash Flow"
         description="Akun kas, ledger, dan transaksi kas showroom"

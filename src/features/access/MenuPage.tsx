@@ -136,7 +136,7 @@ const MenuPageInner = () => {
   const err = (e: unknown) => notifyApiError(e);
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-float-up space-y-4">
+    <div className="max-w-[1200px] mx-auto  space-y-4">
       <PageHeader title="Menu & Permission" description="Atur navigasi dan hak akses: Group → Menu → Permission" />
 
       {/* Petunjuk alur */}

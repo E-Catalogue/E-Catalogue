@@ -27,7 +27,7 @@ const Toggle = ({ label, desc, on = true }: { label: string; desc: string; on?: 
 
 export const PengaturanPage = () => {
   return (
-    <div className="max-w-[1100px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1100px] mx-auto  space-y-5">
       <PageHeader title="Pengaturan" description="Kelola profil showroom, akun, dan preferensi aplikasi" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

@@ -138,7 +138,7 @@ export const MenuSearchModal = ({ open, onClose }: Props) => {
       {/* Modal */}
       <div className="fixed inset-0 z-[201] flex items-start justify-center pt-[12vh] px-4 pointer-events-none">
         <div
-          className="w-full max-w-[520px] bg-surface rounded-2xl shadow-[0_24px_64px_-12px_rgba(24,29,42,0.28)] border border-border overflow-hidden pointer-events-auto animate-float-up"
+          className="w-full max-w-[520px] bg-surface rounded-2xl shadow-[0_24px_64px_-12px_rgba(24,29,42,0.28)] border border-border overflow-hidden pointer-events-auto "
           onKeyDown={handleKey}
         >
           {/* Search input row */}

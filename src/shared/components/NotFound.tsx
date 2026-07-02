@@ -7,7 +7,7 @@ export const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-soft px-6 py-12">
-      <div className="w-full max-w-lg text-center animate-float-up">
+      <div className="w-full max-w-lg text-center ">
         <div className="relative mx-auto mb-8 w-32 h-32">
           <div className="absolute inset-0 rounded-full bg-primary-light blur-2xl opacity-70" />
           <div className="relative w-full h-full rounded-full bg-surface border border-border shadow-card flex items-center justify-center">

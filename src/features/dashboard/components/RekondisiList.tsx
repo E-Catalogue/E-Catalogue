@@ -3,7 +3,8 @@ import { formatDate } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 
 export const RekondisiList = () => {
-  const items = useAppSelector((s) => s.data.units.filter((u) => u.status === 'rekondisi'));
+  const allUnits = useAppSelector((s) => s.data.units);
+  const items = allUnits.filter((u) => u.status === 'rekondisi');
 
   return (
     <div className="space-y-3">

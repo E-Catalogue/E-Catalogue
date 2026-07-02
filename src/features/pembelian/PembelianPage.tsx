@@ -30,7 +30,7 @@ export const PembelianPage = () => {
   ];
 
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1600px] mx-auto  space-y-5">
       <PageHeader
         title="Pembelian Unit"
         description="Akuisisi & sourcing unit mobil bekas"

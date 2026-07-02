@@ -135,7 +135,7 @@ export const KatalogPage = () => {
   ];
 
   return (
-    <div className="max-w-[1400px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1400px] mx-auto  space-y-5">
       <PageHeader
         title="Katalog Publik"
         description="Kelola visibilitas unit yang ditampilkan ke halaman katalog pelanggan."

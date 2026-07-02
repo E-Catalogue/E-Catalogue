@@ -4,10 +4,13 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
+import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { Pagination } from '@/shared/components/ui/Pagination';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { cmsImageUrl } from './cms.api';
@@ -19,13 +22,14 @@ const emptyForm: TestimonialForm = {
 };
 
 export const TestimoniPage = () => {
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState<{ item?: Testimonial } | null>(null);
   const [formData, setFormData] = useState<TestimonialForm>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<Testimonial | null>(null);
   const debounced = useDebouncedValue(search, 400);
 
-  const { data, isLoading, isError } = useTestimonials({ page: 1, limit: 100, search: debounced || undefined });
+  const { data, isLoading, isError } = useTestimonials({ page, limit: 10, search: debounced || undefined });
   const rows = data?.data ?? [];
   const m = useTestimonialMutations();
 
@@ -56,8 +60,77 @@ export const TestimoniPage = () => {
 
   const saving = m.create.isPending || m.update.isPending;
 
+  const columns: Column<Testimonial>[] = [
+    {
+      header: 'Profil',
+      cell: (r) => {
+        const avatar = cmsImageUrl('testimoni', r.avatarFilename);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary-light text-primary flex items-center justify-center font-extrabold text-sm shrink-0 overflow-hidden">
+              {avatar ? <img src={avatar} alt={r.name} className="w-full h-full object-cover" /> : r.name[0]}
+            </div>
+            <div>
+              <p className="font-extrabold text-ink text-[13px]">{r.name}</p>
+              {r.role && <p className="text-[11px] font-medium text-muted mt-0.5">{r.role}</p>}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Rating',
+      cell: (r) => (
+        <div className="flex gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star key={i} size={13} className={i < r.rating ? 'fill-accent-amber text-accent-amber' : 'text-muted/30'} />
+          ))}
+        </div>
+      ),
+    },
+    {
+      header: 'Testimoni',
+      cell: (r) => <p className="text-[12px] font-medium text-ink-soft max-w-xs truncate" title={r.text}>"{r.text}"</p>,
+    },
+    {
+      header: 'Status',
+      align: 'center',
+      cell: (r) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold ${r.isPublished ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>
+          {r.isPublished ? <Eye size={12} /> : <EyeOff size={12} />}
+          {r.isPublished ? 'Tampil' : 'Sembunyi'}
+        </span>
+      ),
+    },
+    {
+      header: '',
+      align: 'right',
+      cell: (r) => (
+        <ActionMenu items={[
+          {
+            icon: r.isPublished ? <EyeOff size={14} /> : <Eye size={14} />,
+            label: r.isPublished ? 'Sembunyikan' : 'Tampilkan',
+            onClick: () => togglePublish(r),
+          },
+          {
+            icon: <Pencil size={14} />,
+            label: 'Edit',
+            onClick: () => openEdit(r),
+          },
+          {
+            icon: <Trash2 size={14} />,
+            label: 'Hapus',
+            onClick: () => setDeleteTarget(r),
+            variant: 'danger',
+            separator: true,
+          },
+        ]} />
+      ),
+    },
+  ];
+
   return (
-    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1200px] mx-auto  space-y-5">
       <PageHeader
         title="Testimoni"
         description="Kelola testimoni pelanggan yang ditampilkan di halaman utama website."
@@ -100,7 +173,7 @@ export const TestimoniPage = () => {
       <div className="relative max-w-sm">
         <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
         <input
-          value={search} onChange={(e) => setSearch(e.target.value)}
+          value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Cari testimoni..."
           className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
         />
@@ -115,38 +188,12 @@ export const TestimoniPage = () => {
         ) : rows.length === 0 ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Tidak ada testimoni ditemukan.</div>
         ) : (
-          <div className="divide-y divide-border">
-            {rows.map((t) => {
-              const avatar = cmsImageUrl('testimoni', t.avatarFilename);
-              return (
-                <div key={t.id} className={`flex items-start gap-4 p-4 transition-colors ${t.isPublished ? 'bg-surface' : 'bg-surface-soft/40'} hover:bg-primary/[0.02]`}>
-                  <div className="w-10 h-10 rounded-full bg-primary-light text-primary flex items-center justify-center font-extrabold text-sm shrink-0 overflow-hidden">
-                    {avatar ? <img src={avatar} alt={t.name} className="w-full h-full object-cover" /> : t.name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-extrabold text-ink text-[13px]">{t.name}</h4>
-                      {t.role && <span className="text-[11px] font-semibold text-muted">• {t.role}</span>}
-                      {!t.isPublished && <span className="text-[9px] font-bold uppercase tracking-wider text-muted bg-muted/10 px-1.5 py-0.5 rounded">Hidden</span>}
-                    </div>
-                    <div className="flex gap-0.5 mt-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} size={12} className={i < t.rating ? 'fill-accent-amber text-accent-amber' : 'text-muted/30'} />
-                      ))}
-                    </div>
-                    <p className="text-[13px] text-ink-soft font-medium mt-1.5 leading-relaxed line-clamp-2">"{t.text}"</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button onClick={() => togglePublish(t)} className={`p-2 rounded-lg transition-colors ${t.isPublished ? 'text-accent-green hover:bg-accent-green/10' : 'text-muted hover:bg-surface-soft'}`} title={t.isPublished ? 'Sembunyikan' : 'Tampilkan'}>
-                      {t.isPublished ? <Eye size={16} /> : <EyeOff size={16} />}
-                    </button>
-                    <button onClick={() => openEdit(t)} className="p-2 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10 transition-colors" title="Edit"><Pencil size={15} /></button>
-                    <button onClick={() => setDeleteTarget(t)} className="p-2 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10 transition-colors" title="Hapus"><Trash2 size={15} /></button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <>
+            <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
+            <div className="px-4 pb-4">
+              <Pagination meta={data?.meta} page={page} onChange={setPage} />
+            </div>
+          </>
         )}
       </SectionCard>
 

@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Wrench, Database, ShieldCheck, Settings,
   type LucideIcon,
 } from 'lucide-react';
-import { MENU_ITEMS, PATH_BY_CODE, VALID_PATHS } from './menu';
+import { MENU_ITEMS, PATH_BY_CODE, VALID_PATHS, resolveFrontendPath } from './menu';
 import { Logo } from './Logo';
 import { QuickInput } from './QuickInput';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
@@ -54,11 +54,7 @@ const buildStaticGroups = (): NavGroup[] =>
     };
   }).filter((g) => g.items.length > 0);
 
-const resolveFrontendPath = (m: { path?: string | null; code?: string }): string | null => {
-  if (m.code && PATH_BY_CODE[m.code]) return PATH_BY_CODE[m.code];
-  if (m.path && VALID_PATHS.has(m.path)) return m.path;
-  return null;
-};
+
 
 export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDesktop }: SidebarProps) => {
   const location = useLocation();

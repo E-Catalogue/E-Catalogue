@@ -1,41 +1,37 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { type ReactNode, forwardRef } from 'react';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 
-interface RevealProps {
+interface RevealProps extends Omit<HTMLMotionProps<"div">, "as"> {
   children: ReactNode;
-  /** Delay animasi (ms) untuk efek berurutan. */
+  /** Delay animasi dalam detik (misal: 0.1) untuk efek berurutan. */
   delay?: number;
   className?: string;
-  as?: 'div' | 'section';
+  as?: any;
 }
 
-/**
- * Reveal saat elemen masuk viewport — **hanya sekali** (observer di-unobserve
- * setelah tampil), jadi tidak berulang ketika section disorot ulang.
- */
-export const Reveal = ({ children, delay = 0, className = '', as = 'div' }: RevealProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+export const Reveal = forwardRef<HTMLElement, RevealProps>(({ children, delay = 0, className = '', as = 'div', ...rest }, ref) => {
+  // Gunakan motion.create(as) untuk framer-motion versi terbaru
+  const MotionComponent = motion.create(as as any) as any;
+  
+  return (
+    <MotionComponent
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-10% 0px -10% 0px' }}
+      transition={{ 
+        type: 'spring',
+        stiffness: 70,
+        damping: 15,
+        mass: 1,
+        delay: delay > 10 ? delay / 1000 : delay,
+      }}
+      className={className}
+      {...rest}
+    >
+      {children}
+    </MotionComponent>
+  );
+});
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (el.classList.contains('is-visible')) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const t = window.setTimeout(() => el.classList.add('is-visible'), delay);
-            io.unobserve(el);           // sekali saja
-            return () => window.clearTimeout(t);
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [delay]);
-
-  const Tag = as;
-  return <Tag ref={ref as never} className={`reveal ${className}`}>{children}</Tag>;
-};
+Reveal.displayName = 'Reveal';

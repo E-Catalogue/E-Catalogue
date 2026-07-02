@@ -82,7 +82,19 @@ export const PATH_BY_CODE: Record<string, string> = {
   CMS_TESTIMONI: '/cms/testimoni',
   CMS_KONTAK: '/cms/kontak',
   CMS_PROFIL: '/cms/profil',
+  CREDIT_SIM: '/cms/credit-sim',
+  SITE_SETTING: '/cms/site-setting',
 };
 
-/** Set seluruh path frontend yang valid. */
-export const VALID_PATHS = new Set(MENU_ITEMS.map((m) => m.path));
+export const VALID_PATHS = new Set([
+  ...MENU_ITEMS.map((m) => m.path),
+  ...Object.values(PATH_BY_CODE)
+]);
+
+export const resolveFrontendPath = (m: { path?: string | null; code?: string }): string | null => {
+  if (m.code && PATH_BY_CODE[m.code]) return PATH_BY_CODE[m.code];
+  if (m.path && VALID_PATHS.has(m.path)) return m.path;
+  // Fallback: If it starts with / let it pass, assuming backend is correct
+  if (m.path?.startsWith('/')) return m.path;
+  return null;
+};

@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Search, SlidersHorizontal, X, Car, RotateCcw } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2 } from 'lucide-react';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
 import { PublicHeader } from './PublicHeader';
 import { PriceRangeSlider } from './PriceRangeSlider';
-import { useAppSelector } from '@/app/store';
 import { formatCurrency } from '@/core/utils/format';
 import type { Unit, Transmission, FuelType } from '@/data/types';
+import { usePublicCatalog } from './landing.hooks';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'km_asc';
 
@@ -39,7 +40,11 @@ const FilterGroup = ({ label, children }: { label: string; children: React.React
 );
 
 export const KatalogPage = () => {
-  const units = useAppSelector((s) => s.data.units.filter((u) => u.status === 'ready' || u.status === 'booked'));
+  const { data, isLoading } = usePublicCatalog({});
+  const units = useMemo(() => {
+    if (!data?.data) return [];
+    return data.data.filter((u: any) => u.status === 'ready' || u.status === 'booked');
+  }, [data]);
   const navigate = useNavigate();
 
   const [query, setQuery] = useState('');
@@ -144,7 +149,10 @@ export const KatalogPage = () => {
           </button>
         </div>
 
-        <div className="flex gap-6 lg:gap-8">
+        {isLoading ? (
+          <div className="py-20 flex justify-center"><Loader2 size={30} className="animate-spin text-primary" /></div>
+        ) : (
+          <div className="flex gap-6 lg:gap-8">
           {/* RESULTS */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -193,6 +201,7 @@ export const KatalogPage = () => {
             </div>
           </aside>
         </div>
+        )}
       </div>
 
       {/* Mobile filter drawer */}

@@ -195,7 +195,7 @@ export const PengeluaranPage = () => {
     { header: '', align: 'right', cell: (r) => <RowActions onEdit={() => setRecurringForm(r)} onDelete={() => setRemoveRecurring(r)} /> },
   ];
   return (
-    <div className="max-w-[1600px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1600px] mx-auto  space-y-5">
       <PageHeader title="Operational" description="Pengeluaran aktual dan template rutin" action={tab === 'expenses' ? <Can code="OPERATIONAL_EXPENSE_CREATE"><Button icon={<Plus size={17} />} onClick={() => setExpenseForm(null)}>Catat Pengeluaran</Button></Can> : <Can code="RECURRING_EXPENSE_CREATE"><div className="flex gap-2"><Button variant="secondary" icon={<CalendarClock size={17} />} onClick={() => setGenerate(true)}>Generate</Button><Button icon={<Plus size={17} />} onClick={() => setRecurringForm(null)}>Tambah Template</Button></div></Can>} />
       <div className="flex flex-wrap gap-2"><button onClick={() => setTab('expenses')} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === 'expenses' ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>Pengeluaran</button><button onClick={() => setTab('recurring')} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === 'recurring' ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>Pengeluaran Rutin</button></div>
       {tab === 'expenses' && (

@@ -3,15 +3,16 @@ import { Link, useParams, useNavigate } from '@tanstack/react-router';
 import {
   ChevronRight, Calendar, Gauge, Fuel, Cog, Palette, Hash, ShieldCheck,
   Phone, ArrowLeft, BadgeCheck, MapPin, ChevronLeft, ChevronRight as ChevronRightIcon,
-  Percent, Wallet, Info, Calculator, Car,
+  Percent, Wallet, Info, Calculator, Car, Loader2
 } from 'lucide-react';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
-import { useAppSelector } from '@/app/store';
 import { getGallery } from '@/data/gallery';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE, APP_NAME } from '@/shared/constants';
 import { WHATSAPP_URL } from './publicNav';
+import { usePublicCatalogUnit, usePublicCatalog, usePublicSiteSettings } from './landing.hooks';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Unit } from '@/data/types';
 
 const TENORS = [12, 24, 36, 48, 60];
@@ -143,9 +144,16 @@ const SimulasiInline = ({ price }: { price: number }) => {
 export const KatalogDetailPage = () => {
   const { id } = useParams({ from: '/_public/katalog/$id' as any });
   const navigate = useNavigate();
-  const unit = useAppSelector((s) => s.data.units.find((u) => u.id === id));
-  const allUnits = useAppSelector((s) => s.data.units.filter((u) => u.status === 'ready' || u.status === 'booked'));
+  const { data: unit, isLoading } = usePublicCatalogUnit(id as string);
+  const { data: allUnitsData } = usePublicCatalog({});
+  const { data: settings } = usePublicSiteSettings();
+  
+  const allUnits = allUnitsData?.data?.filter((u: any) => u.status === 'ready' || u.status === 'booked') || [];
   const [activeImg, setActiveImg] = useState(0);
+
+  if (isLoading) {
+    return <div className="min-h-[70vh] flex items-center justify-center"><Loader2 size={30} className="animate-spin text-primary" /></div>;
+  }
 
   if (!unit) {
     return (
@@ -162,16 +170,16 @@ export const KatalogDetailPage = () => {
 
   const gallery = getGallery(unit);
   const related = allUnits
-    .filter((u) => u.id !== id)
-    .sort((a) => (a.brand === unit.brand ? -1 : 1))
+    .filter((u: any) => u.id !== id)
+    .sort((a: any) => (a.brand === unit.brand ? -1 : 1))
     .slice(0, 4);
 
-  const openDetail = (u: Unit) => { setActiveImg(0); navigate({ to: '/katalog/$id', params: { id: u.id } }); };
+  const openDetail = (u: any) => { setActiveImg(0); navigate({ to: '/katalog/$id', params: { id: u.id } }); };
 
   const waText = encodeURIComponent(
     `Halo, saya tertarik dengan ${unit.brand} ${unit.model} ${unit.variant} (${unit.year}) seharga ${formatCurrency(unit.price)}. Apakah masih tersedia?`
   );
-  const waUrl = `${WHATSAPP_URL}?text=${waText}`;
+  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}?text=${waText}` : `${WHATSAPP_URL}?text=${waText}`;
 
   const prevImg = () => setActiveImg((i) => (i - 1 + gallery.length) % gallery.length);
   const nextImg = () => setActiveImg((i) => (i + 1) % gallery.length);
@@ -193,12 +201,19 @@ export const KatalogDetailPage = () => {
         <div className="animate-fade-in">
           {/* Main image */}
           <div className="relative rounded-2xl overflow-hidden aspect-[16/10] bg-surface-soft border border-border group">
-            <img
-              src={gallery[activeImg]}
-              alt={`${unit.brand} ${unit.model}`}
-              onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
-              className="w-full h-full object-cover transition-opacity duration-200"
-            />
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeImg}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                src={gallery[activeImg]}
+                alt={`${unit.brand} ${unit.model}`}
+                onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
+                className="w-full h-full object-cover"
+              />
+            </AnimatePresence>
             {/* Badges */}
             <div className="absolute top-3 left-3 flex gap-2">
               {unit.isNew && (

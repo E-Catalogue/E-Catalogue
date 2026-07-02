@@ -114,7 +114,7 @@ const NotFoundPage = () => (
         404
       </p>
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-20 h-20 rounded-3xl bg-surface border border-border shadow-card-hover flex items-center justify-center animate-float-up">
+        <div className="w-20 h-20 rounded-3xl bg-surface border border-border shadow-card-hover flex items-center justify-center ">
           <Car size={38} className="text-primary" strokeWidth={1.8} />
         </div>
       </div>

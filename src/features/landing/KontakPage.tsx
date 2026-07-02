@@ -2,12 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, MessageCircle } from 'lucide-react';
 import { PublicHeader } from './PublicHeader';
 import { WHATSAPP_URL } from './publicNav';
+import { usePublicSiteSettings } from './landing.hooks';
+import { Reveal } from '@/shared/components/Reveal';
 
-const INFO = [
-  { icon: MapPin, title: 'Alamat', value: 'Jl. Raya Otomotif No. 88, Jakarta Selatan' },
-  { icon: Phone, title: 'Telepon', value: '021-1500-888' },
-  { icon: Mail, title: 'Email', value: 'halo@gmmobilindo.id' },
-  { icon: Clock, title: 'Jam Buka', value: 'Senin–Sabtu, 09.00–18.00 WIB' },
+const DEFAULT_INFO = [
+  { id: 'address', icon: MapPin, title: 'Alamat', value: 'Jl. Raya Otomotif No. 88, Jakarta Selatan' },
+  { id: 'phone', icon: Phone, title: 'Telepon', value: '021-1500-888' },
+  { id: 'email', icon: Mail, title: 'Email', value: 'halo@gmmobilindo.id' },
+  { id: 'hours', icon: Clock, title: 'Jam Buka', value: 'Senin–Sabtu, 09.00–18.00 WIB' },
 ];
 
 const inputClass =
@@ -15,7 +17,19 @@ const inputClass =
 
 export const KontakPage = () => {
   const [sent, setSent] = useState(false);
+  const { data: settings } = usePublicSiteSettings();
+  
   const submit = (e: FormEvent) => { e.preventDefault(); setSent(true); };
+
+  const info = DEFAULT_INFO.map(item => {
+    let value = item.value;
+    if (item.id === 'address' && settings?.address) value = settings.address;
+    if (item.id === 'phone' && settings?.whatsappNumber) value = settings.whatsappNumber;
+    if (item.id === 'email' && settings?.email) value = settings.email;
+    return { ...item, value };
+  });
+
+  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : WHATSAPP_URL;
 
   return (
     <>
@@ -28,9 +42,9 @@ export const KontakPage = () => {
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 grid lg:grid-cols-2 gap-8 items-start">
         {/* Info + map */}
-        <div className="space-y-5">
+        <Reveal className="space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
-            {INFO.map((i) => {
+            {info.map((i) => {
               const Icon = i.icon;
               return (
                 <div key={i.title} className="bg-surface rounded-2xl border border-border p-5">
@@ -41,7 +55,7 @@ export const KontakPage = () => {
               );
             })}
           </div>
-          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full rounded-2xl bg-accent-green text-white font-bold text-[14px] px-5 py-4 hover:brightness-95 transition-all">
+          <a href={waUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full rounded-2xl bg-accent-green text-white font-bold text-[14px] px-5 py-4 hover:brightness-95 transition-all">
             <MessageCircle size={19} /> Chat via WhatsApp
           </a>
           <div className="rounded-2xl overflow-hidden border border-border h-64 bg-surface-soft">
@@ -52,10 +66,10 @@ export const KontakPage = () => {
               loading="lazy"
             />
           </div>
-        </div>
+        </Reveal>
 
         {/* Form */}
-        <div className="bg-surface rounded-2xl border border-border p-6 md:p-8">
+        <Reveal delay={100} className="bg-surface rounded-2xl border border-border p-6 md:p-8">
           {sent ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-2xl bg-accent-green/10 text-accent-green flex items-center justify-center mx-auto mb-4"><CheckCircle2 size={32} /></div>
@@ -92,7 +106,7 @@ export const KontakPage = () => {
               </button>
             </form>
           )}
-        </div>
+        </Reveal>
       </div>
     </>
   );

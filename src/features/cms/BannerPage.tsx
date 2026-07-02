@@ -55,7 +55,7 @@ export const BannerPage = () => {
   const saving = heroM.isPending || ctaM.isPending;
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1200px] mx-auto  space-y-5">
       <PageHeader
         title="Hero Beranda"
         description="Kelola hero section, statistik, dan ajakan (CTA) di halaman utama website."

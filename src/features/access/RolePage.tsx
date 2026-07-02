@@ -140,7 +140,7 @@ const RolePageInner = () => {
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1200px] mx-auto  space-y-5">
       <PageHeader title="Role" description="Kelola role & hak akses (permission)"
         action={can('ROLE_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Role</Button> : undefined} />
 

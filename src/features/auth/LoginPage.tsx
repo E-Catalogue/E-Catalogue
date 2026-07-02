@@ -71,7 +71,7 @@ export const LoginPage = () => {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-md animate-float-up">
+        <div className="relative z-10 max-w-md ">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[12px] font-bold px-3.5 py-1.5">
             <ShieldCheck size={14} /> Area Internal
           </span>
@@ -99,7 +99,7 @@ export const LoginPage = () => {
 
       {/* ===== KANAN: Form ===== */}
       <div className="flex items-center justify-center p-6 sm:p-10">
-        <form onSubmit={handleLogin} className="w-full max-w-sm animate-float-up">
+        <form onSubmit={handleLogin} className="w-full max-w-sm ">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-glow">
               <Car size={22} className="text-white" strokeWidth={2.4} />

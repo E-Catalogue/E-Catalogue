@@ -74,7 +74,7 @@ export const ActionMenu = ({ items, label = 'Aksi' }: ActionMenuProps) => {
         <div
           ref={menuRef}
           style={{ top: pos.top, right: pos.right, position: 'absolute' }}
-          className="z-[150] w-52 bg-surface border border-border rounded-2xl shadow-xl py-1.5 animate-fade-in"
+          className="z-[150] w-52 bg-surface border border-border rounded-2xl shadow-xl py-1.5 "
         >
           {items.map((item, i) => (
             <div key={i}>
