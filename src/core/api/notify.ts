@@ -11,5 +11,5 @@ import type { ApiErrorBody } from './types';
 export const notifyApiError = (err: unknown, fallback = 'Terjadi kesalahan. Coba lagi.') => {
   if (classifyAxiosError(err)) return; // infra → sudah dimunculkan interceptor
   const ax = err as AxiosError<ApiErrorBody>;
-  store.dispatch(showToast({ type: 'general', title: 'Gagal', message: ax.response?.data?.message ?? fallback }));
+  store.dispatch(showToast({ type: 'general', variant: 'error', title: 'Gagal', message: ax.response?.data?.message ?? fallback }));
 };

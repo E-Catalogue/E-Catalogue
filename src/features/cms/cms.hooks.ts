@@ -2,76 +2,64 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import {
-  siteSettingsApi, homepageApi, aboutApi,
-  bannerApi, testimonialApi, contactMessageApi,
-  creditSimApi, cmsCatalogApi,
+  sectionApi, uploadCmsImage,
+  siteSettingsApi, contactPageApi, catalogPageApi,
+  testimonialApi, contactMessageApi, creditSimApi, cmsCatalogApi,
 } from './cms.api';
 import type {
-  SiteSettingsUpdate, Homepage, About,
-  BannerForm, TestimonialForm, ContactStatus,
-  CreditSimConfig, CmsCatalogPublishBody, CmsListParams,
+  SiteSettingsUpdate, ContactPage, CatalogPage,
+  TestimonialForm, ContactStatus, CreditSimConfig,
+  CmsCatalogPublishBody, CmsListParams, CmsUploadFolder,
 } from './cms.types';
 
-const toastOk = (message: string) =>
-  store.dispatch(showToast({ type: 'general', title: 'Berhasil', message }));
+const toastOk = (message: string) => store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message }));
+
+/* ── Section generik homepage/about ── */
+export const useCmsSection = <T>(page: 'homepage' | 'about', section: string) =>
+  useQuery({ queryKey: ['cms', page, section], queryFn: () => sectionApi.get<T>(page, section) });
+
+export const useUpdateCmsSection = <T>(page: 'homepage' | 'about', section: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Partial<T>) => sectionApi.update<T>(page, section, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cms', page, section] }); toastOk('Perubahan disimpan'); },
+  });
+};
+
+export const useUploadHeroImage = (page: 'homepage' | 'about') =>
+  useMutation({ mutationFn: (file: File) => sectionApi.heroImage(page, file) });
+
+export const useUploadCmsImage = (folder: CmsUploadFolder) =>
+  useMutation({ mutationFn: (file: File) => uploadCmsImage(folder, file) });
 
 /* ── Site Settings ── */
 export const useSiteSettings = () =>
   useQuery({ queryKey: ['cms', 'site-settings'], queryFn: siteSettingsApi.get });
 
+/** Versi publik (tanpa auth) — dipakai layout/dashboard untuk branding. */
+export const usePublicSiteSettings = () =>
+  useQuery({ queryKey: ['public', 'site-settings'], queryFn: siteSettingsApi.getPublic, staleTime: 5 * 60_000 });
+
 export const useSiteSettingsMutations = () => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'site-settings'] });
+  const inval = () => { qc.invalidateQueries({ queryKey: ['cms', 'site-settings'] }); qc.invalidateQueries({ queryKey: ['public', 'site-settings'] }); };
   return {
-    update: useMutation({
-      mutationFn: (body: SiteSettingsUpdate) => siteSettingsApi.update(body),
-      onSuccess: () => { inval(); toastOk('Pengaturan situs disimpan'); },
-    }),
+    update: useMutation({ mutationFn: (body: SiteSettingsUpdate) => siteSettingsApi.update(body), onSuccess: () => { inval(); toastOk('Pengaturan situs disimpan'); } }),
     uploadLogo: useMutation({ mutationFn: (file: File) => siteSettingsApi.uploadLogo(file), onSuccess: () => { inval(); toastOk('Logo diperbarui'); } }),
     uploadFavicon: useMutation({ mutationFn: (file: File) => siteSettingsApi.uploadFavicon(file), onSuccess: () => { inval(); toastOk('Favicon diperbarui'); } }),
   };
 };
 
-/* ── Homepage ── */
-export const useHomepage = () =>
-  useQuery({ queryKey: ['cms', 'homepage'], queryFn: homepageApi.get });
-
-export const useHomepageMutations = () => {
+/* ── Header halaman ── */
+export const useContactPage = () => useQuery({ queryKey: ['cms', 'contact-page'], queryFn: contactPageApi.get });
+export const useUpdateContactPage = () => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'homepage'] });
-  return {
-    update: useMutation({ mutationFn: (body: Homepage) => homepageApi.update(body), onSuccess: () => { inval(); toastOk('Beranda disimpan'); } }),
-    uploadHeroImage: useMutation({ mutationFn: (file: File) => homepageApi.uploadHeroImage(file), onSuccess: () => { inval(); toastOk('Gambar hero diperbarui'); } }),
-  };
+  return useMutation({ mutationFn: (body: Partial<ContactPage>) => contactPageApi.update(body), onSuccess: () => { qc.invalidateQueries({ queryKey: ['cms', 'contact-page'] }); toastOk('Header kontak disimpan'); } });
 };
-
-/* ── About ── */
-export const useAbout = () =>
-  useQuery({ queryKey: ['cms', 'about'], queryFn: aboutApi.get });
-
-export const useAboutMutations = () => {
+export const useCatalogPage = () => useQuery({ queryKey: ['cms', 'catalog-page'], queryFn: catalogPageApi.get });
+export const useUpdateCatalogPage = () => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'about'] });
-  return {
-    update: useMutation({ mutationFn: (body: About) => aboutApi.update(body), onSuccess: () => { inval(); toastOk('Halaman Tentang disimpan'); } }),
-    uploadHeroImage: useMutation({ mutationFn: (file: File) => aboutApi.uploadHeroImage(file), onSuccess: () => { inval(); toastOk('Gambar hero diperbarui'); } }),
-  };
-};
-
-/* ── Banner ── */
-export const useBanners = (params: CmsListParams) =>
-  useQuery({ queryKey: ['cms', 'banners', params], queryFn: () => bannerApi.list(params) });
-
-export const useBannerMutations = () => {
-  const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'banners'] });
-  return {
-    create: useMutation({ mutationFn: (body: BannerForm) => bannerApi.create(body), onSuccess: () => { inval(); toastOk('Banner ditambahkan'); } }),
-    update: useMutation({ mutationFn: (v: { id: string; body: Partial<BannerForm> }) => bannerApi.update(v.id, v.body), onSuccess: () => { inval(); toastOk('Banner diperbarui'); } }),
-    setActive: useMutation({ mutationFn: (v: { id: string; isActive: boolean }) => bannerApi.setActive(v.id, v.isActive), onSuccess: inval }),
-    uploadImage: useMutation({ mutationFn: (v: { id: string; file: File }) => bannerApi.uploadImage(v.id, v.file), onSuccess: () => { inval(); toastOk('Gambar banner diperbarui'); } }),
-    remove: useMutation({ mutationFn: (id: string) => bannerApi.remove(id), onSuccess: () => { inval(); toastOk('Banner dihapus'); } }),
-  };
+  return useMutation({ mutationFn: (body: Partial<CatalogPage>) => catalogPageApi.update(body), onSuccess: () => { qc.invalidateQueries({ queryKey: ['cms', 'catalog-page'] }); toastOk('Header katalog disimpan'); } });
 };
 
 /* ── Testimoni ── */
@@ -93,10 +81,8 @@ export const useTestimonialMutations = () => {
 /* ── Pesan Kontak ── */
 export const useContactMessages = (params: CmsListParams) =>
   useQuery({ queryKey: ['cms', 'contact-messages', params], queryFn: () => contactMessageApi.list(params) });
-
 export const useContactMessageCount = () =>
   useQuery({ queryKey: ['cms', 'contact-messages', 'count-new'], queryFn: contactMessageApi.countNew });
-
 export const useContactMessageMutations = () => {
   const qc = useQueryClient();
   const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'contact-messages'] });
@@ -107,23 +93,15 @@ export const useContactMessageMutations = () => {
 };
 
 /* ── Simulasi Kredit ── */
-export const useCreditSimConfig = () =>
-  useQuery({ queryKey: ['cms', 'credit-sim'], queryFn: creditSimApi.get });
-
+export const useCreditSimConfig = () => useQuery({ queryKey: ['cms', 'credit-sim'], queryFn: creditSimApi.get });
 export const useCreditSimMutations = () => {
   const qc = useQueryClient();
-  return {
-    update: useMutation({
-      mutationFn: (body: Partial<CreditSimConfig>) => creditSimApi.update(body),
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ['cms', 'credit-sim'] }); toastOk('Konfigurasi simulasi disimpan'); },
-    }),
-  };
+  return { update: useMutation({ mutationFn: (body: Partial<CreditSimConfig>) => creditSimApi.update(body), onSuccess: () => { qc.invalidateQueries({ queryKey: ['cms', 'credit-sim'] }); toastOk('Konfigurasi simulasi disimpan'); } }) };
 };
 
 /* ── Katalog CMS ── */
 export const useCmsCatalog = (params: CmsListParams) =>
   useQuery({ queryKey: ['cms', 'catalog', params], queryFn: () => cmsCatalogApi.list(params) });
-
 export const useCmsCatalogMutations = () => {
   const qc = useQueryClient();
   const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });

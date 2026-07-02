@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Wrench, Lock, MapPin, ArrowLeft, Home, RefreshCw } from 'lucide-react';
+import { Wrench, Lock, ArrowLeft, Home, Car } from 'lucide-react';
 import { useAppSelector } from '@/app/store';
 import { PATH_BY_CODE, MENU_ITEMS } from '@/shared/layout/menu';
 
@@ -104,19 +104,27 @@ const ForbiddenPage = () => (
 
 /* ── Not Found (404) ── */
 const NotFoundPage = () => (
-  <div className="flex flex-col items-center justify-center min-h-[64vh] px-4 text-center">
-    <div className="w-20 h-20 rounded-2xl bg-surface-soft border border-border flex items-center justify-center mb-6 relative">
-      <MapPin size={34} className="text-muted" strokeWidth={1.8} />
+  <div className="relative flex flex-col items-center justify-center min-h-[72vh] px-4 text-center overflow-hidden">
+    {/* Ambient glow */}
+    <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[28rem] h-[28rem] rounded-full bg-primary/8 blur-3xl pointer-events-none" />
+
+    {/* Big 404 with car cutout */}
+    <div className="relative select-none">
+      <p className="text-[110px] sm:text-[150px] font-black leading-none tracking-tighter bg-gradient-to-b from-ink/15 to-ink/5 bg-clip-text text-transparent">
+        404
+      </p>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-20 h-20 rounded-3xl bg-surface border border-border shadow-card-hover flex items-center justify-center animate-float-up">
+          <Car size={38} className="text-primary" strokeWidth={1.8} />
+        </div>
+      </div>
     </div>
-    <p className="text-[11px] font-extrabold uppercase tracking-widest text-muted mb-2">
-      404 — Tidak Ditemukan
+
+    <h1 className="relative text-[22px] font-extrabold text-ink mt-2">Halaman Tersesat di Jalan</h1>
+    <p className="relative text-muted font-medium mt-3 max-w-sm leading-relaxed text-[13px]">
+      Alamat yang Anda tuju tidak ditemukan — mungkin sudah dipindahkan, dihapus, atau salah ketik.
     </p>
-    <h1 className="text-[22px] font-extrabold text-ink">Halaman Tidak Ada</h1>
-    <p className="text-muted font-medium mt-3 max-w-sm leading-relaxed text-[13px]">
-      Alamat URL yang Anda buka tidak ditemukan. Mungkin sudah dipindahkan, dihapus, atau
-      Anda salah ketik alamat.
-    </p>
-    <div className="flex items-center gap-3 mt-8">
+    <div className="relative flex items-center gap-3 mt-8">
       <Link
         to="/dashboard"
         className="inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[13px] px-5 py-2.5 shadow-glow hover:bg-primary-dark transition-colors"
@@ -124,10 +132,10 @@ const NotFoundPage = () => (
         <Home size={15} /> Dashboard
       </Link>
       <button
-        onClick={() => window.location.reload()}
+        onClick={() => window.history.back()}
         className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[13px] px-5 py-2.5 hover:border-primary hover:text-primary transition-colors"
       >
-        <RefreshCw size={15} /> Muat Ulang
+        <ArrowLeft size={15} /> Kembali
       </button>
     </div>
   </div>

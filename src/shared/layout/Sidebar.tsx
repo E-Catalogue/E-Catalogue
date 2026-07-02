@@ -11,6 +11,7 @@ import { QuickInput } from './QuickInput';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
 import { resolveIcon } from './iconMap';
 import { useAppSelector } from '@/app/store';
+import { usePublicSiteSettings } from '@/features/cms/cms.hooks';
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -63,6 +64,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
   const location = useLocation();
   const isExpanded = isDesktopOpen || isMobileOpen;
   const groupMenus = useAppSelector((s) => s.auth.groupMenus);
+  const { data: site } = usePublicSiteSettings();
 
   const navGroups = useMemo<NavGroup[]>(() => {
     let groups: NavGroup[] = [];
@@ -316,7 +318,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
                 strokeWidth={1.2}
               />
               <p className="relative text-[9.5px] font-black uppercase tracking-[0.22em] text-white/60 mb-1">
-                GM Mobilindo
+                {site?.companyName ?? 'GM Mobilindo'}
               </p>
               <p className="relative text-[13px] font-extrabold leading-snug">
                 Pilihan Terbaik

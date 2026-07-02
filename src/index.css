@@ -99,3 +99,31 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+/* Dual range slider thumbs (PriceRangeSlider) */
+.range-thumb { height: 1.5rem; }
+.range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 9999px;
+  background: var(--color-primary); border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(24,29,42,0.25);
+  pointer-events: auto; cursor: pointer; margin-top: 1px;
+}
+.range-thumb::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 9999px;
+  background: var(--color-primary); border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(24,29,42,0.25);
+  pointer-events: auto; cursor: pointer;
+}
+.range-thumb::-webkit-slider-runnable-track { background: transparent; }
+.range-thumb::-moz-range-track { background: transparent; }
+
+/* Scroll reveal — sekali saja (dikelola IntersectionObserver via useReveal) */
+.reveal { opacity: 0; transform: translateY(24px); }
+.reveal.is-visible {
+  opacity: 1; transform: none;
+  transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+}

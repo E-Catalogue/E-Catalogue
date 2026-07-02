@@ -1,15 +1,10 @@
 import { useState } from 'react';
-import {
-  Wrench, Plus, Search, Loader2, Eye, Pencil,
-  ArrowRight, Car, Gauge, Calendar, CheckCircle2,
-} from 'lucide-react';
+import { Wrench, Search, Loader2, Eye, Pencil } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
-import { Button } from '@/shared/components/ui/Button';
-import { Modal } from '@/shared/components/ui/Modal';
-import { useUnits, useCreateRekondisi } from '@/features/units/unit.hooks';
+import { useUnits } from '@/features/units/unit.hooks';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
@@ -26,132 +21,10 @@ const hppColor = (hpp?: number | null, beli?: number) => {
   return 'text-ink font-bold';
 };
 
-/* ── Buat Rekondisi — 2-step confirm modal ── */
-type CreateStep = 'confirm' | 'success';
-
-const BuatRekondisiModal = ({
-  unit,
-  onClose,
-  onSuccess,
-}: {
-  unit: Unit;
-  onClose: () => void;
-  onSuccess: () => void;
-}) => {
-  const [step, setStep] = useState<CreateStep>('confirm');
-  const createM = useCreateRekondisi();
-
-  const handleCreate = () => {
-    createM.mutate(unit.id, {
-      onSuccess: () => setStep('success'),
-    });
-  };
-
-  const handleKelola = () => {
-    onClose();
-    onSuccess();
-  };
-
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title={step === 'confirm' ? 'Buat Rekondisi Baru' : 'Rekondisi Berhasil Dibuat'}
-      subtitle={step === 'confirm' ? 'Konfirmasi sebelum memulai proses rekondisi' : 'Lanjutkan untuk mengisi detail pekerjaan'}
-      icon={step === 'confirm' ? <Wrench size={18} /> : <CheckCircle2 size={18} />}
-      size="sm"
-      footer={
-        step === 'confirm' ? (
-          <>
-            <Button variant="secondary" onClick={onClose}>Batal</Button>
-            <Button
-              icon={<Plus size={15} />}
-              onClick={handleCreate}
-              disabled={createM.isPending}
-            >
-              {createM.isPending ? 'Membuat…' : 'Buat Rekondisi'}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={onClose}>Nanti Saja</Button>
-            <Button icon={<ArrowRight size={15} />} onClick={handleKelola}>
-              Kelola Rekondisi
-            </Button>
-          </>
-        )
-      }
-    >
-      {step === 'confirm' ? (
-        <div className="space-y-4">
-          {/* Unit info card */}
-          <div className="rounded-2xl bg-surface-soft border border-border p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
-                <Car size={18} className="text-primary" />
-              </div>
-              <div>
-                <p className="font-extrabold text-ink text-[14px]">{unit.platNomor}</p>
-                <p className="text-[12px] text-muted font-medium">
-                  {unit.merek?.name ?? '—'} {unit.tipe?.name ?? ''} · {unit.tahun}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-divider">
-              <div className="flex items-center gap-1.5 text-[12px] text-muted font-medium">
-                <Gauge size={13} /> {formatNumber(unit.kilometer)} KM
-              </div>
-              <div className="flex items-center gap-1.5 text-[12px] text-muted font-medium">
-                <Calendar size={13} /> Beli: {idr(unit.hargaBeli)}
-              </div>
-            </div>
-          </div>
-
-          {/* Explanation */}
-          <div className="space-y-2.5">
-            <p className="text-[13px] font-semibold text-ink-soft leading-relaxed">
-              Rekondisi baru akan dibuat untuk unit ini dengan status{' '}
-              <span className="font-bold text-ink">Pending</span>.
-            </p>
-            <div className="space-y-2">
-              {[
-                'Rekondisi dibuat dengan status Pending',
-                'Tambahkan vendor & item pekerjaan',
-                'Mulai pengerjaan → selesaikan & upload invoice',
-                'HPP unit diperbarui otomatis',
-              ].map((s, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-[12px] text-muted font-medium">
-                  <span className="w-5 h-5 rounded-full bg-primary-light text-primary font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                    {i + 1}
-                  </span>
-                  {s}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-4 space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-accent-green/10 flex items-center justify-center mx-auto">
-            <CheckCircle2 size={32} className="text-accent-green" />
-          </div>
-          <div>
-            <p className="font-extrabold text-ink text-[15px]">Rekondisi berhasil dibuat!</p>
-            <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed">
-              Anda dapat langsung menambahkan vendor, item pekerjaan, dan memulai pengerjaan.
-            </p>
-          </div>
-        </div>
-      )}
-    </Modal>
-  );
-};
-
 /* ── Main Page ── */
 export const RekondisiPage = () => {
   const [query, setQuery]             = useState('');
   const [rekondisiUnit, setRekondisiUnit] = useState<Unit | null>(null);
-  const [createTarget, setCreateTarget]   = useState<Unit | null>(null);
   const debounced = useDebouncedValue(query, 400);
 
   const { data, isLoading, isError } = useUnits({
@@ -230,11 +103,6 @@ export const RekondisiPage = () => {
             label: 'Kelola Rekondisi',
             onClick: () => setRekondisiUnit(u),
             variant: 'primary',
-          },
-          {
-            icon: <Plus size={13} />,
-            label: 'Buat Rekondisi Baru',
-            onClick: () => setCreateTarget(u),
             dividerAfter: true,
           },
           {
@@ -298,16 +166,7 @@ export const RekondisiPage = () => {
 
       {m.modals}
 
-      {/* Buat rekondisi — confirm modal */}
-      {createTarget && (
-        <BuatRekondisiModal
-          unit={createTarget}
-          onClose={() => setCreateTarget(null)}
-          onSuccess={() => setRekondisiUnit(createTarget)}
-        />
-      )}
-
-      {/* Kelola rekondisi modal */}
+      {/* Kelola rekondisi modal (stepper — termasuk buat rekondisi baru) */}
       <RekondisiDetailModal
         open={!!rekondisiUnit}
         onClose={() => setRekondisiUnit(null)}
