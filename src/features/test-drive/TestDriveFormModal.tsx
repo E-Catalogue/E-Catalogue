@@ -76,7 +76,7 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     queryFn: () => leadApi.list({ page: 1, limit: 20, search: debouncedLead }),
     enabled: open,
   });
-  const { data: unitRes } = useTestDriveUnits({ search: debouncedUnit || undefined });
+  const { data: unitRes } = useTestDriveUnits({ search: debouncedUnit || undefined }, open);
   const mutations = useTestDriveMutations();
   const pending = mutations.create.isPending || mutations.update.isPending;
 

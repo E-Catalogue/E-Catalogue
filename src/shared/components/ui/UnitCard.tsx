@@ -25,9 +25,10 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
       ? `${import.meta.env.VITE_API_URL}/public/unit/${_backendImg.filename}`
       : DEFAULT_CAR_IMAGE);
 
-  const displayPrice = isMock 
-    ? (unit as MockUnit).price 
-    : ((unit as BackendUnit).hargaOtrSaatIni || (unit as BackendUnit).hargaTargetJual || (unit as BackendUnit).hargaBeli || 0);
+  const backendUnit = unit as BackendUnit;
+  const otrPrice = isMock ? null : backendUnit.hargaOtrSaatIni;
+  const targetPrice = isMock ? null : backendUnit.hargaTargetJual;
+  const displayPrice = isMock ? (unit as MockUnit).price : (otrPrice || targetPrice || backendUnit.hargaBeli || 0);
 
   const createdAt = isMock ? undefined : (unit as BackendUnit).createdAt;
   const isNew = isMock 
@@ -94,8 +95,21 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
           <span className="flex items-center gap-1"><GitMerge size={12} /> {transmisi}</span>
           <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(km)} KM</span>
         </div>
-        <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-divider">
-          <span className="font-extrabold text-primary text-[14px] truncate">{formatCurrency(displayPrice)}</span>
+        <div className="flex items-end justify-between gap-2 mt-3 pt-3 border-t border-divider">
+          {isMock ? (
+            <span className="font-extrabold text-primary text-[14px] truncate">{formatCurrency(displayPrice)}</span>
+          ) : (
+            <div className="min-w-0 grid grid-cols-2 gap-3 flex-1">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted">OTR</p>
+                <p className="font-extrabold text-primary text-[13px] truncate">{otrPrice ? formatCurrency(otrPrice) : '-'}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Target</p>
+                <p className="font-extrabold text-ink text-[13px] truncate">{targetPrice ? formatCurrency(targetPrice) : '-'}</p>
+              </div>
+            </div>
+          )}
           <StatusBadge status={statusUnit as never} />
         </div>
       </div>

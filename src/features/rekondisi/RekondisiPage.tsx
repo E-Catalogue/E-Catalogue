@@ -1,251 +1,206 @@
 import { useState } from 'react';
-import {
-  Wrench, Plus, Search, Loader2, Eye, Pencil,
-  ArrowRight, Car, Gauge, Calendar, CheckCircle2,
-} from 'lucide-react';
+import { CheckCircle2, Eye, Loader2, Plus, Search, Wrench } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
-import { useUnits, useCreateRekondisi } from '@/features/units/unit.hooks';
-import { useUnitModals } from '@/features/units/useUnitModals';
+import { SelectField } from '@/shared/components/ui/Field';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import { formatCurrency, formatNumber } from '@/core/utils/format';
+import { useLookupUnits } from '@/features/finance/finance.hooks';
+import type { LookupUnit } from '@/features/finance/types';
+import { useCreateRekondisi } from '@/features/units/unit.hooks';
+import { unitApi } from '@/features/units/unit.api';
+import { notifyApiError } from '@/core/api/notify';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
+import { formatCurrency, formatDate } from '@/core/utils/format';
 import { RekondisiDetailModal } from './RekondisiDetailModal';
-import type { Unit } from '@/features/units/unit.types';
+import { useRekondisis } from './rekondisi.hooks';
+import {
+  REKONDISI_STATUS_COLOR,
+  REKONDISI_STATUS_LABEL,
+  type Rekondisi,
+  type RekondisiStatus,
+} from './rekondisi.types';
 
-const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { compact: true }));
+const idr = (n?: number | null) => (n == null ? '-' : formatCurrency(n, { compact: true }));
 
-const hppColor = (hpp?: number | null, beli?: number) => {
-  if (!hpp || !beli) return 'text-ink font-bold';
-  const pct = (hpp - beli) / beli;
-  if (pct > 0.15) return 'text-semantic-error font-extrabold';
-  if (pct > 0.08) return 'text-accent-amber font-bold';
-  return 'text-ink font-bold';
-};
+const STATUS_OPTIONS: Array<{ value: RekondisiStatus | ''; label: string }> = [
+  { value: '', label: 'Semua Status' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'IN_PROGRESS', label: 'Dalam Proses' },
+  { value: 'COMPLETED', label: 'Selesai' },
+];
 
-/* ── Buat Rekondisi — 2-step confirm modal ── */
-type CreateStep = 'confirm' | 'success';
-
-const BuatRekondisiModal = ({
-  unit,
+const CreateRekondisiModal = ({
+  open,
   onClose,
-  onSuccess,
+  onCreated,
 }: {
-  unit: Unit;
+  open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onCreated: (unit: LookupUnit) => void;
 }) => {
-  const [step, setStep] = useState<CreateStep>('confirm');
+  const [search, setSearch] = useState('');
+  const [unitId, setUnitId] = useState('');
+  const debounced = useDebouncedValue(search, 350);
+  const { data: unitsRes, isLoading } = useLookupUnits({ search: debounced || undefined, statusUnit: 'INVENTORY' });
   const createM = useCreateRekondisi();
+  const units = unitsRes?.data ?? [];
+  const selected = units.find((unit) => unit.id === unitId);
 
-  const handleCreate = () => {
-    createM.mutate(unit.id, {
-      onSuccess: () => setStep('success'),
-    });
-  };
-
-  const handleKelola = () => {
-    onClose();
-    onSuccess();
+  const handleCreate = async () => {
+    if (!selected) return;
+    try {
+      const check = await unitApi.rekondisiStatusCheck(selected.id);
+      if (check.data.hasUnfinishedRekondisi) {
+        store.dispatch(showToast({
+          type: 'general',
+          title: 'Rekondisi masih berjalan',
+          message: 'Unit ini masih memiliki rekondisi PENDING atau IN_PROGRESS.',
+        }));
+        return;
+      }
+      await createM.mutateAsync(selected.id);
+      onCreated(selected);
+      onClose();
+    } catch (err) {
+      notifyApiError(err);
+    }
   };
 
   return (
     <Modal
-      open
+      open={open}
       onClose={onClose}
-      title={step === 'confirm' ? 'Buat Rekondisi Baru' : 'Rekondisi Berhasil Dibuat'}
-      subtitle={step === 'confirm' ? 'Konfirmasi sebelum memulai proses rekondisi' : 'Lanjutkan untuk mengisi detail pekerjaan'}
-      icon={step === 'confirm' ? <Wrench size={18} /> : <CheckCircle2 size={18} />}
-      size="sm"
+      title="Buat Rekondisi"
+      subtitle="Pilih unit inventory untuk memulai rekondisi"
+      icon={<Wrench size={18} />}
+      size="md"
       footer={
-        step === 'confirm' ? (
-          <>
-            <Button variant="secondary" onClick={onClose}>Batal</Button>
-            <Button
-              icon={<Plus size={15} />}
-              onClick={handleCreate}
-              disabled={createM.isPending}
-            >
-              {createM.isPending ? 'Membuat…' : 'Buat Rekondisi'}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={onClose}>Nanti Saja</Button>
-            <Button icon={<ArrowRight size={15} />} onClick={handleKelola}>
-              Kelola Rekondisi
-            </Button>
-          </>
-        )
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={createM.isPending}>Batal</Button>
+          <Button icon={<Plus size={15} />} onClick={handleCreate} disabled={!unitId || createM.isPending}>
+            {createM.isPending ? 'Membuat...' : 'Buat Rekondisi'}
+          </Button>
+        </>
       }
     >
-      {step === 'confirm' ? (
-        <div className="space-y-4">
-          {/* Unit info card */}
-          <div className="rounded-2xl bg-surface-soft border border-border p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
-                <Car size={18} className="text-primary" />
-              </div>
-              <div>
-                <p className="font-extrabold text-ink text-[14px]">{unit.platNomor}</p>
-                <p className="text-[12px] text-muted font-medium">
-                  {unit.merek?.name ?? '—'} {unit.tipe?.name ?? ''} · {unit.tahun}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-divider">
-              <div className="flex items-center gap-1.5 text-[12px] text-muted font-medium">
-                <Gauge size={13} /> {formatNumber(unit.kilometer)} KM
-              </div>
-              <div className="flex items-center gap-1.5 text-[12px] text-muted font-medium">
-                <Calendar size={13} /> Beli: {idr(unit.hargaBeli)}
-              </div>
-            </div>
-          </div>
-
-          {/* Explanation */}
-          <div className="space-y-2.5">
-            <p className="text-[13px] font-semibold text-ink-soft leading-relaxed">
-              Rekondisi baru akan dibuat untuk unit ini dengan status{' '}
-              <span className="font-bold text-ink">Pending</span>.
-            </p>
-            <div className="space-y-2">
-              {[
-                'Rekondisi dibuat dengan status Pending',
-                'Tambahkan vendor & item pekerjaan',
-                'Mulai pengerjaan → selesaikan & upload invoice',
-                'HPP unit diperbarui otomatis',
-              ].map((s, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-[12px] text-muted font-medium">
-                  <span className="w-5 h-5 rounded-full bg-primary-light text-primary font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                    {i + 1}
-                  </span>
-                  {s}
-                </div>
-              ))}
-            </div>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Cari Unit</label>
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari plat, merek, atau tipe..."
+              className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-soft border border-border text-sm font-medium focus:outline-none focus:border-primary"
+            />
           </div>
         </div>
-      ) : (
-        <div className="text-center py-4 space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-accent-green/10 flex items-center justify-center mx-auto">
-            <CheckCircle2 size={32} className="text-accent-green" />
+        <SelectField
+          label="Unit Inventory"
+          required
+          value={unitId}
+          onChange={(e) => setUnitId(e.target.value)}
+          options={[
+            { value: '', label: isLoading ? 'Memuat unit...' : 'Pilih unit' },
+            ...units.map((unit) => ({
+              value: unit.id,
+              label: `${unit.platNomor} - ${unit.merekName} ${unit.tipeName}`,
+            })),
+          ]}
+        />
+        {selected && (
+          <div className="rounded-xl border border-border bg-surface-soft p-3 text-[12px] font-semibold text-ink-soft">
+            Harga beli: <span className="font-bold text-ink">{idr(selected.hargaBeli)}</span>
+            {selected.purchaseCashTransactionId && (
+              <span className="ml-2 text-primary">Pembelian sudah tercatat kas</span>
+            )}
           </div>
-          <div>
-            <p className="font-extrabold text-ink text-[15px]">Rekondisi berhasil dibuat!</p>
-            <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed">
-              Anda dapat langsung menambahkan vendor, item pekerjaan, dan memulai pengerjaan.
-            </p>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </Modal>
   );
 };
 
-/* ── Main Page ── */
 export const RekondisiPage = () => {
-  const [query, setQuery]             = useState('');
-  const [rekondisiUnit, setRekondisiUnit] = useState<Unit | null>(null);
-  const [createTarget, setCreateTarget]   = useState<Unit | null>(null);
-  const debounced = useDebouncedValue(query, 400);
+  const [status, setStatus] = useState<RekondisiStatus | ''>('');
+  const [unitSearch, setUnitSearch] = useState('');
+  const [unitId, setUnitId] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [detailUnit, setDetailUnit] = useState<{ id: string; label?: string } | null>(null);
+  const debouncedUnit = useDebouncedValue(unitSearch, 350);
 
-  const { data, isLoading, isError } = useUnits({
-    page: 1, limit: 100,
-    statusUnit: 'INVENTORY',
-    search: debounced || undefined,
-  });
+  const { data: unitLookup } = useLookupUnits({ search: debouncedUnit || undefined, statusUnit: 'INVENTORY' });
+  const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined });
 
-  const units: Unit[] = data?.data ?? [];
-  const total         = data?.meta?.total ?? 0;
-  const m             = useUnitModals();
+  const rows: Rekondisi[] = data?.data ?? [];
+  const units = unitLookup?.data ?? [];
+  const total = data?.meta?.total ?? rows.length;
 
-  const columns: Column<Unit>[] = [
+  const columns: Column<Rekondisi>[] = [
     {
       header: 'Unit',
-      cell: (u) => (
+      cell: (r) => (
         <div>
-          <p className="font-bold text-ink text-[13px]">{u.platNomor}</p>
-          <p className="text-[11px] text-muted font-medium mt-0.5">
-            {u.merek?.name ?? '—'} {u.tipe?.name ?? ''}
-          </p>
+          <p className="font-bold text-ink text-[13px]">{r.unit?.platNomor ?? r.unitId}</p>
+          <p className="text-[11px] text-muted font-medium mt-0.5">Seq #{r.seq}</p>
         </div>
       ),
     },
     {
-      header: 'Tahun / KM',
-      align: 'right',
-      cell: (u) => (
-        <div className="text-right">
-          <p className="font-bold text-ink text-[13px]">{u.tahun}</p>
-          <p className="text-[11px] text-muted font-medium">{formatNumber(u.kilometer)} KM</p>
-        </div>
-      ),
+      header: 'Vendor',
+      cell: (r) => <span className="font-semibold text-ink-soft text-[13px]">{r.vendor?.name ?? '-'}</span>,
     },
     {
-      header: 'Transmisi',
+      header: 'Status',
       align: 'center',
-      cell: (u) => (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-          u.transmisi === 'AUTOMATIC' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted/10 text-muted'
-        }`}>
-          {u.transmisi === 'AUTOMATIC' ? 'AT' : 'MT'}
+      cell: (r) => (
+        <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold ${REKONDISI_STATUS_COLOR[r.status]}`}>
+          {REKONDISI_STATUS_LABEL[r.status]}
         </span>
       ),
     },
     {
-      header: 'Harga Beli',
+      header: 'Tanggal',
       align: 'right',
-      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.hargaBeli)}</span>,
+      cell: (r) => <span className="font-semibold text-ink-soft text-[13px]">{formatDate(r.tanggal)}</span>,
     },
     {
-      header: 'HPP (Akumulasi)',
+      header: 'Nominal',
       align: 'right',
-      cell: (u) => {
-        const hpp = u.hpp;
-        const delta = hpp && u.hargaBeli ? hpp - u.hargaBeli : null;
-        return hpp ? (
-          <div className="text-right">
-            <span className={`text-[13px] ${hppColor(hpp, u.hargaBeli)}`}>{idr(hpp)}</span>
-            {delta !== null && (
-              <p className="text-[10px] text-muted font-medium mt-0.5">+{idr(delta)} rekondisi</p>
-            )}
-          </div>
-        ) : (
-          <span className="text-[12px] text-muted/50 font-medium italic">Belum ada</span>
-        );
-      },
+      cell: (r) => <span className="font-bold text-ink text-[13px]">{idr(r.nominal)}</span>,
+    },
+    {
+      header: 'Total',
+      align: 'right',
+      cell: (r) => <span className="font-bold text-primary text-[13px]">{idr(r.total)}</span>,
+    },
+    {
+      header: 'Bayar',
+      align: 'center',
+      cell: (r) => r.paidAt ? (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-accent-green/10 text-accent-green text-[10px] font-bold">
+          <CheckCircle2 size={12} /> Paid
+        </span>
+      ) : (
+        <span className="text-[11px] font-semibold text-muted">Belum</span>
+      ),
     },
     {
       header: '',
       align: 'right',
-      cell: (u) => (
+      cell: (r) => (
         <ActionMenu items={[
           {
-            icon: <Wrench size={13} />,
-            label: 'Kelola Rekondisi',
-            onClick: () => setRekondisiUnit(u),
-            variant: 'primary',
-          },
-          {
-            icon: <Plus size={13} />,
-            label: 'Buat Rekondisi Baru',
-            onClick: () => setCreateTarget(u),
-            dividerAfter: true,
-          },
-          {
             icon: <Eye size={13} />,
-            label: 'Lihat Detail Unit',
-            onClick: () => m.openDetail(u),
-          },
-          {
-            icon: <Pencil size={13} />,
-            label: 'Edit Unit',
-            onClick: () => m.openEdit(u),
+            label: 'Kelola Detail',
+            onClick: () => setDetailUnit({ id: r.unitId, label: r.unit?.platNomor ?? r.unitId }),
+            variant: 'primary',
           },
         ]} />
       ),
@@ -256,67 +211,67 @@ export const RekondisiPage = () => {
     <div className="max-w-[1600px] mx-auto animate-float-up space-y-5">
       <PageHeader
         title="Rekondisi"
-        description={`${total} unit dalam tahap inventori`}
+        description={`${total} data rekondisi`}
+        action={<Button icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>Buat Rekondisi</Button>}
       />
 
-      {/* Search */}
-      <div className="relative w-full sm:max-w-xs">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-        <input
-          value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari plat / merek / tipe…"
-          className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_260px] gap-3">
+        <SelectField
+          label=""
+          value={status}
+          onChange={(e) => setStatus(e.target.value as RekondisiStatus | '')}
+          options={STATUS_OPTIONS}
         />
+        <div className="relative">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+          <input
+            value={unitSearch}
+            onChange={(e) => setUnitSearch(e.target.value)}
+            placeholder="Cari unit untuk filter..."
+            className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+          />
+        </div>
+        <select
+          value={unitId}
+          onChange={(e) => setUnitId(e.target.value)}
+          className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold"
+        >
+          <option value="">Semua Unit</option>
+          {units.map((unit) => (
+            <option key={unit.id} value={unit.id}>{unit.platNomor} - {unit.merekName} {unit.tipeName}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Table */}
-      <SectionCard
-        title={`Daftar Unit (${units.length})`}
-        icon={<Wrench size={16} />}
-        bodyClassName="p-0 md:p-0"
-      >
+      <SectionCard title={`Daftar Rekondisi (${rows.length})`} icon={<Wrench size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 gap-2 text-muted">
             <Loader2 size={22} className="animate-spin" />
           </div>
         ) : isError ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-        ) : units.length === 0 ? (
+          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat rekondisi.</div>
+        ) : rows.length === 0 ? (
           <div className="text-center py-16">
             <Wrench size={32} className="text-muted mx-auto mb-3" />
-            <p className="font-bold text-ink text-[14px]">
-              {query ? 'Tidak ada unit yang cocok.' : 'Belum ada unit dalam rekondisi.'}
-            </p>
-            <p className="text-muted text-[12px] font-medium mt-1">
-              Unit berstatus Inventory akan muncul di sini.
-            </p>
+            <p className="font-bold text-ink text-[14px]">Belum ada rekondisi.</p>
+            <p className="text-muted text-[12px] font-medium mt-1">Buat rekondisi dari unit inventory untuk mulai mencatat pekerjaan.</p>
           </div>
         ) : (
-          <DataTable columns={columns} data={units} rowKey={(u) => u.id} />
+          <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
         )}
       </SectionCard>
 
-      {m.modals}
+      <CreateRekondisiModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(unit) => setDetailUnit({ id: unit.id, label: `${unit.platNomor} - ${unit.merekName} ${unit.tipeName}` })}
+      />
 
-      {/* Buat rekondisi — confirm modal */}
-      {createTarget && (
-        <BuatRekondisiModal
-          unit={createTarget}
-          onClose={() => setCreateTarget(null)}
-          onSuccess={() => setRekondisiUnit(createTarget)}
-        />
-      )}
-
-      {/* Kelola rekondisi modal */}
       <RekondisiDetailModal
-        open={!!rekondisiUnit}
-        onClose={() => setRekondisiUnit(null)}
-        unitId={rekondisiUnit?.id ?? null}
-        unitLabel={
-          rekondisiUnit
-            ? `${rekondisiUnit.platNomor} · ${rekondisiUnit.merek?.name ?? ''} ${rekondisiUnit.tipe?.name ?? ''}`
-            : undefined
-        }
+        open={!!detailUnit}
+        onClose={() => setDetailUnit(null)}
+        unitId={detailUnit?.id ?? null}
+        unitLabel={detailUnit?.label}
       />
     </div>
   );

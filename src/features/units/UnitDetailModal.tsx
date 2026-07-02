@@ -39,8 +39,10 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   
   const images = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
   const mainImage = images.find((img) => img.isMain) ?? images[0];
-  const displayPrice = current.hargaOtrSaatIni || current.hargaTargetJual || current.hargaBeli || 0;
-  const margin = current.hargaBeli && displayPrice > current.hargaBeli ? displayPrice - current.hargaBeli : null;
+  const otrPrice = current.hargaOtrSaatIni ?? null;
+  const targetPrice = current.hargaTargetJual ?? null;
+  const marginBase = targetPrice ?? otrPrice;
+  const margin = current.hargaBeli && marginBase && marginBase > current.hargaBeli ? marginBase - current.hargaBeli : null;
 
   const imageUrl = mainImage
     ? `${API_ORIGIN}/public/unit/${mainImage.filename}`
@@ -104,9 +106,15 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
           <h3 className="text-xl font-extrabold text-ink leading-tight">{current.merek?.name}</h3>
           <p className="text-[13px] text-muted font-semibold">{current.tipe?.name}</p>
         </div>
-        <div className="text-right shrink-0">
-          <p className="text-2xl font-extrabold text-primary leading-none">{formatCurrency(displayPrice)}</p>
-          <p className="text-[11px] text-muted font-medium mt-1">Harga OTR / Target</p>
+        <div className="grid grid-cols-2 gap-4 text-right shrink-0">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1">OTR</p>
+            <p className="text-xl font-extrabold text-primary leading-none">{otrPrice ? formatCurrency(otrPrice) : '-'}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1">Target</p>
+            <p className="text-xl font-extrabold text-ink leading-none">{targetPrice ? formatCurrency(targetPrice) : '-'}</p>
+          </div>
         </div>
       </div>
 

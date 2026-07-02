@@ -5,8 +5,8 @@ import type { TestDriveListParams } from './testDrive.types';
 export const useTestDrives = (params: TestDriveListParams) =>
   useQuery({ queryKey: ['test-drives', params], queryFn: () => testDriveApi.list(params) });
 
-export const useTestDriveUnits = (params: { search?: string }) =>
-  useQuery({ queryKey: ['test-drive-units', params], queryFn: () => testDriveApi.units(params) });
+export const useTestDriveUnits = (params: { search?: string }, enabled = true) =>
+  useQuery({ queryKey: ['test-drive-units', params], queryFn: () => testDriveApi.units(params), enabled });
 
 export const useTestDriveMutations = () => {
   const qc = useQueryClient();

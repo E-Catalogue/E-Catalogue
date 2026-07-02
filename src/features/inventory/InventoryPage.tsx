@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2 } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -7,11 +7,17 @@ import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+import { SelectField } from '@/shared/components/ui/Field';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useUnitModals } from '@/features/units/useUnitModals';
-import { useUnits } from '@/features/units/unit.hooks';
+import { useCreateRekondisi, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
+import { unitApi } from '@/features/units/unit.api';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import type { Unit, StatusUnit } from '@/features/units/unit.types';
+import { notifyApiError } from '@/core/api/notify';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
 
 const TABS: { key: StatusUnit | 'all'; label: string }[] = [
   { key: 'all',         label: 'Semua' },
@@ -19,6 +25,13 @@ const TABS: { key: StatusUnit | 'all'; label: string }[] = [
   { key: 'READY_STOCK', label: 'Ready Stock' },
   { key: 'HOLD',        label: 'Hold' },
   { key: 'SOLD',        label: 'Terjual' },
+];
+
+const STATUS_OPTIONS: { value: StatusUnit; label: string }[] = [
+  { value: 'INVENTORY', label: 'Inventory' },
+  { value: 'READY_STOCK', label: 'Ready Stock' },
+  { value: 'HOLD', label: 'Hold' },
+  { value: 'SOLD', label: 'Terjual' },
 ];
 
 const TX_LABEL: Record<string, string> = { AUTOMATIC: 'AT', MANUAL: 'MT' };
@@ -124,14 +137,84 @@ const FilterModal = ({
 };
 
 /* ── Main Page ── */
+const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) => {
+  const [draft, setDraft] = useState<StatusUnit>(unit.statusUnit);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const updateStatus = useUpdateUnitStatus();
+  const isPending = updateStatus.isPending;
+
+  const handleConfirm = () => {
+    updateStatus.mutate(
+      { id: unit.id, data: { statusUnit: draft } },
+      {
+        onError: (err) => notifyApiError(err),
+        onSuccess: () => {
+          setConfirmOpen(false);
+          onClose();
+        },
+      },
+    );
+  };
+
+  return (
+    <>
+      <Modal
+        open
+        onClose={onClose}
+        title="Ubah Status Unit"
+        subtitle={unit.platNomor}
+        icon={<RefreshCw size={18} />}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>
+            <Button onClick={() => setConfirmOpen(true)} disabled={isPending || draft === unit.statusUnit}>
+              Simpan Status
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <SelectField
+            label="Status Unit"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value as StatusUnit)}
+            options={STATUS_OPTIONS}
+          />
+          {draft === 'SOLD' && (
+            <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-3 py-2.5 text-[12px] font-semibold text-ink-soft">
+              Pastikan unit memang sudah selesai terjual sebelum mengubah status ke Terjual.
+            </div>
+          )}
+        </div>
+      </Modal>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirm}
+        closeOnConfirm={false}
+        loading={isPending}
+        tone="warning"
+        icon={AlertTriangle}
+        title="Konfirmasi Ubah Status"
+        message={`Status ${unit.platNomor} akan diubah dari ${unit.statusUnit} menjadi ${draft}. Lanjutkan?`}
+        confirmLabel="Ubah Status"
+      />
+    </>
+  );
+};
+
 export const InventoryPage = () => {
   const [tab, setTab]           = useState<StatusUnit | 'all'>('all');
   const [query, setQuery]       = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter]     = useState<FilterState>(FILTER_DEFAULT);
+  const [statusUnit, setStatusUnit] = useState<Unit | null>(null);
+  const [rekondisiUnitId, setRekondisiUnitId] = useState<string | null>(null);
   const debounced               = useDebouncedValue(query, 400);
 
   const { data, isLoading, isError } = useUnits({ page: 1, limit: 100, search: debounced || undefined });
+  const createRekondisi = useCreateRekondisi();
 
   const all: Unit[] = data?.data ?? [];
   const merkList = [...new Set(all.map((u) => u.merek?.name).filter(Boolean))].sort() as string[];
@@ -145,6 +228,26 @@ export const InventoryPage = () => {
   const activeFilters = [filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax)].filter(Boolean).length;
 
   const m = useUnitModals();
+
+  const handleCreateRekondisi = async (unit: Unit) => {
+    setRekondisiUnitId(unit.id);
+    try {
+      const check = await unitApi.rekondisiStatusCheck(unit.id);
+      if (check.data.hasUnfinishedRekondisi) {
+        store.dispatch(showToast({
+          type: 'general',
+          title: 'Rekondisi masih berjalan',
+          message: 'Unit ini masih memiliki rekondisi yang belum selesai.',
+        }));
+        return;
+      }
+      await createRekondisi.mutateAsync(unit.id);
+    } catch (err) {
+      notifyApiError(err);
+    } finally {
+      setRekondisiUnitId(null);
+    }
+  };
 
   const columns: Column<Unit>[] = [
     {
@@ -183,13 +286,19 @@ export const InventoryPage = () => {
       cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.hargaBeli)}</span>,
     },
     {
-      header: 'OTR / Target',
+      header: 'HPP',
       align: 'right',
-      cell: (u) => (
-        <span className="font-bold text-primary text-[13px]">
-          {idr(u.hargaOtrSaatIni ?? u.hargaTargetJual)}
-        </span>
-      ),
+      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.hpp)}</span>,
+    },
+    {
+      header: 'Target',
+      align: 'right',
+      cell: (u) => <span className="font-bold text-primary text-[13px]">{idr(u.hargaTargetJual)}</span>,
+    },
+    {
+      header: 'OTR',
+      align: 'right',
+      cell: (u) => <span className="font-bold text-primary text-[13px]">{idr(u.hargaOtrSaatIni)}</span>,
     },
     {
       header: 'Status',
@@ -202,7 +311,15 @@ export const InventoryPage = () => {
       cell: (u) => (
         <ActionMenu items={[
           { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(u) },
-          { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(u), dividerAfter: true },
+          { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(u) },
+          { icon: <RefreshCw size={13} />, label: 'Ubah Status', onClick: () => setStatusUnit(u) },
+          {
+            icon: rekondisiUnitId === u.id ? <Loader2 size={13} className="animate-spin" /> : <Wrench size={13} />,
+            label: 'Tambah Rekondisi',
+            onClick: () => { void handleCreateRekondisi(u); },
+            disabled: rekondisiUnitId === u.id || createRekondisi.isPending,
+            dividerAfter: true,
+          },
           { icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(u), variant: 'danger' },
         ]} />
       ),
@@ -294,6 +411,13 @@ export const InventoryPage = () => {
       </SectionCard>
 
       {m.modals}
+
+      {statusUnit && (
+        <StatusChangeModal
+          unit={statusUnit}
+          onClose={() => setStatusUnit(null)}
+        />
+      )}
 
       <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)}
         value={filter} onApply={setFilter} merkList={merkList} />

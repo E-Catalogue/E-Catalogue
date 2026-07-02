@@ -6,8 +6,8 @@ import { TextField, SelectField, NumericField } from '@/shared/components/ui/Fie
 import { CashAccountSelect } from '@/features/finance/components';
 import { useMereks, useTipes } from '@/features/master/master.hooks';
 import { notifyApiError } from '@/core/api/notify';
-import { useCreateUnit, useUpdateUnit } from './unit.hooks';
-import type { Transmisi, Unit, UnitFormData } from './unit.types';
+import { useCreateUnit, useMasterDokumen, useMasterKelengkapan, useUpdateUnit } from './unit.hooks';
+import type { MasterDokumen, MasterKelengkapan, Transmisi, Unit, UnitFormData } from './unit.types';
 
 interface UnitFormModalProps {
   open: boolean;
@@ -60,6 +60,53 @@ const toForm = (unit?: Unit | null): UnitFormState => {
   };
 };
 
+interface ChecklistSectionProps {
+  title: string;
+  loading: boolean;
+  items: Array<MasterKelengkapan | MasterDokumen>;
+  selected: string[];
+  onToggle: (id: string, checked: boolean) => void;
+}
+
+const ChecklistSection = ({ title, loading, items, selected, onToggle }: ChecklistSectionProps) => (
+  <div className="rounded-2xl border border-border bg-surface-soft p-3.5">
+    <div className="flex items-center justify-between gap-3 mb-3">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{title}</p>
+      <span className="text-[10px] font-extrabold text-muted bg-surface px-2 py-1 rounded-full">
+        {selected.length} dipilih
+      </span>
+    </div>
+    {loading ? (
+      <p className="text-[12px] font-semibold text-muted">Memuat data...</p>
+    ) : items.length === 0 ? (
+      <p className="text-[12px] font-semibold text-muted">Belum ada master aktif.</p>
+    ) : (
+      <div className="grid grid-cols-1 gap-2 max-h-52 overflow-y-auto pr-1">
+        {items.map((item) => {
+          const checked = selected.includes(item.id);
+          return (
+            <label
+              key={item.id}
+              className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-[12px] font-semibold transition-colors cursor-pointer ${
+                checked ? 'border-primary bg-primary/8 text-primary' : 'border-border bg-surface text-ink-soft hover:border-primary/60'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => onToggle(item.id, e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="min-w-0 flex-1 truncate">{item.name}</span>
+              <span className="text-[10px] font-extrabold text-muted">{item.code}</span>
+            </label>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
+
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const [form, setForm] = useState<UnitFormState>(() => toForm(unit));
   const [seedId, setSeedId] = useState<string | null | undefined>('init');
@@ -67,6 +114,8 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const updateUnit = useUpdateUnit();
   const { data: merekData } = useMereks({ page: 1, limit: 100 });
   const { data: tipeData } = useTipes(form.merekId || null, { page: 1, limit: 100 });
+  const { data: kelengkapanData, isLoading: kelengkapanLoading } = useMasterKelengkapan();
+  const { data: dokumenData, isLoading: dokumenLoading } = useMasterDokumen();
 
   const currentSeed = unit?.id ?? null;
   if (open && seedId !== currentSeed) {
@@ -76,11 +125,22 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
   const mereks = useMemo(() => (merekData?.data ?? []).filter((m) => m.isActive), [merekData]);
   const tipes = useMemo(() => (tipeData?.data ?? []).filter((t) => t.isActive), [tipeData]);
+  const kelengkapans = useMemo(() => (kelengkapanData?.data ?? []).filter((x) => x.isActive || form.kelengkapans.includes(x.id)), [kelengkapanData, form.kelengkapans]);
+  const dokumens = useMemo(() => (dokumenData?.data ?? []).filter((x) => x.isActive || form.dokumens.includes(x.id)), [dokumenData, form.dokumens]);
   const purchaseLocked = !!unit?.purchaseCashTransactionId;
   const isPending = createUnit.isPending || updateUnit.isPending;
 
   const set = <K extends keyof UnitFormState>(key: K, value: UnitFormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const toggleChecklist = (key: 'kelengkapans' | 'dokumens', id: string, checked: boolean) => {
+    setForm((f) => {
+      const next = new Set(f[key]);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return { ...f, [key]: Array.from(next) };
+    });
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -151,6 +211,22 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
             Harga beli dan tanggal pembelian dikunci karena pembelian unit sudah tercatat di kas.
           </p>
         )}
+        <div className="sm:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ChecklistSection
+            title="Perlengkapan"
+            loading={kelengkapanLoading}
+            items={kelengkapans}
+            selected={form.kelengkapans}
+            onToggle={(id, checked) => toggleChecklist('kelengkapans', id, checked)}
+          />
+          <ChecklistSection
+            title="Dokumen"
+            loading={dokumenLoading}
+            items={dokumens}
+            selected={form.dokumens}
+            onToggle={(id, checked) => toggleChecklist('dokumens', id, checked)}
+          />
+        </div>
       </form>
     </Modal>
   );

@@ -7,11 +7,19 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { CashAccountSelect } from '@/features/finance/components';
+import { API_ORIGIN } from '@/core/api/client';
 import { useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations } from './rekondisi.hooks';
 import { useRekondisis } from './rekondisi.hooks';
 import { useVendors } from '@/features/master/master.hooks';
 import { usePengecekan } from '@/features/master/master.hooks';
+import type { Vendor } from '@/features/master/types';
+import type { SimpleMaster } from '@/features/master/simpleMaster.api';
 import { useCreateRekondisi } from '@/features/units/unit.hooks';
+import { unitApi } from '@/features/units/unit.api';
+import { notifyApiError } from '@/core/api/notify';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
 import {
   REKONDISI_STATUS_LABEL, REKONDISI_STATUS_COLOR,
   type Rekondisi, type RekondisiDetail, type RekondisiDoneFormData,
@@ -19,6 +27,13 @@ import {
 
 const idr = (n?: number | null) =>
   n == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+
+const today = () => new Date().toISOString().slice(0, 10);
+const mediaUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_ORIGIN}/${url.replace(/^\/+/, '')}`;
+};
 
 /* ── Inline detail item row ── */
 const DetailItemRow = ({
@@ -142,13 +157,49 @@ const DoneForm = ({ rekondisiId, onClose }: { rekondisiId: string; onClose: () =
   );
 };
 
+const PayForm = ({ rekondisiId, onClose }: { rekondisiId: string; onClose: () => void }) => {
+  const [cashAccountId, setCashAccountId] = useState('');
+  const [paidDate, setPaidDate] = useState(today());
+  const m = useRekondisiMutations();
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    m.pay.mutate(
+      { id: rekondisiId, data: { cashAccountId, paidDate } },
+      { onSuccess: onClose },
+    );
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-3 p-4 bg-surface-soft rounded-xl border border-border mt-2">
+      <p className="text-[12px] font-bold text-ink">Pembayaran rekondisi</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={setCashAccountId} />
+        <TextField label="Tanggal Bayar" required type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={onClose} className="px-3 h-9 rounded-lg border border-border text-muted text-[12px] font-bold">Batal</button>
+        <button
+          type="submit"
+          disabled={m.pay.isPending || !cashAccountId || !paidDate}
+          className="flex-1 h-9 rounded-lg bg-primary text-white text-[12px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-60"
+        >
+          {m.pay.isPending ? <Loader2 size={14} className="animate-spin" /> : <Receipt size={14} />}
+          Bayar Rekondisi
+        </button>
+      </div>
+    </form>
+  );
+};
+
 /* ── Single rekondisi accordion card ── */
 const RekondisiCard = ({ r }: { r: Rekondisi }) => {
   const [open, setOpen] = useState(false);
   const [addForm, setAddForm] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [showPay, setShowPay] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
-  const [editInfo, setEditInfo] = useState(false);
+  const [editInfo, setEditInfo] = useState(!r.vendorId);
   const [vendorId, setVendorId] = useState(r.vendorId ?? '');
   const [keterangan, setKeterangan] = useState(r.keterangan ?? '');
   const [newPengecekanId, setNewPengecekanId] = useState('');
@@ -162,17 +213,21 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
 
   const { data: vendorsRes } = useVendors({ limit: 100 });
   const { data: pengecekanRes } = usePengecekan({ limit: 100 });
-  const vendors = (vendorsRes?.data ?? []) as any[];
-  const pengecekans = (pengecekanRes?.data ?? []) as any[];
+  const vendors: Vendor[] = vendorsRes?.data ?? [];
+  const pengecekans: SimpleMaster[] = pengecekanRes?.data ?? [];
 
   const m = useRekondisiMutations();
   const dm = useRekondisiDetailMutations(r.id);
   const canEdit = r.status !== 'COMPLETED';
+  const canPay = rekondisi.status === 'COMPLETED' && !rekondisi.paidAt && !rekondisi.cashTransactionId;
+  const hasVendor = !!rekondisi.vendorId;
+  const showInfoForm = canEdit && (!hasVendor || editInfo);
 
   const submitInfo = (e: FormEvent) => {
     e.preventDefault();
+    if (!vendorId) return;
     m.update.mutate(
-      { id: r.id, data: { vendorId: vendorId || null, keterangan: keterangan || null } },
+      { id: r.id, data: { vendorId, keterangan: keterangan || null } },
       { onSuccess: () => setEditInfo(false) },
     );
   };
@@ -211,10 +266,11 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
           ) : (
             <div className="p-4 space-y-4">
               {/* Info section */}
-              {editInfo ? (
+              {showInfoForm ? (
                 <form onSubmit={submitInfo} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <SelectField
                     label="Vendor / Bengkel"
+                    required
                     value={vendorId}
                     onChange={(e) => setVendorId(e.target.value)}
                     options={[{ value: '', label: 'Pilih vendor...' }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]}
@@ -226,8 +282,8 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                     placeholder="Contoh: Perbaikan AC dan kaki-kaki"
                   />
                   <div className="sm:col-span-2 flex gap-2">
-                    <Button type="submit" disabled={m.update.isPending}>Simpan</Button>
-                    <Button variant="secondary" onClick={() => setEditInfo(false)}>Batal</Button>
+                    <Button type="submit" disabled={m.update.isPending || !vendorId}>Simpan</Button>
+                    {hasVendor && <Button variant="secondary" onClick={() => setEditInfo(false)}>Batal</Button>}
                   </div>
                 </form>
               ) : (
@@ -303,6 +359,9 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                         <div className="flex justify-between text-[13px] font-extrabold text-ink pt-1.5 border-t border-border">
                           <span>Total</span><span>{idr(rekondisi.total)}</span>
                         </div>
+                        <div className="flex justify-between text-[12px] text-muted font-medium">
+                          <span>Status bayar</span><span>{rekondisi.paidAt ? 'Sudah dibayar' : 'Belum dibayar'}</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -315,8 +374,9 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                   {r.status === 'PENDING' && (
                     <button
                       onClick={() => m.progress.mutate(r.id)}
-                      disabled={m.progress.isPending}
+                      disabled={m.progress.isPending || !hasVendor}
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-blue text-white font-bold text-[12px] hover:bg-accent-blue/90 transition-colors disabled:opacity-60"
+                      title={!hasVendor ? 'Vendor wajib diisi sebelum mulai pengerjaan' : undefined}
                     >
                       {m.progress.isPending ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
                       Mulai Pengerjaan
@@ -333,8 +393,17 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 </div>
               )}
               {showDone && <DoneForm rekondisiId={r.id} onClose={() => setShowDone(false)} />}
+              {canPay && !showPay && (
+                <button
+                  onClick={() => setShowPay(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white font-bold text-[12px] hover:bg-primary/90 transition-colors"
+                >
+                  <Receipt size={13} /> Bayar Rekondisi
+                </button>
+              )}
+              {showPay && <PayForm rekondisiId={r.id} onClose={() => setShowPay(false)} />}
               {rekondisi.invoiceUrl && (
-                <a href={rekondisi.invoiceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline">
+                <a href={mediaUrl(rekondisi.invoiceUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline">
                   <Receipt size={13} /> Lihat Invoice
                 </a>
               )}
@@ -364,13 +433,26 @@ interface Props {
 }
 
 export const RekondisiDetailModal = ({ open, onClose, unitId, unitLabel }: Props) => {
-  const { data, isLoading } = useRekondisis(open && unitId ? { unitId, limit: 50 } : undefined);
+  const { data, isLoading } = useRekondisis(unitId ? { unitId, limit: 50 } : undefined, open && !!unitId);
   const rekondisiList: Rekondisi[] = (data?.data ?? []) as Rekondisi[];
   const createM = useCreateRekondisi();
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!unitId) return;
-    createM.mutate(unitId);
+    try {
+      const check = await unitApi.rekondisiStatusCheck(unitId);
+      if (check.data.hasUnfinishedRekondisi) {
+        store.dispatch(showToast({
+          type: 'general',
+          title: 'Rekondisi masih berjalan',
+          message: 'Unit ini masih memiliki rekondisi PENDING atau IN_PROGRESS.',
+        }));
+        return;
+      }
+      await createM.mutateAsync(unitId);
+    } catch (err) {
+      notifyApiError(err);
+    }
   };
 
   return (
@@ -385,7 +467,7 @@ export const RekondisiDetailModal = ({ open, onClose, unitId, unitLabel }: Props
         <div className="flex gap-2">
           <Button
             icon={<Plus size={15} />}
-            onClick={handleCreate}
+            onClick={() => { void handleCreate(); }}
             disabled={createM.isPending}
           >
             {createM.isPending ? 'Membuat...' : 'Buat Rekondisi'}

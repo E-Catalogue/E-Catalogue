@@ -3,12 +3,13 @@ import { rekondisiApi } from './rekondisi.api';
 import { notifyApiError } from '@/core/api/notify';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
-import type { RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData } from './rekondisi.types';
+import type { RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams } from './rekondisi.types';
 
-export function useRekondisis(params?: Record<string, any>) {
+export function useRekondisis(params?: RekondisiListParams, enabled = true) {
   return useQuery({
     queryKey: ['rekondisis', params],
     queryFn: () => rekondisiApi.list(params),
+    enabled,
   });
 }
 
@@ -53,14 +54,33 @@ export function useRekondisiMutations() {
       },
       onError: (e: unknown) => notifyApiError(e),
     }),
+    pay: useMutation({
+      mutationFn: ({ id, data }: { id: string; data: RekondisiPayFormData }) => rekondisiApi.pay(id, data),
+      onSuccess: (_, { id }) => {
+        store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Rekondisi berhasil dibayar' }));
+        inval(id);
+        qc.invalidateQueries({ queryKey: ['cash-transactions'] });
+        qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
+        qc.invalidateQueries({ queryKey: ['finance-lookups', 'rekondisis-payable'] });
+      },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
   };
 }
 
-export function useRekondisiDetails(rekondisiId?: string) {
+export function useRekondisiDetails(rekondisiId?: string, params?: { page?: number; limit?: number }) {
   return useQuery({
-    queryKey: ['rekondisi-details', rekondisiId],
-    queryFn: () => rekondisiApi.listDetail(rekondisiId!),
+    queryKey: ['rekondisi-details', rekondisiId, params],
+    queryFn: () => rekondisiApi.listDetail(rekondisiId!, params),
     enabled: !!rekondisiId,
+  });
+}
+
+export function useRekondisiDetail(rekondisiId?: string, id?: string) {
+  return useQuery({
+    queryKey: ['rekondisi-detail', rekondisiId, id],
+    queryFn: () => rekondisiApi.getDetail(rekondisiId!, id!),
+    enabled: !!rekondisiId && !!id,
   });
 }
 
@@ -68,6 +88,7 @@ export function useRekondisiDetailMutations(rekondisiId: string) {
   const qc = useQueryClient();
   const inval = () => {
     qc.invalidateQueries({ queryKey: ['rekondisi-details', rekondisiId] });
+    qc.invalidateQueries({ queryKey: ['rekondisi-detail', rekondisiId] });
     qc.invalidateQueries({ queryKey: ['rekondisi', rekondisiId] });
     qc.invalidateQueries({ queryKey: ['rekondisis'] });
   };

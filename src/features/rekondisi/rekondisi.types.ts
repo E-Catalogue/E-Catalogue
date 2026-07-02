@@ -16,6 +16,9 @@ export interface Rekondisi {
   additionalFee: number | null;
   total: number;
   invoiceUrl: string | null;
+  paidAt: string | null;
+  cashAccountId: string | null;
+  cashTransactionId: string | null;
   rekondisiDetails?: RekondisiDetail[];
   createdAt: string;
   updatedAt: string;
@@ -27,6 +30,7 @@ export interface RekondisiDetail {
   pengecekanId: string;
   description: string | null;
   nominal: number;
+  invoiceUrl?: string | null;
   pengecekan?: { id: string; name: string };
   createdAt?: string;
   updatedAt?: string;
@@ -48,6 +52,18 @@ export interface RekondisiDoneFormData {
   adminFee?: number;
   additionalFee?: number;
   invoice?: File;
+}
+
+export interface RekondisiPayFormData {
+  cashAccountId: string;
+  paidDate: string;
+}
+
+export interface RekondisiListParams {
+  page?: number;
+  limit?: number;
+  unitId?: string;
+  status?: RekondisiStatus;
 }
 
 export const REKONDISI_STATUS_LABEL: Record<RekondisiStatus, string> = {

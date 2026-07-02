@@ -1,9 +1,9 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { Rekondisi, RekondisiDetail, RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData } from './rekondisi.types';
+import type { Rekondisi, RekondisiDetail, RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams } from './rekondisi.types';
 
 export const rekondisiApi = {
-  list: async (params?: Record<string, any>) => {
+  list: async (params?: RekondisiListParams) => {
     const res = await apiClient.get<ApiResponse<Rekondisi[]>>('/rekondisis', { params });
     return res.data;
   },
@@ -35,9 +35,18 @@ export const rekondisiApi = {
     return res.data;
   },
 
-  // Detail items
-  listDetail: async (rekondisiId: string) => {
-    const res = await apiClient.get<ApiResponse<RekondisiDetail[]>>(`/rekondisis/${rekondisiId}/detail`);
+  pay: async (id: string, data: RekondisiPayFormData) => {
+    const res = await apiClient.post<ApiResponse<Rekondisi>>(`/rekondisis/${id}/pay`, data);
+    return res.data;
+  },
+
+  listDetail: async (rekondisiId: string, params?: { page?: number; limit?: number }) => {
+    const res = await apiClient.get<ApiResponse<RekondisiDetail[]>>(`/rekondisis/${rekondisiId}/detail`, { params });
+    return res.data;
+  },
+
+  getDetail: async (rekondisiId: string, id: string) => {
+    const res = await apiClient.get<ApiResponse<RekondisiDetail>>(`/rekondisis/${rekondisiId}/detail/${id}`);
     return res.data;
   },
 
