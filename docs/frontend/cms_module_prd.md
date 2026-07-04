@@ -5,7 +5,7 @@ Dokumen **self-contained** untuk tim frontend membangun UI admin panel + website
 - **Base API:** `${VITE_API_URL}` = `http://localhost:3000/api/v1`
 - **Base gambar:** `${VITE_API_ORIGIN}/public/<folder>/<filename>` (folder: `site`, `page`, `unit`, `testimoni`)
 - **Status backend:** ✅ migration sudah `up to date`, ✅ seed sudah dijalankan (group menu `CMS` + 7 menu + 21 permission aktif).
-- **Status frontend:** ✅ **Panel admin CMS selesai** (semua endpoint `/cms/*` dikonsumsi, per 4 Juli 2026). ⬜ Website publik (`/public/*`) masih data dummy. Kolom "FE" menandai status.
+- **Status frontend:** ✅ **Panel admin CMS + Website publik selesai** (semua endpoint `/cms/*` dan `/public/*` dikonsumsi, per 4 Juli 2026). Kolom "FE" menandai status.
 
 ---
 
@@ -15,16 +15,16 @@ Legenda FE: ⛔ belum dibuat · 🟡 sebagian · ✅ sudah
 
 | # | Fitur | Endpoint publik | Endpoint admin | FE |
 |---|-------|-----------------|----------------|----|
-| 1 | Site Settings | `GET /public/site-settings` | `GET/PUT /cms/site-settings` + upload logo/favicon | ✅ admin · ⬜ publik |
-| 2 | Beranda (7 section) | `GET /public/homepage` | `GET/PUT /cms/homepage/{section}` + hero-image | ✅ admin · ⬜ publik |
-| 3 | Tentang (5 section) | `GET /public/about` | `GET/PUT /cms/about/{section}` + hero-image | ✅ admin · ⬜ publik |
-| 4 | Header Katalog | `GET /public/catalog-page` | `GET/PUT /cms/catalog-page` | ✅ admin · ⬜ publik |
-| 5 | Header Kontak | `GET /public/contact-page` | `GET/PUT /cms/contact-page` | ✅ admin · ⬜ publik |
-| 6 | Katalog publik | `GET /public/catalog*` | — | 🟡 (publik masih dummy) |
+| 1 | Site Settings | `GET /public/site-settings` | `GET/PUT /cms/site-settings` + upload logo/favicon | ✅ |
+| 2 | Beranda (7 section) | `GET /public/homepage` | `GET/PUT /cms/homepage/{section}` + hero-image | ✅ |
+| 3 | Tentang (5 section) | `GET /public/about` | `GET/PUT /cms/about/{section}` + hero-image | ✅ |
+| 4 | Header Katalog | `GET /public/catalog-page` | `GET/PUT /cms/catalog-page` | ✅ |
+| 5 | Header Kontak | `GET /public/contact-page` | `GET/PUT /cms/contact-page` | ✅ |
+| 6 | Katalog publik | `GET /public/catalog*` | — | ✅ |
 | 7 | Kelola tayang katalog | — | `GET /cms/catalog`, `PATCH .../publish`, galeri foto | ✅ |
-| 8 | Testimoni | `GET /public/testimonials` | CRUD `/cms/testimonials*` | ✅ admin · ⬜ publik |
-| 9 | Pesan Kontak | `POST /public/contact-messages` | inbox `/cms/contact-messages*` | ✅ admin · ⬜ form publik |
-| 10 | Simulasi Kredit | `GET /public/.../config`, `POST /.../calculate` | `GET/PUT /cms/.../config` | ✅ admin · ⬜ publik |
+| 8 | Testimoni | `GET /public/testimonials` | CRUD `/cms/testimonials*` | ✅ |
+| 9 | Pesan Kontak | `POST /public/contact-messages` | inbox `/cms/contact-messages*` | ✅ |
+| 10 | Simulasi Kredit | `GET /public/.../config`, `POST /.../calculate` | `GET/PUT /cms/.../config` | ✅ |
 | 11 | Upload generik | — | `POST /cms/uploads/{page,site,testimoni}` | ✅ (`uploadCmsImage`) |
 
 **Belum dikerjakan di backend** (opsional, bukan blocker): hapus file fisik lama saat ganti logo/avatar/hero; rate-limit form kontak; SEO meta per halaman; preview draft; automated test.

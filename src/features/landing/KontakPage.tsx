@@ -1,70 +1,70 @@
 import { useState, type FormEvent } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, MessageCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, MessageCircle, Loader2 } from 'lucide-react';
 import { PublicHeader } from './PublicHeader';
-import { WHATSAPP_URL } from './publicNav';
-import { usePublicSiteSettings } from './landing.hooks';
+import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { usePublicSiteSettings, usePublicContactPage, useSubmitContact } from './landing.hooks';
+import { notifyApiError } from '@/core/api/notify';
 import { Reveal } from '@/shared/components/Reveal';
 
-const DEFAULT_INFO = [
-  { id: 'address', icon: MapPin, title: 'Alamat', value: 'Jl. Raya Otomotif No. 88, Jakarta Selatan' },
-  { id: 'phone', icon: Phone, title: 'Telepon', value: '021-1500-888' },
-  { id: 'email', icon: Mail, title: 'Email', value: 'halo@gmmobilindo.id' },
-  { id: 'hours', icon: Clock, title: 'Jam Buka', value: 'Senin–Sabtu, 09.00–18.00 WIB' },
-];
-
-const inputClass =
-  'w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all';
+const inputClass = 'w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all';
 
 export const KontakPage = () => {
-  const [sent, setSent] = useState(false);
   const { data: settings } = usePublicSiteSettings();
-  
-  const submit = (e: FormEvent) => { e.preventDefault(); setSent(true); };
+  const { data: page } = usePublicContactPage();
+  const submitM = useSubmitContact();
+  const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', email: '', message: '', website: '' });
 
-  const info = DEFAULT_INFO.map(item => {
-    let value = item.value;
-    if (item.id === 'address' && settings?.address) value = settings.address;
-    if (item.id === 'phone' && settings?.whatsappNumber) value = settings.whatsappNumber;
-    if (item.id === 'email' && settings?.email) value = settings.email;
-    return { ...item, value };
-  });
+  const set = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
-  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : WHATSAPP_URL;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    submitM.mutate(
+      { name: form.name, phone: form.phone, email: form.email || undefined, message: form.message, website: form.website },
+      { onSuccess: () => { setSent(true); setForm({ name: '', phone: '', email: '', message: '', website: '' }); }, onError: (err) => notifyApiError(err) },
+    );
+  };
+
+  const info = [
+    { icon: MapPin, title: 'Alamat', value: settings?.address },
+    { icon: Phone, title: 'Telepon', value: settings?.phone },
+    { icon: Mail, title: 'Email', value: settings?.email },
+    { icon: Clock, title: 'Jam Buka', value: settings?.businessHours },
+  ].filter((i) => i.value);
+
+  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
+  const mapUrl = settings?.mapEmbedUrl || 'https://www.openstreetmap.org/export/embed.html?bbox=106.78%2C-6.30%2C106.86%2C-6.22&layer=mapnik';
 
   return (
     <>
       <PublicHeader
-        eyebrow="Kontak"
-        title="Kami Siap Membantu"
-        subtitle="Punya pertanyaan tentang unit, kredit, atau test drive? Hubungi kami kapan saja."
+        eyebrow={page?.eyebrow ?? 'Kontak'}
+        title={page?.title ?? 'Kami Siap Membantu'}
+        subtitle={page?.subtitle ?? 'Punya pertanyaan tentang unit, kredit, atau test drive? Hubungi kami kapan saja.'}
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Kontak' }]}
       />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 grid lg:grid-cols-2 gap-8 items-start">
-        {/* Info + map */}
         <Reveal className="space-y-5">
-          <div className="grid sm:grid-cols-2 gap-4">
-            {info.map((i) => {
-              const Icon = i.icon;
-              return (
-                <div key={i.title} className="bg-surface rounded-2xl border border-border p-5">
-                  <div className="w-11 h-11 rounded-xl bg-primary-light text-primary flex items-center justify-center mb-3"><Icon size={20} strokeWidth={2.2} /></div>
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{i.title}</p>
-                  <p className="text-[14px] font-bold text-ink mt-0.5 leading-snug">{i.value}</p>
-                </div>
-              );
-            })}
-          </div>
+          {info.length > 0 && (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {info.map((i) => {
+                const Icon = i.icon;
+                return (
+                  <div key={i.title} className="bg-surface rounded-2xl border border-border p-5">
+                    <div className="w-11 h-11 rounded-xl bg-primary-light text-primary flex items-center justify-center mb-3"><Icon size={20} strokeWidth={2.2} /></div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{i.title}</p>
+                    <p className="text-[14px] font-bold text-ink mt-0.5 leading-snug">{i.value}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <a href={waUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full rounded-2xl bg-accent-green text-white font-bold text-[14px] px-5 py-4 hover:brightness-95 transition-all">
             <MessageCircle size={19} /> Chat via WhatsApp
           </a>
           <div className="rounded-2xl overflow-hidden border border-border h-64 bg-surface-soft">
-            <iframe
-              title="Lokasi GM Mobilindo"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=106.78%2C-6.30%2C106.86%2C-6.22&layer=mapnik"
-              className="w-full h-full"
-              loading="lazy"
-            />
+            <iframe title="Lokasi" src={mapUrl} className="w-full h-full" loading="lazy" />
           </div>
         </Reveal>
 
@@ -83,26 +83,28 @@ export const KontakPage = () => {
                 <h2 className="text-xl font-extrabold text-ink">Kirim Pesan</h2>
                 <p className="text-[13px] text-muted font-medium mt-1">Isi formulir, kami balas secepatnya.</p>
               </div>
+              {/* Honeypot anti-spam (harus tetap kosong) */}
+              <input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => set('website', e.target.value)} className="hidden" aria-hidden="true" />
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Nama</label>
-                  <input required className={inputClass} placeholder="Nama Anda" />
+                  <input required value={form.name} onChange={(e) => set('name', e.target.value)} className={inputClass} placeholder="Nama Anda" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">No. Telepon</label>
-                  <input required className={inputClass} placeholder="0812-xxxx-xxxx" />
+                  <input required value={form.phone} onChange={(e) => set('phone', e.target.value)} className={inputClass} placeholder="0812-xxxx-xxxx" />
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Email</label>
-                <input type="email" className={inputClass} placeholder="email@contoh.com" />
+                <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Email (opsional)</label>
+                <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} className={inputClass} placeholder="email@contoh.com" />
               </div>
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Pesan</label>
-                <textarea required rows={5} className={`${inputClass} h-auto py-3 resize-none`} placeholder="Tulis pertanyaan Anda..." />
+                <textarea required value={form.message} onChange={(e) => set('message', e.target.value)} rows={5} className={`${inputClass} h-auto py-3 resize-none`} placeholder="Tulis pertanyaan Anda..." />
               </div>
-              <button type="submit" className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors">
-                <Send size={17} /> Kirim Pesan
+              <button type="submit" disabled={submitM.isPending} className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors disabled:opacity-60">
+                {submitM.isPending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />} {submitM.isPending ? 'Mengirim…' : 'Kirim Pesan'}
               </button>
             </form>
           )}

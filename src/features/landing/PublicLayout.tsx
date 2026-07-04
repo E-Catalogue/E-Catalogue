@@ -5,12 +5,6 @@ import { PUBLIC_NAV, WHATSAPP_URL as DEFAULT_WA } from './publicNav';
 import { usePublicSiteSettings } from './landing.hooks';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 
-const InstagramIcon = () => (
-  <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-);
-const FacebookIcon = () => (
-  <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-);
 
 const NavLogo = ({ logoUrl, companyName, tagline }: { logoUrl?: string | null; companyName: string; tagline: string }) => (
   <Link to="/" className="flex items-center gap-3">
@@ -107,10 +101,10 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
               {s?.footerDescription || 'Showroom mobil bekas berkualitas dengan layanan terpercaya, bergaransi, dan harga transparan untuk mobil impian Anda.'}
             </p>
             <div className="flex gap-3 mt-5">
-              <a href={waUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><MessageCircle size={18} /></a>
-              {s?.social?.instagram && <a href={s.social.instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><InstagramIcon /></a>}
-              {s?.social?.facebook && <a href={s.social.facebook} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><FacebookIcon /></a>}
-              {s?.social?.website && <a href={s.social.website} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
+              <a href={waUrl} target="_blank" rel="noreferrer" title="WhatsApp" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><MessageCircle size={18} /></a>
+              {s?.social?.instagram && <a href={s.social.instagram} target="_blank" rel="noreferrer" title="Instagram" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
+              {s?.social?.facebook && <a href={s.social.facebook} target="_blank" rel="noreferrer" title="Facebook" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
+              {s?.social?.website && <a href={s.social.website} target="_blank" rel="noreferrer" title="Website" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
             </div>
           </div>
           <div>

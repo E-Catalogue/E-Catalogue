@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 4 Juli 2026 (rev 7 — CMS admin panel lengkap, per-section)
+> **Terakhir diperbarui:** 4 Juli 2026 (rev 8 — situs publik consume /public/* API)
 
 ---
 
@@ -70,6 +70,18 @@
 - [x] **TestimoniPage** → `/cms/testimonials` (CRUD + publish + avatar)
 - [x] **KatalogPage (CMS)** → `/cms/catalog` (publish/isNew/statusKatalog)
 - [x] **KontakCmsPage** → `/cms/site-settings`
+
+### Situs Publik / Customer (API nyata) — *rev 8*
+- [x] `public.types.ts` — CatalogCard, CatalogDetail, PublicHomepage/About (agregat), CreditCalcResult, CatalogQuery, dll
+- [x] `landing.api.ts` + `landing.hooks.ts` — semua endpoint `/public/*` (site-settings, homepage, about, catalog + brands + detail + related, catalog-page, contact-page, credit config + **calculate**, submit contact)
+- [x] `Ic.tsx` — resolver string ikon lucide (dari CMS) → komponen · `PublicUnitCard` — kartu unit dari `CatalogCard` (harga/km/transmisi API)
+- [x] **PublicLayout** — nama/logo/tagline/navLinks/footer/sosial/WA/copyright dinamis dari `site-settings`
+- [x] **LandingPage** → `GET /public/homepage` (7 section, hormati `isVisible`, ikon & unit unggulan dari API, reveal animasi)
+- [x] **KatalogPage (publik)** → `GET /public/catalog` (filter server-side: search/merek/transmisi/BBM/harga/sort + paginasi) + brands + catalog-page header
+- [x] **KatalogDetailPage** → `GET /public/catalog/:id` + related + config (galeri, spesifikasi, kelengkapan/dokumen, WA prefilled, cicilan pakai `installmentFromFactor`)
+- [x] **SimulasiPage** → config (slider) + **`POST /public/credit-simulation/calculate`** (angka final, debounced, ikut method aktif)
+- [x] **TentangPage** → `GET /public/about` (5 section)
+- [x] **KontakPage** → contact-page + site-settings + **`POST /public/contact-messages`** (honeypot anti-spam)
 
 ### Polish UI global — *rev 6*
 - [x] **Modal notifikasi** — ikon sukses = ceklis hijau (`CheckCircle2`), gagal/peringatan = tanda seru (`AlertTriangle`), via `variant` di `uiSlice` + derivasi title
@@ -144,7 +156,7 @@
 | **CMS — Katalog + galeri + header** (`KatalogPage`) | `cmsCatalogApi` + `catalogPageApi` | ✅ |
 | **CMS — Kontak & Pesan** (`ContactInboxPage`) | `contactPageApi` + `contactMessageApi` | ✅ |
 | **CMS — Simulasi Kredit** (`CreditSimPage`) | `creditSimApi` | ✅ |
-| Situs publik consume `/public/*` | — (website customer masih data dummy) | ⬜ |
+| **Situs publik (7 halaman)** consume `/public/*` | `landingApi` + `landing.hooks` | ✅ |
 
 ---
 
@@ -172,8 +184,8 @@
 - [ ] 🟢 **`ExpenseFormModal.tsx`** — tidak direferensikan di mana pun (PengeluaranPage sudah pakai finance API). Hapus atau arsipkan.
 - [ ] 🟢 **`SaleFormModal.tsx` / `PaymentFormModal.tsx`** — hanya dipakai `QuickInput` (shortcut lama). Setelah wire ke API, evaluasi ulang.
 
-### Sengaja statis (bukan target sekarang) ⚪
-- Halaman **publik/customer** (`landing/*`: LandingPage, KatalogPage, KatalogDetailPage, SimulasiPage) — sesuai keputusan sebelumnya pakai data dummy sampai API CMS/katalog publik siap (lihat [cms_prd.md](cms_prd.md)).
+### Sudah dinamis (rev 8) ✅
+- Halaman **publik/customer** (`landing/*`) kini konsumsi `/public/*` (lihat section "Situs Publik / Customer (API nyata)"). Redux dummy `s.data.*` **tidak lagi** dipakai di situs publik.
 
 ---
 
@@ -233,11 +245,13 @@ Pendukung: `ImageUpload` (preview + validasi), `useSectionForm`/`useCmsSection` 
 
 > **Sisa utama CMS = migrasi situs publik ke `/public/*`.** Semua API layer publik/agregat sudah tersedia di `cms.api.ts` (`siteSettingsApi.getPublic`) — perlu tambah hook publik untuk homepage/about/catalog/credit-sim + ganti data dummy. Butuh backend aktif untuk verifikasi.
 
-### F. CMS — sisa migrasi situs publik 🔴
-> Panel admin CMS **selesai** (lihat tabel status di atas). Sisa = migrasi website customer dari data dummy ke `/public/*`.
-- [x] Panel admin: Site Settings, Beranda (7 section), Tentang (5 section), Testimoni, Katalog (publish+galeri+header), Kontak & Pesan (inbox), Simulasi Kredit
-- [ ] 🔴 **Situs publik consume `/public/*`** — migrasi `landing/*` (Layout, LandingPage 7 section, Katalog, Detail, Simulasi, Tentang, Kontak) dari dummy Redux ke endpoint publik. Perlu hook publik (`usePublicHomepage`, `usePublicAbout`, `usePublicCatalog`, `usePublicCreditConfig` + `calculate`) + backend aktif untuk verifikasi.
-- [ ] 🟠 **Perbaiki 3 file build error (bukan CMS, parallel work)**: `DashboardCashflowPage`, `TargetPendapatanPage`, `TargetPenjualanPage` — prop `size`/`className` tidak ada di Button/Modal, Column generic, unused imports.
+### F. CMS + Situs Publik — SELESAI ✅
+- [x] Panel admin CMS: Site Settings, Beranda (7 section), Tentang (5 section), Testimoni, Katalog (publish+galeri+header), Kontak & Pesan (inbox), Simulasi Kredit
+- [x] **Situs publik consume `/public/*`** — 7 halaman (`landing/*`) sudah dinamis dari API (site-settings, homepage, about, catalog+detail+related, credit config+calculate, contact submit). Data dummy Redux tidak lagi dipakai di situs publik.
+- [ ] 🟢 Verifikasi end-to-end dengan backend aktif (uji render nyata + submit form).
+
+### Z. Perbaikan build (bukan CMS/publik — pekerjaan paralel) 🟠
+- [ ] 🟠 **3 file error build**: `DashboardCashflowPage`, `TargetPendapatanPage`, `TargetPenjualanPage` — prop `size`/`className` tidak ada di Button/Modal, `Column` generic, unused imports. Bukan bagian tugas CMS/publik; perlu dirapikan agar `tsc -b` hijau.
 
 ### E. Lain-lain 🟢
 - [ ] 🟢 Fungsikan wishlist/favorit (tombol hati) & bandingkan mobil
