@@ -29,6 +29,7 @@ import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
 import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
 import { Route as AdminLaporanRouteImport } from './routes/_admin/laporan'
 import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
+import { Route as AdminDashboardCashflowRouteImport } from './routes/_admin/dashboard-cashflow'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
 import { Route as AdminCashflowRouteImport } from './routes/_admin/cashflow'
@@ -151,6 +152,11 @@ const AdminLaporanRoute = AdminLaporanRouteImport.update({
 const AdminInventoryRoute = AdminInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardCashflowRoute = AdminDashboardCashflowRouteImport.update({
+  id: '/dashboard-cashflow',
+  path: '/dashboard-cashflow',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
   '/dashboard': typeof AdminDashboardRoute
+  '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
   '/inventory': typeof AdminInventoryRoute
   '/laporan': typeof AdminLaporanRoute
   '/merek': typeof AdminMerekRoute
@@ -334,6 +341,7 @@ export interface FileRoutesByTo {
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
   '/dashboard': typeof AdminDashboardRoute
+  '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
   '/inventory': typeof AdminInventoryRoute
   '/laporan': typeof AdminLaporanRoute
   '/merek': typeof AdminMerekRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/_admin/cashflow': typeof AdminCashflowRoute
   '/_admin/crm': typeof AdminCrmRoute
   '/_admin/dashboard': typeof AdminDashboardRoute
+  '/_admin/dashboard-cashflow': typeof AdminDashboardCashflowRoute
   '/_admin/inventory': typeof AdminInventoryRoute
   '/_admin/laporan': typeof AdminLaporanRoute
   '/_admin/merek': typeof AdminMerekRoute
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
     | '/cashflow'
     | '/crm'
     | '/dashboard'
+    | '/dashboard-cashflow'
     | '/inventory'
     | '/laporan'
     | '/merek'
@@ -474,6 +484,7 @@ export interface FileRouteTypes {
     | '/cashflow'
     | '/crm'
     | '/dashboard'
+    | '/dashboard-cashflow'
     | '/inventory'
     | '/laporan'
     | '/merek'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/_admin/cashflow'
     | '/_admin/crm'
     | '/_admin/dashboard'
+    | '/_admin/dashboard-cashflow'
     | '/_admin/inventory'
     | '/_admin/laporan'
     | '/_admin/merek'
@@ -707,6 +719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInventoryRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/dashboard-cashflow': {
+      id: '/_admin/dashboard-cashflow'
+      path: '/dashboard-cashflow'
+      fullPath: '/dashboard-cashflow'
+      preLoaderRoute: typeof AdminDashboardCashflowRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/dashboard': {
       id: '/_admin/dashboard'
       path: '/dashboard'
@@ -891,6 +910,7 @@ interface AdminRouteChildren {
   AdminCashflowRoute: typeof AdminCashflowRoute
   AdminCrmRoute: typeof AdminCrmRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminDashboardCashflowRoute: typeof AdminDashboardCashflowRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminLaporanRoute: typeof AdminLaporanRoute
   AdminMerekRoute: typeof AdminMerekRoute
@@ -930,6 +950,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCashflowRoute: AdminCashflowRoute,
   AdminCrmRoute: AdminCrmRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminDashboardCashflowRoute: AdminDashboardCashflowRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminLaporanRoute: AdminLaporanRoute,
   AdminMerekRoute: AdminMerekRoute,

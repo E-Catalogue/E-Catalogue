@@ -190,3 +190,89 @@ export const PIPELINE = [
 ];
 
 export const CONVERSION_RATE = 12.5;
+
+/* ── Dashboard V2 Mock Data ─────────────────────────────── */
+
+export const DASH = {
+  // Row 1 – KPI
+  totalStock: 42,
+  unitTerjual: 18,
+  nilaiInventory: 8_240_000_000,
+  omzet: 3_240_000_000,
+  totalPengeluaran: 58_850_000,
+  get cashTersedia() { return this.omzet - this.totalPengeluaran; },
+  get profit() { return this.omzet - 2_850_000_000 - this.totalPengeluaran; },
+  // trends vs bulan lalu
+  trendStock: -3,
+  trendTerjual: 12.5,
+  trendInventory: 5.2,
+  trendOmzet: 8.3,
+  trendPengeluaran: -4.1,
+  trendCash: 10.6,
+  trendProfit: 15.2,
+  // Target
+  targetUnit: 25,
+  targetOmzet: 5_000_000_000,
+};
+
+export const MONTHLY_SALES: { month: string; unit: number; omzet: number }[] = [
+  { month: 'Jan', unit: 14, omzet: 2_520_000_000 },
+  { month: 'Feb', unit: 12, omzet: 2_160_000_000 },
+  { month: 'Mar', unit: 20, omzet: 3_600_000_000 },
+  { month: 'Apr', unit: 16, omzet: 2_880_000_000 },
+  { month: 'Mei', unit: 22, omzet: 3_960_000_000 },
+  { month: 'Jun', unit: 19, omzet: 3_420_000_000 },
+  { month: 'Jul', unit: 18, omzet: 3_240_000_000 },
+  { month: 'Ags', unit: 0, omzet: 0 },
+  { month: 'Sep', unit: 0, omzet: 0 },
+  { month: 'Okt', unit: 0, omzet: 0 },
+  { month: 'Nov', unit: 0, omzet: 0 },
+  { month: 'Des', unit: 0, omzet: 0 },
+];
+
+export const MONTH_COMPARE = {
+  bulanIni: { label: 'Juli 2026', unit: 18, omzet: 3_240_000_000, profit: 331_150_000, pengeluaran: 58_850_000 },
+  bulanLalu: { label: 'Juni 2026', unit: 19, omzet: 3_420_000_000, profit: 295_000_000, pengeluaran: 62_000_000 },
+};
+
+export const YEAR_COMPARE = {
+  tahunIni: { label: '2026 (YTD)', unit: 121, omzet: 21_780_000_000, profit: 2_180_000_000, pengeluaran: 412_000_000 },
+  tahunLalu: { label: '2025 (YTD)', unit: 98, omzet: 17_640_000_000, profit: 1_680_000_000, pengeluaran: 380_000_000 },
+};
+
+export const TOP_SELLING: { rank: number; merek: string; tipe: string; count: number; revenue: number }[] = [
+  { rank: 1, merek: 'Toyota', tipe: 'Avanza', count: 5, revenue: 900_000_000 },
+  { rank: 2, merek: 'Mitsubishi', tipe: 'Xpander', count: 4, revenue: 1_000_000_000 },
+  { rank: 3, merek: 'Honda', tipe: 'Brio', count: 3, revenue: 510_000_000 },
+  { rank: 4, merek: 'Toyota', tipe: 'Fortuner', count: 3, revenue: 1_275_000_000 },
+  { rank: 5, merek: 'Daihatsu', tipe: 'Sigra', count: 2, revenue: 280_000_000 },
+];
+
+export const AGING_STOCK: { id: string; merek: string; tipe: string; plat: string; harga: number; masuk: string; hari: number }[] = [
+  { id: 'a1', merek: 'Suzuki', tipe: 'XL7 Alpha', plat: 'B 4567 EFG', harga: 205_000_000, masuk: '2026-05-01', hari: 64 },
+  { id: 'a2', merek: 'Honda', tipe: 'Brio RS', plat: 'B 6789 HIJ', harga: 175_000_000, masuk: '2026-05-10', hari: 55 },
+  { id: 'a3', merek: 'Daihatsu', tipe: 'Terios X', plat: 'B 8901 KLM', harga: 195_000_000, masuk: '2026-05-20', hari: 45 },
+  { id: 'a4', merek: 'Toyota', tipe: 'Rush GR', plat: 'B 1234 NOP', harga: 245_000_000, masuk: '2026-06-05', hari: 29 },
+  { id: 'a5', merek: 'Toyota', tipe: 'Avanza G', plat: 'B 5678 QRS', harga: 185_000_000, masuk: '2026-06-15', hari: 19 },
+];
+
+export const SALES_PERF: { name: string; initial: string; unit: number; revenue: number }[] = [
+  { name: 'Andi Firmansyah', initial: 'AF', unit: 8, revenue: 1_440_000_000 },
+  { name: 'Budi Santoso', initial: 'BS', unit: 6, revenue: 1_080_000_000 },
+  { name: 'Citra Dewi', initial: 'CD', unit: 4, revenue: 720_000_000 },
+];
+
+export const LEAD_SOURCES: { source: string; count: number; color: string }[] = [
+  { source: 'WhatsApp', count: 22, color: '#25D366' },
+  { source: 'Walk-in', count: 14, color: 'var(--color-primary)' },
+  { source: 'Marketplace', count: 10, color: 'var(--color-accent-blue)' },
+  { source: 'Referral', count: 6, color: 'var(--color-accent-purple)' },
+  { source: 'Instagram', count: 4, color: 'var(--color-accent-amber)' },
+];
+
+export const SLOW_MOVING: { merek: string; tipe: string; terjual3bln: number; avgDays: number; stokSaatIni: number }[] = [
+  { merek: 'Suzuki', tipe: 'XL7', terjual3bln: 1, avgDays: 58, stokSaatIni: 2 },
+  { merek: 'Daihatsu', tipe: 'Terios', terjual3bln: 1, avgDays: 52, stokSaatIni: 1 },
+  { merek: 'Honda', tipe: 'Brio', terjual3bln: 2, avgDays: 45, stokSaatIni: 3 },
+  { merek: 'Nissan', tipe: 'Livina', terjual3bln: 0, avgDays: 0, stokSaatIni: 1 },
+];
