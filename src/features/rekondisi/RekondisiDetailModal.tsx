@@ -1,13 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import {
   Wrench, Plus, Pencil, Trash2, Play, CheckCircle, Loader2,
-  ChevronDown, ChevronUp, Receipt,
+  ChevronDown, ChevronUp, Receipt, Send, XCircle,
 } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { CashAccountSelect } from '@/features/finance/components';
+import { Can } from '@/features/auth/permissions';
 import { API_ORIGIN } from '@/core/api/client';
 import { useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations } from './rekondisi.hooks';
 import { useRekondisis } from './rekondisi.hooks';
@@ -179,10 +180,12 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
 
   const m = useRekondisiMutations();
   const dm = useRekondisiDetailMutations(r.id);
-  const canEdit = r.status !== 'COMPLETED';
+  const canEdit = rekondisi.status === 'DRAFT';
   const canPay = rekondisi.status === 'COMPLETED' && !rekondisi.paidAt && !rekondisi.cashTransactionId;
   const hasVendor = !!rekondisi.vendorId;
   const showInfoForm = canEdit && (!hasVendor || editInfo);
+  const canSubmit = rekondisi.status === 'DRAFT' && hasVendor && items.length > 0;
+  const canShowStatusActions = ['DRAFT', 'PENDING', 'APPROVED', 'IN_PROGRESS'].includes(rekondisi.status);
 
   const submitInfo = (e: FormEvent) => {
     e.preventDefault();
@@ -205,9 +208,9 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
     <div className="border border-border rounded-2xl overflow-hidden">
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-surface-soft transition-colors text-left">
         <span className="text-[11px] font-bold text-muted shrink-0">#{r.seq}</span>
-        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${REKONDISI_STATUS_COLOR[r.status]}`}>{REKONDISI_STATUS_LABEL[r.status]}</span>
-        <span className="text-[13px] font-semibold text-ink-soft truncate flex-1">{r.vendor?.name ?? (r.keterangan || 'Belum diisi')}</span>
-        {r.total > 0 && <span className="font-bold text-ink text-[13px] shrink-0">{idr(r.total)}</span>}
+        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${REKONDISI_STATUS_COLOR[rekondisi.status]}`}>{REKONDISI_STATUS_LABEL[rekondisi.status]}</span>
+        <span className="text-[13px] font-semibold text-ink-soft truncate flex-1">{rekondisi.vendor?.name ?? (rekondisi.keterangan || 'Belum diisi')}</span>
+        {rekondisi.total > 0 && <span className="font-bold text-ink text-[13px] shrink-0">{idr(rekondisi.total)}</span>}
         {open ? <ChevronUp size={15} className="text-muted shrink-0" /> : <ChevronDown size={15} className="text-muted shrink-0" />}
       </button>
 
@@ -275,15 +278,33 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 )}
               </div>
 
-              {canEdit && (
+              {canShowStatusActions && (
                 <div className="flex flex-wrap gap-2">
-                  {r.status === 'PENDING' && (
-                    <button onClick={() => m.progress.mutate(r.id)} disabled={m.progress.isPending || !hasVendor} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-blue text-white font-bold text-[12px] hover:bg-accent-blue/90 transition-colors disabled:opacity-60" title={!hasVendor ? 'Vendor wajib diisi sebelum mulai pengerjaan' : undefined}>
+                  {rekondisi.status === 'DRAFT' && (
+                    <button onClick={() => m.submit.mutate(r.id)} disabled={m.submit.isPending || !canSubmit} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white font-bold text-[12px] hover:bg-primary/90 transition-colors disabled:opacity-60" title={!canSubmit ? 'Vendor dan minimal satu item pekerjaan wajib diisi sebelum diajukan' : undefined}>
+                      {m.submit.isPending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                      Ajukan
+                    </button>
+                  )}
+                  {rekondisi.status === 'PENDING' && (
+                    <Can code="REKONDISI_APPROVAL">
+                      <button onClick={() => m.approve.mutate(r.id)} disabled={m.approve.isPending || m.reject.isPending} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-green text-white font-bold text-[12px] hover:bg-accent-green/90 transition-colors disabled:opacity-60">
+                        {m.approve.isPending ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+                        Approve
+                      </button>
+                      <button onClick={() => m.reject.mutate(r.id)} disabled={m.approve.isPending || m.reject.isPending} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-semantic-error text-white font-bold text-[12px] hover:bg-semantic-error/90 transition-colors disabled:opacity-60">
+                        {m.reject.isPending ? <Loader2 size={13} className="animate-spin" /> : <XCircle size={13} />}
+                        Reject
+                      </button>
+                    </Can>
+                  )}
+                  {rekondisi.status === 'APPROVED' && (
+                    <button onClick={() => m.progress.mutate(r.id)} disabled={m.progress.isPending} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-blue text-white font-bold text-[12px] hover:bg-accent-blue/90 transition-colors disabled:opacity-60">
                       {m.progress.isPending ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
                       Mulai Pengerjaan
                     </button>
                   )}
-                  {r.status === 'IN_PROGRESS' && !showDone && (
+                  {rekondisi.status === 'IN_PROGRESS' && !showDone && (
                     <button onClick={() => setShowDone(true)} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-green text-white font-bold text-[12px] hover:bg-accent-green/90 transition-colors">
                       <CheckCircle size={13} /> Selesaikan Rekondisi
                     </button>
@@ -324,7 +345,7 @@ export const RekondisiDetailModal = ({ open, onClose, unitId, unitLabel }: Props
         store.dispatch(showToast({
           type: 'general',
           title: 'Rekondisi masih berjalan',
-          message: 'Unit ini masih memiliki rekondisi PENDING atau IN_PROGRESS.',
+          message: 'Unit ini masih memiliki rekondisi yang belum selesai.',
         }));
         return;
       }

@@ -1,4 +1,4 @@
-export type RekondisiStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+export type RekondisiStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface Rekondisi {
   id: string;
@@ -67,13 +67,17 @@ export interface RekondisiListParams {
 }
 
 export const REKONDISI_STATUS_LABEL: Record<RekondisiStatus, string> = {
+  DRAFT: 'Draft',
   PENDING: 'Pending',
+  APPROVED: 'Disetujui',
   IN_PROGRESS: 'Dalam Proses',
   COMPLETED: 'Selesai',
 };
 
 export const REKONDISI_STATUS_COLOR: Record<RekondisiStatus, string> = {
+  DRAFT: 'bg-slate-100 text-slate-600',
   PENDING: 'bg-amber-100 text-amber-700',
+  APPROVED: 'bg-teal-100 text-teal-700',
   IN_PROGRESS: 'bg-blue-100 text-blue-700',
   COMPLETED: 'bg-green-100 text-green-700',
 };

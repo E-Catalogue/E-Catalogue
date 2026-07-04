@@ -29,7 +29,9 @@ const idr = (n?: number | null) => (n == null ? '-' : formatCurrency(n, { compac
 
 const STATUS_OPTIONS: Array<{ value: RekondisiStatus | ''; label: string }> = [
   { value: '', label: 'Semua Status' },
+  { value: 'DRAFT', label: 'Draft' },
   { value: 'PENDING', label: 'Pending' },
+  { value: 'APPROVED', label: 'Disetujui' },
   { value: 'IN_PROGRESS', label: 'Dalam Proses' },
   { value: 'COMPLETED', label: 'Selesai' },
 ];
@@ -59,7 +61,7 @@ const CreateRekondisiModal = ({
         store.dispatch(showToast({
           type: 'general',
           title: 'Rekondisi masih berjalan',
-          message: 'Unit ini masih memiliki rekondisi PENDING atau IN_PROGRESS.',
+          message: 'Unit ini masih memiliki rekondisi yang belum selesai.',
         }));
         return;
       }

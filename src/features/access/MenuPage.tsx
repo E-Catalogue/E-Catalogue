@@ -116,7 +116,9 @@ const MenuPageInner = () => {
   const canCreate = can('MENU_CREATE');
   const canUpdate = can('MENU_UPDATE');
   const canDelete = can('MENU_DELETE');
-  const canPerm = can('PERMISSION_MANAGE');
+  const canPermCreate = can('PERMISSION_CREATE');
+  const canPermUpdate = can('PERMISSION_UPDATE');
+  const canPermDelete = can('PERMISSION_DELETE');
 
   const groups = data?.data ?? [];
   const [groupId, setGroupId] = useState<string | null>(null);
@@ -190,14 +192,14 @@ const MenuPageInner = () => {
 
           {/* KOLOM 3 — Permission */}
           <Column step={3} title={menu ? `Permission — ${menu.name}` : 'Permission'} icon={<KeyRound size={15} />} count={menu ? perms.length : undefined}
-            action={canPerm && menu ? <AddBtn label="Tambah Permission" onClick={() => setPermForm({ item: null })} /> : undefined}>
+            action={canPermCreate && menu ? <AddBtn label="Tambah Permission" onClick={() => setPermForm({ item: null })} /> : undefined}>
             {!menu ? (
               <Empty icon={<MousePointerClick size={26} />} text="Pilih menu untuk mengatur permission-nya." />
             ) : perms.length === 0 ? (
               <Empty icon={<KeyRound size={26} />} text="Menu ini belum punya permission. Klik “Tambah”." />
             ) : perms.map((p) => (
               <Row key={p.id} title={p.name} code={p.code} sub={p.description ?? undefined}
-                canEdit={canPerm} canDelete={canPerm}
+                canEdit={canPermUpdate} canDelete={canPermDelete}
                 onEdit={() => setPermForm({ item: p })}
                 onDelete={() => setDel({ label: p.name, fn: () => menu && m.removePermission.mutate({ menuId: menu.id, permId: p.id }, { onError: err }) })}
               />

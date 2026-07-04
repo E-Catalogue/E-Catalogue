@@ -45,6 +45,30 @@ export function useRekondisiMutations() {
       },
       onError: (e: unknown) => notifyApiError(e),
     }),
+    submit: useMutation({
+      mutationFn: (id: string) => rekondisiApi.submit(id),
+      onSuccess: (_, id) => {
+        store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Rekondisi diajukan' }));
+        inval(id);
+      },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
+    approve: useMutation({
+      mutationFn: (id: string) => rekondisiApi.approve(id),
+      onSuccess: (_, id) => {
+        store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Rekondisi disetujui' }));
+        inval(id);
+      },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
+    reject: useMutation({
+      mutationFn: (id: string) => rekondisiApi.reject(id),
+      onSuccess: (_, id) => {
+        store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Rekondisi ditolak ke draft' }));
+        inval(id);
+      },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
     done: useMutation({
       mutationFn: ({ id, data }: { id: string; data: RekondisiDoneFormData }) => rekondisiApi.done(id, data),
       onSuccess: (_, { id }) => {

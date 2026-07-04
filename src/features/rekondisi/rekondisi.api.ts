@@ -23,6 +23,21 @@ export const rekondisiApi = {
     return res.data;
   },
 
+  submit: async (id: string) => {
+    const res = await apiClient.patch<ApiResponse<Rekondisi>>(`/rekondisis/${id}/submit`);
+    return res.data;
+  },
+
+  approve: async (id: string) => {
+    const res = await apiClient.patch<ApiResponse<Rekondisi>>(`/rekondisis/${id}/approve`);
+    return res.data;
+  },
+
+  reject: async (id: string) => {
+    const res = await apiClient.patch<ApiResponse<Rekondisi>>(`/rekondisis/${id}/reject`);
+    return res.data;
+  },
+
   done: async (id: string, data: RekondisiDoneFormData) => {
     const form = new FormData();
     if (data.tax !== undefined) form.append('tax', String(data.tax));
