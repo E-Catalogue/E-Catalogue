@@ -29,6 +29,7 @@ const AccountForm = ({ item, onClose }: { item: CashAccount | null; onClose: () 
     accountNumber: item?.accountNumber ?? '',
     bankName: item?.bankName ?? '',
     openingBalance: String(item?.openingBalance ?? 0),
+    defaultPayment: item?.defaultPayment ?? false,
     isActive: item?.isActive ?? true,
   });
   const set = (key: keyof typeof form, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
@@ -48,6 +49,9 @@ const AccountForm = ({ item, onClose }: { item: CashAccount | null; onClose: () 
         <CurrencyField label="Saldo Awal" value={form.openingBalance} onChange={(e) => set('openingBalance', e.target.value)} />
         <TextField label="Nomor Rekening" value={form.accountNumber} onChange={(e) => set('accountNumber', e.target.value)} />
         <TextField label="Nama Bank" value={form.bankName} onChange={(e) => set('bankName', e.target.value)} />
+        <label className="sm:col-span-2 flex items-center gap-2.5 text-[13px] font-semibold text-ink-soft">
+          <input type="checkbox" checked={form.defaultPayment} onChange={(e) => set('defaultPayment', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" /> Default pembayaran penjualan
+        </label>
         <label className="sm:col-span-2 flex items-center gap-2.5 text-[13px] font-semibold text-ink-soft">
           <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" /> Aktif
         </label>
@@ -119,6 +123,7 @@ export const CashFlowPage = () => {
     { header: 'Tipe', cell: (a) => a.type },
     { header: 'Bank/Rekening', cell: (a) => [a.bankName, a.accountNumber].filter(Boolean).join(' / ') || '-' },
     { header: 'Saldo Awal', align: 'right', cell: (a) => formatCurrency(a.openingBalance) },
+    { header: 'Default', align: 'center', cell: (a) => a.defaultPayment ? <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Penjualan</span> : '-' },
     { header: 'Status', cell: (a) => a.isActive ? 'Aktif' : 'Nonaktif' },
     { header: '', align: 'right', cell: (a) => <div className="flex justify-end gap-2"><Can code="CASH_ACCOUNT_UPDATE"><button className="text-accent-blue font-bold" onClick={() => setAccountForm(a)}>Edit</button></Can><Can code="CASH_ACCOUNT_DELETE"><button className="text-semantic-error font-bold" onClick={() => setToDelete(a)}>Nonaktif</button></Can></div> },
   ];
@@ -168,6 +173,7 @@ export const CashFlowPage = () => {
               { header: 'Akun', cell: (a) => <span className="font-bold text-ink">{a.name}</span> },
               { header: 'Kode', cell: (a) => a.code },
               { header: 'Tipe', cell: (a) => a.type },
+              { header: 'Default', align: 'center', cell: (a) => a.defaultPayment ? <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Penjualan</span> : '-' },
               { header: 'Masuk', align: 'right', cell: (a) => formatCurrency(a.totalIn) },
               { header: 'Keluar', align: 'right', cell: (a) => formatCurrency(a.totalOut) },
               { header: 'Saldo Akhir', align: 'right', cell: (a) => <span className="font-bold">{formatCurrency(a.endingBalance)}</span> },

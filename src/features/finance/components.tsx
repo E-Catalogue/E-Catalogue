@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from '@/core/utils/format';
 export const CashAccountSelect = ({ value, onChange, label = 'Akun Kas', required, disabled }: { value: string; onChange: (value: string) => void; label?: string; required?: boolean; disabled?: boolean }) => {
   const { data, isLoading } = useLookupCashAccounts({ isActive: 'true' });
   const options = useMemo(
-    () => [{ value: '', label: isLoading ? 'Memuat akun kas...' : 'Pilih akun kas' }, ...((data?.data ?? []).map((x) => ({ value: x.id, label: `${x.name} (${x.code} - ${x.type})` })))],
+    () => [{ value: '', label: isLoading ? 'Memuat akun kas...' : 'Pilih akun kas' }, ...((data?.data ?? []).map((x) => ({ value: x.id, label: `${x.name} (${x.code} - ${x.type})${x.defaultPayment ? ' - Default Penjualan' : ''}` })))],
     [data?.data, isLoading],
   );
   return <SelectField label={label} required={required} value={value} onChange={(e) => onChange(e.target.value)} options={options} disabled={disabled || isLoading} />;

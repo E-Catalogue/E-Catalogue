@@ -24,6 +24,7 @@ export interface CashAccount {
   accountNumber?: string | null;
   bankName?: string | null;
   openingBalance: number;
+  defaultPayment: boolean;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -52,7 +53,7 @@ export interface CashDashboard {
     totalOut: number;
     endingBalance: number;
   };
-  accounts: Array<Pick<CashAccount, 'id' | 'name' | 'code' | 'type' | 'openingBalance'> & {
+  accounts: Array<Pick<CashAccount, 'id' | 'name' | 'code' | 'type' | 'openingBalance' | 'defaultPayment'> & {
     totalIn: number;
     totalOut: number;
     endingBalance: number;
@@ -147,6 +148,7 @@ export interface LookupCashAccount {
   name: string;
   code: string;
   type: CashAccountType;
+  defaultPayment: boolean;
   isActive: boolean;
 }
 

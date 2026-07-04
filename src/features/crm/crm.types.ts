@@ -67,6 +67,13 @@ export interface UnitSummary {
   status?: string;
 }
 
+export interface SalesComboboxUser {
+  id: string;
+  name: string;
+  email?: string | null;
+  username?: string | null;
+}
+
 export interface LeadOrder {
   id: string;
   nomorOrder: string;
@@ -102,3 +109,4 @@ export interface LeadPayment {
   buktiFileId?: string | null;
   createdAt?: string;
 }
+

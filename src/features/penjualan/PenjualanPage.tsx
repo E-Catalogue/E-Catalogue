@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Search, Loader2, ReceiptText, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -11,8 +12,10 @@ import { SalesOrderFormModal } from './SalesOrderFormModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { OrderStatusModal } from './OrderStatusModal';
 import { useLeadOrders, useLeadOrderMutations } from '@/features/crm/crm.hooks';
+import { leadOrderApi } from '@/features/crm/crm.api';
 import { notifyApiError } from '@/core/api/notify';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
+import { useAppSelector } from '@/app/store';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, type LeadOrder, type OrderStatus } from '@/features/crm/crm.types';
 
 const idr = (n?: number | null) =>
@@ -24,15 +27,22 @@ const STATUS_FILTER_OPTIONS = [
 ];
 
 export const PenjualanPage = () => {
+  const currentUserId = useAppSelector((s) => s.auth.user?.id);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterSales, setFilterSales] = useState('');
   const debounced = useDebouncedValue(search, 350);
 
   const { data, isLoading, isError } = useLeadOrders({
     page, limit: 15,
     search: debounced || undefined,
     status: (filterStatus as OrderStatus) || undefined,
+    salesId: filterSales || undefined,
+  });
+  const { data: salesRes } = useQuery({
+    queryKey: ['sales-combobox'],
+    queryFn: leadOrderApi.sales,
   });
   const m = useLeadOrderMutations();
 
@@ -41,6 +51,10 @@ export const PenjualanPage = () => {
   const [statusModal, setStatusModal] = useState<LeadOrder | null>(null);
 
   const orders = data?.data ?? [];
+  const salesFilterOptions = [
+    { value: '', label: 'Semua Sales' },
+    ...(salesRes ?? []).map((s) => ({ value: s.id, label: s.name })),
+  ];
 
   const handleSubmit = (values: Partial<LeadOrder>) => {
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setForm(null) };
@@ -68,6 +82,10 @@ export const PenjualanPage = () => {
         const u = r.unit;
         return <span className="text-[12px] font-medium text-ink-soft">{u ? [u.merek?.name, u.tipe?.name, u.platNomor].filter(Boolean).join(' ') : '-'}</span>;
       },
+    },
+    {
+      header: 'Sales',
+      cell: (r) => <span className="text-[12px] font-semibold text-ink-soft">{r.sales?.name ?? '-'}</span>,
     },
     { header: 'Tipe', cell: (r) => <span className="text-[12px] font-semibold">{r.paymentType}</span>, align: 'center' },
     {
@@ -135,6 +153,13 @@ export const PenjualanPage = () => {
           options={STATUS_FILTER_OPTIONS}
           wrapClass="min-w-[180px]"
         />
+        <SelectField
+          label=""
+          value={filterSales}
+          onChange={(e) => { setFilterSales(e.target.value); setPage(1); }}
+          options={salesFilterOptions}
+          wrapClass="min-w-[180px]"
+        />
       </div>
 
       <SectionCard title={`Daftar Order (${data?.meta?.total ?? 0})`} icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0">
@@ -157,6 +182,7 @@ export const PenjualanPage = () => {
         onClose={() => setForm(null)}
         item={form?.item}
         submitting={m.create.isPending || m.update.isPending}
+        currentUserId={currentUserId}
         onSubmit={handleSubmit}
       />
 

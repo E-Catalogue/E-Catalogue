@@ -1,6 +1,6 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { Lead, LeadOrder, LeadPayment, OrderStatus, UnitSummary } from './crm.types';
+import type { Lead, LeadOrder, LeadPayment, OrderStatus, SalesComboboxUser, UnitSummary } from './crm.types';
 
 export interface LeadListParams {
   page?: number;
@@ -39,6 +39,8 @@ export const leadApi = {
 
 // ---- Sales Order ----
 export const leadOrderApi = {
+  sales: () =>
+    apiClient.get<ApiResponse<SalesComboboxUser[]>>('/lead-orders/sales').then((r) => r.data.data),
   list: (params: OrderListParams) =>
     apiClient.get<ApiResponse<LeadOrder[]>>('/lead-orders', { params }).then((r) => r.data),
   get: (id: string) =>
@@ -72,3 +74,4 @@ export const unitApi = {
   list: (params: { page?: number; limit?: number; search?: string; status?: string }) =>
     apiClient.get<ApiResponse<UnitSummary[]>>('/units', { params }).then((r) => r.data),
 };
+

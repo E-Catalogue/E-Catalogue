@@ -5,7 +5,7 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { leasingApi } from '@/features/master/simpleMaster.api';
-import { leadApi, unitApi } from '@/features/crm/crm.api';
+import { leadApi, leadOrderApi, unitApi } from '@/features/crm/crm.api';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import type { LeadOrder, PaymentType, StatusApproval } from '@/features/crm/crm.types';
 
@@ -32,6 +32,7 @@ interface FormState {
   leadId: string;
   unitId: string;
   paymentType: PaymentType;
+  salesId: string;
   leasingId: string;
   diskonShowroom: string;
   statusSlik: string;
@@ -40,8 +41,8 @@ interface FormState {
   catatan: string;
 }
 
-const emptyForm = (): FormState => ({
-  leadId: '', unitId: '', paymentType: 'CASH', leasingId: '',
+const emptyForm = (currentUserId?: string | null): FormState => ({
+  leadId: '', unitId: '', paymentType: 'CASH', salesId: currentUserId ?? '', leasingId: '',
   diskonShowroom: '0', statusSlik: '', statusApproval: '', tanggalOrder: '', catatan: '',
 });
 
@@ -49,6 +50,7 @@ const toForm = (o: LeadOrder): FormState => ({
   leadId: o.leadId,
   unitId: o.unitId,
   paymentType: o.paymentType,
+  salesId: o.salesId ?? '',
   leasingId: o.leasingId ?? '',
   diskonShowroom: String(o.diskonShowroom ?? 0),
   statusSlik: o.statusSlik ?? '',
@@ -62,14 +64,16 @@ interface Props {
   onClose: () => void;
   item?: LeadOrder | null;
   submitting?: boolean;
+  currentUserId?: string | null;
   onSubmit: (values: Partial<LeadOrder>) => void;
 }
 
-export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit }: Props) => {
-  const [form, setForm] = useState<FormState>(item ? toForm(item) : emptyForm());
+export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUserId, onSubmit }: Props) => {
+  const [form, setForm] = useState<FormState>(item ? toForm(item) : emptyForm(currentUserId));
   const [seedId, setSeedId] = useState<string | undefined>(item?.id);
-  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ? toForm(item) : emptyForm()); }
-  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(emptyForm()); }
+  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ? toForm(item) : emptyForm(currentUserId)); }
+  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(emptyForm(currentUserId)); }
+  if (open && !item && currentUserId && !form.salesId) { setForm((f) => ({ ...f, salesId: currentUserId })); }
 
   const [leadSearch, setLeadSearch] = useState('');
   const [unitSearch, setUnitSearch] = useState('');
@@ -91,6 +95,11 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit 
     queryFn: () => leasingApi.list({ page: 1, limit: 100 }),
     enabled: open,
   });
+  const { data: salesRes } = useQuery({
+    queryKey: ['sales-combobox'],
+    queryFn: leadOrderApi.sales,
+    enabled: open,
+  });
 
   const leadOptions = [
     { value: '', label: 'Pilih Lead...' },
@@ -104,6 +113,10 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit 
     { value: '', label: '(tidak ada)' },
     ...(leasingRes?.data ?? []).filter((l) => l.isActive).map((l) => ({ value: l.id, label: l.name })),
   ];
+  const salesOptions = [
+    { value: '', label: 'Pilih Sales...' },
+    ...(salesRes ?? []).map((s) => ({ value: s.id, label: `${s.name}${s.username ? ` (${s.username})` : ''}` })),
+  ];
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -113,6 +126,7 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit 
       leadId: form.leadId || undefined,
       unitId: form.unitId || undefined,
       paymentType: form.paymentType,
+      salesId: form.salesId || undefined,
       leasingId: form.paymentType === 'KREDIT' ? form.leasingId || undefined : null,
       diskonShowroom: Number(form.diskonShowroom || 0),
       statusSlik: form.paymentType === 'KREDIT' ? form.statusSlik || undefined : null,
@@ -155,6 +169,7 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, onSubmit 
           </select>
         </div>
 
+        <SelectField label="Sales" required value={form.salesId} onChange={(e) => set('salesId', e.target.value)} options={salesOptions} />
         <SelectField label="Tipe Pembayaran" required value={form.paymentType} onChange={(e) => set('paymentType', e.target.value as PaymentType)} options={PAYMENT_OPTIONS} />
         <TextField label="Diskon Showroom (Rp)" type="number" min={0} value={form.diskonShowroom} onChange={(e) => set('diskonShowroom', e.target.value)} placeholder="0" />
 
