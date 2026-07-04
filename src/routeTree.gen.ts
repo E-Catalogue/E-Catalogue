@@ -18,6 +18,8 @@ import { Route as PublicSimulasiRouteImport } from './routes/_public/simulasi'
 import { Route as PublicKontakRouteImport } from './routes/_public/kontak'
 import { Route as AdminVendorRouteImport } from './routes/_admin/vendor'
 import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
+import { Route as AdminTargetPenjualanRouteImport } from './routes/_admin/target-penjualan'
+import { Route as AdminTargetPendapatanRouteImport } from './routes/_admin/target-pendapatan'
 import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
 import { Route as AdminReadyStockRouteImport } from './routes/_admin/ready-stock'
 import { Route as AdminPenjualanRouteImport } from './routes/_admin/penjualan'
@@ -97,6 +99,16 @@ const AdminVendorRoute = AdminVendorRouteImport.update({
 const AdminTestDriveRoute = AdminTestDriveRouteImport.update({
   id: '/test-drive',
   path: '/test-drive',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTargetPenjualanRoute = AdminTargetPenjualanRouteImport.update({
+  id: '/target-penjualan',
+  path: '/target-penjualan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTargetPendapatanRoute = AdminTargetPendapatanRouteImport.update({
+  id: '/target-pendapatan',
+  path: '/target-pendapatan',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRekondisiRoute = AdminRekondisiRouteImport.update({
@@ -307,6 +319,8 @@ export interface FileRoutesByFullPath {
   '/penjualan': typeof AdminPenjualanRoute
   '/ready-stock': typeof AdminReadyStockRoute
   '/rekondisi': typeof AdminRekondisiRoute
+  '/target-pendapatan': typeof AdminTargetPendapatanRoute
+  '/target-penjualan': typeof AdminTargetPenjualanRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
   '/kontak': typeof PublicKontakRoute
@@ -353,6 +367,8 @@ export interface FileRoutesByTo {
   '/penjualan': typeof AdminPenjualanRoute
   '/ready-stock': typeof AdminReadyStockRoute
   '/rekondisi': typeof AdminRekondisiRoute
+  '/target-pendapatan': typeof AdminTargetPendapatanRoute
+  '/target-penjualan': typeof AdminTargetPenjualanRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
   '/kontak': typeof PublicKontakRoute
@@ -401,6 +417,8 @@ export interface FileRoutesById {
   '/_admin/penjualan': typeof AdminPenjualanRoute
   '/_admin/ready-stock': typeof AdminReadyStockRoute
   '/_admin/rekondisi': typeof AdminRekondisiRoute
+  '/_admin/target-pendapatan': typeof AdminTargetPendapatanRoute
+  '/_admin/target-penjualan': typeof AdminTargetPenjualanRoute
   '/_admin/test-drive': typeof AdminTestDriveRoute
   '/_admin/vendor': typeof AdminVendorRoute
   '/_public/kontak': typeof PublicKontakRoute
@@ -450,6 +468,8 @@ export interface FileRouteTypes {
     | '/penjualan'
     | '/ready-stock'
     | '/rekondisi'
+    | '/target-pendapatan'
+    | '/target-penjualan'
     | '/test-drive'
     | '/vendor'
     | '/kontak'
@@ -496,6 +516,8 @@ export interface FileRouteTypes {
     | '/penjualan'
     | '/ready-stock'
     | '/rekondisi'
+    | '/target-pendapatan'
+    | '/target-penjualan'
     | '/test-drive'
     | '/vendor'
     | '/kontak'
@@ -543,6 +565,8 @@ export interface FileRouteTypes {
     | '/_admin/penjualan'
     | '/_admin/ready-stock'
     | '/_admin/rekondisi'
+    | '/_admin/target-pendapatan'
+    | '/_admin/target-penjualan'
     | '/_admin/test-drive'
     | '/_admin/vendor'
     | '/_public/kontak'
@@ -640,6 +664,20 @@ declare module '@tanstack/react-router' {
       path: '/test-drive'
       fullPath: '/test-drive'
       preLoaderRoute: typeof AdminTestDriveRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/target-penjualan': {
+      id: '/_admin/target-penjualan'
+      path: '/target-penjualan'
+      fullPath: '/target-penjualan'
+      preLoaderRoute: typeof AdminTargetPenjualanRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/target-pendapatan': {
+      id: '/_admin/target-pendapatan'
+      path: '/target-pendapatan'
+      fullPath: '/target-pendapatan'
+      preLoaderRoute: typeof AdminTargetPendapatanRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/rekondisi': {
@@ -922,6 +960,8 @@ interface AdminRouteChildren {
   AdminPenjualanRoute: typeof AdminPenjualanRoute
   AdminReadyStockRoute: typeof AdminReadyStockRoute
   AdminRekondisiRoute: typeof AdminRekondisiRoute
+  AdminTargetPendapatanRoute: typeof AdminTargetPendapatanRoute
+  AdminTargetPenjualanRoute: typeof AdminTargetPenjualanRoute
   AdminTestDriveRoute: typeof AdminTestDriveRoute
   AdminVendorRoute: typeof AdminVendorRoute
   AdminAccessControlMenusRoute: typeof AdminAccessControlMenusRoute
@@ -962,6 +1002,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPenjualanRoute: AdminPenjualanRoute,
   AdminReadyStockRoute: AdminReadyStockRoute,
   AdminRekondisiRoute: AdminRekondisiRoute,
+  AdminTargetPendapatanRoute: AdminTargetPendapatanRoute,
+  AdminTargetPenjualanRoute: AdminTargetPenjualanRoute,
   AdminTestDriveRoute: AdminTestDriveRoute,
   AdminVendorRoute: AdminVendorRoute,
   AdminAccessControlMenusRoute: AdminAccessControlMenusRoute,

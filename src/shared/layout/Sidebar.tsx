@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Wrench, Database, ShieldCheck, Settings,
   type LucideIcon,
 } from 'lucide-react';
-import { MENU_ITEMS, resolveFrontendPath } from './menu';
+import { MENU_ITEMS, resolveFrontendPath, isPathActive } from './menu';
 import { Logo } from './Logo';
 import { QuickInput } from './QuickInput';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
@@ -90,7 +90,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
 
   useEffect(() => {
     const activeKey = navGroups.find((g) =>
-      g.items.some((item) => location.pathname.startsWith(item.path))
+      g.items.some((item) => isPathActive(location.pathname, item.path))
     )?.key;
     if (activeKey) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -164,7 +164,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
               {navGroups.map((group, gi) => {
                 const isOpen = openGroups.has(group.key);
                 const hasActive = group.items.some((item) =>
-                  location.pathname.startsWith(item.path)
+                  isPathActive(location.pathname, item.path)
                 );
                 const GroupIcon = group.Icon;
 
@@ -222,7 +222,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
                         <div className="space-y-0.5 pt-0.5 pb-1 pl-1">
                           {group.items.map((item) => {
                             const Icon = item.Icon;
-                            const isActive = location.pathname.startsWith(item.path);
+                            const isActive = isPathActive(location.pathname, item.path);
                             return (
                               <Link
                                 key={item.path}
@@ -266,7 +266,7 @@ export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDe
                   <div className="space-y-0.5">
                     {group.items.map((item) => {
                       const Icon = item.Icon;
-                      const isActive = location.pathname.startsWith(item.path);
+                      const isActive = isPathActive(location.pathname, item.path);
                       return (
                         <Tooltip key={item.path} label={item.label} enabled>
                           <Link

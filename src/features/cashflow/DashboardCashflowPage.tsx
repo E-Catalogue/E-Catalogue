@@ -1,45 +1,25 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState } from 'react';
 import { 
   Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, 
-  Landmark, Repeat, SlidersHorizontal, Plus, CalendarDays, 
+  Landmark, CalendarDays, 
   CheckCircle2, AlertTriangle, ShieldCheck, PieChart, BarChart3, 
-  Clock, ArrowRightLeft, DollarSign, Activity
+  Clock, ArrowRightLeft, Activity
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
-import { Button } from '@/shared/components/ui/Button';
-import { Modal } from '@/shared/components/ui/Modal';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
-import { Can } from '@/features/auth/permissions';
-import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
-import { CashAccountSelect, CurrencyField } from '@/features/finance/components';
 import { 
-  useCashAccounts, useCashDashboard, useCashTransactionMutations, 
+  useCashDashboard, 
   useCashTransactions 
 } from '@/features/finance/finance.hooks';
-import { toIsoDate } from '@/features/finance/finance.utils';
-import type { CashAccount, CashTransaction } from '@/features/finance/types';
-
-type TxModal = 'manual-in' | 'manual-out' | 'transfer' | 'adjustment';
-const today = () => new Date().toISOString().slice(0, 10);
+import type { CashTransaction } from '@/features/finance/types';
 
 export const DashboardCashflowPage = () => {
   const [period, setPeriod] = useState<'month' | 'q3' | 'ytd'>('month');
-  const [txForm, setTxForm] = useState<TxModal | null>(null);
-  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', type: '', cashAccountId: '' });
 
-  const dashboard = useCashDashboard({ 
-    dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, 
-    dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined 
-  });
-  const accounts = useCashAccounts({ page: 1, limit: 100 });
-  const ledger = useCashTransactions({ 
-    page: 1, limit: 10, 
-    type: filters.type || undefined, 
-    cashAccountId: filters.cashAccountId || undefined 
-  });
+  const dashboard = useCashDashboard({});
+  const ledger = useCashTransactions({ page: 1, limit: 10 });
 
   // Calculate or fallback executive summary figures
   const totalIn = dashboard.data?.summary.totalIn || 3450000000;
@@ -142,24 +122,6 @@ export const DashboardCashflowPage = () => {
       <PageHeader
         title="Dashboard Cashflow Executive"
         description="Monitoring arus kas masuk, kontrol pengeluaran operasional, likuiditas rekening bank, & proyeksi kewajiban kas showroom"
-        action={
-          <Can code="CASH_TRANSACTION_CREATE">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Button icon={<ArrowDownLeft size={16} />} onClick={() => setTxForm('manual-in')} className="bg-accent-green hover:bg-accent-green/90 text-white font-extrabold shadow-sm">
-                + Kas Masuk
-              </Button>
-              <Button icon={<ArrowUpRight size={16} />} onClick={() => setTxForm('manual-out')} variant="secondary" className="border-semantic-error/30 text-semantic-error hover:bg-semantic-error/10 font-extrabold">
-                - Kas Keluar
-              </Button>
-              <Button icon={<Repeat size={16} />} onClick={() => setTxForm('transfer')} variant="secondary" className="font-bold">
-                Transfer Bank
-              </Button>
-              <Button icon={<SlidersHorizontal size={16} />} onClick={() => setTxForm('adjustment')} variant="secondary" className="font-bold">
-                Penyesuaian
-              </Button>
-            </div>
-          </Can>
-        }
       />
 
       {/* Period Filter Bar */}
@@ -407,26 +369,6 @@ export const DashboardCashflowPage = () => {
           </SectionCard>
         </div>
       </div>
-
-      {/* Transaction Modal Triggers */}
-      {txForm && (
-        <Modal 
-          open 
-          onClose={() => setTxForm(null)} 
-          title={txForm === 'manual-in' ? 'Input Kas Masuk' : txForm === 'manual-out' ? 'Input Kas Keluar' : txForm === 'transfer' ? 'Transfer Antar Rekening' : 'Penyesuaian Saldo'} 
-          icon={<Wallet size={20} />} 
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setTxForm(null)}>Batal</Button>
-              <Button onClick={() => setTxForm(null)} className="bg-primary text-white">Simpan Transaksi</Button>
-            </>
-          }
-        >
-          <div className="p-4 text-center text-sm font-bold text-ink">
-            Gunakan menu utama Cashflow (/cashflow) atau tombol ini untuk melengkapi form pencatatan jurnal kas.
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };

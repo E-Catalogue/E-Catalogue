@@ -26,6 +26,8 @@ import {
   ShieldCheck,
   UserCog,
   SquareMenu,
+  Target,
+  DollarSign,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -47,6 +49,8 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/crm', label: 'CRM / Lead', icon: Users, group: 'operasional', code: 'CRM' },
   { path: '/test-drive', label: 'Test Drive', icon: KeyRound, group: 'operasional', code: 'TEST_DRIVE' },
   { path: '/penjualan', label: 'Penjualan', icon: ReceiptText, group: 'operasional', code: 'PENJUALAN' },
+  { path: '/target-penjualan', label: 'Target Penjualan', icon: Target, group: 'operasional', code: 'SALES_TARGET' },
+  { path: '/target-pendapatan', label: 'Target Pendapatan', icon: DollarSign, group: 'operasional', code: 'REVENUE_TARGET' },
   { path: '/pembayaran', label: 'Pembayaran', icon: Wallet, group: 'operasional', code: 'PEMBAYARAN' },
   { path: '/pengeluaran', label: 'Pengeluaran', icon: TrendingDown, group: 'operasional', code: 'PENGELUARAN' },
   { path: '/payroll', label: 'Payroll', icon: Banknote, group: 'operasional', code: 'PAYROLL' },
@@ -64,7 +68,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/access-control/roles', label: 'Role', icon: ShieldCheck, group: 'akses', code: 'ROLE' },
   { path: '/access-control/users', label: 'User', icon: UserCog, group: 'akses', code: 'USER' },
   { path: '/access-control/menus', label: 'Menu & Permission', icon: SquareMenu, group: 'akses', code: 'MENU' },
-  { path: '/dashboard-cashflow', label: 'Dashboard Cashflow', icon: Wallet, group: 'lainnya', code: 'DASBOAD_CASHFLOW' },
+  { path: '/dashboard-cashflow', label: 'Dashboard Cashflow', icon: Wallet, group: 'lainnya', code: 'DASBOARD_CASHFLOW' },
   { path: '/cashflow', label: 'Cash Flow', icon: ArrowLeftRight, group: 'lainnya', code: 'CASHFLOW' },
   { path: '/laporan', label: 'Laporan', icon: BarChart3, group: 'lainnya', code: 'LAPORAN' },
   { path: '/pengaturan', label: 'Pengaturan', icon: Settings, group: 'lainnya', code: 'PENGATURAN' },
@@ -74,7 +78,10 @@ export const MENU_ITEMS: MenuItem[] = [
 export const PATH_BY_CODE: Record<string, string> = {
   ...MENU_ITEMS.reduce((acc, m) => (m.code ? { ...acc, [m.code]: m.path } : acc), {} as Record<string, string>),
   // Alias kode backend yang berbeda dari kode static menu
-  DASBOAD_CASHFLOW: '/dashboard-cashflow',
+  SALES_TARGET: '/target-penjualan',
+  REVENUE_TARGET: '/target-pendapatan',
+  TARGET_PENJUALAN: '/target-penjualan',
+  DASBOARD_CASHFLOW: '/dashboard-cashflow',
   DASHBOARD_CASHFLOW: '/dashboard-cashflow',
   UNIT: '/inventory',
   LEAD: '/crm',
@@ -100,4 +107,9 @@ export const resolveFrontendPath = (m: { path?: string | null; code?: string }):
   // Fallback: If it starts with / let it pass, assuming backend is correct
   if (m.path?.startsWith('/')) return m.path;
   return null;
+};
+
+export const isPathActive = (pathname: string, itemPath: string): boolean => {
+  if (itemPath === '/') return pathname === '/';
+  return pathname === itemPath || pathname.startsWith(itemPath + '/');
 };

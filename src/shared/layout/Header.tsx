@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from '@tanstack/react-router';
 import { Menu, Search, Bell, CalendarDays, ChevronDown, Store, LogOut, ShieldOff, Command } from 'lucide-react';
-import { MENU_ITEMS } from './menu';
+import { MENU_ITEMS, isPathActive } from './menu';
 import { CURRENT_USER } from '@/shared/constants';
 import { useAppSelector, useAppDispatch } from '@/app/store';
 import { queryClient } from '@/app/queryClient';
@@ -22,9 +22,9 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
 
-  const active = MENU_ITEMS.find((m) => location.pathname.startsWith(m.path));
+  const active = MENU_ITEMS.find((m) => isPathActive(location.pathname, m.path));
   const title = active?.label ?? 'Dashboard';
-  const isDashboard = location.pathname.startsWith('/dashboard');
+  const isDashboard = isPathActive(location.pathname, '/dashboard') || location.pathname === '/dashboard-cashflow';
 
   const name = user?.name ?? CURRENT_USER.name;
   const role = user?.role?.name ?? CURRENT_USER.role;
