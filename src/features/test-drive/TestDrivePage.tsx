@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { FileImage, KeyRound, Loader2, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -13,6 +14,7 @@ import { formatDate } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { TestDriveFormModal } from './TestDriveFormModal';
 import { useTestDriveMutations, useTestDrives } from './testDrive.hooks';
+import { testDriveApi } from './testDrive.api';
 import type { TestDrive, TestDriveStatus } from './testDrive.types';
 
 const STATUS_CLASS: Record<TestDriveStatus, string> = {
@@ -30,6 +32,8 @@ const STATUS_LABEL: Record<TestDriveStatus, string> = {
 const mediaUrl = (url?: string | null) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
+  const legacyPrefix = 'src/media/public/images/';
+  if (url.startsWith(legacyPrefix)) return `${API_ORIGIN}/public/${url.slice(legacyPrefix.length)}`;
   return `${API_ORIGIN}/${url.replace(/^\/+/, '')}`;
 };
 
@@ -37,13 +41,16 @@ export const TestDrivePage = () => {
   const [page] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [salesId, setSalesId] = useState('');
   const debounced = useDebouncedValue(search, 400);
-  const { data, isLoading, isError } = useTestDrives({ page, limit: 10, search: debounced || undefined, status: status || undefined });
+  const { data, isLoading, isError } = useTestDrives({ page, limit: 10, search: debounced || undefined, status: status || undefined, salesId: salesId || undefined });
+  const { data: salesRes } = useQuery({ queryKey: ['test-drive-sales'], queryFn: testDriveApi.sales });
   const mutations = useTestDriveMutations();
   const [form, setForm] = useState<{ item: TestDrive | null } | null>(null);
   const [toDelete, setToDelete] = useState<TestDrive | null>(null);
 
   const rows = data?.data ?? [];
+  const salesOptions = salesRes ?? [];
   const columns: Column<TestDrive>[] = [
     { header: 'Jadwal', cell: (t) => <span className="font-bold text-ink">{formatDate(t.scheduledAt)}</span> },
     { header: 'Customer', cell: (t) => <span className="font-bold text-ink">{t.lead?.nama ?? t.leadId}</span> },
@@ -63,7 +70,7 @@ export const TestDrivePage = () => {
         action={<Can code="TEST_DRIVE_CREATE"><Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Jadwalkan Test Drive</Button></Can>}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px_220px] gap-3">
         <div className="relative">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari customer, unit, sales..." className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
@@ -73,6 +80,10 @@ export const TestDrivePage = () => {
           <option value="SCHEDULED">Dijadwalkan</option>
           <option value="COMPLETED">Selesai</option>
           <option value="CANCELLED">Dibatalkan</option>
+        </select>
+        <select value={salesId} onChange={(e) => setSalesId(e.target.value)} className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold">
+          <option value="">Semua Sales</option>
+          {salesOptions.map((sales) => <option key={sales.id} value={sales.id}>{sales.name}</option>)}
         </select>
       </div>
 

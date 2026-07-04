@@ -5,10 +5,10 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { leadApi } from '@/features/crm/crm.api';
-import { SalesSelect } from '@/features/finance/components';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { useTestDriveMutations, useTestDriveUnits } from './testDrive.hooks';
+import { testDriveApi } from './testDrive.api';
 import type { TestDrive, TestDriveStatus } from './testDrive.types';
 
 interface Props {
@@ -77,6 +77,11 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     enabled: open,
   });
   const { data: unitRes } = useTestDriveUnits({ search: debouncedUnit || undefined }, open);
+  const { data: salesRes } = useQuery({
+    queryKey: ['test-drive-sales'],
+    queryFn: testDriveApi.sales,
+    enabled: open,
+  });
   const mutations = useTestDriveMutations();
   const pending = mutations.create.isPending || mutations.update.isPending;
 
@@ -113,6 +118,7 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
 
   const leadOptions = [{ value: '', label: 'Pilih lead/customer' }, ...((leadsRes?.data ?? []).map((l) => ({ value: l.id, label: `${l.nama}${l.noHp ? ` - ${l.noHp}` : ''}` })))];
   const unitOptions = [{ value: '', label: 'Pilih unit READY STOCK' }, ...((unitRes?.data ?? []).map((u) => ({ value: u.id, label: `${u.platNomor} - ${u.merekName} ${u.tipeName} ${u.tahun} - ${u.warna}` })))];
+  const salesOptions = [{ value: '', label: 'Pilih sales' }, ...((salesRes ?? []).map((s) => ({ value: s.id, label: `${s.name}${s.username ? ` (${s.username})` : ''}` })))];
 
   return (
     <Modal
@@ -144,7 +150,7 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
             {unitOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </div>
-        <SalesSelect label="Sales (opsional)" value={form.salesId} onChange={(value) => set('salesId', value)} />
+        <SelectField label="Sales (opsional)" value={form.salesId} onChange={(e) => set('salesId', e.target.value)} options={salesOptions} />
         <SelectField label="Status" value={form.status} onChange={(e) => set('status', e.target.value as TestDriveStatus)} options={[{ value: 'SCHEDULED', label: 'Dijadwalkan' }, { value: 'COMPLETED', label: 'Selesai' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />
         <TextField label="Tanggal" required type="date" value={form.scheduledDate} onChange={(e) => set('scheduledDate', e.target.value)} />
         <TextField label="Jam" required type="time" value={form.scheduledTime} onChange={(e) => set('scheduledTime', e.target.value)} />

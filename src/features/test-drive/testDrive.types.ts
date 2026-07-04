@@ -11,6 +11,13 @@ export interface TestDriveUnitLookup {
   statusUnit: 'READY_STOCK';
 }
 
+export interface TestDriveSalesLookup {
+  id: string;
+  name: string;
+  email?: string | null;
+  username?: string | null;
+}
+
 export interface TestDrive {
   id: string;
   leadId: string;
