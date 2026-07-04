@@ -1,15 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2 } from 'lucide-react';
-import { UnitCard } from '@/shared/components/ui/UnitCard';
+import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PublicUnitCard } from './PublicUnitCard';
 import { PublicHeader } from './PublicHeader';
 import { PriceRangeSlider } from './PriceRangeSlider';
 import { formatCurrency } from '@/core/utils/format';
-import type { Unit, Transmission, FuelType } from '@/data/types';
-import { usePublicCatalog } from './landing.hooks';
+import { useDebouncedValue } from '@/features/master/useDebouncedValue';
+import { usePublicCatalog, usePublicCatalogBrands, usePublicCatalogPage } from './landing.hooks';
+import type { CatalogCard, CatalogQuery, PublicTransmisi } from './public.types';
 
-
-type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'km_asc';
+type SortKey = NonNullable<CatalogQuery['sort']>;
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'newest', label: 'Tahun Terbaru' },
@@ -17,21 +17,16 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'price_desc', label: 'Harga Termahal' },
   { key: 'km_asc', label: 'KM Terendah' },
 ];
-
+const TRANS: PublicTransmisi[] = ['AT', 'MT', 'CVT'];
+const FUELS = ['BENSIN', 'DIESEL', 'HYBRID', 'LISTRIK'];
+const FUEL_LABEL: Record<string, string> = { BENSIN: 'Bensin', DIESEL: 'Diesel', HYBRID: 'Hybrid', LISTRIK: 'Listrik' };
 const PRICE_STEP = 5_000_000;
-const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
 
 const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-  <button
-    onClick={onClick}
-    className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
-      active ? 'bg-primary text-white shadow-glow' : 'bg-surface border border-border text-ink-soft hover:border-primary'
-    }`}
-  >
+  <button onClick={onClick} className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${active ? 'bg-primary text-white shadow-glow' : 'bg-surface border border-border text-ink-soft hover:border-primary'}`}>
     {children}
   </button>
 );
-
 const FilterGroup = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div>
     <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">{label}</p>
@@ -40,78 +35,74 @@ const FilterGroup = ({ label, children }: { label: string; children: React.React
 );
 
 export const KatalogPage = () => {
-  const { data, isLoading } = usePublicCatalog({});
-  const units = useMemo(() => {
-    if (!data?.data) return [];
-    return data.data.filter((u: any) => u.status === 'ready' || u.status === 'booked');
-  }, [data]);
   const navigate = useNavigate();
+  const { data: pageData } = usePublicCatalogPage();
+  const { data: brands } = usePublicCatalogBrands();
 
   const [query, setQuery] = useState('');
-  const [brand, setBrand] = useState('Semua');
-  const [trans, setTrans] = useState<'Semua' | Transmission>('Semua');
-  const [fuel, setFuel] = useState<'Semua' | FuelType>('Semua');
+  const [brand, setBrand] = useState('');            // brand id, '' = semua
+  const [trans, setTrans] = useState<PublicTransmisi | ''>('');
+  const [fuel, setFuel] = useState('');
   const [price, setPrice] = useState<{ min: number; max: number } | null>(null);
   const [sort, setSort] = useState<SortKey>('newest');
+  const [page, setPage] = useState(1);
   const [showFilter, setShowFilter] = useState(false);
-
-  const brands = ['Semua', ...Array.from(new Set(units.map((u) => u.brand)))];
+  const debounced = useDebouncedValue(query, 400);
 
   const priceBounds = useMemo(() => {
-    const prices = units.map((u) => u.price);
-    const hi = prices.length ? roundUp(Math.max(...prices), PRICE_STEP) : 1_000_000_000;
-    return { min: 0, max: hi };
-  }, [units]);
+    const maxes = (pageData?.priceRanges ?? []).map((r) => r.max ?? 0);
+    const hi = maxes.length ? Math.max(...maxes) : 0;
+    return { min: 0, max: hi > 0 ? hi : 1_000_000_000 };
+  }, [pageData]);
   const pMin = price?.min ?? priceBounds.min;
   const pMax = price?.max ?? priceBounds.max;
-
-  const result = useMemo(() => {
-    const list = units.filter((u) => {
-      const mb = brand === 'Semua' || u.brand === brand;
-      const mt = trans === 'Semua' || u.transmission === trans;
-      const mf = fuel === 'Semua' || u.fuel === fuel;
-      const mp = u.price >= pMin && u.price <= pMax;
-      const text = `${u.brand} ${u.model} ${u.variant}`.toLowerCase();
-      return mb && mt && mf && mp && text.includes(query.toLowerCase());
-    });
-    return [...list].sort((a, b) => {
-      if (sort === 'price_asc') return a.price - b.price;
-      if (sort === 'price_desc') return b.price - a.price;
-      if (sort === 'km_asc') return a.km - b.km;
-      return b.year - a.year;
-    });
-  }, [units, brand, trans, fuel, pMin, pMax, sort, query]);
-
-  const reset = () => { setBrand('Semua'); setTrans('Semua'); setFuel('Semua'); setPrice(null); setQuery(''); };
-  const openDetail = (u: Unit) => navigate({ to: '/katalog/$id', params: { id: u.id } });
-
   const priceActive = price !== null && (pMin > priceBounds.min || pMax < priceBounds.max);
+
+  const params: CatalogQuery = {
+    page, limit: 12, sort,
+    search: debounced || undefined,
+    merek: brand || undefined,
+    transmisi: trans || undefined,
+    bahanBakar: fuel || undefined,
+    hargaMin: priceActive ? pMin : undefined,
+    hargaMax: priceActive ? pMax : undefined,
+  };
+  const { data, isLoading, isError } = usePublicCatalog(params);
+  const units = data?.data ?? [];
+  const meta = data?.meta;
+  const totalPages = meta?.totalPages ?? 1;
+
+  const openDetail = (u: CatalogCard) => navigate({ to: '/katalog/$id', params: { id: u.id } });
+  const reset = () => { setBrand(''); setTrans(''); setFuel(''); setPrice(null); setQuery(''); setPage(1); };
+
   const activeFilters = [
-    brand !== 'Semua' && { label: brand, clear: () => setBrand('Semua') },
-    trans !== 'Semua' && { label: trans, clear: () => setTrans('Semua') },
-    fuel !== 'Semua' && { label: fuel, clear: () => setFuel('Semua') },
+    brand && { label: brands?.find((b) => b.id === brand)?.name ?? 'Merek', clear: () => setBrand('') },
+    trans && { label: trans, clear: () => setTrans('') },
+    fuel && { label: FUEL_LABEL[fuel], clear: () => setFuel('') },
     priceActive && { label: `${formatCurrency(pMin, { compact: true })} – ${formatCurrency(pMax, { compact: true })}`, clear: () => setPrice(null) },
   ].filter(Boolean) as { label: string; clear: () => void }[];
+
+  // Reset ke page 1 saat filter berubah
+  const withReset = <T,>(setter: (v: T) => void) => (v: T) => { setter(v); setPage(1); };
 
   const FilterPanel = (
     <div className="space-y-6">
       <FilterGroup label="Merek">
-        {brands.map((b) => <Chip key={b} active={brand === b} onClick={() => setBrand(b)}>{b}</Chip>)}
+        <Chip active={brand === ''} onClick={() => withReset(setBrand)('')}>Semua</Chip>
+        {(brands ?? []).map((b) => <Chip key={b.id} active={brand === b.id} onClick={() => withReset(setBrand)(b.id)}>{b.name} ({b.count})</Chip>)}
       </FilterGroup>
       <FilterGroup label="Rentang Harga">
         <div className="w-full">
-          <PriceRangeSlider
-            min={priceBounds.min} max={priceBounds.max} step={PRICE_STEP}
-            valueMin={pMin} valueMax={pMax}
-            onChange={(next) => setPrice(next)}
-          />
+          <PriceRangeSlider min={priceBounds.min} max={priceBounds.max} step={PRICE_STEP} valueMin={pMin} valueMax={pMax} onChange={(next) => { setPrice(next); setPage(1); }} />
         </div>
       </FilterGroup>
       <FilterGroup label="Transmisi">
-        {(['Semua', 'AT', 'MT', 'CVT'] as const).map((t) => <Chip key={t} active={trans === t} onClick={() => setTrans(t)}>{t}</Chip>)}
+        <Chip active={trans === ''} onClick={() => withReset(setTrans)('')}>Semua</Chip>
+        {TRANS.map((t) => <Chip key={t} active={trans === t} onClick={() => withReset(setTrans)(t)}>{t}</Chip>)}
       </FilterGroup>
       <FilterGroup label="Bahan Bakar">
-        {(['Semua', 'Bensin', 'Diesel', 'Hybrid', 'Listrik'] as const).map((f) => <Chip key={f} active={fuel === f} onClick={() => setFuel(f)}>{f}</Chip>)}
+        <Chip active={fuel === ''} onClick={() => withReset(setFuel)('')}>Semua</Chip>
+        {FUELS.map((f) => <Chip key={f} active={fuel === f} onClick={() => withReset(setFuel)(f)}>{FUEL_LABEL[f]}</Chip>)}
       </FilterGroup>
     </div>
   );
@@ -119,9 +110,9 @@ export const KatalogPage = () => {
   return (
     <>
       <PublicHeader
-        eyebrow="Katalog"
-        title="Temukan Mobil Impian Anda"
-        subtitle="Jelajahi koleksi mobil bekas berkualitas, terinspeksi, dan bergaransi. Gunakan filter untuk mempersempit pilihan."
+        eyebrow={pageData?.eyebrow ?? 'Katalog'}
+        title={pageData?.title ?? 'Temukan Mobil Impian Anda'}
+        subtitle={pageData?.subtitle ?? 'Jelajahi koleksi mobil bekas berkualitas, terinspeksi, dan bergaransi.'}
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Katalog' }]}
       />
 
@@ -130,18 +121,11 @@ export const KatalogPage = () => {
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <div className="relative flex-1">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari merek, model, atau varian..."
-              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
-            />
+            <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Cari merek, model, atau varian..."
+              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
           </div>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="h-12 px-4 rounded-2xl bg-surface border border-border text-sm font-bold text-ink-soft cursor-pointer focus:outline-none focus:border-primary"
-          >
+          <select value={sort} onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}
+            className="h-12 px-4 rounded-2xl bg-surface border border-border text-sm font-bold text-ink-soft cursor-pointer focus:outline-none focus:border-primary">
             {SORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
           </select>
           <button onClick={() => setShowFilter(true)} className="lg:hidden h-12 px-4 rounded-2xl bg-primary text-white font-bold text-[13px] inline-flex items-center justify-center gap-2">
@@ -149,15 +133,11 @@ export const KatalogPage = () => {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="py-20 flex justify-center"><Loader2 size={30} className="animate-spin text-primary" /></div>
-        ) : (
-          <div className="flex gap-6 lg:gap-8">
-          {/* RESULTS */}
+        <div className="flex gap-6 lg:gap-8">
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <p className="text-[13px] font-semibold text-muted">
-                Menampilkan <span className="text-ink font-extrabold">{result.length}</span> dari {units.length} unit
+                Menampilkan <span className="text-ink font-extrabold">{units.length}</span>{meta ? ` dari ${meta.total}` : ''} unit
               </p>
               {activeFilters.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
@@ -171,37 +151,43 @@ export const KatalogPage = () => {
               )}
             </div>
 
-            {result.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-24 text-muted"><Loader2 size={26} className="animate-spin" /></div>
+            ) : isError ? (
+              <div className="text-center py-24 bg-surface rounded-2xl border border-border text-muted font-semibold">Gagal memuat katalog.</div>
+            ) : units.length === 0 ? (
               <div className="text-center py-24 bg-surface rounded-2xl border border-border">
                 <Car size={40} className="text-muted mx-auto mb-3" />
                 <p className="text-ink font-bold">Tidak ada unit yang cocok</p>
-                <p className="text-muted text-sm font-medium mt-1">Coba ubah atau reset filter pencarian.</p>
                 <button onClick={reset} className="mt-4 text-[13px] font-bold text-primary hover:underline">Reset filter</button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
-                {result.map((u) => <UnitCard key={u.id} unit={u} onView={openDetail} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {units.map((u) => <PublicUnitCard key={u.id} card={u} onView={openDetail} />)}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center disabled:opacity-40 hover:border-primary"><ChevronLeft size={18} /></button>
+                    <span className="text-[13px] font-bold text-ink-soft px-3">Halaman {page} / {totalPages}</span>
+                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center disabled:opacity-40 hover:border-primary"><ChevronRight size={18} /></button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          {/* FILTER SIDEBAR */}
+          {/* Sidebar filter (desktop) */}
           <aside className="hidden lg:block w-72 shrink-0 order-last">
             <div className="sticky top-20 bg-surface rounded-2xl border border-border p-5">
               <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal size={16} className="text-primary" />
-                  <h2 className="text-[13px] font-extrabold uppercase tracking-wide text-ink">Filter</h2>
-                </div>
-                {activeFilters.length > 0 && (
-                  <button onClick={reset} className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"><RotateCcw size={12} /> Reset</button>
-                )}
+                <div className="flex items-center gap-2"><SlidersHorizontal size={16} className="text-primary" /><h2 className="text-[13px] font-extrabold uppercase tracking-wide text-ink">Filter</h2></div>
+                {activeFilters.length > 0 && <button onClick={reset} className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"><RotateCcw size={12} /> Reset</button>}
               </div>
               {FilterPanel}
             </div>
           </aside>
         </div>
-        )}
       </div>
 
       {/* Mobile filter drawer */}
@@ -216,9 +202,7 @@ export const KatalogPage = () => {
             <div className="flex-1 overflow-y-auto scrollbar-slim p-5">{FilterPanel}</div>
             <div className="p-4 border-t border-border shrink-0 flex gap-2.5">
               <button onClick={reset} className="px-4 h-11 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[13px]">Reset</button>
-              <button onClick={() => setShowFilter(false)} className="flex-1 h-11 rounded-xl bg-primary text-white font-bold text-[13px]">
-                Tampilkan {result.length} unit
-              </button>
+              <button onClick={() => setShowFilter(false)} className="flex-1 h-11 rounded-xl bg-primary text-white font-bold text-[13px]">Tampilkan{meta ? ` ${meta.total}` : ''} unit</button>
             </div>
           </div>
         </div>

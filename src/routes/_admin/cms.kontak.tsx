@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { InboxPage } from '@/features/cms/InboxPage';
+import { ContactInboxPage } from '@/features/cms/ContactInboxPage';
 
 export const Route = createFileRoute('/_admin/cms/kontak')({
-  component: InboxPage,
+  component: ContactInboxPage,
 });

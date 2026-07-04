@@ -91,13 +91,21 @@ export const PATH_BY_CODE: Record<string, string> = {
   LEAD: '/crm',
   LEAD_ORDER: '/penjualan',
   LEAD_PAYMENT: '/pembayaran',
+  // CMS v2 (per-section) — kode menu backend → route FE
+  CMS_SITE_SETTING: '/cms/site-settings',
+  CMS_HOMEPAGE: '/cms/homepage',
+  CMS_ABOUT: '/cms/about',
   CMS_KATALOG: '/cms/katalog',
-  CMS_BANNER: '/cms/banner',
   CMS_TESTIMONI: '/cms/testimoni',
   CMS_KONTAK: '/cms/kontak',
-  CMS_PROFIL: '/cms/profil',
-  CREDIT_SIM: '/cms/credit-sim',
-  SITE_SETTING: '/cms/site-setting',
+  CMS_SIMULASI: '/cms/simulasi',
+  // Alias kode lama / variasi penamaan agar tetap ter-resolve
+  CMS_BANNER: '/cms/homepage',
+  CMS_PROFIL: '/cms/about',
+  CMS_CONTACT: '/cms/kontak',
+  CMS_CREDIT_SIM: '/cms/simulasi',
+  CREDIT_SIM: '/cms/simulasi',
+  SITE_SETTING: '/cms/site-settings',
 };
 
 export const VALID_PATHS = new Set([

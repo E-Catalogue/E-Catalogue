@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
+import { notifyApiError } from '@/core/api/notify';
 import {
   sectionApi, uploadCmsImage,
   siteSettingsApi, contactPageApi, catalogPageApi,
@@ -31,6 +33,24 @@ export const useUploadHeroImage = (page: 'homepage' | 'about') =>
 
 export const useUploadCmsImage = (folder: CmsUploadFolder) =>
   useMutation({ mutationFn: (file: File) => uploadCmsImage(folder, file) });
+
+/**
+ * Form 1 section (homepage/about): load → seed state lokal → save (PUT partial).
+ * Menyederhanakan editor per-section yang berulang.
+ */
+export function useSectionForm<T extends { isVisible?: boolean }>(page: 'homepage' | 'about', section: string) {
+  const q = useCmsSection<T>(page, section);
+  const m = useUpdateCmsSection<T>(page, section);
+  const [form, setForm] = useState<T | null>(null);
+
+  useEffect(() => { if (q.data && !form) setForm(structuredClone(q.data)); }, [q.data, form]);
+
+  const patch = (p: Partial<T>) => setForm((prev) => (prev ? { ...prev, ...p } : prev));
+  const save = () => { if (form) m.mutate(form, { onError: (e) => notifyApiError(e) }); };
+  const toggleVisible = () => setForm((prev) => (prev ? { ...prev, isVisible: !prev.isVisible } : prev));
+
+  return { form, setForm, patch, save, toggleVisible, isLoading: q.isLoading, isError: q.isError, saving: m.isPending };
+}
 
 /* ── Site Settings ── */
 export const useSiteSettings = () =>

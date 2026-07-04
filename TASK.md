@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 2 Juli 2026 (rev 6 — CMS v2 per-section + polish UI)
+> **Terakhir diperbarui:** 4 Juli 2026 (rev 7 — CMS admin panel lengkap, per-section)
 
 ---
 
@@ -137,17 +137,14 @@
 | Rekondisi (list/progress/done + detail items) | `rekondisiApi` | ✅ |
 | Pengeluaran | — | ⬜ |
 | Laporan | — | ⬜ |
-| **CMS — Homepage Hero/CTA (per-section)** | `sectionApi('homepage')` | ✅ |
-| **CMS — About visi-misi/stats/values** | `sectionApi('about')` | ✅ |
-| **CMS — Testimoni** | `testimonialApi` | ✅ |
-| **CMS — Katalog (tayang)** | `cmsCatalogApi` | ✅ |
-| **CMS — Site Settings (Kontak)** | `siteSettingsApi` | ✅ |
-| CMS — Homepage why-us/how-it-works/brands/featured | `sectionApi` (layer siap, belum ada halaman) | 🟡 |
-| CMS — About hero/cta | `sectionApi` (layer siap, belum ada halaman) | 🟡 |
-| CMS — Pesan Kontak (inbox) | `contactMessageApi` (layer siap, belum ada halaman) | 🟡 |
-| CMS — Simulasi Kredit config | `creditSimApi` (layer siap, belum ada editor) | 🟡 |
-| CMS — contact-page / catalog-page header | `contactPageApi` / `catalogPageApi` (layer siap) | 🟡 |
-| Situs publik consume `/public/*` | — (masih data dummy) | ⬜ |
+| **CMS — Pengaturan Situs** (`SiteSettingsPage`) | `siteSettingsApi` (+logo/favicon/navLinks) | ✅ |
+| **CMS — Beranda 7 section** (`HomepagePage`) | `sectionApi('homepage')` + hero-image | ✅ |
+| **CMS — Tentang 5 section** (`AboutPage`) | `sectionApi('about')` + hero-image | ✅ |
+| **CMS — Testimoni** (`TestimoniPage`) | `testimonialApi` | ✅ |
+| **CMS — Katalog + galeri + header** (`KatalogPage`) | `cmsCatalogApi` + `catalogPageApi` | ✅ |
+| **CMS — Kontak & Pesan** (`ContactInboxPage`) | `contactPageApi` + `contactMessageApi` | ✅ |
+| **CMS — Simulasi Kredit** (`CreditSimPage`) | `creditSimApi` | ✅ |
+| Situs publik consume `/public/*` | — (website customer masih data dummy) | ⬜ |
 
 ---
 
@@ -206,16 +203,41 @@
 - [ ] 🟠 Export PDF/Excel
 - [ ] 🔴 **Audit Log** (siapa, sebelum, sesudah, waktu)
 
-### F. CMS per-section (v2) — acuan [docs/frontend/cms_frontend_integration.md](docs/frontend/cms_frontend_integration.md) 🟠
-> Foundation v2 per-section **selesai** (`sectionApi`, hooks generik, ImageUpload preview). Sisa = halaman untuk section yang belum ada UI + migrasi situs publik ke API.
-- [x] Pecah wiring monolitik → per-section (BannerPage `/cms/homepage/*`, ProfilPage `/cms/about/*`)
-- [ ] 🟠 **Beranda — section belum ada UI**: Keunggulan (`why-us`), Cara Kerja (`how-it-works`), Brand chips (`brands`), Unit Unggulan (`featured`) — tambah tab/halaman di CMS (hook `useCmsSection('homepage', …)` sudah siap).
-- [ ] 🟠 **Tentang — section belum ada UI**: Hero (`about/hero`) & CTA (`about/cta`).
-- [ ] 🟠 **Inbox Pesan Kontak** — halaman baru `useContactMessages` (list + filter status + badge count-new + ubah/hapus).
-- [ ] 🟠 **Editor Simulasi Kredit** — form `useCreditSimConfig` (tenor/dp/bunga/method/faktor cicilan/disclaimer).
-- [ ] 🟠 **Header halaman** Kontak & Katalog (`useContactPage`/`useCatalogPage` + priceRanges).
-- [ ] 🟢 **Pengaturan Situs (umum)** — companyName, tagline, logo, favicon, footer, sosial (subset `siteSettings` di luar Kontak).
-- [ ] 🔴 **Situs publik consume `/public/*`** — migrasi `landing/*` (LandingPage 7 section, Tentang, Kontak, Simulasi, Katalog, Detail) dari data dummy Redux ke endpoint publik (`/public/homepage` agregat, `/public/catalog`, `/public/about`, `/public/credit-simulation/config+calculate`). *Besar — perlu backend aktif untuk verifikasi.*
+### ✅ Status Integrasi CMS (rev 7 — acuan [docs/frontend/cms_module_prd.md](docs/frontend/cms_module_prd.md))
+
+**Panel Admin CMS — SUDAH terintegrasi penuh (semua endpoint dikonsumsi):**
+
+| # | Modul | Halaman FE | Endpoint | Status |
+|---|-------|-----------|----------|:--:|
+| 1 | Pengaturan Situs | `SiteSettingsPage` (`/cms/site-settings`) | `GET/PUT /cms/site-settings` + logo/favicon + navLinks | ✅ |
+| 2 | Beranda (7 section) | `HomepagePage` (`/cms/homepage`) | `/cms/homepage/{hero,brands,why-us,how-it-works,featured,testimonials,cta}` + hero-image | ✅ |
+| 3 | Tentang (5 section) | `AboutPage` (`/cms/about`) | `/cms/about/{hero,stats,visi-misi,values,cta}` + hero-image | ✅ |
+| 4 | Testimoni | `TestimoniPage` (`/cms/testimoni`) | CRUD `/cms/testimonials*` + publish + avatar | ✅ |
+| 5 | Katalog (tayang + header + galeri) | `KatalogPage` (`/cms/katalog`) | `/cms/catalog*` (publish, images, reorder) + `/cms/catalog-page` | ✅ |
+| 6 | Kontak & Pesan | `ContactInboxPage` (`/cms/kontak`) | `/cms/contact-page` + inbox `/cms/contact-messages*` (status, count-new, hapus) | ✅ |
+| 7 | Simulasi Kredit | `CreditSimPage` (`/cms/simulasi`) | `GET/PUT /cms/credit-simulation/config` | ✅ |
+
+Pendukung: `ImageUpload` (preview + validasi), `useSectionForm`/`useCmsSection` generik, `CmsKit` (SectionBar/IconItemsEditor/StatsEditor), `uploadCmsImage` (generik page/site/testimoni).
+
+**Situs PUBLIK (website customer) — BELUM konsumsi API, masih data dummy Redux 🔴**
+
+| Halaman publik | Endpoint yang harus dipakai | Status |
+|----------------|-----------------------------|:--:|
+| Layout (`PublicLayout`) header/footer | `GET /public/site-settings` (`navLinks`, logo, sosial) | ⬜ (dashboard admin sudah pakai `usePublicSiteSettings`) |
+| Beranda (`LandingPage`) | `GET /public/homepage` (agregat 7 section) | ⬜ |
+| Katalog (`KatalogPage` publik) | `GET /public/catalog`, `/catalog/brands`, `/catalog-page` | ⬜ (masih `s.data.units`) |
+| Detail (`KatalogDetailPage`) | `GET /public/catalog/:id`, `/related`, config | ⬜ |
+| Simulasi (`SimulasiPage`) | `GET /public/credit-simulation/config` + `POST /calculate` | ⬜ |
+| Tentang (`TentangPage`) | `GET /public/about` | ⬜ |
+| Kontak (`KontakPage`) | `GET /public/contact-page` + `POST /public/contact-messages` | ⬜ |
+
+> **Sisa utama CMS = migrasi situs publik ke `/public/*`.** Semua API layer publik/agregat sudah tersedia di `cms.api.ts` (`siteSettingsApi.getPublic`) — perlu tambah hook publik untuk homepage/about/catalog/credit-sim + ganti data dummy. Butuh backend aktif untuk verifikasi.
+
+### F. CMS — sisa migrasi situs publik 🔴
+> Panel admin CMS **selesai** (lihat tabel status di atas). Sisa = migrasi website customer dari data dummy ke `/public/*`.
+- [x] Panel admin: Site Settings, Beranda (7 section), Tentang (5 section), Testimoni, Katalog (publish+galeri+header), Kontak & Pesan (inbox), Simulasi Kredit
+- [ ] 🔴 **Situs publik consume `/public/*`** — migrasi `landing/*` (Layout, LandingPage 7 section, Katalog, Detail, Simulasi, Tentang, Kontak) dari dummy Redux ke endpoint publik. Perlu hook publik (`usePublicHomepage`, `usePublicAbout`, `usePublicCatalog`, `usePublicCreditConfig` + `calculate`) + backend aktif untuk verifikasi.
+- [ ] 🟠 **Perbaiki 3 file build error (bukan CMS, parallel work)**: `DashboardCashflowPage`, `TargetPendapatanPage`, `TargetPenjualanPage` — prop `size`/`className` tidak ada di Button/Modal, Column generic, unused imports.
 
 ### E. Lain-lain 🟢
 - [ ] 🟢 Fungsikan wishlist/favorit (tombol hati) & bandingkan mobil

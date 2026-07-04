@@ -1,22 +1,116 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search, BookOpen, Car, Eye, EyeOff, Globe, Filter,
-  Image as ImageIcon, ExternalLink, Loader2, Sparkles, Tag,
+  Image as ImageIcon, ExternalLink, Loader2, Sparkles, Tag, Images,
+  Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
+import { Modal } from '@/shared/components/ui/Modal';
+import { TextField } from '@/shared/components/ui/Field';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
-import { useCmsCatalog, useCmsCatalogMutations } from './cms.hooks';
-import type { CmsCatalogRow } from './cms.types';
+import { cmsImageUrl } from './cms.api';
+import { useCmsCatalog, useCmsCatalogMutations, useCatalogPage, useUpdateCatalogPage } from './cms.hooks';
+import { ImageUpload } from './ImageUpload';
+import type { CmsCatalogRow, CatalogPage as CatalogPageType, PriceRange } from './cms.types';
 
 type ViewFilter = 'all' | 'published' | 'hidden';
 
 const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { compact: true }));
+
+/* ── Header halaman katalog + price ranges ── */
+const CatalogHeaderEditor = () => {
+  const { data, isLoading } = useCatalogPage();
+  const update = useUpdateCatalogPage();
+  const [f, setF] = useState<CatalogPageType | null>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => { if (data && !f) setF(structuredClone(data)); }, [data, f]);
+  if (isLoading || !f) return null;
+
+  const setRange = (i: number, patch: Partial<PriceRange>) => setF({ ...f, priceRanges: f.priceRanges.map((r, idx) => (idx === i ? { ...r, ...patch } : r)) });
+
+  return (
+    <div className="bg-surface rounded-2xl border border-border">
+      <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between gap-3 p-4 text-left">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center"><BookOpen size={16} className="text-primary" /></div>
+          <div><p className="text-[13px] font-extrabold text-ink">Header & Filter Harga Halaman Katalog</p><p className="text-[11px] text-muted font-medium">Judul halaman + rentang harga filter</p></div>
+        </div>
+        <ChevronDown size={16} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="p-4 pt-0 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <TextField label="Eyebrow" value={f.eyebrow} onChange={(e) => setF({ ...f, eyebrow: e.target.value })} />
+            <TextField label="Judul" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
+            <TextField label="Subtitle" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Rentang Harga (tombol filter)</p>
+            <div className="space-y-2">
+              {f.priceRanges.map((r, i) => (
+                <div key={i} className="flex items-end gap-2 rounded-xl border border-border bg-surface-soft p-2.5">
+                  <TextField label="Label" wrapClass="flex-1" value={r.label} onChange={(e) => setRange(i, { label: e.target.value })} placeholder="< 100 Juta" />
+                  <TextField label="Min" wrapClass="w-32" type="number" value={String(r.min)} onChange={(e) => setRange(i, { min: Number(e.target.value) })} />
+                  <TextField label="Max (kosong=∞)" wrapClass="w-32" type="number" value={r.max == null ? '' : String(r.max)} onChange={(e) => setRange(i, { max: e.target.value === '' ? null : Number(e.target.value) })} />
+                  <button onClick={() => setF({ ...f, priceRanges: f.priceRanges.filter((_, idx) => idx !== i) })} className="p-2 mb-0.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>
+                </div>
+              ))}
+              <button onClick={() => setF({ ...f, priceRanges: [...f.priceRanges, { label: '', min: 0, max: null }] })} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline"><Plus size={14} /> Tambah Rentang</button>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button icon={<Save size={15} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} disabled={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Header'}</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── Modal kelola galeri foto ── */
+const GalleryModal = ({ row, onClose }: { row: CmsCatalogRow; onClose: () => void }) => {
+  const m = useCmsCatalogMutations();
+  const imgs = row.images ?? [];
+  const move = (idx: number, dir: -1 | 1) => {
+    const next = [...imgs];
+    const j = idx + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    m.reorderImages.mutate({ id: row.id, orderedIds: next.map((i) => i.id) }, { onError: (e) => notifyApiError(e) });
+  };
+  return (
+    <Modal open onClose={onClose} title="Kelola Foto Unit" subtitle={`${row.merek?.name ?? ''} ${row.tipe?.name ?? ''} · ${row.platNomor}`} icon={<Images size={18} />} size="lg"
+      footer={<Button variant="secondary" onClick={onClose}>Tutup</Button>}>
+      <div className="space-y-4">
+        <ImageUpload label="Tambah Foto" aspect="aspect-[16/7]" previewUrl={null} isUploading={m.uploadImage.isPending}
+          onFile={(file) => m.uploadImage.mutate({ id: row.id, file }, { onError: (e) => notifyApiError(e) })} />
+        {imgs.length === 0 ? (
+          <p className="text-center py-8 text-[12px] text-muted border border-dashed border-border rounded-xl">Belum ada foto.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {imgs.map((img, i) => (
+              <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border aspect-[4/3] bg-surface-soft">
+                <img src={cmsImageUrl('unit', img.filename) ?? ''} alt="" className="w-full h-full object-cover" />
+                {i === 0 && <span className="absolute top-1.5 left-1.5 bg-primary text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded">UTAMA</span>}
+                <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                  <button onClick={() => move(i, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg bg-white/90 text-ink flex items-center justify-center disabled:opacity-30"><ArrowLeft size={13} /></button>
+                  <button onClick={() => move(i, 1)} disabled={i === imgs.length - 1} className="w-7 h-7 rounded-lg bg-white/90 text-ink flex items-center justify-center disabled:opacity-30"><ArrowRight size={13} /></button>
+                  <button onClick={() => m.deleteImage.mutate({ id: row.id, imageId: img.id }, { onError: (e) => notifyApiError(e) })} className="w-7 h-7 rounded-lg bg-semantic-error text-white flex items-center justify-center"><Trash2 size={13} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
 
 export const KatalogPage = () => {
   const [search, setSearch]         = useState('');
@@ -32,6 +126,8 @@ export const KatalogPage = () => {
   const rows = data?.data ?? [];
   const total = data?.meta?.total ?? rows.length;
   const m = useCmsCatalogMutations();
+  const [galleryId, setGalleryId] = useState<string | null>(null);
+  const galleryRow = rows.find((r) => r.id === galleryId) ?? null;
 
   const publishedCount = rows.filter((u) => u.isPublished).length;
 
@@ -128,6 +224,12 @@ export const KatalogPage = () => {
             icon: <Tag size={13} />,
             label: u.statusKatalog === 'READY' ? 'Tandai Booked' : 'Tandai Ready',
             onClick: () => patch(u.id, { statusKatalog: u.statusKatalog === 'READY' ? 'BOOKED' : 'READY' }),
+            dividerAfter: true,
+          },
+          {
+            icon: <Images size={13} />,
+            label: `Kelola Foto (${u.imageCount})`,
+            onClick: () => setGalleryId(u.id),
           },
         ]} />
       ),
@@ -145,6 +247,8 @@ export const KatalogPage = () => {
           </a>
         }
       />
+
+      <CatalogHeaderEditor />
 
       {/* Summary stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -204,6 +308,8 @@ export const KatalogPage = () => {
           <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
         )}
       </SectionCard>
+
+      {galleryRow && <GalleryModal row={galleryRow} onClose={() => setGalleryId(null)} />}
     </div>
   );
 };

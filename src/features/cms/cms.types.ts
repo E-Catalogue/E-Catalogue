@@ -19,23 +19,48 @@ export interface SectionMeta {
 /* ── Site Settings (singleton) ── */
 export interface NavLink { label: string; path: string; }
 
+/** Bentuk PUBLIK — sosial dibungkus objek `social`. */
 export interface SiteSettings {
   companyName: string;
   tagline: string;
   logoFilename: string | null;
   faviconFilename: string | null;
-  footerDescription: string;
+  footerDescription: string | null;
   navContactLabel: string;
   navLinks: NavLink[];
-  whatsappNumber: string;
-  phone: string;
-  email: string;
-  address: string;
-  businessHours: string;
+  whatsappNumber: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  businessHours: string | null;
   mapEmbedUrl: string | null;
   mapLat: number | null;
   mapLng: number | null;
   social: { instagram: string | null; facebook: string | null; tiktok: string | null; website: string | null };
+  copyrightText: string | null;
+}
+
+/** Bentuk ADMIN (GET /cms/site-settings) — sosial FLAT (socialInstagram, dst). */
+export interface SiteSettingsRaw {
+  companyName: string | null;
+  tagline: string | null;
+  logoFilename: string | null;
+  faviconFilename: string | null;
+  footerDescription: string | null;
+  navContactLabel: string | null;
+  navLinks: NavLink[] | null;
+  whatsappNumber: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  businessHours: string | null;
+  mapEmbedUrl: string | null;
+  mapLat: number | null;
+  mapLng: number | null;
+  socialInstagram: string | null;
+  socialFacebook: string | null;
+  socialTiktok: string | null;
+  socialWebsite: string | null;
   copyrightText: string | null;
 }
 

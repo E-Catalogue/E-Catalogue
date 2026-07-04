@@ -1,7 +1,7 @@
 import { apiClient, API_ORIGIN } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  SiteSettings, SiteSettingsUpdate,
+  SiteSettings, SiteSettingsRaw, SiteSettingsUpdate,
   ContactPage, CatalogPage,
   Testimonial, TestimonialForm,
   ContactMessage, ContactStatus,
@@ -33,7 +33,7 @@ export const uploadCmsImage = (folder: CmsUploadFolder, file: File) =>
 
 /* ── Site Settings ── */
 export const siteSettingsApi = {
-  get: () => apiClient.get<ApiResponse<SiteSettings>>('/cms/site-settings').then((r) => r.data.data),
+  get: () => apiClient.get<ApiResponse<SiteSettingsRaw>>('/cms/site-settings').then((r) => r.data.data),
   getPublic: () => apiClient.get<ApiResponse<SiteSettings>>('/public/site-settings').then((r) => r.data.data),
   update: (body: SiteSettingsUpdate) => apiClient.put<ApiResponse<SiteSettings>>('/cms/site-settings', body).then((r) => r.data.data),
   uploadLogo: (file: File) => apiClient.post<ApiResponse<{ filename: string }>>('/cms/site-settings/logo', fileForm(file), uploadCfg).then((r) => r.data.data),
