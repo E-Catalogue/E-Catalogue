@@ -328,7 +328,7 @@ export const DashboardCashflowPage = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <h4 className="text-[13px] font-extrabold text-ink">{acc.name}</h4>
-                    <span className="text-[11px] font-semibold text-muted">{acc.bankName} • {acc.accountNumber || acc.code}</span>
+                    <span className="text-[11px] font-semibold text-muted">{(acc as any).bankName || acc.type} • {(acc as any).accountNumber || acc.code}</span>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
                     acc.type === 'BANK' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-accent-amber/10 text-accent-amber'

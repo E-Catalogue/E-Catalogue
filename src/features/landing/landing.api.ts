@@ -15,6 +15,23 @@ export interface CatalogPagePublic {
 
 export interface CatalogListResponse { data: CatalogCard[]; meta?: ApiMeta; }
 
+const mapCatalogUnit = <T extends Record<string, any>>(u: T): T => {
+  if (!u) return u;
+  return {
+    ...u,
+    brand: u.brand ?? u.merek?.name ?? '',
+    model: u.model ?? u.tipe?.name ?? '',
+    year: u.year ?? u.tahun ?? 0,
+    price: u.price ?? u.harga ?? 0,
+    km: u.km ?? u.kilometer ?? 0,
+    transmission: u.transmission ?? u.transmisi ?? '-',
+    fuel: u.fuel ?? u.bahanBakar ?? '-',
+    color: u.color ?? u.warna ?? '-',
+    plate: u.plate ?? u.plat ?? '-',
+    status: u.status ?? (u.statusKatalog?.toLowerCase() === 'ready' ? 'ready' : 'booked'),
+  };
+};
+
 export const landingApi = {
   getSiteSettings: () => apiClient.get<ApiResponse<SiteSettings>>('/public/site-settings').then((r) => r.data.data),
   getHomepage: () => apiClient.get<ApiResponse<PublicHomepage>>('/public/homepage').then((r) => r.data.data),
@@ -23,10 +40,10 @@ export const landingApi = {
 
   getCatalogPage: () => apiClient.get<ApiResponse<CatalogPagePublic>>('/public/catalog-page').then((r) => r.data.data),
   getCatalog: (params: CatalogQuery): Promise<CatalogListResponse> =>
-    apiClient.get<ApiResponse<CatalogCard[]>>('/public/catalog', { params }).then((r) => ({ data: r.data.data, meta: r.data.meta })),
+    apiClient.get<ApiResponse<CatalogCard[]>>('/public/catalog', { params }).then((r) => ({ data: (r.data.data || []).map(mapCatalogUnit), meta: r.data.meta })),
   getCatalogBrands: () => apiClient.get<ApiResponse<CatalogBrand[]>>('/public/catalog/brands').then((r) => r.data.data),
-  getCatalogUnit: (id: string) => apiClient.get<ApiResponse<CatalogDetail>>(`/public/catalog/${id}`).then((r) => r.data.data),
-  getRelatedUnits: (id: string, limit = 4) => apiClient.get<ApiResponse<CatalogCard[]>>(`/public/catalog/${id}/related`, { params: { limit } }).then((r) => r.data.data),
+  getCatalogUnit: (id: string) => apiClient.get<ApiResponse<CatalogDetail>>(`/public/catalog/${id}`).then((r) => mapCatalogUnit(r.data.data)),
+  getRelatedUnits: (id: string, limit = 4) => apiClient.get<ApiResponse<CatalogCard[]>>(`/public/catalog/${id}/related`, { params: { limit } }).then((r) => (r.data.data || []).map(mapCatalogUnit)),
 
   getCreditConfig: () => apiClient.get<ApiResponse<CreditSimConfig>>('/public/credit-simulation/config').then((r) => r.data.data),
   calculateCredit: (body: CreditCalcInput) => apiClient.post<ApiResponse<CreditCalcResult>>('/public/credit-simulation/calculate', body).then((r) => r.data.data),

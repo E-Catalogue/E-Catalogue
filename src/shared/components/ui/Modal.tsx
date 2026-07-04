@@ -12,6 +12,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
 }
 
 const SIZES = {
@@ -21,7 +22,7 @@ const SIZES = {
   xl: 'max-w-4xl',
 };
 
-export const Modal = ({ open, onClose, title, subtitle, icon, children, footer, size = 'md' }: ModalProps) => {
+export const Modal = ({ open, onClose, title, subtitle, icon, children, footer, size = 'md', className = '' }: ModalProps) => {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -51,7 +52,7 @@ export const Modal = ({ open, onClose, title, subtitle, icon, children, footer, 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative z-10 w-full ${SIZES[size]} bg-surface rounded-t-3xl sm:rounded-3xl shadow-card-hover flex flex-col max-h-[92vh] sm:max-h-[88vh]`}
+            className={`relative z-10 w-full ${SIZES[size]} bg-surface rounded-t-3xl sm:rounded-3xl shadow-card-hover flex flex-col max-h-[92vh] sm:max-h-[88vh] ${className}`}
             role="dialog"
             aria-modal="true"
           >

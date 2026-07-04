@@ -1,7 +1,7 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { 
-  DollarSign, TrendingUp, TrendingDown, CalendarDays, Award, 
-  Plus, Edit3, CheckCircle2, PiggyBank, Landmark, Wallet, Percent, ShieldCheck
+  DollarSign, CalendarDays, Award, 
+  Plus, Edit3
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -418,7 +418,7 @@ export const TargetPendapatanPage = () => {
           </div>
         ) : (
           <div className="bg-surface rounded-2xl border border-border shadow-card overflow-hidden">
-            <DataTable columns={columns} data={targets} keyExtractor={(item) => item.id} />
+            <DataTable<MonthlyRevenueTarget> columns={columns} data={targets} rowKey={(item) => item.id} />
           </div>
         )}
       </div>

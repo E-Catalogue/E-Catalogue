@@ -1,23 +1,21 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { 
-  Target, TrendingUp, TrendingDown, CalendarDays, Award, Trophy, 
-  Plus, Edit3, BarChart3, PieChart, CheckCircle2, AlertTriangle, 
-  Clock, Users, DollarSign, ArrowUpRight, ArrowDownLeft, SlidersHorizontal,
-  Zap, ShieldCheck, ChevronRight
+  Target, CalendarDays, Award, 
+  Plus, Edit3
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField } from '@/shared/components/ui/Field';
 import { Can } from '@/features/auth/permissions';
 import { formatCurrency } from '@/core/utils/format';
 import { CurrencyField } from '@/features/finance/components';
 
 export interface MonthlyTarget {
   id: string;
-  monthIndex: number; // 1 to 12
+  monthIndex: number;
   monthName: string;
   targetUnit: number;
   realisasiUnit: number;
@@ -44,18 +42,16 @@ const INITIAL_TARGETS: MonthlyTarget[] = [
 
 export const TargetPenjualanPage = () => {
   const [year, setYear] = useState('2026');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [targets, setTargets] = useState<MonthlyTarget[]>(INITIAL_TARGETS);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [editModal, setEditModal] = useState<MonthlyTarget | null>(null);
-
-  // Form state for editing target
   const [formUnit, setFormUnit] = useState('');
   const [formOmzet, setFormOmzet] = useState('');
 
   const openEdit = (m: MonthlyTarget) => {
+    setEditModal(m);
     setFormUnit(String(m.targetUnit));
     setFormOmzet(String(m.targetOmzet));
-    setEditModal(m);
   };
 
   const handleSaveTarget = (e: FormEvent) => {
@@ -63,25 +59,11 @@ export const TargetPenjualanPage = () => {
     if (!editModal) return;
     const unitVal = Number(formUnit) || 0;
     const omzetVal = Number(formOmzet) || 0;
-
     setTargets((prev) =>
-      prev.map((t) =>
-        t.id === editModal.id
-          ? { ...t, targetUnit: unitVal, targetOmzet: omzetVal }
-          : t
-      )
+      prev.map((t) => (t.id === editModal.id ? { ...t, targetUnit: unitVal, targetOmzet: omzetVal } : t)),
     );
     setEditModal(null);
   };
-
-  // Calculate annual summary KPI figures
-  const totalTargetUnit = useMemo(() => targets.reduce((acc, t) => acc + t.targetUnit, 0), [targets]);
-  const totalRealisasiUnit = useMemo(() => targets.reduce((acc, t) => acc + t.realisasiUnit, 0), [targets]);
-  const totalTargetOmzet = useMemo(() => targets.reduce((acc, t) => acc + t.targetOmzet, 0), [targets]);
-  const totalRealisasiOmzet = useMemo(() => targets.reduce((acc, t) => acc + t.realisasiOmzet, 0), [targets]);
-
-  const unitProgress = Math.round((totalRealisasiUnit / totalTargetUnit) * 100);
-  const omzetProgress = Math.round((totalRealisasiOmzet / totalTargetOmzet) * 100);
 
   const columns: Column<MonthlyTarget>[] = [
     { header: 'Bulan', cell: (m) => <span className="font-extrabold text-ink text-sm">{m.monthName}</span> },
@@ -97,13 +79,27 @@ export const TargetPenjualanPage = () => {
         <span className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${
           pct >= 100 ? 'bg-accent-green/15 text-accent-green' : pct >= 70 ? 'bg-accent-blue/15 text-accent-blue' : m.status === 'BELUM' ? 'bg-surface-soft text-muted' : 'bg-accent-amber/15 text-accent-amber'
         }`}>
-          {m.status === 'BELUM' ? '-' : `${pct}%`}
+          {pct}%
         </span>
       );
     }},
-    { header: 'Target Omzet', align: 'right', cell: (m) => <span className="font-bold text-ink">{formatCurrency(m.targetOmzet, { compact: true })}</span> },
-    { header: 'Realisasi Omzet', align: 'right', cell: (m) => <span className={`font-extrabold ${m.realisasiOmzet >= m.targetOmzet ? 'text-accent-green' : 'text-ink'}`}>{m.status === 'BELUM' ? '-' : formatCurrency(m.realisasiOmzet, { compact: true })}</span> },
-    { header: 'Status', align: 'center', cell: (m) => {
+    { header: 'Target Omzet', align: 'right', cell: (m) => <span className="font-extrabold text-ink">{formatCurrency(m.targetOmzet, { compact: true })}</span> },
+    { header: 'Realisasi Omzet', align: 'right', cell: (m) => (
+      <span className={`font-extrabold ${m.realisasiOmzet >= m.targetOmzet ? 'text-accent-green' : m.status === 'BELUM' ? 'text-muted' : 'text-accent-amber'}`}>
+        {formatCurrency(m.realisasiOmzet, { compact: true })}
+      </span>
+    )},
+    { header: 'Pencapaian Omzet', align: 'center', cell: (m) => {
+      const pct = m.targetOmzet ? Math.round((m.realisasiOmzet / m.targetOmzet) * 100) : 0;
+      return (
+        <span className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${
+          pct >= 100 ? 'bg-accent-green/15 text-accent-green' : pct >= 70 ? 'bg-accent-blue/15 text-accent-blue' : m.status === 'BELUM' ? 'bg-surface-soft text-muted' : 'bg-accent-amber/15 text-accent-amber'
+        }`}>
+          {pct}%
+        </span>
+      );
+    }},
+    { header: 'Status Bulan', align: 'center', cell: (m) => {
       const map = {
         SURPLUS: { text: 'SURPLUS', color: 'bg-accent-green/15 text-accent-green border-accent-green/30' },
         TERCAPAI: { text: 'TERCAPAI', color: 'bg-accent-blue/15 text-accent-blue border-accent-blue/30' },
@@ -111,14 +107,12 @@ export const TargetPenjualanPage = () => {
         BERJALAN: { text: 'BERJALAN', color: 'bg-primary/15 text-primary border-primary/30' },
         BELUM: { text: 'BELUM MULAI', color: 'bg-surface-soft text-muted border-divider' },
       }[m.status];
-      return <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold border ${map.color}`}>{map.text}</span>;
+      return <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold border ${map?.color || ''}`}>{map?.text || m.status}</span>;
     }},
     { header: 'Aksi', align: 'right', cell: (m) => (
       <Button variant="secondary" size="sm" icon={<Edit3 size={13} />} onClick={() => openEdit(m)}>Edit Target</Button>
     )},
   ];
-
-  const maxMonthVal = Math.max(...targets.map(t => Math.max(t.targetUnit, t.realisasiUnit)), 30);
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6 animate-float-up pb-12">

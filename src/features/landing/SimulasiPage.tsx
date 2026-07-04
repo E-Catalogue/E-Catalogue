@@ -26,7 +26,7 @@ export const SimulasiPage = () => {
   }
 
   const selected = units.find((u: any) => u.id === unitId);
-  const price = selected?.price ?? 300_000_000;
+  const price = selected?.harga ?? (selected as any)?.price ?? 300_000_000;
 
   const [dpPercent, setDpPercent] = useState(20);
   const [tenor, setTenor] = useState(36);

@@ -24,8 +24,18 @@ export interface CatalogCard {
   warna: string;
   statusKatalog: 'READY' | 'BOOKED';
   isNew: boolean;
-  image: { filename: string; sortOrder?: number } | null;
+  image: any;
   createdAt: string;
+
+  brand: string;
+  model: string;
+  year: number;
+  price: number;
+  km: number;
+  transmission: string;
+  fuel: string;
+  color: string;
+  status: any;
 }
 
 export interface CatalogImage { id: string; filename: string; sortOrder: number; }
@@ -36,6 +46,8 @@ export interface CatalogDetail extends CatalogCard {
   images: CatalogImage[];
   perlengkapan: string[];
   dokumen: string[];
+
+  plate: string;
 }
 
 export interface CatalogBrand { id: string; name: string; count: number; }

@@ -1,5 +1,3 @@
-import type { Unit } from './types';
-
 // Foto interior/detail generik untuk melengkapi galeri tiap unit (demo).
 const GENERIC = [
   'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?q=80&w=1200&auto=format&fit=crop', // interior dashboard
@@ -8,5 +6,9 @@ const GENERIC = [
   'https://images.unsplash.com/photo-1493238792000-8113da705763?q=80&w=1200&auto=format&fit=crop', // seats
 ];
 
-/** Galeri foto untuk satu unit: foto utama + beberapa angle generik. */
-export const getGallery = (unit: Unit): string[] => [unit.image, ...GENERIC];
+export const getGallery = (unit: any): string[] => {
+  if (!unit) return GENERIC;
+  const mainImg = typeof unit.image === 'string' ? unit.image : unit.image?.filename ? `/uploads/unit/${unit.image.filename}` : '';
+  const extraImgs = Array.isArray(unit.images) ? unit.images.map((img: any) => typeof img === 'string' ? img : img?.filename ? `/uploads/unit/${img.filename}` : '').filter(Boolean) : [];
+  return [mainImg, ...extraImgs, ...GENERIC].filter(Boolean);
+};
