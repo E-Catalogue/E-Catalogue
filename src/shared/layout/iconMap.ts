@@ -16,7 +16,7 @@ const BY_KEY: Record<string, LucideIcon> = {
   DASHBOARD: LayoutDashboard, INVENTORY: Car, INVENTORI: Car, PEMBELIAN: ShoppingCart,
   REKONDISI: Wrench, READY_STOCK: BadgeCheck, CRM: Users, TEST_DRIVE: KeyRound,
   PENJUALAN: ReceiptText, PEMBAYARAN: Wallet, PENGELUARAN: TrendingDown,
-  CASHFLOW: ArrowLeftRight, LAPORAN: BarChart3, PENGATURAN: Settings,
+  CASHFLOW: ArrowLeftRight, LAPORAN: BarChart3, LAPORAN_CASHFLOW: BarChart3, CASHFLOW_REPORT: BarChart3, PENGATURAN: Settings,
   MEREK: Tag, VENDOR: Wrench, BRANCH: Building2, INVESTOR: PiggyBank,
   // Group icons (backend groupCode)
   ACCESS_CONTROL: ShieldCheck, MASTER_DATA: Database,

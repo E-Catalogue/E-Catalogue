@@ -29,7 +29,7 @@ import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
 import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
 import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
 import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
-import { Route as AdminLaporanRouteImport } from './routes/_admin/laporan'
+import { Route as AdminLaporanCashflowRouteImport } from './routes/_admin/laporan-cashflow'
 import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
 import { Route as AdminDashboardCashflowRouteImport } from './routes/_admin/dashboard-cashflow'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
@@ -156,9 +156,9 @@ const AdminMerekRoute = AdminMerekRouteImport.update({
   path: '/merek',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLaporanRoute = AdminLaporanRouteImport.update({
-  id: '/laporan',
-  path: '/laporan',
+const AdminLaporanCashflowRoute = AdminLaporanCashflowRouteImport.update({
+  id: '/laporan-cashflow',
+  path: '/laporan-cashflow',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminInventoryRoute = AdminInventoryRouteImport.update({
@@ -309,7 +309,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AdminDashboardRoute
   '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
   '/inventory': typeof AdminInventoryRoute
-  '/laporan': typeof AdminLaporanRoute
+  '/laporan-cashflow': typeof AdminLaporanCashflowRoute
   '/merek': typeof AdminMerekRoute
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
@@ -357,7 +357,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AdminDashboardRoute
   '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
   '/inventory': typeof AdminInventoryRoute
-  '/laporan': typeof AdminLaporanRoute
+  '/laporan-cashflow': typeof AdminLaporanCashflowRoute
   '/merek': typeof AdminMerekRoute
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
@@ -407,7 +407,7 @@ export interface FileRoutesById {
   '/_admin/dashboard': typeof AdminDashboardRoute
   '/_admin/dashboard-cashflow': typeof AdminDashboardCashflowRoute
   '/_admin/inventory': typeof AdminInventoryRoute
-  '/_admin/laporan': typeof AdminLaporanRoute
+  '/_admin/laporan-cashflow': typeof AdminLaporanCashflowRoute
   '/_admin/merek': typeof AdminMerekRoute
   '/_admin/payroll': typeof AdminPayrollRoute
   '/_admin/pembayaran': typeof AdminPembayaranRoute
@@ -458,7 +458,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-cashflow'
     | '/inventory'
-    | '/laporan'
+    | '/laporan-cashflow'
     | '/merek'
     | '/payroll'
     | '/pembayaran'
@@ -506,7 +506,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-cashflow'
     | '/inventory'
-    | '/laporan'
+    | '/laporan-cashflow'
     | '/merek'
     | '/payroll'
     | '/pembayaran'
@@ -555,7 +555,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard'
     | '/_admin/dashboard-cashflow'
     | '/_admin/inventory'
-    | '/_admin/laporan'
+    | '/_admin/laporan-cashflow'
     | '/_admin/merek'
     | '/_admin/payroll'
     | '/_admin/pembayaran'
@@ -743,11 +743,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerekRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/laporan': {
-      id: '/_admin/laporan'
-      path: '/laporan'
-      fullPath: '/laporan'
-      preLoaderRoute: typeof AdminLaporanRouteImport
+    '/_admin/laporan-cashflow': {
+      id: '/_admin/laporan-cashflow'
+      path: '/laporan-cashflow'
+      fullPath: '/laporan-cashflow'
+      preLoaderRoute: typeof AdminLaporanCashflowRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/inventory': {
@@ -950,7 +950,7 @@ interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDashboardCashflowRoute: typeof AdminDashboardCashflowRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
-  AdminLaporanRoute: typeof AdminLaporanRoute
+  AdminLaporanCashflowRoute: typeof AdminLaporanCashflowRoute
   AdminMerekRoute: typeof AdminMerekRoute
   AdminPayrollRoute: typeof AdminPayrollRoute
   AdminPembayaranRoute: typeof AdminPembayaranRoute
@@ -992,7 +992,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminDashboardCashflowRoute: AdminDashboardCashflowRoute,
   AdminInventoryRoute: AdminInventoryRoute,
-  AdminLaporanRoute: AdminLaporanRoute,
+  AdminLaporanCashflowRoute: AdminLaporanCashflowRoute,
   AdminMerekRoute: AdminMerekRoute,
   AdminPayrollRoute: AdminPayrollRoute,
   AdminPembayaranRoute: AdminPembayaranRoute,

@@ -70,7 +70,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/access-control/menus', label: 'Menu & Permission', icon: SquareMenu, group: 'akses', code: 'MENU' },
   { path: '/dashboard-cashflow', label: 'Dashboard Cashflow', icon: Wallet, group: 'lainnya', code: 'DASBOARD_CASHFLOW' },
   { path: '/cashflow', label: 'Cash Flow', icon: ArrowLeftRight, group: 'lainnya', code: 'CASHFLOW' },
-  { path: '/laporan', label: 'Laporan', icon: BarChart3, group: 'lainnya', code: 'LAPORAN' },
+  { path: '/laporan-cashflow', label: 'Laporan Cashflow', icon: BarChart3, group: 'lainnya', code: 'LAPORAN_CASHFLOW' },
   { path: '/pengaturan', label: 'Pengaturan', icon: Settings, group: 'lainnya', code: 'PENGATURAN' },
 ];
 
@@ -78,6 +78,10 @@ export const MENU_ITEMS: MenuItem[] = [
 export const PATH_BY_CODE: Record<string, string> = {
   ...MENU_ITEMS.reduce((acc, m) => (m.code ? { ...acc, [m.code]: m.path } : acc), {} as Record<string, string>),
   // Alias kode backend yang berbeda dari kode static menu
+  LAPORAN: '/laporan-cashflow',
+  LAPORAN_CASHFLOW: '/laporan-cashflow',
+  CASHFLOW_REPORT: '/laporan-cashflow',
+  FINANCE_REPORT: '/laporan-cashflow',
   SALES_TARGET: '/target-penjualan',
   REVENUE_TARGET: '/target-pendapatan',
   TARGET_PENJUALAN: '/target-penjualan',
