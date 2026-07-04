@@ -1,7 +1,7 @@
-import { LEAD_SOURCES } from '@/data/mock';
+import type { DashboardLeadSource } from '../dashboard.types';
 
-export const LeadSources = () => {
-  const total = LEAD_SOURCES.reduce((a, s) => a + s.count, 0);
+export const LeadSources = ({ data }: { data: DashboardLeadSource[] }) => {
+  const total = data.reduce((a, s) => a + s.count, 0);
 
   // Build donut segments
   const R = 60;
@@ -16,8 +16,8 @@ export const LeadSources = () => {
       {/* Donut chart */}
       <div className="shrink-0">
         <svg width={140} height={140} viewBox="0 0 140 140">
-          {LEAD_SOURCES.map((s, i) => {
-            const pct = s.count / total;
+          {data.map((s, i) => {
+            const pct = total > 0 ? s.count / total : 0;
             const dash = circumference * pct;
             const gap = circumference - dash;
             const seg = (
@@ -45,8 +45,9 @@ export const LeadSources = () => {
 
       {/* Legend */}
       <div className="flex-1 space-y-2">
-        {LEAD_SOURCES.map((s, i) => {
-          const pct = Math.round((s.count / total) * 100);
+        {data.length === 0 && <p className="text-[12px] font-semibold text-muted">Belum ada lead pada periode ini.</p>}
+        {data.map((s, i) => {
+          const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
           return (
             <div key={i} className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />

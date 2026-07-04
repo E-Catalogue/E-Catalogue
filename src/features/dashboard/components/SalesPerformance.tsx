@@ -1,13 +1,13 @@
-import { SALES_PERF, DASH } from '@/data/mock';
 import { formatCurrency } from '@/core/utils/format';
 import { Trophy, Award } from 'lucide-react';
+import type { DashboardSalesPerformance } from '../dashboard.types';
 
 const RANK_MEDALS = ['text-accent-amber bg-accent-amber/10 border-accent-amber/30', 'text-muted bg-muted/10 border-muted/30', 'text-accent-orange bg-accent-orange/10 border-accent-orange/30'];
 
-export const SalesPerformance = () => {
-  const maxUnit = Math.max(...SALES_PERF.map(s => s.unit), 10);
-  const maxRev = Math.max(...SALES_PERF.map(s => s.revenue), 2000000000);
-  const targetPerSales = Math.ceil(DASH.targetUnit / SALES_PERF.length);
+export const SalesPerformance = ({ data, targetUnit }: { data: DashboardSalesPerformance[]; targetUnit: number }) => {
+  const maxUnit = Math.max(...data.map(s => s.unit), 10);
+  const maxRev = Math.max(...data.map(s => s.revenue), 2000000000);
+  const targetPerSales = Math.ceil(targetUnit / Math.max(data.length, 1));
 
   return (
     <div className="space-y-5">
@@ -28,7 +28,8 @@ export const SalesPerformance = () => {
 
       {/* Sales Bars */}
       <div className="space-y-5">
-        {SALES_PERF.map((s, i) => {
+        {data.length === 0 && <p className="text-[12px] font-semibold text-muted">Belum ada performa sales pada periode ini.</p>}
+        {data.map((s, i) => {
           const unitPct = Math.min(Math.round((s.unit / maxUnit) * 100), 100);
           const revPct = Math.min(Math.round((s.revenue / maxRev) * 100), 100);
           const targetPct = Math.round((s.unit / targetPerSales) * 100);

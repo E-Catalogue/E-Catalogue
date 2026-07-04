@@ -1,6 +1,6 @@
-import { TOP_SELLING, DASH } from '@/data/mock';
 import { formatCurrency } from '@/core/utils/format';
 import { Trophy } from 'lucide-react';
+import type { DashboardTopSelling } from '../dashboard.types';
 
 const MEDAL_COLORS = ['text-accent-amber bg-accent-amber/10 border-accent-amber/30', 'text-muted bg-muted/10 border-muted/30', 'text-accent-orange bg-accent-orange/10 border-accent-orange/30'];
 const BAR_GRADIENTS = [
@@ -11,9 +11,8 @@ const BAR_GRADIENTS = [
   'from-muted to-ink-soft',
 ];
 
-export const TopSelling = () => {
-  const maxCount = Math.max(...TOP_SELLING.map(t => t.count), 1);
-  const totalUnit = DASH.unitTerjual || 18;
+export const TopSelling = ({ data, totalUnit }: { data: DashboardTopSelling[]; totalUnit: number }) => {
+  const maxCount = Math.max(...data.map(t => t.count), 1);
 
   return (
     <div className="space-y-4">
@@ -24,8 +23,9 @@ export const TopSelling = () => {
       </div>
 
       <div className="space-y-3.5">
-        {TOP_SELLING.map((t, i) => {
-          const pct = Math.round((t.count / totalUnit) * 100);
+        {data.length === 0 && <p className="text-[12px] font-semibold text-muted">Belum ada penjualan pada periode ini.</p>}
+        {data.map((t, i) => {
+          const pct = totalUnit > 0 ? Math.round((t.count / totalUnit) * 100) : 0;
           const barWidth = Math.min(Math.round((t.count / maxCount) * 100), 100);
 
           return (

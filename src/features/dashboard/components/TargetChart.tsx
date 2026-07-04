@@ -1,6 +1,6 @@
 import { DASH } from '@/data/mock';
 import { formatCurrency } from '@/core/utils/format';
-import { Target, TrendingUp } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 export const TargetChart = () => {
   const unitPct = Math.min(Math.round((DASH.unitTerjual / DASH.targetUnit) * 100), 100);

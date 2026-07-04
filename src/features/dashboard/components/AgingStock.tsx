@@ -1,6 +1,6 @@
-import { AGING_STOCK } from '@/data/mock';
 import { formatCurrency } from '@/core/utils/format';
 import { Clock } from 'lucide-react';
+import type { DashboardAgingStock } from '../dashboard.types';
 
 const agingColor = (days: number) => {
   if (days > 60) return { bar: 'bg-semantic-error', text: 'text-semantic-error', bg: 'bg-semantic-error/10 border-semantic-error/30', label: 'Kritis (>60d)' };
@@ -8,8 +8,15 @@ const agingColor = (days: number) => {
   return { bar: 'bg-accent-green', text: 'text-accent-green', bg: 'bg-accent-green/10 border-accent-green/30', label: 'Sehat (<30d)' };
 };
 
-export const AgingStock = () => {
-  const maxDays = Math.max(...AGING_STOCK.map(s => s.hari), 90);
+export const AgingStock = ({
+  data,
+  summary,
+}: {
+  data: DashboardAgingStock[];
+  summary: { healthyCount: number; warningCount: number; criticalCount: number; totalStock: number };
+}) => {
+  const maxDays = Math.max(...data.map(s => s.hari), 90);
+  const pct = (value: number) => summary.totalStock > 0 ? Math.round((value / summary.totalStock) * 100) : 0;
 
   return (
     <div className="space-y-5">
@@ -23,14 +30,14 @@ export const AgingStock = () => {
         </div>
         {/* Stacked visual bar */}
         <div className="h-3 rounded-full bg-divider/40 flex overflow-hidden gap-0.5 p-0.5">
-          <div className="bg-accent-green h-full rounded-l-full" style={{ width: '92%' }} title="Sehat (<30 Hari): 39 Unit (92%)" />
-          <div className="bg-accent-amber h-full" style={{ width: '5%' }} title="Perhatian (30-60 Hari): 2 Unit (5%)" />
-          <div className="bg-semantic-error h-full rounded-r-full" style={{ width: '3%' }} title="Kritis (>60 Hari): 1 Unit (3%)" />
+          <div className="bg-accent-green h-full rounded-l-full" style={{ width: `${pct(summary.healthyCount)}%` }} title={`Sehat: ${summary.healthyCount} Unit`} />
+          <div className="bg-accent-amber h-full" style={{ width: `${pct(summary.warningCount)}%` }} title={`Perhatian: ${summary.warningCount} Unit`} />
+          <div className="bg-semantic-error h-full rounded-r-full" style={{ width: `${pct(summary.criticalCount)}%` }} title={`Kritis: ${summary.criticalCount} Unit`} />
         </div>
         <div className="flex justify-between text-[10px] font-extrabold pt-0.5">
-          <span className="text-accent-green">Sehat (&lt;30 Hari): 39 Unit (92%)</span>
-          <span className="text-accent-amber">30-60d: 2 Unit</span>
-          <span className="text-semantic-error">&gt;60d: 1 Unit</span>
+          <span className="text-accent-green">Sehat: {summary.healthyCount} Unit ({pct(summary.healthyCount)}%)</span>
+          <span className="text-accent-amber">30-60d: {summary.warningCount} Unit</span>
+          <span className="text-semantic-error">&gt;60d: {summary.criticalCount} Unit</span>
         </div>
       </div>
 
@@ -41,7 +48,8 @@ export const AgingStock = () => {
           <span>Durasi Aging & Valuasi</span>
         </div>
 
-        {AGING_STOCK.map(s => {
+        {data.length === 0 && <p className="text-[12px] font-semibold text-muted">Belum ada stok aktif.</p>}
+        {data.map(s => {
           const c = agingColor(s.hari);
           const widthPct = Math.min(Math.round((s.hari / maxDays) * 100), 100);
 

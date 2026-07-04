@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { MONTHLY_SALES } from '@/data/mock';
 import { formatCurrency } from '@/core/utils/format';
+import type { DashboardMonthlySale } from '../dashboard.types';
 
 type Mode = 'unit' | 'omzet';
 
-export const SalesChart = () => {
+export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year: string | number }) => {
   const [hover, setHover] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>('unit');
 
-  const data = MONTHLY_SALES;
   const activeData = data.filter(d => (mode === 'unit' ? d.unit : d.omzet) > 0);
   const maxVal = Math.max(...data.map(d => mode === 'unit' ? d.unit : d.omzet), 1);
 
@@ -108,7 +107,7 @@ export const SalesChart = () => {
         {/* Tooltip */}
         {data[active] && (mode === 'unit' ? data[active].unit : data[active].omzet) > 0 && (
           <div className="absolute top-0 right-0 bg-ink text-white rounded-xl px-3 py-2 shadow-lg pointer-events-none">
-            <p className="text-[9px] font-semibold text-white/70">{data[active].month} 2026</p>
+            <p className="text-[9px] font-semibold text-white/70">{data[active].month} {year}</p>
             <p className="text-sm font-extrabold leading-none mt-0.5">
               {mode === 'unit' ? `${data[active].unit} Unit` : formatCurrency(data[active].omzet, { compact: true })}
             </p>
