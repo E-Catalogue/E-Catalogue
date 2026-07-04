@@ -99,6 +99,8 @@ export const TestDrivePage = () => {
         open={!!toDelete}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && mutations.remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e), onSuccess: () => setToDelete(null) })}
+        loading={mutations.remove.isPending}
+        closeOnConfirm={false}
         title="Hapus Jadwal"
         message={toDelete ? `Hapus jadwal test drive ${toDelete.lead?.nama ?? toDelete.id}?` : ''}
       />

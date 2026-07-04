@@ -36,6 +36,7 @@ export const useUnitModals = () => {
         title="Hapus Unit"
         message={toDelete ? `Hapus ${toDelete.merek?.name} ${toDelete.tipe?.name} (${toDelete.platNomor}) dari inventory?` : ''}
         loading={deleteUnit.isPending}
+        closeOnConfirm={false}
       />
     </>
   );

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
@@ -254,8 +255,8 @@ export const TargetPendapatanPage = () => {
       }[m.status];
       return <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold border ${map.color}`}>{map.text}</span>;
     }},
-    { header: 'Aksi', align: 'right', cell: (m) => (
-      <Button variant="secondary" size="sm" icon={<Edit3 size={13} />} onClick={() => openEdit(m)}>Edit Target</Button>
+    { header: '', align: 'right', cell: (m) => (
+      <RowActions extra={[{ label: 'Edit Target', icon: <Edit3 size={13} />, onClick: () => openEdit(m), variant: 'primary' }]} />
     )},
   ];
 

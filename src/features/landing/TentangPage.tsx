@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
+import { CustomerLoader, CustomerServerError, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { usePublicAbout, usePublicSiteSettings } from './landing.hooks';
 import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
@@ -9,12 +10,14 @@ import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
 const HERO_FALLBACK = 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?q=80&w=1400&auto=format&fit=crop';
 
 export const TentangPage = () => {
-  const { data: about, isLoading } = usePublicAbout();
+  const { data: about, isLoading, isError, refetch } = usePublicAbout();
   const { data: settings } = usePublicSiteSettings();
   const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
   const resolve = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
 
-  if (isLoading) return <div className="flex items-center justify-center py-40 text-muted"><Loader2 size={30} className="animate-spin" /></div>;
+  if (isLoading) return <CustomerLoader />;
+  if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;
+  if (!about || Object.keys(about).length === 0 || (!about.hero && !about.values)) return <EmptyCmsState title="Halaman Tentang Sedang Dipersiapkan" />;
 
   const hero = about?.hero;
   const heroImg = cmsImageUrl('page', hero?.imageFilename) ?? HERO_FALLBACK;

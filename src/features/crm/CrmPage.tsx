@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Plus, Search, Loader2, Users, Phone, Mail } from 'lucide-react';
+import {
+  Plus, Search, Users, Phone, Mail,
+} from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -76,7 +79,7 @@ export const CrmPage = () => {
 
       <SectionCard title="Daftar Lead" icon={<Users size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
         ) : leads.length === 0 ? (

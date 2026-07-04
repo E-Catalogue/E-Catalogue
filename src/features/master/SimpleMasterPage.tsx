@@ -121,7 +121,7 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode, perm
       </SectionCard>
 
       <FormModal open={!!form} onClose={() => setForm(null)} item={form?.item} withCode={withCode} submitting={create.isPending || update.isPending} onSubmit={handleSubmit} />
-      <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })} title={`Hapus ${title}`} message={toDelete ? `Hapus "${toDelete.name}"?` : ''} />
+      <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })} title={`Hapus ${title}`} message={toDelete ? `Hapus "${toDelete.name}"?` : ''} loading={remove.isPending} closeOnConfirm={false} />
     </div>
   );
 

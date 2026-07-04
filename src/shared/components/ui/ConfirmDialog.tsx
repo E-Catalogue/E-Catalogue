@@ -49,7 +49,7 @@ export const ConfirmDialog = ({
         <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed">{message}</p>
         <div className="flex gap-2.5 mt-6">
           <Button variant="secondary" block onClick={onClose} disabled={loading}>{cancelLabel}</Button>
-          <Button variant={t.btn} block disabled={loading} onClick={() => { onConfirm(); if (closeOnConfirm) onClose(); }}>
+          <Button variant={t.btn} block loading={loading} onClick={() => { onConfirm(); if (closeOnConfirm && !loading) onClose(); }}>
             {confirmLabel}
           </Button>
         </div>

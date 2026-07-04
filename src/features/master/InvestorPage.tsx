@@ -115,7 +115,9 @@ export const InvestorPage = () => {
         <ConfirmDialog
           open={!!toDelete}
           onClose={() => setToDelete(null)}
-          onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })}
+          onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })}
+          loading={m.remove.isPending}
+          closeOnConfirm={false}
           title="Hapus Investor"
           message={toDelete ? `Hapus investor "${toDelete.name}"? Data modal terkait juga dapat terpengaruh.` : ''}
         />

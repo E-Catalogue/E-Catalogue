@@ -1,8 +1,9 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowRight, Search, HandCoins, Star, Quote, Loader2 } from 'lucide-react';
+import { ArrowRight, Search, HandCoins, Star, Quote } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
+import { CustomerLoader, CustomerServerError, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
 import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
@@ -11,15 +12,19 @@ import type { CatalogCard } from './public.types';
 const HERO_FALLBACK_IMG = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1400&auto=format&fit=crop';
 
 export const LandingPage = () => {
-  const { data: hp, isLoading } = usePublicHomepage();
+  const { data: hp, isLoading, isError, refetch } = usePublicHomepage();
   const { data: site } = usePublicSiteSettings();
   const navigate = useNavigate();
   const openDetail = (u: CatalogCard) => navigate({ to: '/katalog/$id', params: { id: u.id } });
   const waUrl = site?.whatsappNumber ? `https://wa.me/${site.whatsappNumber}` : DEFAULT_WA;
   const resolveLink = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center py-40 text-muted"><Loader2 size={30} className="animate-spin" /></div>;
+  // Tampilkan hanya setelah data siap — hindari render setengah jadi.
+  if (isLoading) return <CustomerLoader />;
+  if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;
+  // CMS belum di-setup (tenant baru) → jangan tampil kosong melompong.
+  if (!hp || Object.keys(hp).length === 0 || (!hp.hero && !hp.whyUs && !hp.featured)) {
+    return <EmptyCmsState />;
   }
 
   const hero = hp?.hero;

@@ -33,7 +33,7 @@ export const SectionBar = ({ title, hint, isVisible, onToggleVisible, onSave, sa
           {isVisible ? <Eye size={14} /> : <EyeOff size={14} />} {isVisible ? 'Tampil' : 'Disembunyikan'}
         </button>
       )}
-      <Button icon={<Save size={15} />} onClick={onSave} disabled={saving}>{saving ? 'Menyimpan…' : 'Simpan'}</Button>
+      <Button icon={<Save size={15} />} onClick={onSave} loading={saving}>{saving ? 'Menyimpan…' : 'Simpan'}</Button>
     </div>
   </div>
 );

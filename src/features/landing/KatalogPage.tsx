@@ -4,6 +4,7 @@ import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2, ChevronLeft, Che
 import { PublicUnitCard } from './PublicUnitCard';
 import { PublicHeader } from './PublicHeader';
 import { PriceRangeSlider } from './PriceRangeSlider';
+import { CustomerServerError } from './CustomerStates';
 import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { usePublicCatalog, usePublicCatalogBrands, usePublicCatalogPage } from './landing.hooks';
@@ -67,7 +68,7 @@ export const KatalogPage = () => {
     hargaMin: priceActive ? pMin : undefined,
     hargaMax: priceActive ? pMax : undefined,
   };
-  const { data, isLoading, isError } = usePublicCatalog(params);
+  const { data, isLoading, isError, refetch } = usePublicCatalog(params);
   const units = data?.data ?? [];
   const meta = data?.meta;
   const totalPages = meta?.totalPages ?? 1;
@@ -154,7 +155,7 @@ export const KatalogPage = () => {
             {isLoading ? (
               <div className="flex items-center justify-center py-24 text-muted"><Loader2 size={26} className="animate-spin" /></div>
             ) : isError ? (
-              <div className="text-center py-24 bg-surface rounded-2xl border border-border text-muted font-semibold">Gagal memuat katalog.</div>
+              <CustomerServerError onRetry={() => refetch()} />
             ) : units.length === 0 ? (
               <div className="text-center py-24 bg-surface rounded-2xl border border-border">
                 <Car size={40} className="text-muted mx-auto mb-3" />

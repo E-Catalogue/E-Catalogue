@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
-  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter,
-  Image as ImageIcon, ExternalLink, Loader2, Sparkles, Tag, Images,
-  Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
+  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Tag, Images, Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -65,7 +64,7 @@ const CatalogHeaderEditor = () => {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button icon={<Save size={15} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} disabled={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Header'}</Button>
+            <Button icon={<Save size={15} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Header'}</Button>
           </div>
         </div>
       )}
@@ -295,7 +294,7 @@ export const KatalogPage = () => {
       {/* Table */}
       <SectionCard title={`Daftar Unit (${rows.length})`} icon={<BookOpen size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted gap-2"><Loader2 size={22} className="animate-spin" /></div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
         ) : rows.length === 0 ? (

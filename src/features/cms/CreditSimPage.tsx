@@ -38,7 +38,7 @@ export const CreditSimPage = () => {
         action={
           <div className="flex gap-2">
             <a href="/simulasi" target="_blank" rel="noopener noreferrer"><Button variant="secondary" icon={<ExternalLink size={16} />}>Preview</Button></a>
-            <Button icon={<Save size={16} />} onClick={save} disabled={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
+            <Button icon={<Save size={16} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
           </div>
         } />
 

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
-  Plus, Search, Star, Quote, Pencil, Trash2, Eye, EyeOff, Save, ExternalLink, Loader2,
+  Plus, Search, Star, Quote, Pencil, Trash2, Eye, EyeOff, Save, ExternalLink,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -13,7 +14,6 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
-import { cmsImageUrl } from './cms.api';
 import { useTestimonials, useTestimonialMutations } from './cms.hooks';
 import type { Testimonial, TestimonialForm } from './cms.types';
 
@@ -51,8 +51,7 @@ export const TestimoniPage = () => {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
-    m.remove.mutate(deleteTarget.id, { onError: (err) => notifyApiError(err) });
-    setDeleteTarget(null);
+    m.remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null), onError: (err) => notifyApiError(err) });
   };
 
   const togglePublish = (t: Testimonial) =>
@@ -62,21 +61,18 @@ export const TestimoniPage = () => {
 
   const columns: Column<Testimonial>[] = [
     {
-      header: 'Profil',
-      cell: (r) => {
-        const avatar = cmsImageUrl('testimoni', r.avatarFilename);
-        return (
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary-light text-primary flex items-center justify-center font-extrabold text-sm shrink-0 overflow-hidden">
-              {avatar ? <img src={avatar} alt={r.name} className="w-full h-full object-cover" /> : r.name[0]}
-            </div>
-            <div>
-              <p className="font-extrabold text-ink text-[13px]">{r.name}</p>
-              {r.role && <p className="text-[11px] font-medium text-muted mt-0.5">{r.role}</p>}
-            </div>
+      header: 'Nama',
+      cell: (r) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-primary-light text-primary flex items-center justify-center font-extrabold text-sm shrink-0">
+            {r.name[0]}
           </div>
-        );
-      },
+          <div>
+            <p className="font-extrabold text-ink text-[13px]">{r.name}</p>
+            {r.role && <p className="text-[11px] font-medium text-muted mt-0.5">{r.role}</p>}
+          </div>
+        </div>
+      ),
     },
     {
       header: 'Rating',
@@ -182,7 +178,7 @@ export const TestimoniPage = () => {
       {/* List */}
       <SectionCard title="Daftar Testimoni" icon={<Quote size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={22} className="animate-spin" /></div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat testimoni.</div>
         ) : rows.length === 0 ? (
@@ -228,7 +224,7 @@ export const TestimoniPage = () => {
           </div>
           <div className="flex justify-end gap-2 pt-2 border-t border-border">
             <Button variant="secondary" type="button" onClick={() => setForm(null)}>Batal</Button>
-            <Button type="submit" icon={<Save size={16} />} disabled={saving}>
+            <Button type="submit" icon={<Save size={16} />} loading={saving}>
               {saving ? 'Menyimpan…' : form?.item ? 'Simpan Perubahan' : 'Tambah Testimoni'}
             </Button>
           </div>
@@ -243,6 +239,8 @@ export const TestimoniPage = () => {
         message={`Yakin ingin menghapus testimoni dari "${deleteTarget?.name}"?`}
         confirmLabel="Hapus"
         tone="danger"
+        loading={m.remove.isPending}
+        closeOnConfirm={false}
       />
     </div>
   );

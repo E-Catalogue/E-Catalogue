@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { CheckCircle2, Eye, Loader2, Plus, Search, Wrench } from 'lucide-react';
+import {
+  CheckCircle2, Eye, Plus, Search, Wrench,
+} from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -247,9 +250,7 @@ export const RekondisiPage = () => {
 
       <SectionCard title={`Daftar Rekondisi (${rows.length})`} icon={<Wrench size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-muted">
-            <Loader2 size={22} className="animate-spin" />
-          </div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat rekondisi.</div>
         ) : rows.length === 0 ? (

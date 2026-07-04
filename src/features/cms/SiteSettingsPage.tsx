@@ -58,7 +58,7 @@ export const SiteSettingsPage = () => {
         action={
           <div className="flex gap-2">
             <a href="/" target="_blank" rel="noopener noreferrer"><Button variant="secondary" icon={<ExternalLink size={16} />}>Preview</Button></a>
-            <Button icon={<Save size={16} />} onClick={save} disabled={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
+            <Button icon={<Save size={16} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
           </div>
         }
       />
@@ -117,7 +117,7 @@ export const SiteSettingsPage = () => {
       </SectionCard>
 
       <div className="flex justify-end">
-        <Button icon={<Settings size={15} />} onClick={save} disabled={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Semua'}</Button>
+        <Button icon={<Settings size={15} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Semua'}</Button>
       </div>
     </div>
   );

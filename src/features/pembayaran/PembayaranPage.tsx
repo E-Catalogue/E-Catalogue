@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Search, Loader2, Wallet } from 'lucide-react';
+import {
+  Search, Wallet,
+} from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { SelectField } from '@/shared/components/ui/Field';
@@ -131,7 +134,7 @@ export const PembayaranPage = () => {
 
       <SectionCard title={`Riwayat Pembayaran (${data?.meta?.total ?? 0})`} icon={<Wallet size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
         ) : orders.length === 0 ? (

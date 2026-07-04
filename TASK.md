@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 4 Juli 2026 (rev 8 — situs publik consume /public/* API)
+> **Terakhir diperbarui:** 5 Juli 2026 (rev 10 — loaders proper + action loading + konfirmasi)
 
 ---
 
@@ -83,6 +83,26 @@
 - [x] **TentangPage** → `GET /public/about` (5 section)
 - [x] **KontakPage** → contact-page + site-settings + **`POST /public/contact-messages`** (honeypot anti-spam)
 
+### Loaders & Action UX — *rev 10*
+- [x] **`Button` prop `loading`** — spinner + auto-disable (cegah double-click) di seluruh app; `aria-busy`
+- [x] **`ConfirmDialog`** — tombol konfirmasi tampil spinner saat `loading`, `closeOnConfirm={false}` menahan dialog terbuka sampai proses selesai
+- [x] **Skeleton loaders** — `Skeleton`, `TableSkeleton`, `StatCardSkeleton`, `PageLoader` (branded) di `ui/Skeleton.tsx` + shimmer CSS
+- [x] **TableSkeleton** menggantikan spinner polos di 8 halaman: Inventory, Rekondisi, CRM, Penjualan, Pembayaran, CMS Katalog/Testimoni/Kontak
+- [x] **CustomerLoader full-screen** (rev 9) untuk situs publik
+- [x] **Aksi ada loading + konfirmasi** (cegah double-click & aksi tak sengaja):
+  - Hapus Unit (`useUnitModals` → Inventory/Rekondisi) — loading + keep-open
+  - Master: `SimpleMasterPage` (7 halaman), Vendor, Merek, Branch, Investor, Test Drive — loading + keep-open
+  - CMS: simpan section/site-settings/katalog/kontak/simulasi → `loading`; hapus Testimoni & Pesan Kontak → loading + keep-open
+- [ ] 🟢 Sisa `ConfirmDialog` adopsi pola `loading`: access (User/Role/Menu), CashFlow, Pengeluaran, Payroll, OrderDetailModal, TipeModal, InvestorModalModal, BranchImagesModal, RekondisiDetailModal (primitif sudah siap, tinggal oper `loading={mut.isPending}` + `closeOnConfirm={false}`)
+
+### Customer Error Handling — *rev 9* (acuan [docs/customer-error-handler-prd.md](docs/customer-error-handler-prd.md))
+- [x] `CustomerStates.tsx` — `EmptyCmsState` (CMS belum di-setup), `CustomerNotFound` (404 ramah), `CustomerServerError` (API down + WA hotline + Coba Lagi)
+- [x] **`CustomerLoader` full-screen branded** — overlay `fixed inset-0 z-[100]` (menutupi header & footer) dengan logo/nama tenant, ring berputar, pulse, & bar indeterminate → beranda tampil hanya loader dulu, tidak setengah jadi
+- [x] **404** — `notFoundComponent` di `__root` + `_public` (dalam PublicLayout) → CustomerNotFound
+- [x] **Error boundary** — `errorComponent` di `_public` → CustomerServerError (onRetry=reset)
+- [x] **Load-gate** — LandingPage & TentangPage tampil **hanya setelah data siap** (loading → CustomerLoader), `isError` → CustomerServerError, data CMS kosong → EmptyCmsState (tidak render kosong melompong)
+- [x] KatalogPage `isError` → CustomerServerError (retry via `refetch`)
+
 ### Polish UI global — *rev 6*
 - [x] **Modal notifikasi** — ikon sukses = ceklis hijau (`CheckCircle2`), gagal/peringatan = tanda seru (`AlertTriangle`), via `variant` di `uiSlice` + derivasi title
 - [x] **Halaman 404** dipercantik (angka 404 besar + kartu ikon mobil + ambient glow)
@@ -90,7 +110,8 @@
 - [x] **Rekondisi = stepper modal** — Kelola Rekondisi jadi stepper (Buat→Isi Item→Pengerjaan→Selesai), tombol "Buat Rekondisi" pindah ke dalam modal, riwayat selesai collapsible
 - [x] **Filter katalog publik** — `PriceRangeSlider` (dual range + input min/max kustom + nilai rupiah)
 - [x] **Landing** — animasi scroll-reveal **sekali** (`Reveal` + IntersectionObserver unobserve) di section Keunggulan/Cara Kerja/Unggulan/Testimoni/CTA
-- [x] **Tabel seragam** — cross-check: 18 halaman DataTable, tanpa `<table>` manual & tanpa gambar di sel (kecuali Menu & Permission)
+- [x] **Tabel seragam** — cross-check: semua halaman DataTable, tanpa `<table>` manual & tanpa gambar di sel (kecuali Menu & Permission)
+- [x] **Tabel seragam (rev 9)** — perbaiki deviasi: `TargetPenjualanPage`/`TargetPendapatanPage` (aksi inline `<Button>` + header 'Aksi' → `RowActions` + header `''`), `CashFlowPage` (tombol Edit/Nonaktif inline → `RowActions` + cek `usePermissions().can()`), `TestimoniPage` (hapus `<img>` avatar di sel → inisial saja per §4)
 
 ### Sidebar & Routing dinamis
 - [x] `PATH_BY_CODE` — alias kode backend (`UNIT`, `LEAD`, `LEAD_ORDER`, `LEAD_PAYMENT`) ke route frontend

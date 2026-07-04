@@ -3,6 +3,7 @@ import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pe
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -394,9 +395,7 @@ export const InventoryPage = () => {
         ) : undefined}
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted gap-2">
-            <Loader2 size={22} className="animate-spin" />
-          </div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
         ) : rows.length === 0 ? (

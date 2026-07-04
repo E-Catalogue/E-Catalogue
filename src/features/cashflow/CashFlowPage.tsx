@@ -7,7 +7,10 @@ import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
+import { Power } from 'lucide-react';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField } from '@/features/finance/components';
@@ -106,6 +109,7 @@ const TransactionForm = ({ mode, onClose }: { mode: TxModal; onClose: () => void
 };
 
 export const CashFlowPage = () => {
+  const { can } = usePermissions();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [accountForm, setAccountForm] = useState<CashAccount | null | undefined>();
   const [txForm, setTxForm] = useState<TxModal | null>(null);
@@ -125,7 +129,12 @@ export const CashFlowPage = () => {
     { header: 'Saldo Awal', align: 'right', cell: (a) => formatCurrency(a.openingBalance) },
     { header: 'Default', align: 'center', cell: (a) => a.defaultPayment ? <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Penjualan</span> : '-' },
     { header: 'Status', cell: (a) => a.isActive ? 'Aktif' : 'Nonaktif' },
-    { header: '', align: 'right', cell: (a) => <div className="flex justify-end gap-2"><Can code="CASH_ACCOUNT_UPDATE"><button className="text-accent-blue font-bold" onClick={() => setAccountForm(a)}>Edit</button></Can><Can code="CASH_ACCOUNT_DELETE"><button className="text-semantic-error font-bold" onClick={() => setToDelete(a)}>Nonaktif</button></Can></div> },
+    { header: '', align: 'right', cell: (a) => (
+      <RowActions
+        onEdit={can('CASH_ACCOUNT_UPDATE') ? () => setAccountForm(a) : undefined}
+        extra={can('CASH_ACCOUNT_DELETE') ? [{ label: 'Nonaktifkan', icon: <Power size={13} />, onClick: () => setToDelete(a), variant: 'danger' }] : undefined}
+      />
+    ) },
   ];
   const ledgerColumns: Column<CashTransaction>[] = [
     { header: 'Tanggal', cell: (t) => formatDate(t.transactionDate) },

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
-  Inbox, Save, Loader2, Mail, Phone, Trash2, MailOpen, CornerUpLeft, Archive, ExternalLink,
+  Inbox, Save, Mail, Phone, Trash2, MailOpen, CornerUpLeft, Archive, ExternalLink,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -39,7 +40,7 @@ const HeaderEditor = () => {
   if (isLoading || !f) return null;
   return (
     <SectionCard title="Header Halaman Kontak" icon={<Mail size={16} />}
-      action={<Button icon={<Save size={14} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} disabled={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>}>
+      action={<Button icon={<Save size={14} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Eyebrow" value={f.eyebrow} onChange={(e) => setF({ ...f, eyebrow: e.target.value })} />
         <TextField label="Judul" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
@@ -111,7 +112,7 @@ export const ContactInboxPage = () => {
 
       <SectionCard title={`Pesan Masuk (${rows.length})`} icon={<Inbox size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={22} className="animate-spin" /></div>
+          <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat pesan.</div>
         ) : rows.length === 0 ? (
@@ -145,8 +146,9 @@ export const ContactInboxPage = () => {
       </Modal>
 
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)}
-        onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })}
-        title="Hapus Pesan" message={`Hapus pesan dari "${toDelete?.name}"?`} tone="danger" confirmLabel="Hapus" />
+        onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })}
+        title="Hapus Pesan" message={`Hapus pesan dari "${toDelete?.name}"?`} tone="danger" confirmLabel="Hapus"
+        loading={m.remove.isPending} closeOnConfirm={false} />
     </div>
   );
 };

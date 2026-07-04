@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'sm' | 'md' | 'lg' | string;
@@ -21,14 +22,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
   icon?: ReactNode;
   block?: boolean;
+  /** Tampilkan spinner + nonaktifkan tombol (cegah double-click saat proses). */
+  loading?: boolean;
 }
 
-export const Button = ({ variant = 'primary', size = 'md', icon, block, className = '', children, ...rest }: ButtonProps) => (
+export const Button = ({ variant = 'primary', size = 'md', icon, block, loading, disabled, className = '', children, ...rest }: ButtonProps) => (
   <button
+    disabled={disabled || loading}
+    aria-busy={loading || undefined}
     className={`inline-flex items-center justify-center gap-2 font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${VARIANTS[variant]} ${SIZES[size] || SIZES.md} ${block ? 'w-full' : ''} ${className}`}
     {...rest}
   >
-    {icon}
+    {loading ? <Loader2 size={15} className="animate-spin" /> : icon}
     {children}
   </button>
 );
