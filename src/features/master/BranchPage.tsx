@@ -42,17 +42,11 @@ export const BranchPage = () => {
     { header: 'Lokasi', cell: (r) => r.lokasi || '-' },
     { header: 'Kontak', cell: (r) => r.kontak || '-' },
     { header: '', align: 'right', cell: (r) => (
-      <div className="flex items-center justify-end gap-1">
-        {can('BRANCH_UPDATE') && (
-          <button onClick={() => setImagesFor(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors" title="Kelola foto">
-            <Images size={14} /> Foto
-          </button>
-        )}
-        <RowActions 
-          onEdit={can('BRANCH_UPDATE') ? () => setForm({ item: r }) : undefined} 
-          onDelete={can('BRANCH_DELETE') ? () => setToDelete(r) : undefined} 
-        />
-      </div>
+      <RowActions
+        onEdit={can('BRANCH_UPDATE') ? () => setForm({ item: r }) : undefined}
+        onDelete={can('BRANCH_DELETE') ? () => setToDelete(r) : undefined}
+        extra={can('BRANCH_UPDATE') ? [{ label: 'Kelola Foto', icon: <Images size={13} />, onClick: () => setImagesFor(r) }] : undefined}
+      />
     ) },
   ];
 

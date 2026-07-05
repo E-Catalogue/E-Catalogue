@@ -52,17 +52,11 @@ export const InvestorPage = () => {
     ) },
     { header: 'Status', align: 'center', cell: (r) => <ActiveBadge active={r.isActive} /> },
     { header: '', align: 'right', cell: (r) => (
-      <div className="flex items-center justify-end gap-1">
-        {can('INVESTOR_UPDATE') && (
-          <button onClick={() => setModalFor(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors" title="Kelola modal">
-            <Wallet size={14} /> Modal
-          </button>
-        )}
-        <RowActions 
-          onEdit={can('INVESTOR_UPDATE') ? () => setForm({ item: r }) : undefined} 
-          onDelete={can('INVESTOR_DELETE') ? () => setToDelete(r) : undefined} 
-        />
-      </div>
+      <RowActions
+        onEdit={can('INVESTOR_UPDATE') ? () => setForm({ item: r }) : undefined}
+        onDelete={can('INVESTOR_DELETE') ? () => setToDelete(r) : undefined}
+        extra={can('INVESTOR_UPDATE') ? [{ label: 'Kelola Modal', icon: <Wallet size={13} />, onClick: () => setModalFor(r) }] : undefined}
+      />
     ) },
   ];
 

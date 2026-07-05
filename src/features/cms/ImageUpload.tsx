@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Upload, Loader2, ImageIcon, Trash2 } from 'lucide-react';
+import { validateImageFile } from '@/core/utils/imageValidation';
 
 interface ImageUploadProps {
   /** URL gambar saat ini (hasil cmsImageUrl), null bila belum ada. */
@@ -17,8 +18,6 @@ interface ImageUploadProps {
   children?: ReactNode;
 }
 
-const MAX_MB = 5;
-
 export const ImageUpload = ({
   previewUrl, onFile, isUploading, onRemove,
   label, hint = 'JPG/PNG maks 5 MB', aspect = 'aspect-[16/10]', rounded, className = '',
@@ -29,8 +28,9 @@ export const ImageUpload = ({
 
   const pick = (file?: File) => {
     if (!file) return;
-    if (!/image\/(jpeg|jpg|png)/.test(file.type)) { setErr('Format harus JPG atau PNG'); return; }
-    if (file.size > MAX_MB * 1024 * 1024) { setErr(`Ukuran maksimal ${MAX_MB} MB`); return; }
+    // Validasi klien dulu (feedback instan) — server tetap jadi jaring pengaman.
+    const invalid = validateImageFile(file);
+    if (invalid) { setErr(invalid); return; }
     setErr(null);
     setLocalPreview(URL.createObjectURL(file));  // preview instan sebelum server balas
     onFile(file);

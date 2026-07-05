@@ -3,7 +3,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 5 Juli 2026 (rev 10 — loaders proper + action loading + konfirmasi)
+> **Terakhir diperbarui:** 5 Juli 2026 (rev 11 — CMS UX auto/manual + error/upload + tabel standar)
 
 ---
 
@@ -82,6 +82,12 @@
 - [x] **SimulasiPage** → config (slider) + **`POST /public/credit-simulation/calculate`** (angka final, debounced, ikut method aktif)
 - [x] **TentangPage** → `GET /public/about` (5 section)
 - [x] **KontakPage** → contact-page + site-settings + **`POST /public/contact-messages`** (honeypot anti-spam)
+
+### CMS UX + Error/Upload + Tabel — *rev 11* (acuan [docs/frontend/cms_module_prd.md](docs/frontend/cms_module_prd.md) §1.5)
+- [x] **CMS auto/manual jelas** — `AutoValueField` (dropdown Otomatis/Manual + badge "Dihitung otomatis dari data") gantikan input ketik "auto" di Statistik Hero/About; `ModeSelect` (segmented radio + hint) gantikan input teks mode di Merek Populer & Unit Unggulan
+- [x] **Validasi upload gambar** — util `validateImageFile` (`core/utils/imageValidation.ts`: 5 MB, JPG/PNG) dipakai `ImageUpload` (feedback instan sebelum upload)
+- [x] **Error handling terpusat** — `core/api/apiError.ts`: `getApiErrorCode` (branching), `getApiErrorMessage` (tampilan), `getFieldErrors` (highlight field dari `VALIDATION_ERROR.details`)
+- [x] **Tabel standar (§5)** — semua kolom aksi kini pakai dropdown `RowActions`/`ActionMenu`: BranchPage ("Kelola Foto" → extra), InvestorPage ("Kelola Modal" → extra), PembayaranPage ("Detail" → onView). Scan konfirmasi 0 deviasi.
 
 ### Loaders & Action UX — *rev 10*
 - [x] **`Button` prop `loading`** — spinner + auto-disable (cegah double-click) di seluruh app; `aria-busy`

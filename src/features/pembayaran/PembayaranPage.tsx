@@ -6,7 +6,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
-import { Button } from '@/shared/components/ui/Button';
+import { RowActions } from '@/shared/components/ui/RowActions';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { SelectField } from '@/shared/components/ui/Field';
 import { OrderDetailModal } from '@/features/penjualan/OrderDetailModal';
@@ -94,9 +94,7 @@ export const PembayaranPage = () => {
     {
       header: '',
       align: 'right',
-      cell: (r) => (
-        <Button variant="secondary" className="text-xs px-3 py-1.5" onClick={() => setDetail(r.id)}>Detail</Button>
-      ),
+      cell: (r) => <RowActions onView={() => setDetail(r.id)} />,
     },
   ];
 

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Plus, Trash2, Eye, EyeOff, Save, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Save, GripVertical, Sparkles } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
 import type { CmsIconItem, CmsStat } from './cms.types';
@@ -64,6 +64,63 @@ export const IconItemsEditor = ({ items, onChange, itemLabel = 'Item' }: {
   );
 };
 
+/**
+ * Field nilai statistik dengan pilihan **Otomatis** (dihitung server dari data)
+ * atau **Manual** (ketik sendiri). Menghilangkan kebingungan mengetik "auto".
+ */
+export const AutoValueField = ({ label = 'Nilai', value, onChange, autoHint = 'Dihitung otomatis dari data' }: {
+  label?: string; value: string; onChange: (v: string) => void; autoHint?: string;
+}) => {
+  const isAuto = value === 'auto';
+  return (
+    <div className="min-w-0">
+      <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">{label}</label>
+      <div className="flex items-center gap-1.5">
+        <select
+          value={isAuto ? 'auto' : 'manual'}
+          onChange={(e) => onChange(e.target.value === 'auto' ? 'auto' : '')}
+          className="h-10 px-2 rounded-lg bg-surface border border-border text-[12px] font-bold text-ink-soft focus:outline-none focus:border-primary cursor-pointer shrink-0"
+        >
+          <option value="manual">Manual</option>
+          <option value="auto">Otomatis</option>
+        </select>
+        {isAuto ? (
+          <span className="flex-1 h-10 flex items-center gap-1.5 px-2.5 rounded-lg bg-accent-green/8 border border-dashed border-accent-green/30 text-[11px] font-bold text-accent-green truncate">
+            <Sparkles size={12} /> {autoHint}
+          </span>
+        ) : (
+          <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="mis. 120+"
+            className="flex-1 min-w-0 h-10 px-2.5 rounded-lg bg-surface border border-border text-[13px] font-semibold focus:outline-none focus:border-primary" />
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** Dropdown mode Otomatis/Manual dengan penjelasan (brands, featured). */
+export const ModeSelect = ({ value, onChange, autoLabel, manualLabel, hint }: {
+  value: 'auto' | 'manual'; onChange: (v: 'auto' | 'manual') => void;
+  autoLabel: string; manualLabel: string; hint?: string;
+}) => (
+  <div>
+    <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Sumber Data</label>
+    <div className="grid grid-cols-2 gap-2">
+      {([['auto', autoLabel], ['manual', manualLabel]] as const).map(([v, lbl]) => (
+        <button key={v} type="button" onClick={() => onChange(v)}
+          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-left border transition-colors ${
+            value === v ? 'bg-primary/8 border-primary' : 'bg-surface-soft border-border hover:border-primary/40'
+          }`}>
+          <span className={`w-4 h-4 rounded-full border-2 shrink-0 grid place-items-center ${value === v ? 'border-primary' : 'border-muted/40'}`}>
+            {value === v && <span className="w-2 h-2 rounded-full bg-primary" />}
+          </span>
+          <span className={`text-[12px] font-bold ${value === v ? 'text-primary' : 'text-ink-soft'}`}>{lbl}</span>
+        </button>
+      ))}
+    </div>
+    {hint && <p className="text-[11px] text-muted font-medium mt-1.5">{hint}</p>}
+  </div>
+);
+
 /** Editor daftar statistik {value,label,icon?}. */
 export const StatsEditor = ({ items, onChange, withIcon }: {
   items: CmsStat[]; onChange: (next: CmsStat[]) => void; withIcon?: boolean;
@@ -74,8 +131,8 @@ export const StatsEditor = ({ items, onChange, withIcon }: {
       {items.map((s, i) => (
         <div key={i} className="flex items-end gap-2 rounded-xl border border-border bg-surface-soft p-2.5">
           <GripVertical size={16} className="text-muted/50 mb-2.5 shrink-0" />
-          {withIcon && <TextField label="Ikon" wrapClass="w-32" value={s.icon ?? ''} onChange={(e) => set(i, { icon: e.target.value })} placeholder="car" />}
-          <TextField label="Nilai" wrapClass="w-32" value={s.value} onChange={(e) => set(i, { value: e.target.value })} placeholder="120+ / auto" />
+          {withIcon && <TextField label="Ikon" wrapClass="w-24 shrink-0" value={s.icon ?? ''} onChange={(e) => set(i, { icon: e.target.value })} placeholder="car" />}
+          <div className="w-52 shrink-0"><AutoValueField value={s.value} onChange={(v) => set(i, { value: v })} /></div>
           <TextField label="Label" wrapClass="flex-1" value={s.label} onChange={(e) => set(i, { label: e.target.value })} placeholder="Unit Tersedia" />
           <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="p-2 mb-0.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>
         </div>

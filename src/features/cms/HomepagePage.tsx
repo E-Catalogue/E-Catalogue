@@ -7,7 +7,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { cmsImageUrl } from './cms.api';
 import { useSectionForm, useUploadHeroImage } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
-import { SectionBar, SectionCardShell, TextArea, IconItemsEditor } from './CmsKit';
+import { SectionBar, SectionCardShell, TextArea, IconItemsEditor, AutoValueField, ModeSelect } from './CmsKit';
 import type {
   HomepageHero, HomepageBrands, HomepageWhyUs, HomepageHowItWorks,
   HomepageFeatured, HomepageTestimonialsHeader, HomepageCta,
@@ -46,12 +46,15 @@ const HeroEditor = () => {
         </div>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Statistik (isi <span className="font-bold">auto</span> = hitung otomatis)</p>
-        <div className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Statistik Hero</p>
+        <div className="space-y-2.5">
           {form.stats.map((s, i) => (
-            <div key={i} className="grid grid-cols-2 gap-2">
-              <input value={s.value} onChange={(e) => setStat(i, 'value', e.target.value)} className="h-9 px-3 rounded-lg bg-surface-soft border border-border text-sm font-bold focus:outline-none focus:border-primary" placeholder="120+ / auto" />
-              <input value={s.label} onChange={(e) => setStat(i, 'label', e.target.value)} className="h-9 px-3 rounded-lg bg-surface-soft border border-border text-sm font-medium focus:outline-none focus:border-primary" placeholder="Unit Tersedia" />
+            <div key={i} className="flex items-end gap-2 rounded-xl border border-border bg-surface-soft p-2.5">
+              <div className="w-52 shrink-0"><AutoValueField value={s.value} onChange={(v) => setStat(i, 'value', v)} /></div>
+              <div className="flex-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Label</label>
+                <input value={s.label} onChange={(e) => setStat(i, 'label', e.target.value)} className="w-full h-10 px-2.5 rounded-lg bg-surface border border-border text-[13px] font-semibold focus:outline-none focus:border-primary" placeholder="Unit Tersedia" />
+              </div>
             </div>
           ))}
         </div>
@@ -67,12 +70,13 @@ const BrandsEditor = () => {
   return (
     <SectionCardShell>
       <SectionBar title="Merek Populer" hint="Chip merek di bawah hero" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Label" value={form.label} onChange={(e) => patch({ label: e.target.value })} placeholder="Merek populer:" />
-        <TextField label="Mode (auto/manual)" value={form.mode} onChange={(e) => patch({ mode: e.target.value === 'manual' ? 'manual' : 'auto' })} />
-        <TextField label="Jumlah (limit)" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} />
+        <TextField label="Jumlah Merek Ditampilkan" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} />
       </div>
-      <p className="text-[11px] text-muted font-medium">Mode <b>auto</b> mengambil merek terbanyak dari unit tayang. Mode manual memakai daftar ID merek (atur via API).</p>
+      <ModeSelect value={form.mode} onChange={(v) => patch({ mode: v })}
+        autoLabel="Otomatis (terpopuler)" manualLabel="Pilih Sendiri"
+        hint={form.mode === 'auto' ? 'Menampilkan merek terbanyak dari unit yang tayang secara otomatis.' : 'Pilih merek tertentu untuk ditampilkan (pengaturan daftar merek via API/menu Merek).'} />
     </SectionCardShell>
   );
 };
@@ -109,10 +113,11 @@ const FeaturedEditor = () => {
         <TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} />
         <TextField label="Label 'Lihat Semua'" value={form.seeAllLabel} onChange={(e) => patch({ seeAllLabel: e.target.value })} />
         <TextField label="Link 'Lihat Semua'" value={form.seeAllLink} onChange={(e) => patch({ seeAllLink: e.target.value })} />
-        <TextField label="Mode (auto/manual)" value={form.mode} onChange={(e) => patch({ mode: e.target.value === 'manual' ? 'manual' : 'auto' })} />
-        <TextField label="Jumlah unit (limit)" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} />
+        <TextField label="Jumlah Unit Ditampilkan" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} />
       </div>
-      <p className="text-[11px] text-muted font-medium">Mode <b>auto</b> = unit tayang terbaru. Mode manual memakai daftar unitId (atur via API / halaman katalog).</p>
+      <ModeSelect value={form.mode} onChange={(v) => patch({ mode: v })}
+        autoLabel="Otomatis (terbaru)" manualLabel="Pilih Sendiri"
+        hint={form.mode === 'auto' ? 'Menampilkan unit tayang terbaru secara otomatis.' : 'Pilih unit tertentu untuk ditonjolkan (atur di halaman Katalog / via API).'} />
     </SectionCardShell>
   );
 };
