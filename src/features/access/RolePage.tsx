@@ -128,7 +128,7 @@ const RolePageInner = () => {
     { header: 'Status', align: 'center', cell: (r) => <Badge active={r.isActive} /> },
     { header: '', align: 'right', cell: (r) => (
       <div className="flex items-center justify-end gap-1">
-        {can('ROLE_SET_PERMISSION') && (
+        {can('PERMISSION_MANAGE') && (
           <button onClick={() => setPerms(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors"><KeyRound size={14} /> Permission</button>
         )}
         <RowActions
