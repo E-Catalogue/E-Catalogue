@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashAccountApi, cashTransactionApi, financeLookupApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
 import type { CashAccount, OperationalExpense, PayrollBaseSalary, RecurringExpense, SalesIncentive, ListParams } from './types';
 
-export const useCashAccounts = (params: ListParams & { isActive?: string } = { page: 1, limit: 100 }) =>
-  useQuery({ queryKey: ['cash-accounts', params], queryFn: () => cashAccountApi.list(params) });
+export const useCashAccounts = (params: ListParams & { isActive?: string } = { page: 1, limit: 100 }, opts?: { enabled?: boolean }) =>
+  useQuery({ queryKey: ['cash-accounts', params], queryFn: () => cashAccountApi.list(params), ...opts });
 
 export const useCashAccountMutations = () => {
   const qc = useQueryClient();

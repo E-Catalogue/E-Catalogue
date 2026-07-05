@@ -28,8 +28,9 @@ interface FormState {
 }
 const emptyForm = (): FormState => ({ name: '', email: '', username: '', password: '', roleId: '', branchId: '', isActive: true });
 
-const UserFormModal = ({ open, onClose, item, submitting, onSubmit }: {
+const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdate = true, canBranchUpdate = true }: {
   open: boolean; onClose: () => void; item?: AccessUser | null; submitting?: boolean; onSubmit: (v: FormState) => void;
+  canRoleUpdate?: boolean; canBranchUpdate?: boolean;
 }) => {
   const { data: roles } = useRoles({ page: 1, limit: 100 });
   const { data: branches } = useBranches({ page: 1, limit: 100 });
@@ -54,8 +55,8 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit }: {
         <TextField label="Username" required value={form.username} onChange={(e) => set('username', e.target.value)} placeholder="username" />
         <TextField label="Email" type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="email@contoh.com" />
         <TextField label={item ? 'Password (kosongkan jika tetap)' : 'Password'} type="password" required={!item} value={form.password} onChange={(e) => set('password', e.target.value)} placeholder="••••••••" />
-        <SelectField label="Role" required value={form.roleId} onChange={(e) => set('roleId', e.target.value)} options={roleOpts} />
-        <SelectField label="Cabang" value={form.branchId} onChange={(e) => set('branchId', e.target.value)} options={branchOpts} />
+        <SelectField label="Role" required value={form.roleId} onChange={(e) => set('roleId', e.target.value)} options={roleOpts} disabled={!!item && !canRoleUpdate} />
+        <SelectField label="Cabang" value={form.branchId} onChange={(e) => set('branchId', e.target.value)} options={branchOpts} disabled={!!item && !canBranchUpdate} />
         <label className="sm:col-span-2 flex items-center gap-2.5 cursor-pointer select-none">
           <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" />
           <span className="text-[13px] font-semibold text-ink-soft">Aktif</span>
@@ -84,8 +85,8 @@ const UserPageInner = () => {
         const body: Record<string, unknown> = { name: v.name, email: v.email, username: v.username, isActive: v.isActive };
         if (v.password) body.password = v.password;
         await m.update.mutateAsync({ id: form.item.id, body });
-        if (v.roleId && v.roleId !== form.item.role?.id) await m.setRole.mutateAsync({ id: form.item.id, roleId: v.roleId });
-        if (v.branchId && v.branchId !== form.item.branch?.id) await m.setBranch.mutateAsync({ id: form.item.id, branchId: v.branchId });
+        if (v.roleId && v.roleId !== form.item.role?.id && can('USER_ROLE_UPDATE')) await m.setRole.mutateAsync({ id: form.item.id, roleId: v.roleId });
+        if (v.branchId !== form.item.branch?.id && can('USER_BRANCH_UPDATE')) await m.setBranch.mutateAsync({ id: form.item.id, branchId: v.branchId });
       } else {
         const body: Record<string, unknown> = { name: v.name, email: v.email, username: v.username, password: v.password, roleId: v.roleId, isActive: v.isActive };
         if (v.branchId) body.branchId = v.branchId;
@@ -129,7 +130,7 @@ const UserPageInner = () => {
           : <><DataTable columns={columns} data={users} rowKey={(u) => u.id} /><div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div></>}
       </SectionCard>
 
-      <UserFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} />
+      <UserFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} canRoleUpdate={can('USER_ROLE_UPDATE')} canBranchUpdate={can('USER_BRANCH_UPDATE')} />
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })} title="Nonaktifkan User" message={toDelete ? `Nonaktifkan user "${toDelete.name}"?` : ''} confirmLabel="Nonaktifkan" />
     </div>
   );

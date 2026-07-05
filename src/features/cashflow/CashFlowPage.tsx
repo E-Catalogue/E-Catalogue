@@ -117,7 +117,7 @@ export const CashFlowPage = () => {
   const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', type: '', cashAccountId: '' });
 
   const dashboard = useCashDashboard({ dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined });
-  const accounts = useCashAccounts({ page: 1, limit: 100 });
+  const accounts = useCashAccounts({ page: 1, limit: 100 }, { enabled: can('CASH_ACCOUNT_READ') });
   const ledger = useCashTransactions({ page: 1, limit: 50, type: filters.type || undefined, cashAccountId: filters.cashAccountId || undefined, dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined });
   const accountMutations = useCashAccountMutations();
 
@@ -159,7 +159,7 @@ export const CashFlowPage = () => {
         action={<Can code="CASH_TRANSACTION_CREATE"><div className="flex flex-wrap gap-2"><Button icon={<ArrowDownLeft size={16} />} onClick={() => setTxForm('manual-in')}>Kas Masuk</Button><Button variant="secondary" icon={<ArrowUpRight size={16} />} onClick={() => setTxForm('manual-out')}>Kas Keluar</Button><Button variant="secondary" icon={<Repeat size={16} />} onClick={() => setTxForm('transfer')}>Transfer</Button><Button variant="secondary" icon={<SlidersHorizontal size={16} />} onClick={() => setTxForm('adjustment')}>Adjustment</Button></div></Can>}
       />
       <div className="flex flex-wrap gap-2">
-        {[{ id: 'dashboard', label: 'Dashboard' }, { id: 'ledger', label: 'Buku Kas' }, { id: 'accounts', label: 'Akun Kas' }].map((x) => (
+        {[{ id: 'dashboard', label: 'Dashboard' }, { id: 'ledger', label: 'Buku Kas' }, ...(can('CASH_ACCOUNT_READ') ? [{ id: 'accounts', label: 'Akun Kas' }] : [])].map((x) => (
           <button key={x.id} onClick={() => setTab(x.id as Tab)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === x.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>{x.label}</button>
         ))}
       </div>

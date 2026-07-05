@@ -116,9 +116,9 @@ const MenuPageInner = () => {
   const canCreate = can('MENU_CREATE');
   const canUpdate = can('MENU_UPDATE');
   const canDelete = can('MENU_DELETE');
-  const canPermCreate = can('PERMISSION_CREATE');
-  const canPermUpdate = can('PERMISSION_UPDATE');
-  const canPermDelete = can('PERMISSION_DELETE');
+  const canPermCreate = can('PERMISSION_MANAGE');
+  const canPermUpdate = can('PERMISSION_MANAGE');
+  const canPermDelete = can('PERMISSION_MANAGE');
 
   const groups = data?.data ?? [];
   const [groupId, setGroupId] = useState<string | null>(null);

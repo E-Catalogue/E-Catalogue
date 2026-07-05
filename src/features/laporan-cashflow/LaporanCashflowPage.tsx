@@ -9,13 +9,15 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { formatCurrency } from '@/core/utils/format';
 import { useCashDashboard, useCashAccounts } from '@/features/finance/finance.hooks';
 import { Can } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 
 export const LaporanCashflowPage = () => {
   const [period, setPeriod] = useState<'month' | 'q3' | 'ytd'>('month');
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
 
+  const { can } = usePermissions();
   const dashboard = useCashDashboard({});
-  const accountsQuery = useCashAccounts({ page: 1, limit: 20 });
+  const accountsQuery = useCashAccounts({ page: 1, limit: 20 }, { enabled: can('CASH_ACCOUNT_READ') });
 
   // Summary cashflow figures (or realistic fallback numbers for presentation)
   const totalIn = dashboard.data?.summary.totalIn || 3450000000;
