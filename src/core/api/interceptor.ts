@@ -1,13 +1,12 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { apiClient, API_BASE_URL } from './client';
-import { getAccessToken, getRefreshToken, setTokens } from './token';
+import { getAccessToken } from './token';
 import { store } from '@/app/store';
 import { queryClient } from '@/app/queryClient';
-import { setCredentials, clearCredentials } from '@/app/store/authSlice';
+import { setAccessToken, clearCredentials } from '@/app/store/authSlice';
 import { showToast } from '@/app/store/uiSlice';
 import { classifyAxiosError } from './errorHandler';
 import type { ApiResponse, ApiErrorBody } from './types';
-import type { AuthPayload } from '@/features/auth/types';
 
 const isAuthEndpoint = (url?: string) =>
   !!url && (url.includes('/auth/login') || url.includes('/auth/refresh'));
@@ -42,7 +41,7 @@ const flushQueue = (error: unknown, token: string | null) => {
 const forceLogout = (error: unknown) => {
   store.dispatch(clearCredentials());
   queryClient.clear(); // buang cache profil & data lain milik sesi lama
-  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
     window.location.href = '/login';
   }
   return Promise.reject(error);
@@ -58,16 +57,20 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
 
     // A. Otorisasi (401) pada endpoint terproteksi.
-    if (status === 401 && original && !original._retry && !isAuthEndpoint(original.url)) {
+    // `skipAuthRefresh` → request ini tidak boleh menjatuhkan sesi (lihat types.ts).
+    if (
+      status === 401 &&
+      original &&
+      !original._retry &&
+      !original.skipAuthRefresh &&
+      !isAuthEndpoint(original.url)
+    ) {
       const code = errorCode(error);
       // Sesi sudah berakhir (refresh tidak akan menolong) → langsung logout.
       if (SESSION_ENDED_CODES.has(code ?? '')) return forceLogout(error);
       // Hanya access token kedaluwarsa yang bisa dipulihkan via refresh.
       // (Kode tak dikenal/absen diperlakukan sebagai access token kedaluwarsa demi ketahanan.)
       if (code && code !== 'INVALID_ACCESS_TOKEN') return Promise.reject(error);
-
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) return forceLogout(error);
 
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => queue.push({ resolve, reject })).then((token) => {
@@ -79,11 +82,19 @@ apiClient.interceptors.response.use(
       original._retry = true;
       isRefreshing = true;
       try {
-        // Pakai axios polos agar tidak kena interceptor (hindari rekursi).
-        const res = await axios.post<ApiResponse<AuthPayload>>(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        const refreshUrl = `${API_BASE_URL}/tenant/auth/refresh`;
+
+        // Pakai axios polos agar tidak kena interceptor; withCredentials wajib untuk kirim cookie refresh.
+        const res = await axios.post<ApiResponse<{ accessToken: string }>>(
+          refreshUrl,
+          {},
+          { withCredentials: true }
+        );
         const data = res.data.data;
-        setTokens(data.accessToken, data.refreshToken);
-        store.dispatch(setCredentials(data));
+        // Endpoint refresh hanya mengembalikan accessToken — user & menu tidak berubah,
+        // jadi cukup perbarui tokennya saja di store.
+        store.dispatch(setAccessToken(data.accessToken));
+
         flushQueue(null, data.accessToken);
         if (original.headers) original.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(original);

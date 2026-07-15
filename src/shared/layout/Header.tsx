@@ -1,208 +1,113 @@
-import { useState, useEffect } from 'react';
-import { useLocation, Link, useNavigate } from '@tanstack/react-router';
-import { Menu, Search, Bell, CalendarDays, ChevronDown, Store, LogOut, ShieldOff, Command } from 'lucide-react';
-import { MENU_ITEMS, isPathActive } from './menu';
-import { CURRENT_USER } from '@/shared/constants';
-import { useAppSelector, useAppDispatch } from '@/app/store';
-import { queryClient } from '@/app/queryClient';
-import { clearCredentials } from '@/app/store/authSlice';
-import { authApi } from '@/features/auth/auth.api';
+import { useEffect, useState } from 'react';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { Menu, LogOut, Search } from 'lucide-react';
+import { ProfileMenu } from './ProfileMenu';
+import { flattenMenus, resolveMenus } from './menu';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { MenuSearchModal } from '@/shared/components/ui/MenuSearchModal';
+import { useAppDispatch, useAppSelector } from '@/app/store';
+import { clearCredentials } from '@/app/store/authSlice';
+
+import { tenantAuthApi } from '@/features/tenant/api/tenant-auth.api';
 
 interface HeaderProps {
-  onOpenMobileSidebar: () => void;
-  isProfileOpen: boolean;
-  onToggleProfile: () => void;
+  onOpenMenu: () => void;
 }
 
-export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: HeaderProps) => {
-  const location = useLocation();
+const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+export const Header = ({ onOpenMenu }: HeaderProps) => {
+  const { location } = useRouterState();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const user = useAppSelector((s) => s.auth.user);
 
-  const active = MENU_ITEMS.find((m) => isPathActive(location.pathname, m.path));
-  const title = active?.label ?? 'Dashboard';
-  const isDashboard = isPathActive(location.pathname, '/dashboard') || location.pathname === '/dashboard-cashflow';
+  const groupMenus = resolveMenus(useAppSelector((state) => state.auth.groupMenus));
+  const user = useAppSelector((state) => state.auth.user);
 
-  const name = user?.name ?? CURRENT_USER.name;
-  const role = user?.role?.name ?? CURRENT_USER.role;
-  const initials = name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-
-  const [confirmLogout, setConfirmLogout] = useState(false);
-  const [confirmLogoutAll, setConfirmLogoutAll] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
-  // Global shortcut: Ctrl+K / Cmd+K
+  // Judul halaman diambil dari menu yang path-nya cocok dengan URL sekarang.
+  const current = flattenMenus(groupMenus).find((m) => m.path === location.pathname);
+
+  // ⌘K / Ctrl+K membuka pencarian menu dari mana saja.
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen((v) => !v);
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const askLogout = () => { onToggleProfile(); setConfirmLogout(true); };
-  const askLogoutAll = () => { onToggleProfile(); setConfirmLogoutAll(true); };
-
-  const finishLogout = () => {
-    dispatch(clearCredentials());
-    queryClient.clear();
-    setConfirmLogout(false);
-    setConfirmLogoutAll(false);
-    setLoggingOut(false);
-    navigate({ to: '/login' });
-  };
-
   const handleLogout = async () => {
-    setLoggingOut(true);
-    try { await authApi.logout(); } catch { /* ignore */ }
-    finishLogout();
+    try {
+      await tenantAuthApi.logout();
+    } catch {
+      // Logout server gagal pun, sesi lokal tetap dibersihkan.
+    } finally {
+      dispatch(clearCredentials());
+      navigate({ to: '/login' });
+    }
   };
-
-  const handleLogoutAll = async () => {
-    setLoggingOut(true);
-    try { await authApi.logoutAll(); } catch { /* ignore */ }
-    finishLogout();
-  };
-
-  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
 
   return (
     <>
-      <header className="px-4 md:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4 shrink-0 bg-surface border-b border-border z-30">
-        {/* LEFT: title */}
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={onOpenMobileSidebar}
-            className="lg:hidden p-2 bg-surface-soft rounded-xl text-muted hover:text-ink transition-colors shrink-0"
-          >
-            <Menu size={22} strokeWidth={2.5} />
-          </button>
-          <div className="min-w-0">
-            <h1 className="text-lg md:text-xl font-extrabold text-ink tracking-tight leading-none truncate">{title}</h1>
-            {isDashboard && (
-              <p className="text-[11px] md:text-xs text-muted font-medium mt-1 truncate">
-                Selamat datang kembali, <span className="text-primary font-bold">{name}</span>
-              </p>
-            )}
-          </div>
+      <header className="sticky top-0 z-40 h-16 shrink-0 flex items-center gap-3 px-4 md:px-6 bg-surface border-b border-border">
+        <button
+          onClick={onOpenMenu}
+          aria-label="Buka menu"
+          className="lg:hidden shrink-0 text-muted hover:text-ink p-1.5 -ml-1.5 rounded-lg"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Kiri: judul halaman */}
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-extrabold text-ink truncate">{current?.name ?? 'Master App'}</p>
+          <p className="text-[11px] font-medium text-muted truncate hidden sm:block">
+            {user?.name ? `Tenant: ${user.name}` : 'Aplikasi operasional showroom'}
+          </p>
         </div>
 
-        {/* CENTER: search trigger (looks like input, opens modal) */}
-        <div className="hidden md:flex flex-1 max-w-md mx-auto">
+        {/* Kanan: Pencarian & Profil */}
+        <div className="shrink-0 flex items-center justify-end gap-2 sm:gap-3">
           <button
             onClick={() => setSearchOpen(true)}
-            className="group relative w-full flex items-center h-11 pl-11 pr-4 rounded-2xl bg-surface-soft border border-border hover:border-primary/40 hover:bg-primary/[0.03] transition-all text-left"
+            aria-label="Cari menu"
+            className="shrink-0 flex items-center gap-2.5 h-9 w-9 md:w-56 lg:w-64 justify-center md:justify-start px-0 md:px-3 rounded-xl bg-surface-soft border border-border text-muted hover:border-primary hover:text-primary transition-colors"
           >
-            <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-hover:text-primary transition-colors" strokeWidth={2.2} />
-            <span className="text-sm font-medium text-muted flex-1">Cari menu...</span>
-            <kbd className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[10px] font-bold text-muted/60 shrink-0">
-              <Command size={9} />
-              <span>{isMac ? '⌘' : 'Ctrl'} K</span>
-            </kbd>
-          </button>
-        </div>
-
-        {/* RIGHT: actions */}
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {/* Mobile search trigger */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="md:hidden p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors"
-          >
-            <Search size={20} strokeWidth={2.2} />
+            <Search size={15} className="shrink-0" />
+            <span className="text-[12px] font-semibold hidden md:block">Cari menu…</span>
+            <kbd className="kbd hidden md:inline-flex ml-auto">{isMac ? '⌘' : 'Ctrl'} K</kbd>
           </button>
 
-          <Link
-            to="/"
-            className="hidden lg:inline-flex items-center gap-2 rounded-xl bg-surface-soft border border-border text-ink-soft hover:text-primary hover:border-primary font-bold text-[12px] px-3 py-2.5 transition-colors"
-            title="Lihat katalog publik"
-          >
-            <Store size={16} /> Katalog
-          </Link>
-
-          <button className="relative p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
-            <Bell size={20} strokeWidth={2.2} />
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-surface">8</span>
-          </button>
-
-          <button className="hidden sm:flex p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
-            <CalendarDays size={20} strokeWidth={2.2} />
-          </button>
-
-          <div className="relative">
-            <button
-              onClick={onToggleProfile}
-              className="flex items-center gap-2.5 pl-1.5 pr-2 md:pr-3 py-1.5 rounded-full bg-surface-soft border border-border hover:border-primary transition-colors"
-            >
-              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-[12px] font-extrabold shrink-0">{initials}</span>
-              <div className="hidden md:flex flex-col items-start leading-none">
-                <span className="text-[12px] font-bold text-ink">{name}</span>
-                <span className="text-[10px] text-muted font-medium mt-0.5">{role}</span>
-              </div>
-              <ChevronDown size={16} className="text-muted hidden md:block" />
-            </button>
-
-            {isProfileOpen && (
-              <div className="absolute right-0 mt-3 w-56 bg-surface border border-border rounded-2xl shadow-card-hover z-50 overflow-hidden ">
-                <div className="p-4 border-b border-divider flex items-center gap-3 bg-surface-soft">
-                  <span className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">{initials}</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-ink leading-tight truncate">{name}</p>
-                    <p className="text-[10px] text-muted font-semibold uppercase tracking-wider mt-0.5 truncate">{role}</p>
-                  </div>
-                </div>
-                <div className="p-2">
-                  <Link to="/pengaturan" onClick={onToggleProfile} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-ink-soft hover:bg-surface-soft transition-colors">
-                    Pengaturan
-                  </Link>
-                  <button onClick={askLogout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-semantic-error hover:bg-semantic-error/10 transition-colors">
-                    <LogOut size={16} /> Keluar
-                  </button>
-                  <button onClick={askLogoutAll} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-ink-soft hover:bg-surface-soft transition-colors">
-                    <ShieldOff size={16} /> Keluar dari Semua Perangkat
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <ProfileMenu
+            name={user?.name ?? 'Pengguna'}
+            role={user?.role?.name ?? 'Tenant'}
+            initials={(user?.name ?? 'T').slice(0, 2).toUpperCase()}
+            onProfile={() => {
+              // TODO(profil): arahkan ke halaman profil saat routenya dibuat.
+            }}
+            onLogout={() => setConfirmLogout(true)}
+          />
         </div>
       </header>
 
-      {/* Menu search modal */}
-      <MenuSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {searchOpen && <MenuSearchModal onClose={() => setSearchOpen(false)} />}
 
       <ConfirmDialog
         open={confirmLogout}
-        onClose={() => !loggingOut && setConfirmLogout(false)}
+        onClose={() => setConfirmLogout(false)}
         onConfirm={handleLogout}
-        tone="warning"
-        icon={LogOut}
-        title="Keluar dari Akun?"
-        message={`Anda akan keluar dari sesi ${name}. Pastikan pekerjaan sudah tersimpan.`}
-        confirmLabel={loggingOut ? 'Keluar...' : 'Ya, Keluar'}
+        title="Keluar dari Tenant Web"
+        message="Anda akan keluar dari sesi ini dan kembali ke halaman login. Lanjutkan?"
+        confirmLabel="Keluar"
         cancelLabel="Batal"
-        loading={loggingOut}
-        closeOnConfirm={false}
-      />
-      <ConfirmDialog
-        open={confirmLogoutAll}
-        onClose={() => !loggingOut && setConfirmLogoutAll(false)}
-        onConfirm={handleLogoutAll}
         tone="danger"
-        icon={ShieldOff}
-        title="Keluar dari Semua Perangkat?"
-        message="Seluruh sesi aktif Anda di semua perangkat akan dicabut. Gunakan ini bila akun dirasa berisiko."
-        confirmLabel={loggingOut ? 'Memproses...' : 'Ya, Cabut Semua'}
-        cancelLabel="Batal"
-        loading={loggingOut}
-        closeOnConfirm={false}
+        icon={LogOut}
       />
     </>
   );

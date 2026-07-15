@@ -40,7 +40,9 @@
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
 
+@layer components {
   /* Keyboard shortcut hint key */
   .kbd {
     display: inline-flex;
@@ -55,7 +57,9 @@
     color: var(--color-muted);
     line-height: 1.6;
   }
+}
 
+@layer utilities {
   .scrollbar-slim::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-slim::-webkit-scrollbar-thumb { background: #D5D8E0; border-radius: 9999px; }
   .scrollbar-slim::-webkit-scrollbar-track { background: transparent; }
@@ -100,48 +104,7 @@
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
 
-/* Dual range slider thumbs (PriceRangeSlider) */
-.range-thumb { height: 1.5rem; }
-.range-thumb::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 18px; height: 18px; border-radius: 9999px;
-  background: var(--color-primary); border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(24,29,42,0.25);
-  pointer-events: auto; cursor: pointer; margin-top: 1px;
-}
-.range-thumb::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 9999px;
-  background: var(--color-primary); border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(24,29,42,0.25);
-  pointer-events: auto; cursor: pointer;
-}
-.range-thumb::-webkit-slider-runnable-track { background: transparent; }
-.range-thumb::-moz-range-track { background: transparent; }
-
-/* Scroll reveal — sekali saja (dikelola IntersectionObserver via useReveal) */
-.reveal { opacity: 0; transform: translateY(24px); }
-.reveal.is-visible {
-  opacity: 1; transform: none;
-  transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; }
-}
-
-/* Loader bar indeterminate (CustomerLoader) */
-@keyframes loaderBar {
-  0%   { transform: translateX(-120%); }
-  100% { transform: translateX(340%); }
-}
-.animate-loader-bar { animation: loaderBar 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-
-@keyframes loaderPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 8px 24px -8px rgba(217,119,87,0.45); }
-  50%      { transform: scale(1.06); box-shadow: 0 14px 36px -8px rgba(217,119,87,0.6); }
-}
-.animate-loader-pulse { animation: loaderPulse 1.6s ease-in-out infinite; }
-
-/* Skeleton shimmer (admin loaders) */
+/* Skeleton shimmer (loading state) */
 @keyframes skeletonShimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }

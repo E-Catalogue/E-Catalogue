@@ -1,227 +1,172 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from '@tanstack/react-router';
-import { Search, ArrowRight, Command, type LucideIcon } from 'lucide-react';
-import { MENU_ITEMS, PATH_BY_CODE, VALID_PATHS } from '@/shared/layout/menu';
-import { resolveIcon } from '@/shared/layout/iconMap';
+import { Search, CornerDownLeft, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAppSelector } from '@/app/store';
+import { getIconComponent } from '@/shared/layout/iconMapper';
+import { flattenWithGroup, resolveMenus } from '@/shared/layout/menu';
+import type { ApiMenuItem } from '@/features/auth/types';
 
-interface SearchItem {
-  path: string;
-  label: string;
-  group: string;
-  Icon: LucideIcon;
-}
-
-const resolveFrontendPath = (m: { path?: string | null; code?: string }): string | null => {
-  if (m.code && PATH_BY_CODE[m.code]) return PATH_BY_CODE[m.code];
-  if (m.path && VALID_PATHS.has(m.path)) return m.path;
-  return null;
-};
-
-const GROUP_LABELS: Record<string, string> = {
-  main: 'Menu Utama',
-  operasional: 'Operasional',
-  master: 'Master Data',
-  akses: 'Akses Kontrol',
-  lainnya: 'Lainnya',
-};
-
-// Group color accent (for the icon background pill)
-const GROUP_ACCENT: Record<string, string> = {
-  main:        'bg-primary/10 text-primary',
-  operasional: 'bg-amber-100 text-amber-700',
-  master:      'bg-blue-100 text-blue-700',
-  akses:       'bg-purple-100 text-purple-700',
-  lainnya:     'bg-slate-100 text-slate-600',
-};
-
-const useAllMenuItems = (): SearchItem[] => {
-  const groupMenus = useAppSelector((s) => s.auth.groupMenus);
-
-  return useMemo<SearchItem[]>(() => {
-    if (groupMenus && groupMenus.length > 0) {
-      return groupMenus
-        .flatMap((g) =>
-          (g.menus ?? []).map((m) => {
-            const path = resolveFrontendPath(m);
-            if (!path) return null;
-            return {
-              path,
-              label: m.name,
-              group: g.name,
-              Icon: resolveIcon({ icon: m.icon, code: m.code, path: m.path }),
-            } satisfies SearchItem;
-          })
-        )
-        .filter((x): x is SearchItem => x !== null);
-    }
-    return MENU_ITEMS.map((m) => ({
-      path: m.path,
-      label: m.label,
-      group: GROUP_LABELS[m.group] ?? m.group,
-      Icon: m.icon,
-    }));
-  }, [groupMenus]);
-};
-
-interface Props {
-  open: boolean;
+interface MenuSearchModalProps {
   onClose: () => void;
 }
 
-export const MenuSearchModal = ({ open, onClose }: Props) => {
+interface Hit extends ApiMenuItem {
+  group?: string;
+}
+
+/**
+ * Command palette pencarian menu — dibuka dari header atau ⌘K / Ctrl+K.
+ * Di-mount hanya saat terbuka (lihat Header), jadi state selalu mulai bersih.
+ */
+export const MenuSearchModal = ({ onClose }: MenuSearchModalProps) => {
   const navigate = useNavigate();
-  const allItems = useAllMenuItems();
-  const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
+  
+  const groupMenus = resolveMenus(useAppSelector((state) => state.auth.groupMenus));
 
-  const results = useMemo(() => {
+  const [query, setQuery] = useState('');
+  const [cursor, setCursor] = useState(0);
+
+  // Ratakan menu + simpan nama grupnya untuk ditampilkan sebagai konteks.
+  const hits: Hit[] = useMemo(() => {
+    const all: Hit[] = flattenWithGroup(groupMenus).map(({ item, group }) => ({ ...item, group }));
     const q = query.trim().toLowerCase();
-    if (!q) return allItems;
-    return allItems.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.group.toLowerCase().includes(q)
+    if (!q) return all;
+    return all.filter(
+      (i) => i.name.toLowerCase().includes(q),
     );
-  }, [query, allItems]);
+  }, [query, groupMenus]);
 
-  // Reset on open
+  // Fokus ke input & kunci scroll latar selama palette terbuka.
   useEffect(() => {
-    if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setQuery('');
-      setActive(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [open]);
+    const t = setTimeout(() => inputRef.current?.focus(), 20);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = '';
+    };
+  }, []);
 
-  // Clamp active index when results shrink
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setActive((a) => Math.min(a, Math.max(results.length - 1, 0)));
-  }, [results.length]);
+  // Kursor tidak boleh menggantung di luar daftar saat hasil menyusut.
+  const safeCursor = Math.min(cursor, Math.max(hits.length - 1, 0));
 
-  // Scroll active item into view
-  useEffect(() => {
-    const el = listRef.current?.querySelector(`[data-idx="${active}"]`);
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [active]);
-
-  const go = useCallback(
-    (item: SearchItem) => {
+  const go = (item: Hit) => {
+    if (item.path) {
       navigate({ to: item.path });
-      onClose();
-    },
-    [navigate, onClose]
-  );
-
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, results.length - 1)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-    else if (e.key === 'Enter' && results[active]) { go(results[active]); }
-    else if (e.key === 'Escape') { onClose(); }
+    }
+    onClose();
   };
 
-  if (!open) return null;
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setCursor((c) => (hits.length ? (c + 1) % hits.length : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setCursor((c) => (hits.length ? (c - 1 + hits.length) % hits.length : 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const item = hits[safeCursor];
+      if (item) go(item);
+    }
+  };
 
-  return (
-    <>
-      {/* Backdrop */}
+  return createPortal(
+    <div className="fixed inset-0 z-[120] flex items-start justify-center p-4 pt-[12vh]">
+      <div className="absolute inset-0 bg-ink/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+
       <div
-        className="fixed inset-0 z-[200] bg-ink/30 backdrop-blur-[3px]"
-        onClick={onClose}
-      />
+        role="dialog"
+        aria-modal="true"
+        aria-label="Cari menu"
+        onKeyDown={onKeyDown}
+        className="relative z-10 w-full max-w-lg bg-surface rounded-2xl border border-border shadow-card-hover overflow-hidden animate-modal-in"
+      >
+        {/* Input */}
+        <div className="flex items-center gap-3 px-4 h-14 border-b border-divider">
+          <Search size={17} className="text-muted shrink-0" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setCursor(0);
+            }}
+            placeholder="Cari menu…"
+            aria-label="Cari menu"
+            className="flex-1 h-full bg-transparent text-[14px] font-semibold text-ink placeholder:text-muted placeholder:font-medium focus:outline-none"
+          />
+          <kbd className="kbd shrink-0">ESC</kbd>
+        </div>
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-[201] flex items-start justify-center pt-[12vh] px-4 pointer-events-none">
-        <div
-          className="w-full max-w-[520px] bg-surface rounded-2xl shadow-[0_24px_64px_-12px_rgba(24,29,42,0.28)] border border-border overflow-hidden pointer-events-auto "
-          onKeyDown={handleKey}
-        >
-          {/* Search input row */}
-          <div className="flex items-center gap-3 px-4 h-14 border-b border-divider">
-            <Search size={18} className="text-muted shrink-0" strokeWidth={2.2} />
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setActive(0); }}
-              placeholder="Cari menu..."
-              className="flex-1 bg-transparent text-[15px] font-semibold text-ink placeholder:text-muted focus:outline-none"
-            />
-            <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-soft border border-border text-[10px] font-bold text-muted shrink-0">
-              Esc
-            </kbd>
-          </div>
-
-          {/* Results */}
-          <div ref={listRef} className="overflow-y-auto max-h-[340px] py-1.5 no-scrollbar">
-            {results.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <Search size={28} className="mx-auto text-muted/40 mb-3" strokeWidth={1.5} />
-                <p className="text-[13px] font-semibold text-muted">Tidak ditemukan untuk "{query}"</p>
-                <p className="text-[11px] text-muted/60 mt-1">Coba kata kunci lain</p>
-              </div>
-            ) : (
-              results.map((item, i) => {
-                const isActive = i === active;
-                const accent = GROUP_ACCENT[
-                  MENU_ITEMS.find((m) => m.path === item.path)?.group ?? 'lainnya'
-                ] ?? 'bg-slate-100 text-slate-600';
-
-                return (
-                  <button
-                    key={item.path}
-                    data-idx={i}
-                    onClick={() => go(item)}
-                    onMouseEnter={() => setActive(i)}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors
-                      ${isActive ? 'bg-primary/6' : 'hover:bg-surface-soft'}
-                    `}
+        {/* Hasil */}
+        <div className="max-h-[46vh] overflow-y-auto scrollbar-slim py-2">
+          {hits.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[13px] font-semibold text-muted">
+              Menu <span className="text-ink">“{query}”</span> tidak ditemukan.
+            </p>
+          ) : (
+            hits.map((item, i) => {
+              const Icon = getIconComponent(item.icon);
+              const active = i === safeCursor;
+              const path = item.path || '#';
+              return (
+                <button
+                  key={path}
+                  onMouseEnter={() => setCursor(i)}
+                  onClick={() => go(item)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                    active ? 'bg-primary-light' : 'hover:bg-surface-soft'
+                  }`}
+                >
+                  <span
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      active ? 'bg-primary text-white' : 'bg-surface-soft text-muted'
+                    }`}
                   >
-                    {/* Icon pill */}
-                    <span className={`flex items-center justify-center w-8 h-8 rounded-xl shrink-0 ${accent}`}>
-                      <item.Icon size={15} strokeWidth={2} />
+                    <Icon size={16} strokeWidth={2.2} />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className={`block text-[13px] font-bold truncate ${active ? 'text-primary' : 'text-ink'}`}>
+                      {item.name}
                     </span>
+                  </span>
 
-                    {/* Label + group */}
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[13px] font-semibold leading-tight truncate ${isActive ? 'text-primary' : 'text-ink'}`}>
-                        {item.label}
-                      </p>
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-muted mt-0.5 truncate">
-                        {item.group}
-                      </p>
-                    </div>
+                  {item.group && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted shrink-0 hidden sm:block">
+                      {item.group}
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
 
-                    {/* Arrow — only shown on active */}
-                    <ArrowRight
-                      size={14}
-                      className={`shrink-0 text-primary transition-opacity ${isActive ? 'opacity-100' : 'opacity-0'}`}
-                    />
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Footer hint */}
-          <div className="flex items-center justify-between gap-4 px-4 py-2.5 border-t border-divider bg-surface-soft">
-            <div className="flex items-center gap-3 text-[10px] text-muted font-bold">
-              <span className="flex items-center gap-1"><kbd className="kbd">↑↓</kbd> Navigasi</span>
-              <span className="flex items-center gap-1"><kbd className="kbd">↵</kbd> Buka</span>
-              <span className="flex items-center gap-1"><kbd className="kbd">Esc</kbd> Tutup</span>
-            </div>
-            <div className="flex items-center gap-1 text-[10px] text-muted/50 font-bold shrink-0">
-              <Command size={10} />
-              <span>{isMac ? '⌘' : 'Ctrl'}+K</span>
-            </div>
-          </div>
+        {/* Petunjuk keyboard */}
+        <div className="flex items-center gap-4 px-4 h-10 border-t border-divider bg-surface-soft">
+          <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted">
+            <kbd className="kbd">
+              <ArrowUp size={9} />
+            </kbd>
+            <kbd className="kbd">
+              <ArrowDown size={9} />
+            </kbd>
+            navigasi
+          </span>
+          <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted">
+            <kbd className="kbd">
+              <CornerDownLeft size={9} />
+            </kbd>
+            buka
+          </span>
         </div>
       </div>
-    </>
+    </div>,
+    document.body,
   );
 };
