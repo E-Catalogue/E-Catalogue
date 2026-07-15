@@ -138,14 +138,14 @@ export const TenantUserListPage = () => {
   ], [handleEdit]);
 
   if (error) {
-    return <div className="p-6 text-center text-semantic-error">Gagal memuat data pengguna tenant.</div>;
+    return <div className="p-6 text-center text-semantic-error">Gagal memuat data pengguna showroom.</div>;
   }
 
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader
-        title="Tenant Users"
-        description="Kelola staf dan pengguna yang memiliki akses ke ruang kerja (tenant) ini."
+        title="Showroom Users"
+        description="Kelola staf dan pengguna yang memiliki akses ke ruang kerja (showroom) ini."
         action={can('tenant.user.create') ? (
           <Button icon={<Plus size={16} />} onClick={() => setModal({ open: true, mode: 'create', data: defaultUserForm })}>
             Undang Pengguna
@@ -177,8 +177,8 @@ export const TenantUserListPage = () => {
       <Modal
         open={modal.open}
         onClose={() => setModal(prev => ({ ...prev, open: false }))}
-        title={modal.mode === 'create' ? 'Undang Pengguna Baru' : 'Edit Pengguna Tenant'}
-        subtitle={modal.mode === 'create' ? 'Tambahkan anggota tim ke dalam tenant Anda' : 'Ubah data atau peran anggota tim'}
+        title={modal.mode === 'create' ? 'Undang Pengguna Baru' : 'Edit Pengguna Showroom'}
+        subtitle={modal.mode === 'create' ? 'Tambahkan anggota tim ke dalam showroom Anda' : 'Ubah data atau peran anggota tim'}
         icon={<UserCircle2 size={20} />}
         size="md"
         footer={

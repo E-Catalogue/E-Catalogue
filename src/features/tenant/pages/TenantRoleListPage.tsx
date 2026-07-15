@@ -152,14 +152,14 @@ export const TenantRoleListPage = () => {
   ], [handleEdit]);
 
   if (error) {
-    return <div className="p-6 text-center text-semantic-error">Gagal memuat data role tenant.</div>;
+    return <div className="p-6 text-center text-semantic-error">Gagal memuat data role showroom.</div>;
   }
 
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader
-        title="Tenant Roles"
-        description="Kelola peran dan hak akses spesifik di dalam tenant Anda."
+        title="Showroom Roles"
+        description="Kelola peran dan hak akses spesifik di dalam showroom Anda."
         action={can('tenant.role.create') ? (
           <Button icon={<Plus size={16} />} onClick={() => setModal({ open: true, mode: 'create', data: defaultRoleForm })}>
             Buat Role Baru
@@ -191,8 +191,8 @@ export const TenantRoleListPage = () => {
       <Modal
         open={modal.open}
         onClose={() => setModal(prev => ({ ...prev, open: false }))}
-        title={modal.mode === 'create' ? 'Buat Role Tenant' : 'Edit Role Tenant'}
-        subtitle={modal.mode === 'create' ? 'Buat peran baru untuk staf di tenant Anda' : 'Ubah detail dan hak akses peran'}
+        title={modal.mode === 'create' ? 'Buat Role Showroom' : 'Edit Role Showroom'}
+        subtitle={modal.mode === 'create' ? 'Buat peran baru untuk staf di showroom Anda' : 'Ubah detail dan hak akses peran'}
         icon={<Shield size={20} />}
         size="md"
         footer={

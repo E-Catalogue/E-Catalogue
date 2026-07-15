@@ -46,7 +46,7 @@ export const ForbiddenPage = () => (
     icon={ShieldOff}
     tone="bg-semantic-error/10 text-semantic-error"
     title="Akses Ditolak"
-    message="Anda tidak memiliki permission untuk membuka halaman ini. Hubungi admin tenant bila menurut Anda ini keliru."
+    message="Anda tidak memiliki permission untuk membuka halaman ini. Hubungi admin showroom bila menurut Anda ini keliru."
   />
 );
 
@@ -55,7 +55,7 @@ export const FeatureUnavailablePage = () => (
     icon={PackageX}
     tone="bg-accent-amber/10 text-accent-amber"
     title="Fitur Belum Aktif"
-    message="Modul ini belum aktif untuk tenant Anda. Aktivasi capability dilakukan lewat Platform — hubungi penyedia layanan."
+    message="Modul ini belum aktif untuk showroom Anda. Aktivasi capability dilakukan lewat Platform — hubungi penyedia layanan."
   />
 );
 
@@ -63,7 +63,7 @@ export const TenantSuspendedPage = () => (
   <StatePage
     icon={Ban}
     tone="bg-semantic-error/10 text-semantic-error"
-    title="Tenant Ditangguhkan"
+    title="Showroom Ditangguhkan"
     message="Akses ke ruang kerja ini sedang ditangguhkan. Silakan hubungi penyedia layanan untuk mengaktifkannya kembali."
     action={
       <Link to="/login">

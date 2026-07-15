@@ -88,7 +88,7 @@ export const LoginPage = () => {
             <ShieldCheck size={14} /> Area Internal
           </span>
           <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-[1.1] mt-5">
-            Jalankan Showroom<br />
+            Kelola Showroom<br />
             dari <span className="text-primary-light">Satu Aplikasi</span>
           </h1>
           <p className="text-white/80 font-medium mt-4 text-[15px] leading-relaxed">
@@ -126,7 +126,7 @@ export const LoginPage = () => {
             <Lock size={24} strokeWidth={2.2} />
           </div>
           <h2 className="text-2xl font-extrabold text-ink">Masuk ke Ruang Kerja</h2>
-          <p className="text-muted font-medium mt-1.5 text-[14px]">Masukkan tenant, email, dan password Anda.</p>
+          <p className="text-muted font-medium mt-1.5 text-[14px]">Masukkan showroom, email, dan password Anda.</p>
 
           {error && (
             <div className="flex items-start gap-2 mt-5 px-3.5 py-2.5 rounded-xl bg-semantic-error/10 border border-semantic-error/20 text-semantic-error">
@@ -138,7 +138,7 @@ export const LoginPage = () => {
           <div className="mt-6 space-y-4">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
-                Tenant
+                Showroom
               </label>
               <input
                 value={tenantSlug}

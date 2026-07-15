@@ -68,7 +68,7 @@ export const Header = ({ onOpenMenu }: HeaderProps) => {
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-extrabold text-ink truncate">{current?.name ?? 'E-Catalogue'}</p>
           <p className="text-[11px] font-medium text-muted truncate hidden sm:block">
-            {user?.name ? `Tenant: ${user.name}` : 'Aplikasi operasional showroom'}
+            {user?.name ? `Showroom: ${user.name}` : 'Aplikasi operasional showroom'}
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export const Header = ({ onOpenMenu }: HeaderProps) => {
 
           <ProfileMenu
             name={user?.name ?? 'Pengguna'}
-            role={user?.role?.name ?? 'Tenant'}
+            role={user?.role?.name ?? 'Showroom'}
             initials={(user?.name ?? 'T').slice(0, 2).toUpperCase()}
             onProfile={() => {
               // TODO(profil): arahkan ke halaman profil saat routenya dibuat.
@@ -102,7 +102,7 @@ export const Header = ({ onOpenMenu }: HeaderProps) => {
         open={confirmLogout}
         onClose={() => setConfirmLogout(false)}
         onConfirm={handleLogout}
-        title="Keluar dari Tenant Web"
+        title="Keluar dari Showroom Web"
         message="Anda akan keluar dari sesi ini dan kembali ke halaman login. Lanjutkan?"
         confirmLabel="Keluar"
         cancelLabel="Batal"

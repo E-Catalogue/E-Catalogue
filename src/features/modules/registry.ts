@@ -845,7 +845,7 @@ export const MODULES: ModuleSpec[] = [
   {
     path: '/settings/modules',
     title: 'Module Settings',
-    description: 'Capability tenant — read-only, diaktifkan dari Platform.',
+    description: 'Capability showroom — read-only, diaktifkan dari Platform.',
     icon: 'module',
     resource: 'tenant.module_settings',
     columns: [

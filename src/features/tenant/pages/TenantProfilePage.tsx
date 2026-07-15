@@ -30,13 +30,13 @@ export const TenantProfilePage = () => {
   });
 
   if (error) {
-    return <div className="p-6 text-center text-semantic-error">Gagal memuat profil tenant.</div>;
+    return <div className="p-6 text-center text-semantic-error">Gagal memuat profil showroom.</div>;
   }
 
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader
-        title="Profil Tenant"
+        title="Profil Showroom"
         description="Informasi ruang kerja dan identitas perusahaan Anda."
       />
 
@@ -99,7 +99,7 @@ const ProfileForm = ({ profile }: { profile: TenantProfileData }) => {
                 disabled 
               />
               <SelectField 
-                label="Status Tenant" 
+                label="Status Showroom"
                 value={profile.status} 
                 disabled 
                 options={[{ value: profile.status, label: profile.status }]}
