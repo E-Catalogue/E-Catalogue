@@ -1,4 +1,4 @@
-# 🏢 Master App — Tenant Management
+# 🏢 E-Catalogue — Tenant Management
 
 Panel administrasi internal untuk **mengelola tenant** (showroom mobil yang berlangganan): modul yang boleh mereka akses, hak akses (permission) di tiap modul, dan identitas aplikasi masing-masing.
 
@@ -6,7 +6,7 @@ Panel administrasi internal untuk **mengelola tenant** (showroom mobil yang berl
 >
 > - ✅ Kerangka: routing, store, API layer (interceptor + auto-refresh), UI kit.
 > - ✅ Halaman: Login, Dashboard, Tenant (+ modal Modul & Permission), CMS Tenant.
-> - 🟡 **Belum ada konsumsi API** — endpoint master-app belum tersedia. Data tenant memakai
+> - 🟡 **Belum ada konsumsi API** — endpoint e-catalogue belum tersedia. Data tenant memakai
 >   seed di [`tenantSlice.ts`](src/app/store/tenantSlice.ts) (Redux), dan login belum diverifikasi.
 
 ## 🧩 Cakupan

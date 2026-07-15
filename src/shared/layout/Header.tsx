@@ -66,7 +66,7 @@ export const Header = ({ onOpenMenu }: HeaderProps) => {
 
         {/* Kiri: judul halaman */}
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-extrabold text-ink truncate">{current?.name ?? 'Master App'}</p>
+          <p className="text-[13px] font-extrabold text-ink truncate">{current?.name ?? 'E-Catalogue'}</p>
           <p className="text-[11px] font-medium text-muted truncate hidden sm:block">
             {user?.name ? `Tenant: ${user.name}` : 'Aplikasi operasional showroom'}
           </p>

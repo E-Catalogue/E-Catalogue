@@ -1,4 +1,4 @@
-# Master App - Design & UI Standards
+# E-Catalogue - Design & UI Standards
 
 File ini menjadi sumber kebenaran (Source of Truth) untuk gaya visual, penamaan warna, dan aturan UI di seluruh aplikasi, demi menjaga konsistensi (*pixel-perfect*) dengan *mockup* dan citra *brand*.
 

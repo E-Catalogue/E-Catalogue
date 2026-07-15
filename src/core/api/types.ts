@@ -1,6 +1,6 @@
 import 'axios';
 
-// Tipe response standar backend master-app.
+// Tipe response standar backend e-catalogue.
 
 export interface ApiMeta {
   page: number;
