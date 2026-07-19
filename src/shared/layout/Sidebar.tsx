@@ -1,290 +1,332 @@
-import { useState } from 'react';
-import { Link, useRouterState } from '@tanstack/react-router';
-import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion';
-import { Layers, X, PanelLeftClose, PanelLeftOpen, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation } from '@tanstack/react-router';
+import {
+  ChevronLeft, ChevronRight, ChevronDown, Car,
+  LayoutDashboard, Wrench, Database, ShieldCheck, Settings,
+  type LucideIcon,
+} from 'lucide-react';
+import { MENU_ITEMS, resolveFrontendPath, isPathActive } from './menu';
+import { Logo } from './Logo';
+import { QuickInput } from './QuickInput';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
+import { resolveIcon } from './iconMap';
 import { useAppSelector } from '@/app/store';
-import { getIconComponent } from './iconMapper';
-import { childrenOf, isGroup, resolveMenus } from './menu';
-import { APP_NAME, APP_TAGLINE, APP_VERSION } from '@/shared/constants';
-import type { ApiMenuItem } from '@/features/auth/types';
+import { usePublicSiteSettings } from '@/features/cms/cms.hooks';
 
 interface SidebarProps {
-  /** Drawer mobile. */
-  open: boolean;
-  onClose: () => void;
-  /** Sidebar mini (desktop). */
-  collapsed: boolean;
-  onToggleCollapse: () => void;
+  isMobileOpen: boolean;
+  isDesktopOpen: boolean;
+  onCloseMobile: () => void;
+  onToggleDesktop: () => void;
 }
 
-export const Sidebar = ({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) => {
-  const { location } = useRouterState();
-  const reduceMotion = useReducedMotion();
+interface NavItem {
+  path: string;
+  label: string;
+  Icon: LucideIcon;
+}
+interface NavGroup {
+  key: string;
+  label: string;
+  Icon: LucideIcon;
+  items: NavItem[];
+}
 
-  /** Pegas pendek — penanda aktif terasa "meluncur", bukan melompat. */
-  const slide: Transition = reduceMotion
-    ? { duration: 0 }
-    : { type: 'spring', stiffness: 520, damping: 40, mass: 0.7 };
+const STATIC_GROUP_META: Record<string, { label: string; Icon: LucideIcon }> = {
+  main:        { label: 'Menu Utama',    Icon: LayoutDashboard },
+  operasional: { label: 'Operasional',   Icon: Wrench          },
+  master:      { label: 'Master Data',   Icon: Database        },
+  akses:       { label: 'Akses Kontrol', Icon: ShieldCheck     },
+  lainnya:     { label: 'Lainnya',       Icon: Settings        },
+};
+const STATIC_GROUP_ORDER = ['main', 'operasional', 'master', 'akses', 'lainnya'] as const;
 
-  /** Buka/tutup grup: tinggi + fade, kurva yang sama dengan modal. */
-  const collapse: Transition = reduceMotion
-    ? { duration: 0 }
-    : { duration: 0.24, ease: [0.22, 1, 0.36, 1] };
+const buildStaticGroups = (): NavGroup[] =>
+  STATIC_GROUP_ORDER.map((key) => {
+    const meta = STATIC_GROUP_META[key];
+    return {
+      key,
+      label: meta.label,
+      Icon: meta.Icon,
+      items: MENU_ITEMS.filter((m) => m.group === key).map((m) => ({
+        path: m.path, label: m.label, Icon: m.icon,
+      })),
+    };
+  }).filter((g) => g.items.length > 0);
 
-  const apiMenus = useAppSelector((state) => state.auth.groupMenus);
-  const groupMenus = resolveMenus(apiMenus);
 
-  /**
-   * Grup mana yang terbuka. Aturannya:
-   * - Default **tertutup** semua; yang terbuka hanya grup berisi halaman aktif.
-   * - Hanya satu grup terbuka (accordion) — buka grup B, grup A ikut menutup.
-   * - Pilihan manual user hanya berlaku untuk pathname saat itu. Begitu pindah halaman,
-   *   override kedaluwarsa dan grup kembali mengikuti halaman aktif. Ini membuat state
-   *   grup **turunan dari route** — tidak perlu useEffect untuk menyinkronkannya.
-   */
-  const [override, setOverride] = useState<{ path: string; group: string | null } | null>(null);
 
-  const isMenuActive = (path?: string | null): boolean => {
-    if (!path) return false;
-    if (path === '/') return location.pathname === '/'; // Dashboard: cocok persis
-    // Halaman turunan (mis. /customers/123) ikut menyalakan menu induknya.
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+export const Sidebar = ({ isMobileOpen, isDesktopOpen, onCloseMobile, onToggleDesktop }: SidebarProps) => {
+  const location = useLocation();
+  const isExpanded = isDesktopOpen || isMobileOpen;
+  const groupMenus = useAppSelector((s) => s.auth.groupMenus);
+  const { data: site } = usePublicSiteSettings();
+
+  const navGroups = useMemo<NavGroup[]>(() => {
+    let groups: NavGroup[] = [];
+    if (groupMenus && groupMenus.length > 0) {
+      groups = [...groupMenus]
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map((g) => ({
+          key: g.id,
+          label: g.name,
+          Icon: resolveIcon({ icon: g.icon, code: g.code }),
+          items: [...(g.menus ?? [])]
+            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .map((m) => {
+              const path = resolveFrontendPath(m);
+              return path
+                ? { path, label: m.name, Icon: resolveIcon({ icon: m.icon, code: m.code, path: m.path }) }
+                : null;
+            })
+            .filter((it): it is NavItem => it !== null),
+        }))
+        .filter((g) => g.items.length > 0);
+    }
+    return groups.length > 0 ? groups : buildStaticGroups();
+  }, [groupMenus]);
+
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    const activeKey = navGroups.find((g) =>
+      g.items.some((item) => isPathActive(location.pathname, item.path))
+    )?.key;
+    if (activeKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpenGroups((prev) => {
+        if (prev.has(activeKey)) return prev;
+        return new Set([...prev, activeKey]);
+      });
+    }
+  }, [location.pathname, navGroups]);
+
+  const toggleGroup = (key: string) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
-
-  const activeGroupId =
-    groupMenus.find((g) => isGroup(g) && childrenOf(g).some((c) => isMenuActive(c.path)))?.id ?? null;
-
-  const openGroupId = override?.path === location.pathname ? override.group : activeGroupId;
-
-  const toggleGroup = (id: string) =>
-    setOverride({ path: location.pathname, group: openGroupId === id ? null : id });
-
-  const renderBrand = (mini: boolean) => (
-    <div
-      className={`flex items-center h-16 border-b border-divider shrink-0 ${
-        mini ? 'justify-center px-3' : 'gap-3 px-4'
-      }`}
-    >
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shrink-0">
-        <Layers size={18} className="text-white" strokeWidth={2.4} />
-      </div>
-
-      {!mini && (
-        <>
-          <div className="leading-none min-w-0 flex-1">
-            <p className="font-extrabold text-ink text-[13px] tracking-tight uppercase truncate">{APP_NAME}</p>
-            <p className="text-[8px] font-bold uppercase tracking-[0.08em] text-primary mt-1 truncate">
-              {APP_TAGLINE}
-            </p>
-          </div>
-
-          {/* Tombol perkecil sidebar — di dalam area brand (design.md §3). */}
-          <button
-            onClick={onToggleCollapse}
-            aria-label="Perkecil sidebar"
-            aria-expanded
-            title="Perkecil sidebar"
-            className="hidden lg:flex w-8 h-8 rounded-lg items-center justify-center text-muted hover:text-primary hover:bg-primary-light transition-colors shrink-0"
-          >
-            <PanelLeftClose size={16} />
-          </button>
-
-          <button
-            onClick={onClose}
-            aria-label="Tutup menu"
-            className="lg:hidden text-muted hover:text-ink p-1 rounded-lg shrink-0"
-          >
-            <X size={18} />
-          </button>
-        </>
-      )}
-    </div>
-  );
-
-  /** Saat mini, tombol perlebar berdiri sendiri di bawah brand. */
-  const renderExpandButton = () => (
-    <div className="flex justify-center py-3 border-b border-divider shrink-0">
-      <Tooltip label="Perlebar sidebar" side="right">
-        <button
-          onClick={onToggleCollapse}
-          aria-label="Perlebar sidebar"
-          aria-expanded={false}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-primary hover:bg-primary-light transition-colors"
-        >
-          <PanelLeftOpen size={16} />
-        </button>
-      </Tooltip>
-    </div>
-  );
-
-  /**
-   * Item menu (design.md §3):
-   * - nested aktif  → solid primary (bg-primary text-white)
-   * - tunggal aktif → soft primary (bg-primary-light text-primary) + batang kiri
-   */
-  const renderItem = (item: ApiMenuItem, mini: boolean, nested: boolean) => {
-    const Icon = getIconComponent(item.icon);
-    const path = item.path || '#';
-    const active = isMenuActive(item.path);
-
-    // Latar sub-menu aktif digambar oleh layer `nav-pill` di bawah; di sini cukup warna teks.
-    const activeClass = nested ? 'text-white' : 'bg-primary-light text-primary';
-
-    return (
-      <Tooltip key={item.id} label={item.name} enabled={mini} side="right">
-        <Link
-          to={path}
-          onClick={onClose}
-          aria-label={item.name}
-          aria-current={active ? 'page' : undefined}
-          className={`relative flex items-center h-10 rounded-xl text-[13px] font-bold transition-colors ${
-            mini ? 'justify-center px-0' : 'gap-3 px-3'
-          } ${active ? activeClass : 'text-muted hover:bg-surface-soft hover:text-ink'}`}
-        >
-          {/* Latar aktif dipisah jadi layer ber-`layoutId` supaya meluncur dari menu
-              sebelumnya, bukan muncul-hilang. `nav-pill` untuk sub-menu (solid),
-              `nav-bar` untuk item tunggal & judul grup (batang tepi). */}
-          {active && nested && (
-            <motion.span
-              layoutId="nav-pill"
-              transition={slide}
-              className="absolute inset-0 rounded-xl bg-primary shadow-sm shadow-primary/20"
-            />
-          )}
-          {active && !nested && !mini && (
-            <motion.span
-              layoutId="nav-bar"
-              transition={slide}
-              className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-md bg-primary"
-            />
-          )}
-
-          <Icon size={17} strokeWidth={2.2} className="relative z-10 shrink-0" />
-          {!mini && <span className="relative z-10 truncate">{item.name}</span>}
-        </Link>
-      </Tooltip>
-    );
-  };
-
-  const renderNav = (mini: boolean) => (
-    <nav className="flex-1 py-3 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-slim">
-      {groupMenus.map((entry) => {
-        const items = childrenOf(entry);
-
-        // Menu tunggal di level atas (mis. Dashboard) — bukan grup.
-        if (!isGroup(entry)) {
-          return (
-            <div key={entry.id} className="px-3">
-              {renderItem(entry, mini, false)}
-            </div>
-          );
-        }
-
-        // Saat mini, sub-menu selalu tampil (tidak ada judul grup untuk diklik).
-        const opened = mini || openGroupId === entry.id;
-        const hasActiveChild = items.some((i) => isMenuActive(i.path));
-        const GroupIcon = getIconComponent(entry.icon);
-
-        return (
-          <div key={entry.id} className="px-3">
-            {mini ? (
-              /* Mini: judul grup jadi ikon grup — ikut menyala bila salah satu anaknya aktif. */
-              <Tooltip label={entry.name} side="right">
-                <div
-                  className={`flex items-center justify-center h-8 transition-colors ${
-                    hasActiveChild ? 'text-primary' : 'text-muted'
-                  }`}
-                >
-                  <GroupIcon size={15} strokeWidth={2.4} />
-                </div>
-              </Tooltip>
-            ) : (
-              <button
-                onClick={() => toggleGroup(entry.id)}
-                aria-expanded={opened}
-                className={`relative w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] font-bold transition-colors ${
-                  hasActiveChild ? 'text-primary' : 'text-muted hover:bg-surface-soft hover:text-ink'
-                }`}
-              >
-                {/* Grup dengan halaman aktif → batang penanda, berbagi `layoutId` dengan
-                    item tunggal supaya batangnya meluncur, bukan berkedip. */}
-                {hasActiveChild && !opened && (
-                  <motion.span
-                    layoutId="nav-bar"
-                    transition={slide}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-md bg-primary"
-                  />
-                )}
-
-                <GroupIcon size={17} strokeWidth={2.2} className="shrink-0" />
-                <span className="flex-1 text-left truncate">{entry.name}</span>
-
-                <motion.span
-                  animate={{ rotate: opened ? 0 : -90 }}
-                  transition={collapse}
-                  className="shrink-0 flex"
-                >
-                  <ChevronDown size={15} />
-                </motion.span>
-              </button>
-            )}
-
-            <AnimatePresence initial={false}>
-              {opened && items.length > 0 && (
-                <motion.div
-                  key="sub"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={collapse}
-                  className="overflow-hidden"
-                >
-                  <div className={`space-y-1 ${mini ? 'mt-1' : 'mt-1 pl-3'}`}>
-                    {items.map((item) => renderItem(item, mini, true))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        );
-      })}
-    </nav>
-  );
-
-  const renderVersion = (mini: boolean) =>
-    !mini && (
-      <div className="px-5 py-3 border-t border-divider shrink-0">
-        <p className="text-[10px] font-bold text-muted">{APP_VERSION}</p>
-      </div>
-    );
 
   return (
     <>
-      {/* Desktop */}
-      {/* Setinggi viewport & menempel — brand/footer tetap, hanya <nav> yang scroll. */}
-      <aside
-        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen bg-surface border-r border-border transition-[width] duration-200 ${
-          collapsed ? 'w-[4.5rem]' : 'w-60'
-        }`}
-      >
-        {renderBrand(collapsed)}
-        {collapsed && renderExpandButton()}
-        {renderNav(collapsed)}
-        {renderVersion(collapsed)}
-      </aside>
-
-      {/* Drawer mobile — selalu penuh, tidak ikut mini. */}
-      {open && (
-        <div className="lg:hidden fixed inset-0 z-[90] flex">
-          <div className="absolute inset-0 bg-ink/50 animate-fade-in" onClick={onClose} />
-          <aside className="relative z-10 flex flex-col h-full w-60 bg-surface border-r border-border animate-float-up">
-            {renderBrand(false)}
-            {renderNav(false)}
-            {renderVersion(false)}
-          </aside>
-        </div>
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-ink/40 z-40 lg:hidden backdrop-blur-[2px]"
+          onClick={onCloseMobile}
+        />
       )}
+
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-[60] lg:relative
+          bg-surface flex flex-col
+          border-r border-divider
+          shadow-[2px_0_24px_-4px_rgba(24,29,42,0.10)] lg:shadow-none
+          transition-all duration-300 ease-in-out shrink-0
+          ${isMobileOpen ? 'translate-x-0 w-[268px]' : '-translate-x-full lg:translate-x-0'}
+          ${isDesktopOpen ? 'lg:w-[256px]' : 'lg:w-[70px]'}
+        `}
+      >
+        {/* Toggle pill */}
+        <button
+          onClick={onToggleDesktop}
+          className="hidden lg:flex absolute -right-[13px] top-6 z-20
+            w-6 h-6 rounded-full bg-surface border border-border shadow-card
+            text-muted hover:text-primary hover:border-primary
+            items-center justify-center transition-all duration-150"
+          title={isDesktopOpen ? 'Tutup sidebar' : 'Buka sidebar'}
+        >
+          {isDesktopOpen
+            ? <ChevronLeft size={13} strokeWidth={2.8} />
+            : <ChevronRight size={13} strokeWidth={2.8} />}
+        </button>
+
+        {/* Logo header */}
+        <div
+          className={`
+            flex items-center h-[68px] shrink-0 border-b border-divider
+            transition-all duration-300
+            ${isExpanded ? 'px-5' : 'justify-center px-2'}
+          `}
+        >
+          {isExpanded ? <Logo /> : <Logo compact />}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto no-scrollbar py-3 px-2.5">
+          {isExpanded ? (
+            /* ── EXPANDED: accordion groups ── */
+            <div className="space-y-0.5">
+              {navGroups.map((group, gi) => {
+                const isOpen = openGroups.has(group.key);
+                const hasActive = group.items.some((item) =>
+                  isPathActive(location.pathname, item.path)
+                );
+                const GroupIcon = group.Icon;
+
+                return (
+                  <div key={group.key} className={gi > 0 ? 'pt-0.5' : ''}>
+                    {/* Group accordion trigger */}
+                    <button
+                      onClick={() => toggleGroup(group.key)}
+                      className={`
+                        relative w-full flex items-start gap-2.5 pl-3 pr-2.5 py-2.5 rounded-xl
+                        select-none transition-all duration-150
+                        ${hasActive
+                          ? 'text-primary'
+                          : 'text-muted/60 hover:text-muted hover:bg-surface-soft'
+                        }
+                      `}
+                    >
+                      {/* Left accent bar on active */}
+                      <span
+                        className={`
+                          absolute left-0 top-1/2 -translate-y-1/2
+                          w-[3px] rounded-full transition-all duration-200
+                          ${hasActive ? 'h-5 bg-primary opacity-100' : 'h-0 opacity-0'}
+                        `}
+                      />
+
+                      <GroupIcon
+                        size={14}
+                        strokeWidth={hasActive ? 2.4 : 2}
+                        className="shrink-0 mt-[1px]"
+                      />
+                      <span className="flex-1 text-left text-[13px] font-bold leading-snug">
+                        {group.label}
+                      </span>
+
+                      <ChevronDown
+                        size={13}
+                        strokeWidth={2.4}
+                        className={`
+                          shrink-0 mt-[1px] transition-transform duration-200
+                          ${isOpen ? 'rotate-180' : ''}
+                          ${hasActive ? 'text-primary/70' : 'text-muted/30'}
+                        `}
+                      />
+                    </button>
+
+                    {/* Accordion body */}
+                    <div
+                      className={`
+                        grid transition-[grid-template-rows] duration-200 ease-in-out
+                        ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}
+                      `}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="space-y-0.5 pt-0.5 pb-1 pl-1">
+                          {group.items.map((item) => {
+                            const Icon = item.Icon;
+                            const isActive = isPathActive(location.pathname, item.path);
+                            return (
+                              <Link
+                                key={item.path}
+                                to={item.path}
+                                onClick={onCloseMobile}
+                                className={`
+                                  flex items-center min-h-[38px] py-[9px] px-3 gap-2.5 rounded-xl
+                                  text-[12.5px] transition-all duration-150
+                                  ${isActive
+                                    ? 'bg-primary text-white font-semibold shadow-glow'
+                                    : 'text-ink-soft font-medium hover:bg-primary-light hover:text-primary'
+                                  }
+                                `}
+                              >
+                                <Icon
+                                  size={15}
+                                  strokeWidth={isActive ? 2.3 : 1.9}
+                                  className="shrink-0"
+                                />
+                                <span className="leading-snug">{item.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* ── COLLAPSED: flat icons + group separators ── */
+            <div className="space-y-0.5">
+              {navGroups.map((group, gi) => (
+                <div key={group.key}>
+                  {gi > 0 && (
+                    <div className="flex items-center justify-center py-1.5">
+                      <div className="w-5 h-px rounded-full bg-divider" />
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.Icon;
+                      const isActive = isPathActive(location.pathname, item.path);
+                      return (
+                        <Tooltip key={item.path} label={item.label} enabled>
+                          <Link
+                            to={item.path}
+                            onClick={onCloseMobile}
+                            className={`
+                              flex items-center justify-center h-10 rounded-xl
+                              transition-all duration-150
+                              ${isActive
+                                ? 'bg-primary text-white shadow-glow'
+                                : 'text-ink-soft hover:bg-primary-light hover:text-primary'
+                              }
+                            `}
+                          >
+                            <Icon size={18} strokeWidth={isActive ? 2.3 : 1.9} />
+                          </Link>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </nav>
+
+        {/* Footer */}
+        <div
+          className={`border-t border-divider shrink-0 transition-all duration-300 ${isExpanded ? 'p-3 space-y-2.5' : 'p-2 space-y-2'}`}
+        >
+          {isExpanded && (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#D97757] to-[#B05232] p-4 text-white select-none">
+              {/* Dot texture */}
+              <div
+                className="absolute inset-0 opacity-[0.12]"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                  backgroundSize: '12px 12px',
+                }}
+              />
+              {/* Ghost car */}
+              <Car
+                size={72}
+                className="absolute -right-3 -bottom-4 text-white/15"
+                strokeWidth={1.2}
+              />
+              <p className="relative text-[9.5px] font-black uppercase tracking-[0.22em] text-white/60 mb-1">
+                {site?.companyName ?? 'GM Mobilindo'}
+              </p>
+              <p className="relative text-[13px] font-extrabold leading-snug">
+                Pilihan Terbaik
+              </p>
+              <p className="relative text-[11px] font-semibold text-white/75 leading-tight">
+                untuk Mobil Impian Anda
+              </p>
+            </div>
+          )}
+          <QuickInput expanded={isExpanded} />
+        </div>
+      </aside>
     </>
   );
 };

@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { AuthUser, GroupMenu, MePayload } from '@/features/auth/types';
+import type { AuthUser, GroupMenu, AuthPayload, MePayload } from '@/features/auth/types';
 import { getAccessToken, setTokens, clearTokens } from '@/core/api/token';
 
 interface AuthState {
@@ -10,27 +10,29 @@ interface AuthState {
   hydrating: boolean;
 }
 
-const hasToken = !!getAccessToken();
-
 const initialState: AuthState = {
   user: null,
   permissionCodes: [],
   groupMenus: [],
-  isAuthenticated: hasToken,
-  hydrating: hasToken,
+  isAuthenticated: !!getAccessToken(),
+  hydrating: !!getAccessToken(),
 };
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    /** Setelah login / refresh berhasil (membawa access token baru). */
-    setAccessToken: (state, action: PayloadAction<string>) => {
-      setTokens(action.payload);
+    // Setelah login / refresh berhasil (membawa token baru).
+    setCredentials: (state, action: PayloadAction<AuthPayload>) => {
+      const { accessToken, refreshToken, user, permissionCodes, groupMenus } = action.payload;
+      setTokens(accessToken, refreshToken);
+      state.user = user;
+      state.permissionCodes = permissionCodes ?? [];
+      state.groupMenus = groupMenus ?? [];
       state.isAuthenticated = true;
+      state.hydrating = false;
     },
-
-    /** Setelah /tenant/auth/me + /tenant/auth/me/menu. */
+    // Setelah /auth/me (tanpa token baru).
     setSession: (state, action: PayloadAction<MePayload>) => {
       state.user = action.payload.user;
       state.permissionCodes = action.payload.permissionCodes ?? [];
@@ -38,11 +40,9 @@ export const authSlice = createSlice({
       state.isAuthenticated = true;
       state.hydrating = false;
     },
-
     setHydrating: (state, action: PayloadAction<boolean>) => {
       state.hydrating = action.payload;
     },
-
     clearCredentials: (state) => {
       clearTokens();
       state.user = null;
@@ -54,5 +54,5 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setAccessToken, setSession, setHydrating, clearCredentials } = authSlice.actions;
+export const { setCredentials, setSession, setHydrating, clearCredentials } = authSlice.actions;
 export default authSlice.reducer;

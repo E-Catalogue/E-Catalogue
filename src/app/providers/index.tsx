@@ -3,8 +3,9 @@ import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { store } from '../store';
 import { queryClient } from '../queryClient';
+import { AuthBootstrap } from './AuthBootstrap';
 import { GlobalErrorModal } from '@/shared/components/ui/GlobalErrorModal';
-import { AuthBootstrap } from '@/features/auth/AuthBootstrap';
+import { ToastStack } from '@/shared/components/ui/ToastStack';
 import '@/core/api/interceptor';
 
 interface AppProviderProps {
@@ -17,8 +18,9 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       <QueryClientProvider client={queryClient}>
         <AuthBootstrap>
           {children}
+          <GlobalErrorModal />
+          <ToastStack />
         </AuthBootstrap>
-        <GlobalErrorModal />
       </QueryClientProvider>
     </Provider>
   );

@@ -1,39 +1,38 @@
-export type BadgeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+import type { UnitStatus } from '@/data/types';
 
-const TONE_CLASS: Record<BadgeTone, string> = {
-  success: 'bg-accent-green/15 text-accent-green border border-accent-green/25',
-  warning: 'bg-accent-amber/15 text-accent-amber border border-accent-amber/25',
-  danger: 'bg-semantic-error/15 text-semantic-error border border-semantic-error/25',
-  info: 'bg-accent-blue/15 text-accent-blue border border-accent-blue/25',
-  neutral: 'bg-ink/8 text-ink-soft border border-ink/15',
-};
-
-/** Status yang dikenal lintas fitur. Status baru cukup ditambahkan di sini. */
-const STATUS_MAP: Record<string, { label: string; tone: BadgeTone }> = {
-  ACTIVE: { label: 'Aktif', tone: 'success' },
-  INACTIVE: { label: 'Nonaktif', tone: 'neutral' },
-  PENDING: { label: 'Pending', tone: 'warning' },
-  SUSPENDED: { label: 'Ditangguhkan', tone: 'danger' },
-  TRIAL: { label: 'Trial', tone: 'info' },
-  EXPIRED: { label: 'Kedaluwarsa', tone: 'danger' },
+const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  // Unit statuses (Backend)
+  INVENTORY: { label: 'Inventory', className: 'bg-accent-blue/10 text-accent-blue' },
+  READY_STOCK: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
+  HOLD: { label: 'Hold', className: 'bg-accent-amber/10 text-accent-amber' },
+  SOLD: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
+  // Unit statuses (Old/Dummy - keep for compatibility if used elsewhere)
+  ready: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
+  rekondisi: { label: 'Rekondisi', className: 'bg-accent-amber/10 text-accent-amber' },
+  booked: { label: 'Booked', className: 'bg-accent-blue/10 text-accent-blue' },
+  sold: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
+  pembelian: { label: 'Pembelian', className: 'bg-accent-purple/10 text-accent-purple' },
+  // Generic
+  Lunas: { label: 'Lunas', className: 'bg-accent-green/10 text-accent-green' },
+  DP: { label: 'DP', className: 'bg-accent-amber/10 text-accent-amber' },
+  Proses: { label: 'Proses', className: 'bg-accent-blue/10 text-accent-blue' },
+  Sukses: { label: 'Sukses', className: 'bg-accent-green/10 text-accent-green' },
+  Pending: { label: 'Pending', className: 'bg-accent-amber/10 text-accent-amber' },
+  Gagal: { label: 'Gagal', className: 'bg-primary/10 text-primary' },
+  Terjadwal: { label: 'Terjadwal', className: 'bg-accent-blue/10 text-accent-blue' },
+  Selesai: { label: 'Selesai', className: 'bg-accent-green/10 text-accent-green' },
+  Batal: { label: 'Batal', className: 'bg-primary/10 text-primary' },
 };
 
 interface StatusBadgeProps {
-  status: string;
-  /** Timpa tone bawaan, atau tentukan tone untuk status yang belum ada di STATUS_MAP. */
-  tone?: BadgeTone;
+  status: UnitStatus | string;
 }
 
-export const StatusBadge = ({ status, tone }: StatusBadgeProps) => {
-  const config = STATUS_MAP[status];
-  const label = config?.label ?? status;
-  const resolved = tone ?? config?.tone ?? 'neutral';
-
+export const StatusBadge = ({ status }: StatusBadgeProps) => {
+  const config = STATUS_MAP[status] ?? { label: status, className: 'bg-muted/10 text-muted' };
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${TONE_CLASS[resolved]}`}
-    >
-      {label}
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${config.className}`}>
+      {config.label}
     </span>
   );
 };

@@ -21,26 +21,24 @@ export interface MenuPermission {
   code: string;
 }
 
-/** Grup menu (punya `children`) vs menu biasa (punya `path`). Lihat PRD `GET /me/menu`. */
-export type MenuType = 'MENU_GROUP' | 'MENU';
-
 export interface ApiMenuItem {
   id: string;
   name: string;
   code: string;
-  type: MenuType;
   path?: string | null;
   icon?: string | null;
   sortOrder?: number;
-  children?: ApiMenuItem[];
   permissions?: MenuPermission[];
 }
 
-/**
- * Item level teratas dari `/me/menu` — bisa berupa MENU_GROUP (berisi `children`)
- * maupun MENU tunggal (mis. Dashboard) yang langsung punya `path`.
- */
-export type GroupMenu = ApiMenuItem;
+export interface GroupMenu {
+  id: string;
+  name: string;
+  code: string;
+  icon?: string | null;
+  sortOrder?: number;
+  menus?: ApiMenuItem[];
+}
 
 export interface AuthPayload {
   accessToken: string;

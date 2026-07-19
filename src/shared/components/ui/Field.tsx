@@ -8,20 +8,9 @@ interface LabelWrapProps {
   required?: boolean;
   children: ReactNode;
   className?: string;
-  /** Teks bantuan di bawah field. Diabaikan bila `error` terisi. */
-  helperText?: string;
-  /** Pesan validasi. Menimpa helperText dan mewarnai teksnya merah. */
-  error?: string;
 }
 
-export const FieldWrap = ({
-  label,
-  required,
-  children,
-  className = '',
-  helperText,
-  error,
-}: LabelWrapProps) => (
+export const FieldWrap = ({ label, required, children, className = '' }: LabelWrapProps) => (
   <div className={className}>
     {label && (
       <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
@@ -29,40 +18,18 @@ export const FieldWrap = ({
       </label>
     )}
     {children}
-    {(error || helperText) && (
-      <p className={`mt-1.5 text-[11px] font-medium ${error ? 'text-semantic-error' : 'text-muted'}`}>
-        {error || helperText}
-      </p>
-    )}
   </div>
 );
-
-/** Field nonaktif tetap terbaca, tapi jelas tidak bisa diubah. */
-const disabledInput = 'disabled:bg-surface-soft disabled:text-muted disabled:cursor-not-allowed';
 
 interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   required?: boolean;
   wrapClass?: string;
-  helperText?: string;
-  error?: string;
 }
 
-export const TextField = ({
-  label,
-  required,
-  wrapClass,
-  helperText,
-  error,
-  className = '',
-  ...rest
-}: TextFieldProps) => (
-  <FieldWrap label={label} required={required} className={wrapClass} helperText={helperText} error={error}>
-    <input
-      className={`${baseInput} ${disabledInput} ${error ? '!border-semantic-error' : ''} ${className}`}
-      aria-invalid={!!error || undefined}
-      {...rest}
-    />
+export const TextField = ({ label, required, wrapClass, className = '', ...rest }: TextFieldProps) => (
+  <FieldWrap label={label} required={required} className={wrapClass}>
+    <input className={`${baseInput} ${className}`} {...rest} />
   </FieldWrap>
 );
 
@@ -71,26 +38,11 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   required?: boolean;
   options: { value: string; label: string }[];
   wrapClass?: string;
-  helperText?: string;
-  error?: string;
 }
 
-export const SelectField = ({
-  label,
-  required,
-  options,
-  wrapClass,
-  helperText,
-  error,
-  className = '',
-  ...rest
-}: SelectFieldProps) => (
-  <FieldWrap label={label} required={required} className={wrapClass} helperText={helperText} error={error}>
-    <select
-      className={`${baseInput} ${disabledInput} cursor-pointer ${error ? '!border-semantic-error' : ''} ${className}`}
-      aria-invalid={!!error || undefined}
-      {...rest}
-    >
+export const SelectField = ({ label, required, options, wrapClass, className = '', ...rest }: SelectFieldProps) => (
+  <FieldWrap label={label} required={required} className={wrapClass}>
+    <select className={`${baseInput} cursor-pointer ${className}`} {...rest}>
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}

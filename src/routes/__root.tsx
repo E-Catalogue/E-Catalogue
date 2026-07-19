@@ -1,7 +1,12 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { NotFound } from '@/shared/components/NotFound';
+import { PublicLayout } from '@/features/landing/PublicLayout';
+import { CustomerNotFound } from '@/features/landing/CustomerStates';
 
 export const Route = createRootRoute({
   component: () => <Outlet />,
-  notFoundComponent: NotFound,
+  notFoundComponent: () => (
+    <PublicLayout>
+      <CustomerNotFound />
+    </PublicLayout>
+  ),
 });
