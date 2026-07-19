@@ -75,18 +75,29 @@ const TransactionForm = ({ mode, onClose }: { mode: TxModal; onClose: () => void
     description: '',
     proofUrl: '',
   });
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
   const title = mode === 'manual-in' ? 'Kas Masuk' : mode === 'manual-out' ? 'Kas Keluar' : mode === 'transfer' ? 'Transfer Antar Kas' : 'Penyesuaian Saldo';
   const pending = mutations.manualIn.isPending || mutations.manualOut.isPending || mutations.transfer.isPending || mutations.adjustment.isPending;
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
+  const needsConfirm = mode === 'manual-in' || mode === 'manual-out' || mode === 'transfer';
+  const doSubmit = () => {
     const common = { amount: Number(form.amount || 0), transactionDate: toIsoDate(form.transactionDate), description: form.description, proofUrl: form.proofUrl || null };
-    const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => onClose() };
+    const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => { setConfirmOpen(false); onClose(); } };
     if (mode === 'manual-in') mutations.manualIn.mutate({ ...common, cashAccountId: form.cashAccountId }, opts);
     if (mode === 'manual-out') mutations.manualOut.mutate({ ...common, cashAccountId: form.cashAccountId }, opts);
     if (mode === 'transfer') mutations.transfer.mutate({ ...common, fromCashAccountId: form.fromCashAccountId, toCashAccountId: form.toCashAccountId }, opts);
     if (mode === 'adjustment') mutations.adjustment.mutate({ ...common, cashAccountId: form.cashAccountId, type: form.type as 'IN' | 'OUT' }, opts);
   };
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (needsConfirm) setConfirmOpen(true);
+    else doSubmit();
+  };
+  const confirmMessage = mode === 'manual-in'
+    ? `Catat kas masuk sebesar ${formatCurrency(Number(form.amount || 0))}?`
+    : mode === 'manual-out'
+    ? `Catat kas keluar sebesar ${formatCurrency(Number(form.amount || 0))}?`
+    : `Transfer ${formatCurrency(Number(form.amount || 0))} antar akun kas? Tindakan ini akan mengubah saldo kedua akun.`;
   return (
     <Modal open onClose={onClose} title={title} icon={<Wallet size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="cash-tx-form" disabled={pending}>Simpan</Button></>}>
       <form id="cash-tx-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -104,6 +115,20 @@ const TransactionForm = ({ mode, onClose }: { mode: TxModal; onClose: () => void
         <TextField label="Keterangan" wrapClass="sm:col-span-2" value={form.description} onChange={(e) => set('description', e.target.value)} />
         <TextField label="URL Bukti" wrapClass="sm:col-span-2" value={form.proofUrl} onChange={(e) => set('proofUrl', e.target.value)} />
       </form>
+      {needsConfirm && (
+        <ConfirmDialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={doSubmit}
+          loading={pending}
+          closeOnConfirm={false}
+          tone="primary"
+          icon={Wallet}
+          title={`Konfirmasi ${title}`}
+          message={confirmMessage}
+          confirmLabel="Ya, Simpan"
+        />
+      )}
     </Modal>
   );
 };

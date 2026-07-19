@@ -54,6 +54,7 @@ export const ContactInboxPage = () => {
   const [tab, setTab] = useState<ContactStatus | 'ALL'>('ALL');
   const [detail, setDetail] = useState<ContactMessage | null>(null);
   const [toDelete, setToDelete] = useState<ContactMessage | null>(null);
+  const [confirmStatus, setConfirmStatus] = useState<{ msg: ContactMessage; status: ContactStatus; label: string } | null>(null);
 
   const { data, isLoading, isError } = useContactMessages({ page: 1, limit: 100, status: tab === 'ALL' ? undefined : tab });
   const { data: countNew } = useContactMessageCount();
@@ -80,8 +81,8 @@ export const ContactInboxPage = () => {
       cell: (r) => (
         <ActionMenu items={[
           { icon: <MailOpen size={13} />, label: 'Lihat Pesan', onClick: () => { setDetail(r); if (r.status === 'NEW') setStatus(r.id, 'READ'); }, variant: 'primary', dividerAfter: true },
-          { icon: <CornerUpLeft size={13} />, label: 'Tandai Dibalas', onClick: () => setStatus(r.id, 'REPLIED') },
-          { icon: <Archive size={13} />, label: 'Arsipkan', onClick: () => setStatus(r.id, 'ARCHIVED'), dividerAfter: true },
+          { icon: <CornerUpLeft size={13} />, label: 'Tandai Dibalas', onClick: () => setConfirmStatus({ msg: r, status: 'REPLIED', label: 'ditandai sebagai sudah dibalas' }) },
+          { icon: <Archive size={13} />, label: 'Arsipkan', onClick: () => setConfirmStatus({ msg: r, status: 'ARCHIVED', label: 'diarsipkan' }), dividerAfter: true },
           { icon: <Trash2 size={13} />, label: 'Hapus', onClick: () => setToDelete(r), variant: 'danger' },
         ]} />
       ),
@@ -149,6 +150,18 @@ export const ContactInboxPage = () => {
         onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })}
         title="Hapus Pesan" message={`Hapus pesan dari "${toDelete?.name}"?`} tone="danger" confirmLabel="Hapus"
         loading={m.remove.isPending} closeOnConfirm={false} />
+
+      <ConfirmDialog
+        open={!!confirmStatus}
+        onClose={() => setConfirmStatus(null)}
+        onConfirm={() => confirmStatus && m.setStatus.mutate({ id: confirmStatus.msg.id, status: confirmStatus.status }, { onSuccess: () => setConfirmStatus(null), onError: (e) => notifyApiError(e) })}
+        loading={m.setStatus.isPending}
+        closeOnConfirm={false}
+        tone="primary"
+        title={confirmStatus?.status === 'REPLIED' ? 'Tandai Sudah Dibalas' : 'Arsipkan Pesan'}
+        message={confirmStatus ? `Pesan dari "${confirmStatus.msg.name}" akan ${confirmStatus.label}. Lanjutkan?` : ''}
+        confirmLabel="Ya, Lanjutkan"
+      />
     </div>
   );
 };

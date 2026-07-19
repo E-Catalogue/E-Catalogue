@@ -1,14 +1,16 @@
 import { useState, type ChangeEvent } from 'react';
-import { ArrowDown, ArrowUp, Calendar, Cog, Gauge, Hash, Image as ImageIcon, Pencil, Receipt, Star, Trash2, TrendingUp, Upload } from 'lucide-react';
+import { ArrowDown, ArrowUp, BadgeCheck, Calendar, CheckCircle, Cog, Gauge, Hash, Image as ImageIcon, Pencil, Receipt, Star, Trash2, TrendingUp, Upload } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { usePermissions } from '@/features/auth/usePermissions';
 import type { Unit } from '@/features/units/unit.types';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
 import { notifyApiError } from '@/core/api/notify';
-import { useUnit, useUnitImageMutations } from './unit.hooks';
+import { useFinalizeInitialPricing, useUnit, useUnitImageMutations } from './unit.hooks';
 
 interface UnitDetailModalProps {
   open: boolean;
@@ -33,16 +35,31 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   const { data: detailRes } = useUnit(open ? unit?.id : undefined);
   const current = detailRes?.data ?? unit;
   const imageMutations = useUnitImageMutations(current?.id ?? '');
+  const finalizePricing = useFinalizeInitialPricing();
+  const { can } = usePermissions();
   const [imageError, setImageError] = useState('');
+  const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const [confirmNoRekondisi, setConfirmNoRekondisi] = useState(false);
 
   if (!current) return null;
-  
+
   const images = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
   const mainImage = images.find((img) => img.isMain) ?? images[0];
-  const otrPrice = current.hargaOtrSaatIni ?? null;
-  const targetPrice = current.hargaTargetJual ?? null;
+  const otrPrice = current.otrPrice ?? null;
+  const targetPrice = current.targetPrice ?? null;
   const marginBase = targetPrice ?? otrPrice;
-  const margin = current.hargaBeli && marginBase && marginBase > current.hargaBeli ? marginBase - current.hargaBeli : null;
+  const margin = current.purchaseCost && marginBase && marginBase > current.purchaseCost ? marginBase - current.purchaseCost : null;
+  const canFinalizePricing = !current.pricingFinalizedAt && can('UNIT_PRICING_FINALIZE');
+
+  const handleFinalizePricing = () => {
+    finalizePricing.mutate(
+      { id: current.id, data: { confirmNoInitialReconditioning: confirmNoRekondisi } },
+      {
+        onSuccess: () => { setConfirmFinalize(false); setConfirmNoRekondisi(false); },
+        onError: (err) => notifyApiError(err),
+      },
+    );
+  };
 
   const imageUrl = mainImage
     ? `${API_ORIGIN}/public/unit/${mainImage.filename}`
@@ -127,13 +144,32 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />
       </div>
 
-      {(margin !== null || current.hargaBeli) && (
+      {(margin !== null || current.purchaseCost) && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-2.5">
-          {current.hargaBeli ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.hargaBeli)} /> : null}
-          {current.hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(current.hpp)} /> : null}
+          {current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost)} /> : null}
+          {current.pricingCostBasis ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(current.pricingCostBasis)} /> : null}
           {margin !== null ? <Spec icon={TrendingUp} label="Estimasi Margin" value={formatCurrency(margin)} /> : null}
         </div>
       )}
+
+      <div className="mt-5 border-t border-divider pt-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="text-[13px] font-extrabold text-ink">Pendanaan &amp; Harga Awal</p>
+            <p className="text-[11px] font-semibold text-muted">
+              {current.fundingAgreement?.fundingSource === 'INVESTOR'
+                ? `Investor: ${current.fundingAgreement.investor?.name ?? '-'} (${current.fundingAgreement.status})`
+                : 'Milik perusahaan'}
+              {current.pricingFinalizedAt ? ` · Difinalisasi ${new Date(current.pricingFinalizedAt).toLocaleDateString('id-ID')}` : ' · Belum difinalisasi'}
+            </p>
+          </div>
+          {canFinalizePricing && (
+            <Button size="sm" icon={<BadgeCheck size={14} />} onClick={() => setConfirmFinalize(true)}>
+              Finalisasi Harga
+            </Button>
+          )}
+        </div>
+      </div>
 
       <div className="mt-5 border-t border-divider pt-4">
         <div className="flex items-center justify-between gap-3 mb-3">

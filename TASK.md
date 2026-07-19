@@ -3,7 +3,97 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 5 Juli 2026 (rev 11 — CMS UX auto/manual + error/upload + tabel standar)
+> **Terakhir diperbarui:** 19 Juli 2026 (rev 13 — audit refactor mendalam terhadap `ecatalogue-be/.prd/*` (37 file kontrak). Tabel di bawah memeriksa bukan cuma "ada/tidak ada" tapi **kesesuaian field/endpoint** FE terhadap kontrak backend asli — banyak modul yang sebelumnya ditandai "done" ternyata dibangun dari asumsi/mock sebelum PRD ini ada, jadi butuh refactor, bukan cuma wiring baru)
+
+---
+
+## 📋 Tracking Refactor per PRD Backend (`ecatalogue-be/.prd/`)
+
+> Backend (`ecatalogue-be`) adalah sumber kebenaran kontrak API — lihat `ecatalogue-be/.prd/README.md` untuk aturan lintas-modul (envelope response, branch scope §8, permission §7, pagination §10, money/date §11-12, idempotency §14, cache invalidation §18). Audit dilakukan field-by-field terhadap `ecatalogue-be/src/modules/*/‌*.route.js`+`*.validation.js` (bukan cuma baca PRD-nya), lalu dibandingkan ke kode FE aktual.
+>
+> Legenda: ✅ **sesuai** (endpoint & field cocok kontrak) · 🟡 **drift** (ada FE, tapi field/endpoint menyimpang — perlu refactor) · ⬜ **belum ada** (FE tidak punya implementasi sama sekali).
+
+### 🔴 Gap sistemik (memengaruhi banyak modul sekaligus)
+1. **Tidak ada header `X-Branch-Id` di mana pun** — `src/core/api/client.ts`/`interceptor.ts` tidak pernah mengirim header ini, tidak ada branch selector di UI. Semua modul branch-scoped (cash-account, cash-transaction, operational/recurring-expense, payroll, target, book) kena dampak — aturan Owner-lihat-semua-cabang vs Owner-pilih-satu-cabang (README §8) belum terimplementasi sama sekali.
+2. **Tidak ada header `Idempotency-Key` di mana pun** — wajib untuk semua mutation finansial (README §14: payment customer, deposit/withdrawal investor, pembayaran kewajiban investor, transaksi kas manual/adjustment/transfer). Tanpa ini, retry setelah timeout/network error berisiko membuat transaksi dobel.
+
+### Dashboard
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_dashboard` | `dashboard/dashboard.api.ts`, `dashboard.types.ts` | 🟡 drift berat | FE kirim param `tipePeriode` yang tidak ada di kontrak (kontrak cuma `period=YYYY-MM`). Bentuk response **hasil karangan**: PRD balikin `{period,branch,summary,inventory,charts:{monthlySales}}` flat, FE malah nested `period:{tipePeriode,label,...}` + field karangan `summary.trend/margin/availableCash`, `inventory.averageAge/healthyCount`, `charts.topSelling/salesPerformance/leadSources/agingStock`. Tidak menangani Owner `{consolidated,breakdown}`. |
+
+### Unit
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_unit` | `units/unit.api.ts`, `unit.types.ts` | 🟡 drift berat | Endpoint hilang total: `GET /units/lookups`, `GET/PATCH /units/:id/funding`, `POST /units/:id/finalize-initial-pricing`, `GET/PUT /units/pricing-policy`, `POST /units/:id/transfer-branch` — seluruh alur funding/pricing investor (README §16) tidak ada di FE. Field create/update juga menyimpang: `hargaBeli` (FE) vs `purchaseCost` (backend); tidak kirim object `funding:{fundingSource,investorId,finalCyclePolicy}`. Response: `hpp`/`hargaTargetJual`/`hargaOtrSaatIni` (FE) vs `pricingCostBasis`/`targetPrice`/`otrPrice` (backend). |
+| `create_rekondisi` | `rekondisi/rekondisi.api.ts`, `rekondisi.types.ts` | 🟡 drift ringan | Endpoint/verb sudah cocok. Tapi dropdown vendor/pengecekan pakai `simpleMaster` generic list, bukan `GET /rekondisis/lookups` — melanggar README §9 (memaksa permission CRUD modul lain cuma buat dropdown). Enum status juga kurang `PAID` (state machine README §15 berakhir di PAID, bukan cuma COMPLETED). |
+
+### Sales
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_lead` | `crm/crm.api.ts` (`leadApi`) | 🟡 drift | Tidak ada `updateStatus` — backend butuh `PATCH /leads/:id/status` terpisah dari update biasa. Type `Lead` tidak punya `status`, pakai `ktpFileId` padahal backend `ktpUrl`. |
+| `create_test_drive` | `test-drive/testDrive.api.ts` | 🟡 drift ringan | Endpoint cocok. Lookup unit di-flatten (`merekName`/`tipeName`/`hargaOtrSaatIni`) padahal backend nested `merek.name`/`tipe.name`/`otrPrice`. |
+| `create_lead_order` | `crm/crm.api.ts` (`leadOrderApi`,`leadPaymentApi`), `penjualan/*`, `pembayaran/*` | 🟡 **drift paling parah di seluruh app** | `OrderStatus` FE masih pakai funnel lama yang **dilarang eksplisit** oleh README §15/§24 (`NEW,INTERESTED,FOLLOW_UP,TEST_DRIVE,APPROVED_KREDIT,CASH_BUYER,BOOKING,DEAL,REJECT_SLIK,CANCEL`) — kontrak asli cuma `BOOKING\|DEAL\|CANCELLED`. Modul Settlement (lookups, `/:id/settlement`, `PUT sales-incentive`, `POST settlement/finalize`) tidak ada sama sekali. Reversal payment tidak ada — FE cuma punya `remove` (DELETE), padahal README eksplisit larang hapus payment yang sudah posted, harus reversal (`POST /:orderId/payments/:id/reverse`). Field `LeadPayment` menyimpang: `orderId`/`buktiFileId` (FE) vs `leadOrderId`/`buktiUrl` (backend); tidak ada `postingStatus`/`cashAccountId`/`idempotencyKey`. |
+
+### Cashflow
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_cash_account` | `finance/finance.api.ts` | 🟡 drift ringan | Endpoint cocok. Type `CashAccount` kurang field `defaultPaymentKey`, `branchId`, `branch`. |
+| `create_cash_transaction` | `finance/finance.api.ts`, `CashFlowPage.tsx` | 🟡 drift | `manual-in/out/transfer/adjustment` cocok, tapi **`inter-branch-transfer` dan `:id/reverse` sama sekali tidak ada** di `finance.api.ts` (dikonfirmasi grep kosong). `CashDashboard` type tidak punya varian Owner `{consolidated,breakdown}`. |
+| `create_book` | — | ⬜ **belum ada FE sama sekali** | Tidak ada satu pun kode untuk `/books/periods`, `/books/ledger`, `/books/cash-summary`, `/books/profit-summary`, `/books/periods/:period/close`, `/books/tax-settings`, `/books/tax-reserve/retry` di FE. |
+| `create_laporan` | `laporan-cashflow/LaporanCashflowPage.tsx` | 🟡 **melanggar aturan eksplisit** | Backend `/reports` memang belum ada (sesuai PRD) — tapi FE **mengarang angka**: `totalIn = dashboard.data?.summary.totalIn \|\| 3450000000` dst (fallback hardcode), plus tombol Export Excel/PDF yang tidak berfungsi dan permission karangan (`LAPORAN_CASHFLOW_EXPORT`) yang tidak ada di seed. Ini pelanggaran langsung README §16/checklist "Tidak ada implementasi fiktif untuk Laporan". |
+
+### Operational
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_operational_expense` | `finance/finance.api.ts`, `pengeluaran/*` | 🟡 drift ringan | Endpoint/verb cocok. Backend expect multipart upload field `proof`; FE cuma input teks URL manual (`proofUrl`) — tidak ada upload file sungguhan meski backend terima fallback string. |
+| `create_recurring_expense` | `finance/finance.api.ts` | ✅ sesuai | — |
+| `create_payroll` | `finance/finance.api.ts`, `payroll/PayrollPage.tsx` | ✅ sesuai | Catatan kecil: FE pakai endpoint lookup terpisah (`/finance/lookups/*`) bukan `GET /payroll/lookups` yang didokumentasikan PRD — sama-sama valid di backend, cuma beda jalur, bukan fabrikasi. |
+
+### Access Control
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_role` | `access/access.api.ts`, `RolePage.tsx` | 🟡 drift (bug nyata) | Endpoint cocok, tapi response detail role `rolePermissions:[{permission:{...}}]` — type FE deklarasi `permissions?: Permission[]` flat dan `RolePage.tsx` baca `detail.permissions` (selalu `undefined`). **Akibatnya: checkbox permission tidak pernah ter-centang saat edit role**, harus di-refactor field mapping-nya. |
+| `create_user` | `access/access.api.ts` | ✅ sesuai | — |
+| `create_menu_permission` | `access/access.api.ts` | ✅ sesuai | — |
+| `create_pengaturan` | `pengaturan/PengaturanPage.tsx` | 🟡 **melanggar aturan eksplisit** | Backend memang belum punya endpoint (sesuai PRD) — tapi halaman FE menampilkan form editable dengan tombol "Simpan Perubahan" yang aktif namun tidak melakukan apa-apa, menyesatkan user. Harus dinonaktifkan/diberi status "Belum tersedia" sesuai README §16. |
+
+### Master
+| PRD file | FE | Status |
+|---|---|:--:|
+| `create_merek_tipe` | `master/master.api.ts` | ✅ sesuai |
+| `create_vendor` | `master/master.api.ts` | ✅ sesuai |
+| `create_branch` | `master/master.api.ts` | ✅ sesuai |
+| `create_leasing`, `create_sumber_lead`, `create_pengecekan`, `create_kategori_pengeluaran`, `create_metode_pembayaran`, `create_dokumen`, `create_perlengkapan` | `master/simpleMaster.api.ts` | ✅ sesuai (7 modul generik `{name,code,isActive}` — kebetulan identik hari ini, tapi rawan drift diam-diam kalau salah satu Joi schema berubah nanti) |
+| `create_investor` | `master/master.api.ts` (`investorApi`,`investorModalApi`) | 🟡 **modul rusak di production** | Form investor tidak kirim field wajib `scheme` (`FIXED_MONTHLY\|PROFIT_SHARE`) dan `defaultRate` → `POST /investors` selalu 422. `investorModalApi` manggil `/investors/:id/modals` yang **sudah deprecated, backend balikin 410 `INVESTOR_MODAL_DEPRECATED`** — seluruh UI `InvestorModalModal.tsx` mati total, harus dibangun ulang pakai `/investors/:id/capital-accounts`, `/capital-transactions`, `/capital/deposits`, `/capital/withdrawals`. |
+| `create_investor_obligation` | — | ⬜ **belum ada FE sama sekali** | Backend lengkap & ter-mount (`/investor-obligations`: list, generate, detail, payments, pay [wajib Idempotency-Key], reverse) — FE nol. |
+
+### Target dan Kinerja
+| PRD file | FE | Status | Catatan |
+|---|---|:--:|---|
+| `create_target` | `target-penjualan/*.tsx` | ⬜ **100% mock** | Tidak ada `target.api.ts`/`target.hooks.ts` — halaman cuma `useState` lokal + data dummy import. `/targets/lookups/sales`, `/branches`, `/branches/:id/sales`, `/activate`, `/close`, `/achievement` semuanya belum tersambung. |
+
+### CMS
+| PRD file | FE | Status |
+|---|---|:--:|
+| `create_cms_site_setting`, `create_cms_homepage`, `create_cms_about`, `create_cms_testimonial`, `create_cms_catalog`, `create_cms_contact`, `create_cms_credit_simulation` | `cms/cms.api.ts` | ✅ sesuai — seluruh 7 modul CMS dicek field-by-field, endpoint & body cocok kontrak persis. |
+
+> **Situs publik** (`src/features/landing/`) — dicek terpisah, **tidak ada drift**: seluruh endpoint `/public/*` (site-settings, homepage, about, contact-page, catalog+brands+detail+related, credit-simulation config+calculate, contact-messages) cocok `public.route.js` persis, termasuk penanganan field legacy vs field asli di `mapCatalogUnit()`.
+
+### Ringkasan (37 PRD file)
+- ✅ **Sesuai kontrak: 21** — seluruh master data generik, access control (kecuali Role), recurring expense/payroll, seluruh CMS + situs publik.
+- 🟡 **Drift (butuh refactor): 13** — termasuk 3 pelanggaran aturan eksplisit (Laporan, Pengaturan, funnel status lama di Lead Order) dan 1 modul yang **rusak di production** (Investor Modal, 410).
+- ⬜ **Belum ada FE sama sekali: 3** — Book/Pembukuan, Target, Investor Obligation (backend siap semua, FE nol).
+- Ditambah **2 gap sistemik** (branch header, idempotency key) yang mendasari banyak baris 🟡 di atas.
+
+### 🎯 Prioritas refactor berikutnya
+1. 🔴 **Gap sistemik** — tambah dukungan header `X-Branch-Id` (opsional per-request) dan helper `Idempotency-Key` di `core/api/client.ts`. Sekali beres, banyak modul lain jadi lebih mudah diperbaiki.
+2. 🔴 **Investor Modal (410 di production)** — ganti total ke `/capital-accounts`/`/capital-transactions`/`/capital/deposits`/`/capital/withdrawals`, tambah field `scheme`/`defaultRate` di form investor.
+3. 🔴 **Lead Order / Settlement** — refactor `OrderStatus` enum ke `BOOKING\|DEAL\|CANCELLED`, bangun modul Settlement, tambah reversal payment (ganti dari delete).
+4. 🟠 **Laporan & Pengaturan** — hapus data/tombol fiktif, ganti status "Belum tersedia" sesuai PRD (quick fix, tapi prioritas tinggi karena user-facing menyesatkan).
+5. 🟠 **RolePage permission bug** — perbaiki mapping `rolePermissions[].permission` supaya checkbox permission ter-centang saat edit.
+6. 🟠 **Unit funding/pricing** — bangun endpoint funding/finalize-pricing/pricing-policy/transfer-branch yang hilang total.
+7. 🟢 **Dashboard, Target, Book, Investor Obligation** — modul besar yang butuh dibangun/dirombak dari nol, kerjakan setelah item di atas selesai.
 
 ---
 

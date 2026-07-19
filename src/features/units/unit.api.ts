@@ -1,7 +1,25 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { Unit, UnitFormData, UnitImageReorderItem, UnitStatusUpdate, MasterKelengkapan, MasterDokumen } from './unit.types';
+import type {
+  Unit,
+  UnitFormData,
+  UnitImageReorderItem,
+  UnitStatusUpdate,
+  MasterKelengkapan,
+  MasterDokumen,
+  UnitLookups,
+  FundingAgreement,
+  UnitFundingUpdatePayload,
+  FinalizeInitialPricingPayload,
+  PricingPolicy,
+  PricingPolicyUpdatePayload,
+  UnitTransferBranchPayload,
+  UnitTransferBranchResult,
+} from './unit.types';
 import type { Rekondisi } from '@/features/rekondisi/rekondisi.types';
+
+/** Header opsional `{ 'X-Branch-Id': branchId }` — wajib diisi caller untuk mutation Owner (README §8). */
+type BranchHeaders = Record<string, string> | undefined;
 
 export const unitApi = {
   list: async (params?: Record<string, unknown>) => {
@@ -11,6 +29,11 @@ export const unitApi = {
 
   get: async (id: string) => {
     const res = await apiClient.get<ApiResponse<Unit>>(`/units/${id}`);
+    return res.data;
+  },
+
+  getLookups: async (headers?: BranchHeaders) => {
+    const res = await apiClient.get<ApiResponse<UnitLookups>>('/units/lookups', { headers });
     return res.data;
   },
 
@@ -43,7 +66,7 @@ export const unitApi = {
     const res = await apiClient.get<ApiResponse<MasterDokumen[]>>('/units/dokumen');
     return res.data;
   },
-  
+
   uploadImage: async (id: string, file: File, opts?: { sequence?: number; isMain?: boolean }) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -77,6 +100,43 @@ export const unitApi = {
 
   createRekondisi: async (id: string) => {
     const res = await apiClient.post<ApiResponse<Rekondisi>>(`/units/${id}/rekondisi`);
+    return res.data;
+  },
+
+  // ── Pendanaan (funding) ──────────────────────────────────────────────────
+
+  getFunding: async (id: string, headers?: BranchHeaders) => {
+    const res = await apiClient.get<ApiResponse<FundingAgreement>>(`/units/${id}/funding`, { headers });
+    return res.data;
+  },
+
+  updateFunding: async (id: string, data: UnitFundingUpdatePayload, headers?: BranchHeaders) => {
+    const res = await apiClient.patch<ApiResponse<FundingAgreement>>(`/units/${id}/funding`, data, { headers });
+    return res.data;
+  },
+
+  /** Sukses mengembalikan `FundingAgreement`, BUKAN detail unit — caller wajib re-fetch `GET /units/:id`. */
+  finalizeInitialPricing: async (id: string, data: FinalizeInitialPricingPayload, headers?: BranchHeaders) => {
+    const res = await apiClient.post<ApiResponse<FundingAgreement>>(`/units/${id}/finalize-initial-pricing`, data, { headers });
+    return res.data;
+  },
+
+  // ── Pricing policy ───────────────────────────────────────────────────────
+
+  getPricingPolicies: async (headers?: BranchHeaders) => {
+    const res = await apiClient.get<ApiResponse<PricingPolicy[]>>('/units/pricing-policy', { headers });
+    return res.data;
+  },
+
+  updatePricingPolicy: async (data: PricingPolicyUpdatePayload, headers?: BranchHeaders) => {
+    const res = await apiClient.put<ApiResponse<PricingPolicy>>('/units/pricing-policy', data, { headers });
+    return res.data;
+  },
+
+  // ── Transfer cabang ──────────────────────────────────────────────────────
+
+  transferBranch: async (id: string, data: UnitTransferBranchPayload, headers?: BranchHeaders) => {
+    const res = await apiClient.post<ApiResponse<UnitTransferBranchResult>>(`/units/${id}/transfer-branch`, data, { headers });
     return res.data;
   },
 };

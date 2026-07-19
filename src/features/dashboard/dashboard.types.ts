@@ -1,94 +1,89 @@
-export type DashboardPeriodType = 'yearly' | 'monthly' | 'yearToDate';
+// Kontrak nyata: GET /dashboard?period=YYYY-MM (ecatalogue-be/src/modules/dashboard).
+// Owner tanpa X-Branch-Id (atau '*') -> mode "all": summary+inventory konsolidasi + breakdown per cabang.
+// Owner dengan X-Branch-Id, atau non-Owner: mode "single": summary+inventory+charts satu cabang.
 
-export interface DashboardOverview {
-  period: {
-    tipePeriode: DashboardPeriodType;
-    period: string;
-    label: string;
-    previousLabel: string;
-    dateFrom: string;
-    dateTo: string;
-  };
-  summary: {
-    unitSold: number;
-    revenue: number;
-    hpp: number;
-    grossProfit: number;
-    expense: number;
-    netProfit: number;
-    margin: number;
-    targetUnit: number;
-    targetRevenue: number;
-    cashIn: number;
-    cashOut: number;
-    netCashFlow: number;
-    availableCash: number;
-    totalLeads: number;
-    totalTestDrives: number;
-    conversionRate: number;
-    trend: {
-      unitSold: number;
-      revenue: number;
-      netProfit: number;
-      expense: number;
-      cash: number;
-      leads: number;
-    };
-  };
-  inventory: {
-    totalStock: number;
-    readyStock: number;
-    holdStock: number;
-    inventoryStock: number;
-    totalValue: number;
-    averageAge: number;
-    healthyCount: number;
-    warningCount: number;
-    criticalCount: number;
-  };
-  charts: {
-    monthlySales: DashboardMonthlySale[];
-    topSelling: DashboardTopSelling[];
-    salesPerformance: DashboardSalesPerformance[];
-    leadSources: DashboardLeadSource[];
-    agingStock: DashboardAgingStock[];
-  };
+export interface DashboardBranchRef {
+  id: string;
+  nama: string;
+  code: string;
+}
+
+/**
+ * Field uang backend sudah diserialisasi jadi number biasa (lihat utils/response.js `serialize`),
+ * bukan string — jangan format ulang selain lewat formatCurrency untuk display.
+ */
+export interface DashboardSummary {
+  unitSold: number;
+  revenue: number;
+  hpp: number;
+  grossProfit: number;
+  expense: number;
+  operationalExpense: number;
+  payrollExpense: number;
+  reconditioningCost: number;
+  netProfit: number;
+  investorProfit: number;
+  fixedReturnExpense: number;
+  taxProvision: number;
+  salesIncentiveAccrued: number;
+  cashIn: number;
+  cashOut: number;
+  netCashFlow: number;
+  totalLeads: number;
+  totalTestDrives: number;
+  conversionRate: number;
+  targetUnit: number;
+  targetRevenue: number;
+  /** Hanya ada di summary single-branch; summary konsolidasi Owner tidak mengirim field ini. */
+  targetStatus?: string | null;
+}
+
+export interface DashboardInventory {
+  totalStock: number;
+  inventoryStock: number;
+  readyStock: number;
+  holdStock: number;
+  soldStock: number;
+  totalValue: number;
 }
 
 export interface DashboardMonthlySale {
-  month: string;
-  unit: number;
-  omzet: number;
-}
-
-export interface DashboardTopSelling {
-  rank: number;
-  merek: string;
-  tipe: string;
-  count: number;
-  revenue: number;
-}
-
-export interface DashboardSalesPerformance {
-  id: string;
-  name: string;
-  initial: string;
+  /** 1-12. Selalu 12 titik, termasuk bulan bernilai nol — jangan difilter. */
+  month: number;
   unit: number;
   revenue: number;
 }
 
-export interface DashboardLeadSource {
-  source: string;
-  count: number;
-  color: string;
+export interface DashboardCharts {
+  monthlySales: DashboardMonthlySale[];
 }
 
-export interface DashboardAgingStock {
-  id: string;
-  merek: string;
-  tipe: string;
-  plat: string;
-  harga: number;
-  masuk: string;
-  hari: number;
+/** Satu baris breakdown per cabang pada respons Owner "all". */
+export interface DashboardBranchBreakdown {
+  branch: DashboardBranchRef;
+  summary: DashboardSummary;
+  inventory: DashboardInventory;
+  charts: DashboardCharts;
 }
+
+export interface DashboardOverviewSingle {
+  period: string;
+  branch: DashboardBranchRef;
+  summary: DashboardSummary;
+  inventory: DashboardInventory;
+  charts: DashboardCharts;
+}
+
+export interface DashboardOverviewConsolidated {
+  period: string;
+  /** Konsolidasi seluruh cabang; cashflow di sini mengecualikan transfer antar-cabang. */
+  summary: DashboardSummary;
+  inventory: DashboardInventory;
+  breakdown: DashboardBranchBreakdown[];
+}
+
+export type DashboardOverview = DashboardOverviewSingle | DashboardOverviewConsolidated;
+
+export const isDashboardConsolidated = (
+  data: DashboardOverview,
+): data is DashboardOverviewConsolidated => 'breakdown' in data;

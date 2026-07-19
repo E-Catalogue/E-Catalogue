@@ -7,6 +7,7 @@ interface ExtraAction {
   icon: ReactNode;
   onClick: () => void;
   variant?: 'default' | 'primary' | 'danger';
+  disabled?: boolean;
 }
 
 interface RowActionsProps {
@@ -27,7 +28,7 @@ export const RowActions = ({ onView, onEdit, onDelete, extra, label }: RowAction
 
   if (onView) items.push({ icon: <Eye size={13} />, label: 'Lihat Detail', onClick: onView, variant: 'primary' });
   if (onEdit) items.push({ icon: <Pencil size={13} />, label: 'Edit', onClick: onEdit });
-  if (extra) extra.forEach((a) => items.push({ icon: a.icon, label: a.label, onClick: a.onClick, variant: a.variant }));
+  if (extra) extra.forEach((a) => items.push({ icon: a.icon, label: a.label, onClick: a.onClick, variant: a.variant, disabled: a.disabled }));
   if (onDelete) {
     // Beri pemisah sebelum aksi destruktif bila ada aksi lain di atasnya.
     if (items.length > 0) items[items.length - 1].dividerAfter = true;

@@ -1,16 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  AlertTriangle,
-  ArrowLeftRight,
   BarChart3,
+  Building2,
   CalendarDays,
   Car,
-  Clock,
   CreditCard,
   DollarSign,
+  Landmark,
   Layers,
-  Share2,
+  RefreshCw,
   Target,
   Trophy,
   TrendingUp,
@@ -18,75 +17,48 @@ import {
   Wallet,
 } from 'lucide-react';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
+import { StatCardSkeleton, TableSkeleton } from '@/shared/components/ui/Skeleton';
+import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { formatCurrency } from '@/core/utils/format';
+import { useBranchScope } from '@/features/auth/useBranchScope';
+import { useBranches } from '@/features/master/master.hooks';
 import { dashboardApi } from './dashboard.api';
-import type { DashboardPeriodType } from './dashboard.types';
-import { AgingStock } from './components/AgingStock';
-import { LeadSources } from './components/LeadSources';
+import {
+  isDashboardConsolidated,
+  type DashboardBranchBreakdown,
+  type DashboardOverview,
+} from './dashboard.types';
 import { SalesChart } from './components/SalesChart';
-import { SalesPerformance } from './components/SalesPerformance';
 import { StatCard } from './components/StatCard';
-import { TopSelling } from './components/TopSelling';
+
+const MONTH_LABEL_LONG = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
 
 const currentMonth = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const currentYear = () => String(new Date().getFullYear());
-
-const periodLabel = {
-  monthly: 'Bulanan',
-  yearly: 'Tahunan',
-  yearToDate: 'Year to Date',
-} satisfies Record<DashboardPeriodType, string>;
-
-const periodTypeOptions: DashboardPeriodType[] = ['monthly', 'yearToDate', 'yearly'];
+const formatPeriodLabel = (period: string) => {
+  const [year, month] = period.split('-').map(Number);
+  const label = MONTH_LABEL_LONG[(month || 1) - 1] ?? period;
+  return `${label} ${year}`;
+};
 
 const asPct = (value: number) => Math.max(0, Math.min(Math.round(value), 999));
 
 export const DashboardPage = () => {
-  const [tipePeriode, setTipePeriode] = useState<DashboardPeriodType>('monthly');
   const [period, setPeriod] = useState(currentMonth());
+  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
+  const { data: branchesResp } = useBranches({ page: 1, limit: 100 });
+  const branches = branchesResp?.data ?? [];
 
-  const normalizedPeriod = useMemo(() => {
-    if (tipePeriode === 'monthly') return period.includes('-') ? period : currentMonth();
-    return period.slice(0, 4) || currentYear();
-  }, [period, tipePeriode]);
-
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['dashboard-overview', tipePeriode, normalizedPeriod],
-    queryFn: () => dashboardApi.overview({ tipePeriode, period: normalizedPeriod }),
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
+    queryKey: ['dashboard-overview', period, branchKey],
+    queryFn: () => dashboardApi.overview({ period }, branchHeader),
   });
-
-  const onPeriodTypeChange = (value: DashboardPeriodType) => {
-    setTipePeriode(value);
-    setPeriod(value === 'monthly' ? currentMonth() : currentYear());
-  };
-
-  if (isLoading) {
-    return (
-      <div className="max-w-[1600px] mx-auto rounded-2xl border border-border bg-surface p-6 text-sm font-semibold text-muted">
-        Memuat dashboard...
-      </div>
-    );
-  }
-
-  if (isError || !data) {
-    return (
-      <div className="max-w-[1600px] mx-auto rounded-2xl border border-semantic-error/30 bg-semantic-error/10 p-6 text-sm font-semibold text-semantic-error">
-        Dashboard gagal dimuat{error instanceof Error ? `: ${error.message}` : '.'}
-      </div>
-    );
-  }
-
-  const { summary, inventory, charts } = data;
-  const targetUnitPct = summary.targetUnit > 0 ? asPct((summary.unitSold / summary.targetUnit) * 100) : 0;
-  const targetRevenuePct = summary.targetRevenue > 0 ? asPct((summary.revenue / summary.targetRevenue) * 100) : 0;
-  const chartYear = data.period.period.slice(0, 4);
-  const topSales = charts.salesPerformance[0];
-  const topSelling = charts.topSelling[0];
-  const leadSource = charts.leadSources[0];
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-float-up pb-12">
@@ -94,45 +66,106 @@ export const DashboardPage = () => {
         <div>
           <h1 className="text-lg font-extrabold text-ink">Dashboard Executive</h1>
           <p className="text-[12px] font-semibold text-muted">
-            Periode {data.period.label}. Data diambil dari transaksi penjualan, kas, stok, dan lead.
+            Periode {formatPeriodLabel(period)}. Data diambil dari transaksi penjualan, kas, stok, dan lead.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="flex rounded-xl border border-border bg-surface-soft p-1">
-            {periodTypeOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => onPeriodTypeChange(option)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-colors ${
-                  tipePeriode === option ? 'bg-primary text-white shadow-sm' : 'text-muted hover:text-primary'
-                }`}
+          {isOwner && (
+            <label className="flex items-center gap-2 bg-surface-soft border border-border rounded-xl px-3 py-2 text-[12px] font-bold text-ink">
+              <Building2 size={15} className="text-primary" />
+              <select
+                value={selectedBranchId ?? ''}
+                onChange={(event) => setSelectedBranchId(event.target.value || null)}
+                className="bg-transparent outline-none font-bold max-w-[160px]"
               >
-                {periodLabel[option]}
-              </button>
-            ))}
-          </div>
+                <option value="">Semua Cabang</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>{branch.nama}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="flex items-center gap-2 bg-surface-soft border border-border rounded-xl px-3 py-2 text-[12px] font-bold text-ink">
             <CalendarDays size={15} className="text-primary" />
             <input
-              type={tipePeriode === 'monthly' ? 'month' : 'number'}
-              min={tipePeriode === 'monthly' ? undefined : 2000}
-              max={tipePeriode === 'monthly' ? undefined : 2100}
-              value={normalizedPeriod}
-              onChange={(event) => setPeriod(event.target.value)}
+              type="month"
+              value={period}
+              onChange={(event) => setPeriod(event.target.value || currentMonth())}
               className="bg-transparent outline-none w-32 font-bold"
             />
           </label>
         </div>
       </div>
 
+      {isLoading && (
+        <div className="space-y-8">
+          <StatCardSkeleton count={4} />
+          <StatCardSkeleton count={3} />
+          <TableSkeleton rows={4} cols={4} />
+        </div>
+      )}
+
+      {isError && !isLoading && (
+        <div className="max-w-[1600px] mx-auto rounded-2xl border border-semantic-error/30 bg-semantic-error/10 p-6 text-sm font-semibold text-semantic-error flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>Dashboard gagal dimuat{error instanceof Error ? `: ${error.message}` : '.'}</span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-1.5 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-semantic-error text-white text-[12px] font-extrabold hover:opacity-90 transition-opacity"
+          >
+            <RefreshCw size={13} /> Coba Lagi
+          </button>
+        </div>
+      )}
+
+      {data && !isLoading && !isError && (
+        <DashboardContent data={data} isFetching={isFetching} />
+      )}
+    </div>
+  );
+};
+
+const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFetching: boolean }) => {
+  const consolidated = isDashboardConsolidated(data);
+  const { summary, inventory } = data;
+
+  const targetUnitPct = summary.targetUnit > 0 ? asPct((summary.unitSold / summary.targetUnit) * 100) : 0;
+  const targetRevenuePct = summary.targetRevenue > 0 ? asPct((summary.revenue / summary.targetRevenue) * 100) : 0;
+  const marginPct = summary.revenue > 0 ? Number(((summary.netProfit / summary.revenue) * 100).toFixed(1)) : 0;
+  const expenseRatioPct = summary.revenue > 0 ? ((summary.expense / summary.revenue) * 100).toFixed(1) : '0';
+
+  const breakdownColumns: Column<DashboardBranchBreakdown>[] = [
+    { header: 'Cabang', cell: (row) => (
+      <div>
+        <span className="font-extrabold text-ink">{row.branch.nama}</span>
+        <span className="text-[10px] font-bold text-muted ml-1.5">({row.branch.code})</span>
+      </div>
+    ) },
+    { header: 'Unit Terjual', align: 'right', cell: (row) => `${row.summary.unitSold} / ${row.summary.targetUnit}` },
+    { header: 'Omzet', align: 'right', cell: (row) => formatCurrency(row.summary.revenue, { compact: true }) },
+    { header: 'Profit Bersih', align: 'right', cell: (row) => formatCurrency(row.summary.netProfit, { compact: true }) },
+    { header: 'Net Cash Flow', align: 'right', cell: (row) => formatCurrency(row.summary.netCashFlow, { compact: true }) },
+    { header: 'Stok Aktif', align: 'right', cell: (row) => `${row.inventory.totalStock} Unit` },
+  ];
+
+  return (
+    <div className={`space-y-8 transition-opacity ${isFetching ? 'opacity-60' : ''}`}>
+      {consolidated && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-[12px] font-bold text-primary flex items-center gap-2">
+          <Landmark size={15} />
+          Menampilkan konsolidasi seluruh cabang. Arus kas konsolidasi mengecualikan transfer antar-cabang.
+        </div>
+      )}
+
       <div>
         <div className="flex items-center justify-between mb-3 border-b border-divider pb-2">
           <div className="flex items-center gap-2">
             <DollarSign size={16} className="text-primary" />
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-ink">1. Metrik Keuangan & Arus Kas</h2>
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-ink">1. Metrik Keuangan &amp; Arus Kas</h2>
           </div>
-          <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg">{periodLabel[tipePeriode]}</span>
+          {!consolidated && (
+            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg">{data.branch.nama}</span>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
@@ -140,7 +173,6 @@ export const DashboardPage = () => {
             color="green"
             label="Total Omzet"
             value={formatCurrency(summary.revenue, { compact: true })}
-            trend={{ value: summary.trend.revenue, label: `vs ${data.period.previousLabel}` }}
             progress={{ percent: targetRevenuePct, label: 'Pencapaian Target Omzet' }}
             details={[
               { label: 'Target Omzet', value: formatCurrency(summary.targetRevenue, { compact: true }) },
@@ -151,10 +183,9 @@ export const DashboardPage = () => {
           <StatCard
             icon={Trophy}
             color="orange"
-            label="Profit Bersih Praktis"
+            label="Profit Bersih Perusahaan"
             value={formatCurrency(summary.netProfit, { compact: true })}
-            trend={{ value: summary.trend.netProfit, label: `vs ${data.period.previousLabel}` }}
-            subtitle={{ text: 'Margin bersih:', highlight: `${summary.margin}% dari omzet` }}
+            subtitle={{ text: 'Margin bersih:', highlight: `${marginPct}% dari omzet` }}
             details={[
               { label: 'Gross Profit', value: formatCurrency(summary.grossProfit, { compact: true }) },
               { label: 'HPP', value: formatCurrency(summary.hpp, { compact: true }) },
@@ -164,10 +195,9 @@ export const DashboardPage = () => {
           <StatCard
             icon={Wallet}
             color="teal"
-            label="Cash Flow & Kas Tersedia"
-            value={formatCurrency(summary.availableCash, { compact: true })}
-            trend={{ value: summary.trend.cash, label: `net flow vs ${data.period.previousLabel}` }}
-            subtitle={{ text: 'Arus kas bersih:', highlight: formatCurrency(summary.netCashFlow, { compact: true }) }}
+            label="Arus Kas Bersih"
+            value={formatCurrency(summary.netCashFlow, { compact: true })}
+            subtitle={{ text: 'Kas masuk vs keluar:', highlight: `${formatCurrency(summary.cashIn, { compact: true })} / ${formatCurrency(summary.cashOut, { compact: true })}` }}
             details={[
               { label: 'Kas Masuk', value: formatCurrency(summary.cashIn, { compact: true }), color: 'text-accent-green' },
               { label: 'Kas Keluar', value: formatCurrency(summary.cashOut, { compact: true }), color: 'text-semantic-error' },
@@ -179,12 +209,11 @@ export const DashboardPage = () => {
             color="red"
             label="Total Pengeluaran"
             value={formatCurrency(summary.expense, { compact: true })}
-            trend={{ value: summary.trend.expense, label: `vs ${data.period.previousLabel}` }}
-            subtitle={{ text: 'Rasio expense:', highlight: `${summary.revenue > 0 ? ((summary.expense / summary.revenue) * 100).toFixed(1) : 0}% dari omzet` }}
+            subtitle={{ text: 'Rasio expense:', highlight: `${expenseRatioPct}% dari omzet` }}
             details={[
-              { label: 'Operasional + Payroll', value: formatCurrency(summary.expense, { compact: true }) },
-              { label: 'Cash Out Aktual', value: formatCurrency(summary.cashOut, { compact: true }) },
-              { label: 'Selisih cash out', value: formatCurrency(Math.max(summary.cashOut - summary.expense, 0), { compact: true }) },
+              { label: 'Operasional', value: formatCurrency(summary.operationalExpense, { compact: true }) },
+              { label: 'Payroll', value: formatCurrency(summary.payrollExpense, { compact: true }) },
+              { label: 'Rekondisi', value: formatCurrency(summary.reconditioningCost, { compact: true }) },
             ]}
           />
         </div>
@@ -194,11 +223,11 @@ export const DashboardPage = () => {
         <div className="flex items-center justify-between mb-3 border-b border-divider pb-2">
           <div className="flex items-center gap-2">
             <Car size={16} className="text-accent-blue" />
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-ink">2. Inventaris & Sales Pipeline</h2>
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-ink">2. Inventaris &amp; Sales Pipeline</h2>
           </div>
           <span className="text-[11px] font-bold text-accent-blue bg-accent-blue/10 px-2.5 py-0.5 rounded-lg">Showroom Assets</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
             icon={DollarSign}
             color="purple"
@@ -217,25 +246,11 @@ export const DashboardPage = () => {
             label="Unit Terjual"
             value={`${summary.unitSold} / ${summary.targetUnit}`}
             unit="Unit"
-            trend={{ value: summary.trend.unitSold, label: `vs ${data.period.previousLabel}` }}
             progress={{ percent: targetUnitPct, label: 'Pencapaian Target Unit' }}
             details={[
               { label: 'Sisa Target', value: `${Math.max(summary.targetUnit - summary.unitSold, 0)} Unit` },
-              { label: 'Top Model', value: topSelling ? `${topSelling.merek} ${topSelling.tipe}` : '-' },
+              { label: 'Status Target', value: summary.targetStatus ?? '-' },
               { label: 'Konversi Lead', value: `${summary.conversionRate}%` },
-            ]}
-          />
-          <StatCard
-            icon={Clock}
-            color="teal"
-            label="Rata-Rata Umur Stok"
-            value={`${inventory.averageAge} Hari`}
-            subtitle={{ text: 'Distribusi stok:', highlight: `${inventory.healthyCount} sehat` }}
-            progress={{ percent: asPct((inventory.averageAge / 90) * 100), label: 'Batas monitor 90 hari' }}
-            details={[
-              { label: 'Sehat (<30 Hari)', value: `${inventory.healthyCount} Unit`, color: 'text-accent-green' },
-              { label: 'Perhatian (30-60 Hari)', value: `${inventory.warningCount} Unit`, color: 'text-accent-amber' },
-              { label: 'Kritis (>60 Hari)', value: `${inventory.criticalCount} Unit`, color: 'text-semantic-error' },
             ]}
           />
           <StatCard
@@ -243,11 +258,10 @@ export const DashboardPage = () => {
             color="orange"
             label="Lead & Test Drive"
             value={`${summary.totalLeads} Lead`}
-            trend={{ value: summary.trend.leads, label: `vs ${data.period.previousLabel}` }}
-            subtitle={{ text: 'Sumber terbesar:', highlight: leadSource ? leadSource.source : '-' }}
+            subtitle={{ text: 'Test drive terjadwal:', highlight: `${summary.totalTestDrives} jadwal` }}
             details={[
               { label: 'Test Drive', value: `${summary.totalTestDrives} Jadwal`, color: 'text-accent-blue' },
-              { label: 'Top Sales', value: topSales?.name || '-' },
+              { label: 'Unit Terjual', value: `${summary.unitSold} Unit` },
               { label: 'Konversi Deal', value: `${summary.conversionRate}%`, color: 'text-accent-green' },
             ]}
           />
@@ -255,18 +269,20 @@ export const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-        <div className="lg:col-span-2 flex flex-col">
-          <SectionCard
-            title={`Grafik Penjualan Bulanan (${chartYear})`}
-            icon={<BarChart3 size={16} />}
-            className="flex-1 flex flex-col"
-            bodyClassName="flex-1 flex flex-col justify-center"
-          >
-            <SalesChart data={charts.monthlySales} year={chartYear} />
-          </SectionCard>
-        </div>
-        <SectionCard title="Target vs Realisasi" icon={<Target size={16} />} className="flex flex-col">
-          <div className="space-y-4">
+        {!consolidated && (
+          <div className="lg:col-span-2 flex flex-col">
+            <SectionCard
+              title={`Grafik Penjualan Bulanan (${data.period.slice(0, 4)})`}
+              icon={<BarChart3 size={16} />}
+              className="flex-1 flex flex-col"
+              bodyClassName="flex-1 flex flex-col justify-center"
+            >
+              <SalesChart data={data.charts.monthlySales} year={data.period.slice(0, 4)} />
+            </SectionCard>
+          </div>
+        )}
+        <SectionCard title="Target vs Realisasi" icon={<Target size={16} />} className={consolidated ? 'lg:col-span-3 flex flex-col' : 'flex flex-col'}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
                 <span className="text-muted">Unit</span>
@@ -293,42 +309,34 @@ export const DashboardPage = () => {
         </SectionCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        <SectionCard title="Top Selling Mobil" icon={<Trophy size={16} />} action={<span className="text-[11px] font-bold text-muted">{data.period.label}</span>}>
-          <TopSelling data={charts.topSelling} totalUnit={summary.unitSold} />
-        </SectionCard>
-        <SectionCard title="Aging Stock" icon={<Clock size={16} />} action={<span className="text-[11px] font-bold text-semantic-error">Urutan Terlama</span>}>
-          <AgingStock data={charts.agingStock} summary={{ ...inventory }} />
-        </SectionCard>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        <SectionCard title="Performa Sales" icon={<Users size={16} />} action={<span className="text-[11px] font-bold text-muted">Berdasarkan Unit Deal</span>}>
-          <SalesPerformance data={charts.salesPerformance} targetUnit={summary.targetUnit} />
-        </SectionCard>
-        <SectionCard title="Sumber Leads / Prospek" icon={<Share2 size={16} />} className="flex flex-col" bodyClassName="flex-1 flex items-center justify-center">
-          <LeadSources data={charts.leadSources} />
-        </SectionCard>
-      </div>
-
-      <SectionCard title="Ringkasan Perbandingan" icon={<ArrowLeftRight size={16} />}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <SectionCard title="Distribusi Profit & Provisi" icon={<Landmark size={16} />} action={<span className="text-[11px] font-bold text-muted">Dari Settlement Terfinalisasi</span>}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Trend Unit', value: `${summary.trend.unitSold}%`, icon: Layers },
-            { label: 'Trend Omzet', value: `${summary.trend.revenue}%`, icon: DollarSign },
-            { label: 'Trend Profit', value: `${summary.trend.netProfit}%`, icon: Trophy },
-            { label: 'Stok Kritis', value: `${inventory.criticalCount} Unit`, icon: AlertTriangle },
+            { label: 'Profit Investor', value: summary.investorProfit, icon: Users },
+            { label: 'Fixed Return Accrued', value: summary.fixedReturnExpense, icon: Wallet },
+            { label: 'Provisi Pajak', value: summary.taxProvision, icon: CreditCard },
+            { label: 'Insentif Sales Accrued', value: summary.salesIncentiveAccrued, icon: Trophy },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-border bg-surface-soft p-3">
               <div className="flex items-center gap-2 text-muted">
                 <item.icon size={14} />
                 <span className="text-[11px] font-bold uppercase">{item.label}</span>
               </div>
-              <div className="mt-2 text-lg font-extrabold text-ink">{item.value}</div>
+              <div className="mt-2 text-lg font-extrabold text-ink">{formatCurrency(item.value, { compact: true })}</div>
             </div>
           ))}
         </div>
       </SectionCard>
+
+      {consolidated && (
+        <SectionCard title="Breakdown per Cabang" icon={<Building2 size={16} />} bodyClassName="p-0 md:p-0">
+          {data.breakdown.length === 0 ? (
+            <p className="p-5 text-[12px] font-semibold text-muted">Belum ada cabang aktif.</p>
+          ) : (
+            <DataTable columns={breakdownColumns} data={data.breakdown} rowKey={(row) => row.branch.id} />
+          )}
+        </SectionCard>
+      )}
     </div>
   );
 };

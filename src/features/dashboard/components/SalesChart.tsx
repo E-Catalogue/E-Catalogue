@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { formatCurrency } from '@/core/utils/format';
 import type { DashboardMonthlySale } from '../dashboard.types';
 
-type Mode = 'unit' | 'omzet';
+type Mode = 'unit' | 'revenue';
+
+const MONTH_LABEL = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
 export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year: string | number }) => {
   const [hover, setHover] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>('unit');
 
-  const activeData = data.filter(d => (mode === 'unit' ? d.unit : d.omzet) > 0);
-  const maxVal = Math.max(...data.map(d => mode === 'unit' ? d.unit : d.omzet), 1);
+  const activeData = data.filter(d => (mode === 'unit' ? d.unit : d.revenue) > 0);
+  const maxVal = Math.max(...data.map(d => mode === 'unit' ? d.unit : d.revenue), 1);
 
   const W = 480;
   const H = 200;
@@ -25,7 +27,7 @@ export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year:
   // Line path for values > 0
   const linePoints = activeData.map(d => {
     const i = data.indexOf(d);
-    return { x: xCenter(i), y: yVal(mode === 'unit' ? d.unit : d.omzet) };
+    return { x: xCenter(i), y: yVal(mode === 'unit' ? d.unit : d.revenue) };
   });
   const linePath = linePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
@@ -35,7 +37,7 @@ export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year:
     <div className="space-y-3">
       {/* Mode toggle */}
       <div className="flex gap-1">
-        {(['unit', 'omzet'] as Mode[]).map(m => (
+        {(['unit', 'revenue'] as Mode[]).map(m => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -66,7 +68,7 @@ export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year:
 
           {/* Bars */}
           {data.map((d, i) => {
-            const val = mode === 'unit' ? d.unit : d.omzet;
+            const val = mode === 'unit' ? d.unit : d.revenue;
             if (val === 0) return null;
             const barH = (val / maxVal) * innerH;
             return (
@@ -93,7 +95,7 @@ export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year:
           {/* X labels */}
           {data.map((d, i) => (
             <text key={i} x={xCenter(i)} y={H - 6} textAnchor="middle" className="fill-muted" fontSize="9" fontWeight="600">
-              {d.month}
+              {MONTH_LABEL[d.month - 1] ?? d.month}
             </text>
           ))}
 
@@ -105,11 +107,11 @@ export const SalesChart = ({ data, year }: { data: DashboardMonthlySale[]; year:
         </svg>
 
         {/* Tooltip */}
-        {data[active] && (mode === 'unit' ? data[active].unit : data[active].omzet) > 0 && (
+        {data[active] && (mode === 'unit' ? data[active].unit : data[active].revenue) > 0 && (
           <div className="absolute top-0 right-0 bg-ink text-white rounded-xl px-3 py-2 shadow-lg pointer-events-none">
-            <p className="text-[9px] font-semibold text-white/70">{data[active].month} {year}</p>
+            <p className="text-[9px] font-semibold text-white/70">{MONTH_LABEL[data[active].month - 1] ?? data[active].month} {year}</p>
             <p className="text-sm font-extrabold leading-none mt-0.5">
-              {mode === 'unit' ? `${data[active].unit} Unit` : formatCurrency(data[active].omzet, { compact: true })}
+              {mode === 'unit' ? `${data[active].unit} Unit` : formatCurrency(data[active].revenue, { compact: true })}
             </p>
           </div>
         )}

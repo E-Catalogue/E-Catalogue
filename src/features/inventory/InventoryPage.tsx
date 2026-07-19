@@ -16,8 +16,6 @@ import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import type { Unit, StatusUnit } from '@/features/units/unit.types';
 import { notifyApiError } from '@/core/api/notify';
-import { store } from '@/app/store';
-import { showToast } from '@/app/store/uiSlice';
 
 const TABS: { key: StatusUnit | 'all'; label: string }[] = [
   { key: 'all',         label: 'Semua' },
@@ -366,10 +364,9 @@ export const InventoryPage = () => {
           { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(u) },
           { icon: <RefreshCw size={13} />, label: 'Ubah Status', onClick: () => setStatusUnit(u) },
           {
-            icon: rekondisiUnitId === u.id ? <Loader2 size={13} className="animate-spin" /> : <Wrench size={13} />,
+            icon: <Wrench size={13} />,
             label: 'Tambah Rekondisi',
-            onClick: () => { void handleCreateRekondisi(u); },
-            disabled: rekondisiUnitId === u.id || createRekondisi.isPending,
+            onClick: () => setRekondisiTarget(u),
             dividerAfter: true,
           },
           { icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(u), variant: 'danger' },
@@ -466,6 +463,13 @@ export const InventoryPage = () => {
         <StatusChangeModal
           unit={statusUnit}
           onClose={() => setStatusUnit(null)}
+        />
+      )}
+
+      {rekondisiTarget && (
+        <CreateRekondisiModal
+          unit={rekondisiTarget}
+          onClose={() => setRekondisiTarget(null)}
         />
       )}
 

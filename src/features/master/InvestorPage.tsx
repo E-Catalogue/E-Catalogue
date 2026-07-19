@@ -55,7 +55,12 @@ export const InvestorPage = () => {
       <RowActions
         onEdit={can('INVESTOR_UPDATE') ? () => setForm({ item: r }) : undefined}
         onDelete={can('INVESTOR_DELETE') ? () => setToDelete(r) : undefined}
-        extra={can('INVESTOR_UPDATE') ? [{ label: 'Kelola Modal', icon: <Wallet size={13} />, onClick: () => setModalFor(r) }] : undefined}
+        extra={can('INVESTOR_UPDATE') ? [{
+          label: 'Kelola Modal (segera diperbarui)',
+          icon: <Wallet size={13} />,
+          onClick: () => setModalFor(r),
+          disabled: true,
+        }] : undefined}
       />
     ) },
   ];

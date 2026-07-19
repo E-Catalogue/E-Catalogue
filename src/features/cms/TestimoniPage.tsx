@@ -27,6 +27,7 @@ export const TestimoniPage = () => {
   const [form, setForm] = useState<{ item?: Testimonial } | null>(null);
   const [formData, setFormData] = useState<TestimonialForm>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<Testimonial | null>(null);
+  const [publishTarget, setPublishTarget] = useState<Testimonial | null>(null);
   const debounced = useDebouncedValue(search, 400);
 
   const { data, isLoading, isError } = useTestimonials({ page, limit: 10, search: debounced || undefined });
@@ -54,8 +55,13 @@ export const TestimoniPage = () => {
     m.remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null), onError: (err) => notifyApiError(err) });
   };
 
-  const togglePublish = (t: Testimonial) =>
-    m.setPublish.mutate({ id: t.id, isPublished: !t.isPublished }, { onError: (err) => notifyApiError(err) });
+  const confirmTogglePublish = () => {
+    if (!publishTarget) return;
+    m.setPublish.mutate(
+      { id: publishTarget.id, isPublished: !publishTarget.isPublished },
+      { onSuccess: () => setPublishTarget(null), onError: (err) => notifyApiError(err) },
+    );
+  };
 
   const saving = m.create.isPending || m.update.isPending;
 
@@ -106,7 +112,7 @@ export const TestimoniPage = () => {
           {
             icon: r.isPublished ? <EyeOff size={14} /> : <Eye size={14} />,
             label: r.isPublished ? 'Sembunyikan' : 'Tampilkan',
-            onClick: () => togglePublish(r),
+            onClick: () => setPublishTarget(r),
           },
           {
             icon: <Pencil size={14} />,
@@ -240,6 +246,18 @@ export const TestimoniPage = () => {
         confirmLabel="Hapus"
         tone="danger"
         loading={m.remove.isPending}
+        closeOnConfirm={false}
+      />
+
+      <ConfirmDialog
+        open={!!publishTarget}
+        onClose={() => setPublishTarget(null)}
+        onConfirm={confirmTogglePublish}
+        title={publishTarget?.isPublished ? 'Sembunyikan Testimoni' : 'Tampilkan Testimoni'}
+        message={publishTarget ? `${publishTarget.isPublished ? 'Sembunyikan' : 'Tampilkan'} testimoni dari "${publishTarget.name}" di halaman utama website?` : ''}
+        confirmLabel={publishTarget?.isPublished ? 'Ya, Sembunyikan' : 'Ya, Tampilkan'}
+        tone="primary"
+        loading={m.setPublish.isPending}
         closeOnConfirm={false}
       />
     </div>

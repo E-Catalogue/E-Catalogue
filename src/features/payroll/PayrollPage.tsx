@@ -74,13 +74,26 @@ const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose
 const GeneratePayrollForm = ({ onClose }: { onClose: () => void }) => {
   const mutations = usePayrollRunMutations();
   const [period, setPeriod] = useState(month());
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    mutations.generate.mutate({ period }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
+    setConfirmOpen(true);
   };
   return (
     <Modal open onClose={onClose} title="Generate Payroll" icon={<CalendarDays size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="generate-payroll-form" disabled={mutations.generate.isPending}>Generate</Button></>}>
       <form id="generate-payroll-form" onSubmit={submit}><TextField label="Periode" required type="month" value={period} onChange={(e) => setPeriod(e.target.value)} /></form>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => mutations.generate.mutate({ period }, { onError: (e) => notifyApiError(e), onSuccess: () => { setConfirmOpen(false); onClose(); } })}
+        loading={mutations.generate.isPending}
+        closeOnConfirm={false}
+        tone="primary"
+        icon={CalendarDays}
+        title="Generate Payroll"
+        message={`Payroll untuk periode ${period} akan digenerate untuk seluruh user aktif. Lanjutkan?`}
+        confirmLabel="Ya, Generate"
+      />
     </Modal>
   );
 };

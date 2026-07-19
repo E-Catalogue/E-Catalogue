@@ -68,7 +68,7 @@ const CreateRekondisiModal = ({
         }));
         return;
       }
-      await createM.mutateAsync(selected.id);
+      await createM.mutateAsync({ id: selected.id });
       onCreated(selected);
       onClose();
     } catch (err) {

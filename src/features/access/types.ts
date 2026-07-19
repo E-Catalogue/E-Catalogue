@@ -5,13 +5,21 @@ export interface Permission {
   description?: string | null;
 }
 
+export interface RolePermissionLink {
+  id: string;
+  roleId: string;
+  permissionId: string;
+  permission: Permission & { menuId: string; menu: { id: string; name: string; code: string; path?: string | null } };
+}
+
 export interface Role {
   id: string;
   name: string;
   code: string;
   description?: string | null;
   isActive: boolean;
-  permissions?: Permission[];
+  /** Hanya terisi di response detail (GET/POST/PATCH satu role) — bukan flat `permissions`. */
+  rolePermissions?: RolePermissionLink[];
 }
 
 export interface AccessUser {

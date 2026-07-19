@@ -131,7 +131,16 @@ const UserPageInner = () => {
       </SectionCard>
 
       <UserFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} canRoleUpdate={can('USER_ROLE_UPDATE')} canBranchUpdate={can('USER_BRANCH_UPDATE')} />
-      <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })} title="Nonaktifkan User" message={toDelete ? `Nonaktifkan user "${toDelete.name}"?` : ''} confirmLabel="Nonaktifkan" />
+      <ConfirmDialog
+        open={!!toDelete}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })}
+        title="Nonaktifkan User"
+        message={toDelete ? `Nonaktifkan user "${toDelete.name}"?` : ''}
+        confirmLabel="Nonaktifkan"
+        loading={m.remove.isPending}
+        closeOnConfirm={false}
+      />
     </div>
   );
 };

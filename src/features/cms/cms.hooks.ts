@@ -92,7 +92,7 @@ export const useTestimonialMutations = () => {
   return {
     create: useMutation({ mutationFn: (body: TestimonialForm) => testimonialApi.create(body), onSuccess: () => { inval(); toastOk('Testimoni ditambahkan'); } }),
     update: useMutation({ mutationFn: (v: { id: string; body: Partial<TestimonialForm> }) => testimonialApi.update(v.id, v.body), onSuccess: () => { inval(); toastOk('Testimoni diperbarui'); } }),
-    setPublish: useMutation({ mutationFn: (v: { id: string; isPublished: boolean }) => testimonialApi.setPublish(v.id, v.isPublished), onSuccess: inval }),
+    setPublish: useMutation({ mutationFn: (v: { id: string; isPublished: boolean }) => testimonialApi.setPublish(v.id, v.isPublished), onSuccess: (_d, v) => { inval(); toastOk(v.isPublished ? 'Testimoni dipublikasikan' : 'Testimoni disembunyikan'); } }),
     uploadAvatar: useMutation({ mutationFn: (v: { id: string; file: File }) => testimonialApi.uploadAvatar(v.id, v.file), onSuccess: () => { inval(); toastOk('Avatar diperbarui'); } }),
     remove: useMutation({ mutationFn: (id: string) => testimonialApi.remove(id), onSuccess: () => { inval(); toastOk('Testimoni dihapus'); } }),
   };
@@ -107,7 +107,7 @@ export const useContactMessageMutations = () => {
   const qc = useQueryClient();
   const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'contact-messages'] });
   return {
-    setStatus: useMutation({ mutationFn: (v: { id: string; status: ContactStatus }) => contactMessageApi.setStatus(v.id, v.status), onSuccess: inval }),
+    setStatus: useMutation({ mutationFn: (v: { id: string; status: ContactStatus }) => contactMessageApi.setStatus(v.id, v.status), onSuccess: (_d, v) => { inval(); toastOk(v.status === 'REPLIED' ? 'Pesan ditandai dibalas' : v.status === 'ARCHIVED' ? 'Pesan diarsipkan' : 'Status pesan diperbarui'); } }),
     remove: useMutation({ mutationFn: (id: string) => contactMessageApi.remove(id), onSuccess: () => { inval(); toastOk('Pesan dihapus'); } }),
   };
 };
@@ -126,9 +126,9 @@ export const useCmsCatalogMutations = () => {
   const qc = useQueryClient();
   const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
   return {
-    publish: useMutation({ mutationFn: (v: { id: string; body: CmsCatalogPublishBody }) => cmsCatalogApi.publish(v.id, v.body), onSuccess: inval }),
+    publish: useMutation({ mutationFn: (v: { id: string; body: CmsCatalogPublishBody }) => cmsCatalogApi.publish(v.id, v.body), onSuccess: () => { inval(); toastOk('Status publikasi katalog diperbarui'); } }),
     uploadImage: useMutation({ mutationFn: (v: { id: string; file: File }) => cmsCatalogApi.uploadImage(v.id, v.file), onSuccess: () => { inval(); toastOk('Foto ditambahkan'); } }),
     deleteImage: useMutation({ mutationFn: (v: { id: string; imageId: string }) => cmsCatalogApi.deleteImage(v.id, v.imageId), onSuccess: () => { inval(); toastOk('Foto dihapus'); } }),
-    reorderImages: useMutation({ mutationFn: (v: { id: string; orderedIds: string[] }) => cmsCatalogApi.reorderImages(v.id, v.orderedIds), onSuccess: inval }),
+    reorderImages: useMutation({ mutationFn: (v: { id: string; orderedIds: string[] }) => cmsCatalogApi.reorderImages(v.id, v.orderedIds), onSuccess: () => { inval(); toastOk('Urutan foto diperbarui'); } }),
   };
 };
