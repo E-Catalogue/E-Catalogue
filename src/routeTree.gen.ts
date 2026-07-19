@@ -17,54 +17,52 @@ import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as FeatureUnavailableRouteImport } from './routes/feature-unavailable'
 import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as AdminRouteImport } from './routes/_admin'
-import { Route as AdminIndexRouteImport } from './routes/_admin/index'
-import { Route as AdminCustomersRouteImport } from './routes/_admin/customers'
-import { Route as AdminShowroomVehicleUnitsRouteImport } from './routes/_admin/showroom/vehicle-units'
-import { Route as AdminShowroomTradeInsRouteImport } from './routes/_admin/showroom/trade-ins'
-import { Route as AdminShowroomTestDrivesRouteImport } from './routes/_admin/showroom/test-drives'
-import { Route as AdminShowroomReservationsRouteImport } from './routes/_admin/showroom/reservations'
-import { Route as AdminShowroomLeasingRouteImport } from './routes/_admin/showroom/leasing'
-import { Route as AdminShowroomDeliveriesRouteImport } from './routes/_admin/showroom/deliveries'
-import { Route as AdminSettingsUsersRouteImport } from './routes/_admin/settings/users'
-import { Route as AdminSettingsRolesRouteImport } from './routes/_admin/settings/roles'
-import { Route as AdminSettingsNumberingRouteImport } from './routes/_admin/settings/numbering'
-import { Route as AdminSettingsModulesRouteImport } from './routes/_admin/settings/modules'
-import { Route as AdminSettingsGeneralRouteImport } from './routes/_admin/settings/general'
-import { Route as AdminSettingsApprovalsRouteImport } from './routes/_admin/settings/approvals'
-import { Route as AdminSalesReturnsRouteImport } from './routes/_admin/sales/returns'
-import { Route as AdminSalesReportsRouteImport } from './routes/_admin/sales/reports'
-import { Route as AdminSalesQuotationsRouteImport } from './routes/_admin/sales/quotations'
-import { Route as AdminSalesOrdersRouteImport } from './routes/_admin/sales/orders'
-import { Route as AdminSalesLeadsRouteImport } from './routes/_admin/sales/leads'
-import { Route as AdminSalesInvoicesRouteImport } from './routes/_admin/sales/invoices'
-import { Route as AdminPurchasingSuppliersRouteImport } from './routes/_admin/purchasing/suppliers'
-import { Route as AdminPurchasingReportsRouteImport } from './routes/_admin/purchasing/reports'
-import { Route as AdminPurchasingPurchaseReturnsRouteImport } from './routes/_admin/purchasing/purchase-returns'
-import { Route as AdminPurchasingPurchaseRequestsRouteImport } from './routes/_admin/purchasing/purchase-requests'
-import { Route as AdminPurchasingPurchaseOrdersRouteImport } from './routes/_admin/purchasing/purchase-orders'
-import { Route as AdminPurchasingPurchaseInvoicesRouteImport } from './routes/_admin/purchasing/purchase-invoices'
-import { Route as AdminPurchasingGoodsReceiptsRouteImport } from './routes/_admin/purchasing/goods-receipts'
-import { Route as AdminInventoryTransfersRouteImport } from './routes/_admin/inventory/transfers'
-import { Route as AdminInventoryStocksRouteImport } from './routes/_admin/inventory/stocks'
-import { Route as AdminInventoryStockCountsRouteImport } from './routes/_admin/inventory/stock-counts'
-import { Route as AdminInventorySerializedStocksRouteImport } from './routes/_admin/inventory/serialized-stocks'
-import { Route as AdminInventoryReportsRouteImport } from './routes/_admin/inventory/reports'
-import { Route as AdminInventoryMovementsRouteImport } from './routes/_admin/inventory/movements'
-import { Route as AdminInventoryLocationsRouteImport } from './routes/_admin/inventory/locations'
-import { Route as AdminInventoryAdjustmentsRouteImport } from './routes/_admin/inventory/adjustments'
-import { Route as AdminFinanceReportsRouteImport } from './routes/_admin/finance/reports'
-import { Route as AdminFinanceReceivablesRouteImport } from './routes/_admin/finance/receivables'
-import { Route as AdminFinancePaymentsRouteImport } from './routes/_admin/finance/payments'
-import { Route as AdminFinancePayablesRouteImport } from './routes/_admin/finance/payables'
-import { Route as AdminFinanceJournalsRouteImport } from './routes/_admin/finance/journals'
-import { Route as AdminFinanceFiscalPeriodsRouteImport } from './routes/_admin/finance/fiscal-periods'
-import { Route as AdminFinanceExpensesRouteImport } from './routes/_admin/finance/expenses'
-import { Route as AdminFinanceCashBankRouteImport } from './routes/_admin/finance/cash-bank'
-import { Route as AdminFinanceAccountsRouteImport } from './routes/_admin/finance/accounts'
-import { Route as AdminCatalogueProductsRouteImport } from './routes/_admin/catalogue/products'
-import { Route as AdminCataloguePriceListsRouteImport } from './routes/_admin/catalogue/price-lists'
-import { Route as AdminCatalogueCategoriesRouteImport } from './routes/_admin/catalogue/categories'
-import { Route as AdminCatalogueBrandsRouteImport } from './routes/_admin/catalogue/brands'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicTentangRouteImport } from './routes/_public/tentang'
+import { Route as PublicSimulasiRouteImport } from './routes/_public/simulasi'
+import { Route as PublicKontakRouteImport } from './routes/_public/kontak'
+import { Route as AdminVendorRouteImport } from './routes/_admin/vendor'
+import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
+import { Route as AdminTargetsRouteImport } from './routes/_admin/targets'
+import { Route as AdminTargetPenjualanRouteImport } from './routes/_admin/target-penjualan'
+import { Route as AdminTargetPendapatanRouteImport } from './routes/_admin/target-pendapatan'
+import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
+import { Route as AdminReadyStockRouteImport } from './routes/_admin/ready-stock'
+import { Route as AdminPenjualanRouteImport } from './routes/_admin/penjualan'
+import { Route as AdminPengeluaranRouteImport } from './routes/_admin/pengeluaran'
+import { Route as AdminPengaturanRouteImport } from './routes/_admin/pengaturan'
+import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
+import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
+import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
+import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
+import { Route as AdminLaporanCashflowRouteImport } from './routes/_admin/laporan-cashflow'
+import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
+import { Route as AdminDashboardCashflowRouteImport } from './routes/_admin/dashboard-cashflow'
+import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
+import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
+import { Route as AdminCashflowRouteImport } from './routes/_admin/cashflow'
+import { Route as AdminBranchRouteImport } from './routes/_admin/branch'
+import { Route as AdminSplatRouteImport } from './routes/_admin/$'
+import { Route as PublicKatalogIndexRouteImport } from './routes/_public/katalog/index'
+import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog/$id'
+import { Route as AdminMasterSumberLeadRouteImport } from './routes/_admin/master.sumber-lead'
+import { Route as AdminMasterPerlengkapanRouteImport } from './routes/_admin/master.perlengkapan'
+import { Route as AdminMasterPengecekanRouteImport } from './routes/_admin/master.pengecekan'
+import { Route as AdminMasterMetodePembayaranRouteImport } from './routes/_admin/master.metode-pembayaran'
+import { Route as AdminMasterLeasingRouteImport } from './routes/_admin/master.leasing'
+import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_admin/master.kategori-pengeluaran'
+import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
+import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
+import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
+import { Route as AdminCmsSiteSettingsRouteImport } from './routes/_admin/cms.site-settings'
+import { Route as AdminCmsSimulasiRouteImport } from './routes/_admin/cms.simulasi'
+import { Route as AdminCmsKontakRouteImport } from './routes/_admin/cms.kontak'
+import { Route as AdminCmsKatalogRouteImport } from './routes/_admin/cms.katalog'
+import { Route as AdminCmsHomepageRouteImport } from './routes/_admin/cms.homepage'
+import { Route as AdminCmsAboutRouteImport } from './routes/_admin/cms.about'
+import { Route as AdminAccessControlUsersRouteImport } from './routes/_admin/access-control.users'
+import { Route as AdminAccessControlRolesRouteImport } from './routes/_admin/access-control.roles'
+import { Route as AdminAccessControlMenusRouteImport } from './routes/_admin/access-control.menus'
 
 const TenantSuspendedRoute = TenantSuspendedRouteImport.update({
   id: '/tenant-suspended',
@@ -115,10 +113,135 @@ const AdminCustomersRoute = AdminCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminShowroomVehicleUnitsRoute =
-  AdminShowroomVehicleUnitsRouteImport.update({
-    id: '/showroom/vehicle-units',
-    path: '/showroom/vehicle-units',
+const AdminTargetsRoute = AdminTargetsRouteImport.update({
+  id: '/targets',
+  path: '/targets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTargetPenjualanRoute = AdminTargetPenjualanRouteImport.update({
+  id: '/target-penjualan',
+  path: '/target-penjualan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTargetPendapatanRoute = AdminTargetPendapatanRouteImport.update({
+  id: '/target-pendapatan',
+  path: '/target-pendapatan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRekondisiRoute = AdminRekondisiRouteImport.update({
+  id: '/rekondisi',
+  path: '/rekondisi',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReadyStockRoute = AdminReadyStockRouteImport.update({
+  id: '/ready-stock',
+  path: '/ready-stock',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPenjualanRoute = AdminPenjualanRouteImport.update({
+  id: '/penjualan',
+  path: '/penjualan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPengeluaranRoute = AdminPengeluaranRouteImport.update({
+  id: '/pengeluaran',
+  path: '/pengeluaran',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPembelianRoute = AdminPembelianRouteImport.update({
+  id: '/pembelian',
+  path: '/pembelian',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPembayaranRoute = AdminPembayaranRouteImport.update({
+  id: '/pembayaran',
+  path: '/pembayaran',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPayrollRoute = AdminPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMerekRoute = AdminMerekRouteImport.update({
+  id: '/merek',
+  path: '/merek',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLaporanCashflowRoute = AdminLaporanCashflowRouteImport.update({
+  id: '/laporan-cashflow',
+  path: '/laporan-cashflow',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInventoryRoute = AdminInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardCashflowRoute = AdminDashboardCashflowRouteImport.update({
+  id: '/dashboard-cashflow',
+  path: '/dashboard-cashflow',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCrmRoute = AdminCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCashflowRoute = AdminCashflowRouteImport.update({
+  id: '/cashflow',
+  path: '/cashflow',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBranchRoute = AdminBranchRouteImport.update({
+  id: '/branch',
+  path: '/branch',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSplatRoute = AdminSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PublicKatalogIndexRoute = PublicKatalogIndexRouteImport.update({
+  id: '/katalog/',
+  path: '/katalog/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicKatalogIdRoute = PublicKatalogIdRouteImport.update({
+  id: '/katalog/$id',
+  path: '/katalog/$id',
+  getParentRoute: () => PublicRoute,
+} as any)
+const AdminMasterSumberLeadRoute = AdminMasterSumberLeadRouteImport.update({
+  id: '/master/sumber-lead',
+  path: '/master/sumber-lead',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMasterPerlengkapanRoute = AdminMasterPerlengkapanRouteImport.update({
+  id: '/master/perlengkapan',
+  path: '/master/perlengkapan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMasterPengecekanRoute = AdminMasterPengecekanRouteImport.update({
+  id: '/master/pengecekan',
+  path: '/master/pengecekan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMasterMetodePembayaranRoute =
+  AdminMasterMetodePembayaranRouteImport.update({
+    id: '/master/metode-pembayaran',
+    path: '/master/metode-pembayaran',
     getParentRoute: () => AdminRoute,
   } as any)
 const AdminShowroomTradeInsRoute = AdminShowroomTradeInsRouteImport.update({
@@ -367,55 +490,51 @@ export interface FileRoutesByFullPath {
   '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/tenant-suspended': typeof TenantSuspendedRoute
-  '/customers': typeof AdminCustomersRoute
-  '/catalogue/brands': typeof AdminCatalogueBrandsRoute
-  '/catalogue/categories': typeof AdminCatalogueCategoriesRoute
-  '/catalogue/price-lists': typeof AdminCataloguePriceListsRoute
-  '/catalogue/products': typeof AdminCatalogueProductsRoute
-  '/finance/accounts': typeof AdminFinanceAccountsRoute
-  '/finance/cash-bank': typeof AdminFinanceCashBankRoute
-  '/finance/expenses': typeof AdminFinanceExpensesRoute
-  '/finance/fiscal-periods': typeof AdminFinanceFiscalPeriodsRoute
-  '/finance/journals': typeof AdminFinanceJournalsRoute
-  '/finance/payables': typeof AdminFinancePayablesRoute
-  '/finance/payments': typeof AdminFinancePaymentsRoute
-  '/finance/receivables': typeof AdminFinanceReceivablesRoute
-  '/finance/reports': typeof AdminFinanceReportsRoute
-  '/inventory/adjustments': typeof AdminInventoryAdjustmentsRoute
-  '/inventory/locations': typeof AdminInventoryLocationsRoute
-  '/inventory/movements': typeof AdminInventoryMovementsRoute
-  '/inventory/reports': typeof AdminInventoryReportsRoute
-  '/inventory/serialized-stocks': typeof AdminInventorySerializedStocksRoute
-  '/inventory/stock-counts': typeof AdminInventoryStockCountsRoute
-  '/inventory/stocks': typeof AdminInventoryStocksRoute
-  '/inventory/transfers': typeof AdminInventoryTransfersRoute
-  '/purchasing/goods-receipts': typeof AdminPurchasingGoodsReceiptsRoute
-  '/purchasing/purchase-invoices': typeof AdminPurchasingPurchaseInvoicesRoute
-  '/purchasing/purchase-orders': typeof AdminPurchasingPurchaseOrdersRoute
-  '/purchasing/purchase-requests': typeof AdminPurchasingPurchaseRequestsRoute
-  '/purchasing/purchase-returns': typeof AdminPurchasingPurchaseReturnsRoute
-  '/purchasing/reports': typeof AdminPurchasingReportsRoute
-  '/purchasing/suppliers': typeof AdminPurchasingSuppliersRoute
-  '/sales/invoices': typeof AdminSalesInvoicesRoute
-  '/sales/leads': typeof AdminSalesLeadsRoute
-  '/sales/orders': typeof AdminSalesOrdersRoute
-  '/sales/quotations': typeof AdminSalesQuotationsRoute
-  '/sales/reports': typeof AdminSalesReportsRoute
-  '/sales/returns': typeof AdminSalesReturnsRoute
-  '/settings/approvals': typeof AdminSettingsApprovalsRoute
-  '/settings/general': typeof AdminSettingsGeneralRoute
-  '/settings/modules': typeof AdminSettingsModulesRoute
-  '/settings/numbering': typeof AdminSettingsNumberingRoute
-  '/settings/roles': typeof AdminSettingsRolesRoute
-  '/settings/users': typeof AdminSettingsUsersRoute
-  '/showroom/deliveries': typeof AdminShowroomDeliveriesRoute
-  '/showroom/leasing': typeof AdminShowroomLeasingRoute
-  '/showroom/reservations': typeof AdminShowroomReservationsRoute
-  '/showroom/test-drives': typeof AdminShowroomTestDrivesRoute
-  '/showroom/trade-ins': typeof AdminShowroomTradeInsRoute
-  '/showroom/vehicle-units': typeof AdminShowroomVehicleUnitsRoute
+  '/$': typeof AdminSplatRoute
+  '/branch': typeof AdminBranchRoute
+  '/cashflow': typeof AdminCashflowRoute
+  '/crm': typeof AdminCrmRoute
+  '/dashboard': typeof AdminDashboardRoute
+  '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
+  '/inventory': typeof AdminInventoryRoute
+  '/laporan-cashflow': typeof AdminLaporanCashflowRoute
+  '/merek': typeof AdminMerekRoute
+  '/payroll': typeof AdminPayrollRoute
+  '/pembayaran': typeof AdminPembayaranRoute
+  '/pembelian': typeof AdminPembelianRoute
+  '/pengaturan': typeof AdminPengaturanRoute
+  '/pengeluaran': typeof AdminPengeluaranRoute
+  '/penjualan': typeof AdminPenjualanRoute
+  '/ready-stock': typeof AdminReadyStockRoute
+  '/rekondisi': typeof AdminRekondisiRoute
+  '/target-pendapatan': typeof AdminTargetPendapatanRoute
+  '/target-penjualan': typeof AdminTargetPenjualanRoute
+  '/targets': typeof AdminTargetsRoute
+  '/test-drive': typeof AdminTestDriveRoute
+  '/vendor': typeof AdminVendorRoute
+  '/kontak': typeof PublicKontakRoute
+  '/simulasi': typeof PublicSimulasiRoute
+  '/tentang': typeof PublicTentangRoute
+  '/access-control/menus': typeof AdminAccessControlMenusRoute
+  '/access-control/roles': typeof AdminAccessControlRolesRoute
+  '/access-control/users': typeof AdminAccessControlUsersRoute
+  '/cms/about': typeof AdminCmsAboutRoute
+  '/cms/homepage': typeof AdminCmsHomepageRoute
+  '/cms/katalog': typeof AdminCmsKatalogRoute
+  '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/simulasi': typeof AdminCmsSimulasiRoute
+  '/cms/site-settings': typeof AdminCmsSiteSettingsRoute
+  '/cms/testimoni': typeof AdminCmsTestimoniRoute
+  '/master/dokumen': typeof AdminMasterDokumenRoute
+  '/master/investor': typeof AdminMasterInvestorRoute
+  '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
+  '/master/leasing': typeof AdminMasterLeasingRoute
+  '/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
+  '/master/pengecekan': typeof AdminMasterPengecekanRoute
+  '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
+  '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
+  '/katalog/$id': typeof PublicKatalogIdRoute
+  '/katalog/': typeof PublicKatalogIndexRoute
 }
 export interface FileRoutesByTo {
   '/change-password': typeof ChangePasswordRoute
@@ -423,56 +542,51 @@ export interface FileRoutesByTo {
   '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/tenant-suspended': typeof TenantSuspendedRoute
-  '/customers': typeof AdminCustomersRoute
-  '/': typeof AdminIndexRoute
-  '/catalogue/brands': typeof AdminCatalogueBrandsRoute
-  '/catalogue/categories': typeof AdminCatalogueCategoriesRoute
-  '/catalogue/price-lists': typeof AdminCataloguePriceListsRoute
-  '/catalogue/products': typeof AdminCatalogueProductsRoute
-  '/finance/accounts': typeof AdminFinanceAccountsRoute
-  '/finance/cash-bank': typeof AdminFinanceCashBankRoute
-  '/finance/expenses': typeof AdminFinanceExpensesRoute
-  '/finance/fiscal-periods': typeof AdminFinanceFiscalPeriodsRoute
-  '/finance/journals': typeof AdminFinanceJournalsRoute
-  '/finance/payables': typeof AdminFinancePayablesRoute
-  '/finance/payments': typeof AdminFinancePaymentsRoute
-  '/finance/receivables': typeof AdminFinanceReceivablesRoute
-  '/finance/reports': typeof AdminFinanceReportsRoute
-  '/inventory/adjustments': typeof AdminInventoryAdjustmentsRoute
-  '/inventory/locations': typeof AdminInventoryLocationsRoute
-  '/inventory/movements': typeof AdminInventoryMovementsRoute
-  '/inventory/reports': typeof AdminInventoryReportsRoute
-  '/inventory/serialized-stocks': typeof AdminInventorySerializedStocksRoute
-  '/inventory/stock-counts': typeof AdminInventoryStockCountsRoute
-  '/inventory/stocks': typeof AdminInventoryStocksRoute
-  '/inventory/transfers': typeof AdminInventoryTransfersRoute
-  '/purchasing/goods-receipts': typeof AdminPurchasingGoodsReceiptsRoute
-  '/purchasing/purchase-invoices': typeof AdminPurchasingPurchaseInvoicesRoute
-  '/purchasing/purchase-orders': typeof AdminPurchasingPurchaseOrdersRoute
-  '/purchasing/purchase-requests': typeof AdminPurchasingPurchaseRequestsRoute
-  '/purchasing/purchase-returns': typeof AdminPurchasingPurchaseReturnsRoute
-  '/purchasing/reports': typeof AdminPurchasingReportsRoute
-  '/purchasing/suppliers': typeof AdminPurchasingSuppliersRoute
-  '/sales/invoices': typeof AdminSalesInvoicesRoute
-  '/sales/leads': typeof AdminSalesLeadsRoute
-  '/sales/orders': typeof AdminSalesOrdersRoute
-  '/sales/quotations': typeof AdminSalesQuotationsRoute
-  '/sales/reports': typeof AdminSalesReportsRoute
-  '/sales/returns': typeof AdminSalesReturnsRoute
-  '/settings/approvals': typeof AdminSettingsApprovalsRoute
-  '/settings/general': typeof AdminSettingsGeneralRoute
-  '/settings/modules': typeof AdminSettingsModulesRoute
-  '/settings/numbering': typeof AdminSettingsNumberingRoute
-  '/settings/roles': typeof AdminSettingsRolesRoute
-  '/settings/users': typeof AdminSettingsUsersRoute
-  '/showroom/deliveries': typeof AdminShowroomDeliveriesRoute
-  '/showroom/leasing': typeof AdminShowroomLeasingRoute
-  '/showroom/reservations': typeof AdminShowroomReservationsRoute
-  '/showroom/test-drives': typeof AdminShowroomTestDrivesRoute
-  '/showroom/trade-ins': typeof AdminShowroomTradeInsRoute
-  '/showroom/vehicle-units': typeof AdminShowroomVehicleUnitsRoute
+  '/$': typeof AdminSplatRoute
+  '/branch': typeof AdminBranchRoute
+  '/cashflow': typeof AdminCashflowRoute
+  '/crm': typeof AdminCrmRoute
+  '/dashboard': typeof AdminDashboardRoute
+  '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
+  '/inventory': typeof AdminInventoryRoute
+  '/laporan-cashflow': typeof AdminLaporanCashflowRoute
+  '/merek': typeof AdminMerekRoute
+  '/payroll': typeof AdminPayrollRoute
+  '/pembayaran': typeof AdminPembayaranRoute
+  '/pembelian': typeof AdminPembelianRoute
+  '/pengaturan': typeof AdminPengaturanRoute
+  '/pengeluaran': typeof AdminPengeluaranRoute
+  '/penjualan': typeof AdminPenjualanRoute
+  '/ready-stock': typeof AdminReadyStockRoute
+  '/rekondisi': typeof AdminRekondisiRoute
+  '/target-pendapatan': typeof AdminTargetPendapatanRoute
+  '/target-penjualan': typeof AdminTargetPenjualanRoute
+  '/targets': typeof AdminTargetsRoute
+  '/test-drive': typeof AdminTestDriveRoute
+  '/vendor': typeof AdminVendorRoute
+  '/kontak': typeof PublicKontakRoute
+  '/simulasi': typeof PublicSimulasiRoute
+  '/tentang': typeof PublicTentangRoute
+  '/access-control/menus': typeof AdminAccessControlMenusRoute
+  '/access-control/roles': typeof AdminAccessControlRolesRoute
+  '/access-control/users': typeof AdminAccessControlUsersRoute
+  '/cms/about': typeof AdminCmsAboutRoute
+  '/cms/homepage': typeof AdminCmsHomepageRoute
+  '/cms/katalog': typeof AdminCmsKatalogRoute
+  '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/simulasi': typeof AdminCmsSimulasiRoute
+  '/cms/site-settings': typeof AdminCmsSiteSettingsRoute
+  '/cms/testimoni': typeof AdminCmsTestimoniRoute
+  '/master/dokumen': typeof AdminMasterDokumenRoute
+  '/master/investor': typeof AdminMasterInvestorRoute
+  '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
+  '/master/leasing': typeof AdminMasterLeasingRoute
+  '/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
+  '/master/pengecekan': typeof AdminMasterPengecekanRoute
+  '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
+  '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
+  '/katalog/$id': typeof PublicKatalogIdRoute
+  '/katalog': typeof PublicKatalogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -482,56 +596,52 @@ export interface FileRoutesById {
   '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/tenant-suspended': typeof TenantSuspendedRoute
-  '/_admin/customers': typeof AdminCustomersRoute
-  '/_admin/': typeof AdminIndexRoute
-  '/_admin/catalogue/brands': typeof AdminCatalogueBrandsRoute
-  '/_admin/catalogue/categories': typeof AdminCatalogueCategoriesRoute
-  '/_admin/catalogue/price-lists': typeof AdminCataloguePriceListsRoute
-  '/_admin/catalogue/products': typeof AdminCatalogueProductsRoute
-  '/_admin/finance/accounts': typeof AdminFinanceAccountsRoute
-  '/_admin/finance/cash-bank': typeof AdminFinanceCashBankRoute
-  '/_admin/finance/expenses': typeof AdminFinanceExpensesRoute
-  '/_admin/finance/fiscal-periods': typeof AdminFinanceFiscalPeriodsRoute
-  '/_admin/finance/journals': typeof AdminFinanceJournalsRoute
-  '/_admin/finance/payables': typeof AdminFinancePayablesRoute
-  '/_admin/finance/payments': typeof AdminFinancePaymentsRoute
-  '/_admin/finance/receivables': typeof AdminFinanceReceivablesRoute
-  '/_admin/finance/reports': typeof AdminFinanceReportsRoute
-  '/_admin/inventory/adjustments': typeof AdminInventoryAdjustmentsRoute
-  '/_admin/inventory/locations': typeof AdminInventoryLocationsRoute
-  '/_admin/inventory/movements': typeof AdminInventoryMovementsRoute
-  '/_admin/inventory/reports': typeof AdminInventoryReportsRoute
-  '/_admin/inventory/serialized-stocks': typeof AdminInventorySerializedStocksRoute
-  '/_admin/inventory/stock-counts': typeof AdminInventoryStockCountsRoute
-  '/_admin/inventory/stocks': typeof AdminInventoryStocksRoute
-  '/_admin/inventory/transfers': typeof AdminInventoryTransfersRoute
-  '/_admin/purchasing/goods-receipts': typeof AdminPurchasingGoodsReceiptsRoute
-  '/_admin/purchasing/purchase-invoices': typeof AdminPurchasingPurchaseInvoicesRoute
-  '/_admin/purchasing/purchase-orders': typeof AdminPurchasingPurchaseOrdersRoute
-  '/_admin/purchasing/purchase-requests': typeof AdminPurchasingPurchaseRequestsRoute
-  '/_admin/purchasing/purchase-returns': typeof AdminPurchasingPurchaseReturnsRoute
-  '/_admin/purchasing/reports': typeof AdminPurchasingReportsRoute
-  '/_admin/purchasing/suppliers': typeof AdminPurchasingSuppliersRoute
-  '/_admin/sales/invoices': typeof AdminSalesInvoicesRoute
-  '/_admin/sales/leads': typeof AdminSalesLeadsRoute
-  '/_admin/sales/orders': typeof AdminSalesOrdersRoute
-  '/_admin/sales/quotations': typeof AdminSalesQuotationsRoute
-  '/_admin/sales/reports': typeof AdminSalesReportsRoute
-  '/_admin/sales/returns': typeof AdminSalesReturnsRoute
-  '/_admin/settings/approvals': typeof AdminSettingsApprovalsRoute
-  '/_admin/settings/general': typeof AdminSettingsGeneralRoute
-  '/_admin/settings/modules': typeof AdminSettingsModulesRoute
-  '/_admin/settings/numbering': typeof AdminSettingsNumberingRoute
-  '/_admin/settings/roles': typeof AdminSettingsRolesRoute
-  '/_admin/settings/users': typeof AdminSettingsUsersRoute
-  '/_admin/showroom/deliveries': typeof AdminShowroomDeliveriesRoute
-  '/_admin/showroom/leasing': typeof AdminShowroomLeasingRoute
-  '/_admin/showroom/reservations': typeof AdminShowroomReservationsRoute
-  '/_admin/showroom/test-drives': typeof AdminShowroomTestDrivesRoute
-  '/_admin/showroom/trade-ins': typeof AdminShowroomTradeInsRoute
-  '/_admin/showroom/vehicle-units': typeof AdminShowroomVehicleUnitsRoute
+  '/_admin/$': typeof AdminSplatRoute
+  '/_admin/branch': typeof AdminBranchRoute
+  '/_admin/cashflow': typeof AdminCashflowRoute
+  '/_admin/crm': typeof AdminCrmRoute
+  '/_admin/dashboard': typeof AdminDashboardRoute
+  '/_admin/dashboard-cashflow': typeof AdminDashboardCashflowRoute
+  '/_admin/inventory': typeof AdminInventoryRoute
+  '/_admin/laporan-cashflow': typeof AdminLaporanCashflowRoute
+  '/_admin/merek': typeof AdminMerekRoute
+  '/_admin/payroll': typeof AdminPayrollRoute
+  '/_admin/pembayaran': typeof AdminPembayaranRoute
+  '/_admin/pembelian': typeof AdminPembelianRoute
+  '/_admin/pengaturan': typeof AdminPengaturanRoute
+  '/_admin/pengeluaran': typeof AdminPengeluaranRoute
+  '/_admin/penjualan': typeof AdminPenjualanRoute
+  '/_admin/ready-stock': typeof AdminReadyStockRoute
+  '/_admin/rekondisi': typeof AdminRekondisiRoute
+  '/_admin/target-pendapatan': typeof AdminTargetPendapatanRoute
+  '/_admin/target-penjualan': typeof AdminTargetPenjualanRoute
+  '/_admin/targets': typeof AdminTargetsRoute
+  '/_admin/test-drive': typeof AdminTestDriveRoute
+  '/_admin/vendor': typeof AdminVendorRoute
+  '/_public/kontak': typeof PublicKontakRoute
+  '/_public/simulasi': typeof PublicSimulasiRoute
+  '/_public/tentang': typeof PublicTentangRoute
+  '/_public/': typeof PublicIndexRoute
+  '/_admin/access-control/menus': typeof AdminAccessControlMenusRoute
+  '/_admin/access-control/roles': typeof AdminAccessControlRolesRoute
+  '/_admin/access-control/users': typeof AdminAccessControlUsersRoute
+  '/_admin/cms/about': typeof AdminCmsAboutRoute
+  '/_admin/cms/homepage': typeof AdminCmsHomepageRoute
+  '/_admin/cms/katalog': typeof AdminCmsKatalogRoute
+  '/_admin/cms/kontak': typeof AdminCmsKontakRoute
+  '/_admin/cms/simulasi': typeof AdminCmsSimulasiRoute
+  '/_admin/cms/site-settings': typeof AdminCmsSiteSettingsRoute
+  '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
+  '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
+  '/_admin/master/investor': typeof AdminMasterInvestorRoute
+  '/_admin/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
+  '/_admin/master/leasing': typeof AdminMasterLeasingRoute
+  '/_admin/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
+  '/_admin/master/pengecekan': typeof AdminMasterPengecekanRoute
+  '/_admin/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
+  '/_admin/master/sumber-lead': typeof AdminMasterSumberLeadRoute
+  '/_public/katalog/$id': typeof PublicKatalogIdRoute
+  '/_public/katalog/': typeof PublicKatalogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -542,55 +652,51 @@ export interface FileRouteTypes {
     | '/forbidden'
     | '/forgot-password'
     | '/login'
-    | '/reset-password'
-    | '/tenant-suspended'
-    | '/customers'
-    | '/catalogue/brands'
-    | '/catalogue/categories'
-    | '/catalogue/price-lists'
-    | '/catalogue/products'
-    | '/finance/accounts'
-    | '/finance/cash-bank'
-    | '/finance/expenses'
-    | '/finance/fiscal-periods'
-    | '/finance/journals'
-    | '/finance/payables'
-    | '/finance/payments'
-    | '/finance/receivables'
-    | '/finance/reports'
-    | '/inventory/adjustments'
-    | '/inventory/locations'
-    | '/inventory/movements'
-    | '/inventory/reports'
-    | '/inventory/serialized-stocks'
-    | '/inventory/stock-counts'
-    | '/inventory/stocks'
-    | '/inventory/transfers'
-    | '/purchasing/goods-receipts'
-    | '/purchasing/purchase-invoices'
-    | '/purchasing/purchase-orders'
-    | '/purchasing/purchase-requests'
-    | '/purchasing/purchase-returns'
-    | '/purchasing/reports'
-    | '/purchasing/suppliers'
-    | '/sales/invoices'
-    | '/sales/leads'
-    | '/sales/orders'
-    | '/sales/quotations'
-    | '/sales/reports'
-    | '/sales/returns'
-    | '/settings/approvals'
-    | '/settings/general'
-    | '/settings/modules'
-    | '/settings/numbering'
-    | '/settings/roles'
-    | '/settings/users'
-    | '/showroom/deliveries'
-    | '/showroom/leasing'
-    | '/showroom/reservations'
-    | '/showroom/test-drives'
-    | '/showroom/trade-ins'
-    | '/showroom/vehicle-units'
+    | '/$'
+    | '/branch'
+    | '/cashflow'
+    | '/crm'
+    | '/dashboard'
+    | '/dashboard-cashflow'
+    | '/inventory'
+    | '/laporan-cashflow'
+    | '/merek'
+    | '/payroll'
+    | '/pembayaran'
+    | '/pembelian'
+    | '/pengaturan'
+    | '/pengeluaran'
+    | '/penjualan'
+    | '/ready-stock'
+    | '/rekondisi'
+    | '/target-pendapatan'
+    | '/target-penjualan'
+    | '/targets'
+    | '/test-drive'
+    | '/vendor'
+    | '/kontak'
+    | '/simulasi'
+    | '/tentang'
+    | '/access-control/menus'
+    | '/access-control/roles'
+    | '/access-control/users'
+    | '/cms/about'
+    | '/cms/homepage'
+    | '/cms/katalog'
+    | '/cms/kontak'
+    | '/cms/simulasi'
+    | '/cms/site-settings'
+    | '/cms/testimoni'
+    | '/master/dokumen'
+    | '/master/investor'
+    | '/master/kategori-pengeluaran'
+    | '/master/leasing'
+    | '/master/metode-pembayaran'
+    | '/master/pengecekan'
+    | '/master/perlengkapan'
+    | '/master/sumber-lead'
+    | '/katalog/$id'
+    | '/katalog/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/change-password'
@@ -598,56 +704,51 @@ export interface FileRouteTypes {
     | '/forbidden'
     | '/forgot-password'
     | '/login'
-    | '/reset-password'
-    | '/tenant-suspended'
-    | '/customers'
-    | '/'
-    | '/catalogue/brands'
-    | '/catalogue/categories'
-    | '/catalogue/price-lists'
-    | '/catalogue/products'
-    | '/finance/accounts'
-    | '/finance/cash-bank'
-    | '/finance/expenses'
-    | '/finance/fiscal-periods'
-    | '/finance/journals'
-    | '/finance/payables'
-    | '/finance/payments'
-    | '/finance/receivables'
-    | '/finance/reports'
-    | '/inventory/adjustments'
-    | '/inventory/locations'
-    | '/inventory/movements'
-    | '/inventory/reports'
-    | '/inventory/serialized-stocks'
-    | '/inventory/stock-counts'
-    | '/inventory/stocks'
-    | '/inventory/transfers'
-    | '/purchasing/goods-receipts'
-    | '/purchasing/purchase-invoices'
-    | '/purchasing/purchase-orders'
-    | '/purchasing/purchase-requests'
-    | '/purchasing/purchase-returns'
-    | '/purchasing/reports'
-    | '/purchasing/suppliers'
-    | '/sales/invoices'
-    | '/sales/leads'
-    | '/sales/orders'
-    | '/sales/quotations'
-    | '/sales/reports'
-    | '/sales/returns'
-    | '/settings/approvals'
-    | '/settings/general'
-    | '/settings/modules'
-    | '/settings/numbering'
-    | '/settings/roles'
-    | '/settings/users'
-    | '/showroom/deliveries'
-    | '/showroom/leasing'
-    | '/showroom/reservations'
-    | '/showroom/test-drives'
-    | '/showroom/trade-ins'
-    | '/showroom/vehicle-units'
+    | '/$'
+    | '/branch'
+    | '/cashflow'
+    | '/crm'
+    | '/dashboard'
+    | '/dashboard-cashflow'
+    | '/inventory'
+    | '/laporan-cashflow'
+    | '/merek'
+    | '/payroll'
+    | '/pembayaran'
+    | '/pembelian'
+    | '/pengaturan'
+    | '/pengeluaran'
+    | '/penjualan'
+    | '/ready-stock'
+    | '/rekondisi'
+    | '/target-pendapatan'
+    | '/target-penjualan'
+    | '/targets'
+    | '/test-drive'
+    | '/vendor'
+    | '/kontak'
+    | '/simulasi'
+    | '/tentang'
+    | '/access-control/menus'
+    | '/access-control/roles'
+    | '/access-control/users'
+    | '/cms/about'
+    | '/cms/homepage'
+    | '/cms/katalog'
+    | '/cms/kontak'
+    | '/cms/simulasi'
+    | '/cms/site-settings'
+    | '/cms/testimoni'
+    | '/master/dokumen'
+    | '/master/investor'
+    | '/master/kategori-pengeluaran'
+    | '/master/leasing'
+    | '/master/metode-pembayaran'
+    | '/master/pengecekan'
+    | '/master/perlengkapan'
+    | '/master/sumber-lead'
+    | '/katalog/$id'
+    | '/katalog'
   id:
     | '__root__'
     | '/_admin'
@@ -656,56 +757,52 @@ export interface FileRouteTypes {
     | '/forbidden'
     | '/forgot-password'
     | '/login'
-    | '/reset-password'
-    | '/tenant-suspended'
-    | '/_admin/customers'
-    | '/_admin/'
-    | '/_admin/catalogue/brands'
-    | '/_admin/catalogue/categories'
-    | '/_admin/catalogue/price-lists'
-    | '/_admin/catalogue/products'
-    | '/_admin/finance/accounts'
-    | '/_admin/finance/cash-bank'
-    | '/_admin/finance/expenses'
-    | '/_admin/finance/fiscal-periods'
-    | '/_admin/finance/journals'
-    | '/_admin/finance/payables'
-    | '/_admin/finance/payments'
-    | '/_admin/finance/receivables'
-    | '/_admin/finance/reports'
-    | '/_admin/inventory/adjustments'
-    | '/_admin/inventory/locations'
-    | '/_admin/inventory/movements'
-    | '/_admin/inventory/reports'
-    | '/_admin/inventory/serialized-stocks'
-    | '/_admin/inventory/stock-counts'
-    | '/_admin/inventory/stocks'
-    | '/_admin/inventory/transfers'
-    | '/_admin/purchasing/goods-receipts'
-    | '/_admin/purchasing/purchase-invoices'
-    | '/_admin/purchasing/purchase-orders'
-    | '/_admin/purchasing/purchase-requests'
-    | '/_admin/purchasing/purchase-returns'
-    | '/_admin/purchasing/reports'
-    | '/_admin/purchasing/suppliers'
-    | '/_admin/sales/invoices'
-    | '/_admin/sales/leads'
-    | '/_admin/sales/orders'
-    | '/_admin/sales/quotations'
-    | '/_admin/sales/reports'
-    | '/_admin/sales/returns'
-    | '/_admin/settings/approvals'
-    | '/_admin/settings/general'
-    | '/_admin/settings/modules'
-    | '/_admin/settings/numbering'
-    | '/_admin/settings/roles'
-    | '/_admin/settings/users'
-    | '/_admin/showroom/deliveries'
-    | '/_admin/showroom/leasing'
-    | '/_admin/showroom/reservations'
-    | '/_admin/showroom/test-drives'
-    | '/_admin/showroom/trade-ins'
-    | '/_admin/showroom/vehicle-units'
+    | '/_admin/$'
+    | '/_admin/branch'
+    | '/_admin/cashflow'
+    | '/_admin/crm'
+    | '/_admin/dashboard'
+    | '/_admin/dashboard-cashflow'
+    | '/_admin/inventory'
+    | '/_admin/laporan-cashflow'
+    | '/_admin/merek'
+    | '/_admin/payroll'
+    | '/_admin/pembayaran'
+    | '/_admin/pembelian'
+    | '/_admin/pengaturan'
+    | '/_admin/pengeluaran'
+    | '/_admin/penjualan'
+    | '/_admin/ready-stock'
+    | '/_admin/rekondisi'
+    | '/_admin/target-pendapatan'
+    | '/_admin/target-penjualan'
+    | '/_admin/targets'
+    | '/_admin/test-drive'
+    | '/_admin/vendor'
+    | '/_public/kontak'
+    | '/_public/simulasi'
+    | '/_public/tentang'
+    | '/_public/'
+    | '/_admin/access-control/menus'
+    | '/_admin/access-control/roles'
+    | '/_admin/access-control/users'
+    | '/_admin/cms/about'
+    | '/_admin/cms/homepage'
+    | '/_admin/cms/katalog'
+    | '/_admin/cms/kontak'
+    | '/_admin/cms/simulasi'
+    | '/_admin/cms/site-settings'
+    | '/_admin/cms/testimoni'
+    | '/_admin/master/dokumen'
+    | '/_admin/master/investor'
+    | '/_admin/master/kategori-pengeluaran'
+    | '/_admin/master/leasing'
+    | '/_admin/master/metode-pembayaran'
+    | '/_admin/master/pengecekan'
+    | '/_admin/master/perlengkapan'
+    | '/_admin/master/sumber-lead'
+    | '/_public/katalog/$id'
+    | '/_public/katalog/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -791,11 +888,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCustomersRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/showroom/vehicle-units': {
-      id: '/_admin/showroom/vehicle-units'
-      path: '/showroom/vehicle-units'
-      fullPath: '/showroom/vehicle-units'
-      preLoaderRoute: typeof AdminShowroomVehicleUnitsRouteImport
+    '/_admin/targets': {
+      id: '/_admin/targets'
+      path: '/targets'
+      fullPath: '/targets'
+      preLoaderRoute: typeof AdminTargetsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/target-penjualan': {
+      id: '/_admin/target-penjualan'
+      path: '/target-penjualan'
+      fullPath: '/target-penjualan'
+      preLoaderRoute: typeof AdminTargetPenjualanRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/showroom/trade-ins': {
@@ -1117,105 +1221,89 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
-  AdminCustomersRoute: typeof AdminCustomersRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-  AdminCatalogueBrandsRoute: typeof AdminCatalogueBrandsRoute
-  AdminCatalogueCategoriesRoute: typeof AdminCatalogueCategoriesRoute
-  AdminCataloguePriceListsRoute: typeof AdminCataloguePriceListsRoute
-  AdminCatalogueProductsRoute: typeof AdminCatalogueProductsRoute
-  AdminFinanceAccountsRoute: typeof AdminFinanceAccountsRoute
-  AdminFinanceCashBankRoute: typeof AdminFinanceCashBankRoute
-  AdminFinanceExpensesRoute: typeof AdminFinanceExpensesRoute
-  AdminFinanceFiscalPeriodsRoute: typeof AdminFinanceFiscalPeriodsRoute
-  AdminFinanceJournalsRoute: typeof AdminFinanceJournalsRoute
-  AdminFinancePayablesRoute: typeof AdminFinancePayablesRoute
-  AdminFinancePaymentsRoute: typeof AdminFinancePaymentsRoute
-  AdminFinanceReceivablesRoute: typeof AdminFinanceReceivablesRoute
-  AdminFinanceReportsRoute: typeof AdminFinanceReportsRoute
-  AdminInventoryAdjustmentsRoute: typeof AdminInventoryAdjustmentsRoute
-  AdminInventoryLocationsRoute: typeof AdminInventoryLocationsRoute
-  AdminInventoryMovementsRoute: typeof AdminInventoryMovementsRoute
-  AdminInventoryReportsRoute: typeof AdminInventoryReportsRoute
-  AdminInventorySerializedStocksRoute: typeof AdminInventorySerializedStocksRoute
-  AdminInventoryStockCountsRoute: typeof AdminInventoryStockCountsRoute
-  AdminInventoryStocksRoute: typeof AdminInventoryStocksRoute
-  AdminInventoryTransfersRoute: typeof AdminInventoryTransfersRoute
-  AdminPurchasingGoodsReceiptsRoute: typeof AdminPurchasingGoodsReceiptsRoute
-  AdminPurchasingPurchaseInvoicesRoute: typeof AdminPurchasingPurchaseInvoicesRoute
-  AdminPurchasingPurchaseOrdersRoute: typeof AdminPurchasingPurchaseOrdersRoute
-  AdminPurchasingPurchaseRequestsRoute: typeof AdminPurchasingPurchaseRequestsRoute
-  AdminPurchasingPurchaseReturnsRoute: typeof AdminPurchasingPurchaseReturnsRoute
-  AdminPurchasingReportsRoute: typeof AdminPurchasingReportsRoute
-  AdminPurchasingSuppliersRoute: typeof AdminPurchasingSuppliersRoute
-  AdminSalesInvoicesRoute: typeof AdminSalesInvoicesRoute
-  AdminSalesLeadsRoute: typeof AdminSalesLeadsRoute
-  AdminSalesOrdersRoute: typeof AdminSalesOrdersRoute
-  AdminSalesQuotationsRoute: typeof AdminSalesQuotationsRoute
-  AdminSalesReportsRoute: typeof AdminSalesReportsRoute
-  AdminSalesReturnsRoute: typeof AdminSalesReturnsRoute
-  AdminSettingsApprovalsRoute: typeof AdminSettingsApprovalsRoute
-  AdminSettingsGeneralRoute: typeof AdminSettingsGeneralRoute
-  AdminSettingsModulesRoute: typeof AdminSettingsModulesRoute
-  AdminSettingsNumberingRoute: typeof AdminSettingsNumberingRoute
-  AdminSettingsRolesRoute: typeof AdminSettingsRolesRoute
-  AdminSettingsUsersRoute: typeof AdminSettingsUsersRoute
-  AdminShowroomDeliveriesRoute: typeof AdminShowroomDeliveriesRoute
-  AdminShowroomLeasingRoute: typeof AdminShowroomLeasingRoute
-  AdminShowroomReservationsRoute: typeof AdminShowroomReservationsRoute
-  AdminShowroomTestDrivesRoute: typeof AdminShowroomTestDrivesRoute
-  AdminShowroomTradeInsRoute: typeof AdminShowroomTradeInsRoute
-  AdminShowroomVehicleUnitsRoute: typeof AdminShowroomVehicleUnitsRoute
+  AdminSplatRoute: typeof AdminSplatRoute
+  AdminBranchRoute: typeof AdminBranchRoute
+  AdminCashflowRoute: typeof AdminCashflowRoute
+  AdminCrmRoute: typeof AdminCrmRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminDashboardCashflowRoute: typeof AdminDashboardCashflowRoute
+  AdminInventoryRoute: typeof AdminInventoryRoute
+  AdminLaporanCashflowRoute: typeof AdminLaporanCashflowRoute
+  AdminMerekRoute: typeof AdminMerekRoute
+  AdminPayrollRoute: typeof AdminPayrollRoute
+  AdminPembayaranRoute: typeof AdminPembayaranRoute
+  AdminPembelianRoute: typeof AdminPembelianRoute
+  AdminPengaturanRoute: typeof AdminPengaturanRoute
+  AdminPengeluaranRoute: typeof AdminPengeluaranRoute
+  AdminPenjualanRoute: typeof AdminPenjualanRoute
+  AdminReadyStockRoute: typeof AdminReadyStockRoute
+  AdminRekondisiRoute: typeof AdminRekondisiRoute
+  AdminTargetPendapatanRoute: typeof AdminTargetPendapatanRoute
+  AdminTargetPenjualanRoute: typeof AdminTargetPenjualanRoute
+  AdminTargetsRoute: typeof AdminTargetsRoute
+  AdminTestDriveRoute: typeof AdminTestDriveRoute
+  AdminVendorRoute: typeof AdminVendorRoute
+  AdminAccessControlMenusRoute: typeof AdminAccessControlMenusRoute
+  AdminAccessControlRolesRoute: typeof AdminAccessControlRolesRoute
+  AdminAccessControlUsersRoute: typeof AdminAccessControlUsersRoute
+  AdminCmsAboutRoute: typeof AdminCmsAboutRoute
+  AdminCmsHomepageRoute: typeof AdminCmsHomepageRoute
+  AdminCmsKatalogRoute: typeof AdminCmsKatalogRoute
+  AdminCmsKontakRoute: typeof AdminCmsKontakRoute
+  AdminCmsSimulasiRoute: typeof AdminCmsSimulasiRoute
+  AdminCmsSiteSettingsRoute: typeof AdminCmsSiteSettingsRoute
+  AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
+  AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
+  AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
+  AdminMasterKategoriPengeluaranRoute: typeof AdminMasterKategoriPengeluaranRoute
+  AdminMasterLeasingRoute: typeof AdminMasterLeasingRoute
+  AdminMasterMetodePembayaranRoute: typeof AdminMasterMetodePembayaranRoute
+  AdminMasterPengecekanRoute: typeof AdminMasterPengecekanRoute
+  AdminMasterPerlengkapanRoute: typeof AdminMasterPerlengkapanRoute
+  AdminMasterSumberLeadRoute: typeof AdminMasterSumberLeadRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminCustomersRoute: AdminCustomersRoute,
-  AdminIndexRoute: AdminIndexRoute,
-  AdminCatalogueBrandsRoute: AdminCatalogueBrandsRoute,
-  AdminCatalogueCategoriesRoute: AdminCatalogueCategoriesRoute,
-  AdminCataloguePriceListsRoute: AdminCataloguePriceListsRoute,
-  AdminCatalogueProductsRoute: AdminCatalogueProductsRoute,
-  AdminFinanceAccountsRoute: AdminFinanceAccountsRoute,
-  AdminFinanceCashBankRoute: AdminFinanceCashBankRoute,
-  AdminFinanceExpensesRoute: AdminFinanceExpensesRoute,
-  AdminFinanceFiscalPeriodsRoute: AdminFinanceFiscalPeriodsRoute,
-  AdminFinanceJournalsRoute: AdminFinanceJournalsRoute,
-  AdminFinancePayablesRoute: AdminFinancePayablesRoute,
-  AdminFinancePaymentsRoute: AdminFinancePaymentsRoute,
-  AdminFinanceReceivablesRoute: AdminFinanceReceivablesRoute,
-  AdminFinanceReportsRoute: AdminFinanceReportsRoute,
-  AdminInventoryAdjustmentsRoute: AdminInventoryAdjustmentsRoute,
-  AdminInventoryLocationsRoute: AdminInventoryLocationsRoute,
-  AdminInventoryMovementsRoute: AdminInventoryMovementsRoute,
-  AdminInventoryReportsRoute: AdminInventoryReportsRoute,
-  AdminInventorySerializedStocksRoute: AdminInventorySerializedStocksRoute,
-  AdminInventoryStockCountsRoute: AdminInventoryStockCountsRoute,
-  AdminInventoryStocksRoute: AdminInventoryStocksRoute,
-  AdminInventoryTransfersRoute: AdminInventoryTransfersRoute,
-  AdminPurchasingGoodsReceiptsRoute: AdminPurchasingGoodsReceiptsRoute,
-  AdminPurchasingPurchaseInvoicesRoute: AdminPurchasingPurchaseInvoicesRoute,
-  AdminPurchasingPurchaseOrdersRoute: AdminPurchasingPurchaseOrdersRoute,
-  AdminPurchasingPurchaseRequestsRoute: AdminPurchasingPurchaseRequestsRoute,
-  AdminPurchasingPurchaseReturnsRoute: AdminPurchasingPurchaseReturnsRoute,
-  AdminPurchasingReportsRoute: AdminPurchasingReportsRoute,
-  AdminPurchasingSuppliersRoute: AdminPurchasingSuppliersRoute,
-  AdminSalesInvoicesRoute: AdminSalesInvoicesRoute,
-  AdminSalesLeadsRoute: AdminSalesLeadsRoute,
-  AdminSalesOrdersRoute: AdminSalesOrdersRoute,
-  AdminSalesQuotationsRoute: AdminSalesQuotationsRoute,
-  AdminSalesReportsRoute: AdminSalesReportsRoute,
-  AdminSalesReturnsRoute: AdminSalesReturnsRoute,
-  AdminSettingsApprovalsRoute: AdminSettingsApprovalsRoute,
-  AdminSettingsGeneralRoute: AdminSettingsGeneralRoute,
-  AdminSettingsModulesRoute: AdminSettingsModulesRoute,
-  AdminSettingsNumberingRoute: AdminSettingsNumberingRoute,
-  AdminSettingsRolesRoute: AdminSettingsRolesRoute,
-  AdminSettingsUsersRoute: AdminSettingsUsersRoute,
-  AdminShowroomDeliveriesRoute: AdminShowroomDeliveriesRoute,
-  AdminShowroomLeasingRoute: AdminShowroomLeasingRoute,
-  AdminShowroomReservationsRoute: AdminShowroomReservationsRoute,
-  AdminShowroomTestDrivesRoute: AdminShowroomTestDrivesRoute,
-  AdminShowroomTradeInsRoute: AdminShowroomTradeInsRoute,
-  AdminShowroomVehicleUnitsRoute: AdminShowroomVehicleUnitsRoute,
+  AdminSplatRoute: AdminSplatRoute,
+  AdminBranchRoute: AdminBranchRoute,
+  AdminCashflowRoute: AdminCashflowRoute,
+  AdminCrmRoute: AdminCrmRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminDashboardCashflowRoute: AdminDashboardCashflowRoute,
+  AdminInventoryRoute: AdminInventoryRoute,
+  AdminLaporanCashflowRoute: AdminLaporanCashflowRoute,
+  AdminMerekRoute: AdminMerekRoute,
+  AdminPayrollRoute: AdminPayrollRoute,
+  AdminPembayaranRoute: AdminPembayaranRoute,
+  AdminPembelianRoute: AdminPembelianRoute,
+  AdminPengaturanRoute: AdminPengaturanRoute,
+  AdminPengeluaranRoute: AdminPengeluaranRoute,
+  AdminPenjualanRoute: AdminPenjualanRoute,
+  AdminReadyStockRoute: AdminReadyStockRoute,
+  AdminRekondisiRoute: AdminRekondisiRoute,
+  AdminTargetPendapatanRoute: AdminTargetPendapatanRoute,
+  AdminTargetPenjualanRoute: AdminTargetPenjualanRoute,
+  AdminTargetsRoute: AdminTargetsRoute,
+  AdminTestDriveRoute: AdminTestDriveRoute,
+  AdminVendorRoute: AdminVendorRoute,
+  AdminAccessControlMenusRoute: AdminAccessControlMenusRoute,
+  AdminAccessControlRolesRoute: AdminAccessControlRolesRoute,
+  AdminAccessControlUsersRoute: AdminAccessControlUsersRoute,
+  AdminCmsAboutRoute: AdminCmsAboutRoute,
+  AdminCmsHomepageRoute: AdminCmsHomepageRoute,
+  AdminCmsKatalogRoute: AdminCmsKatalogRoute,
+  AdminCmsKontakRoute: AdminCmsKontakRoute,
+  AdminCmsSimulasiRoute: AdminCmsSimulasiRoute,
+  AdminCmsSiteSettingsRoute: AdminCmsSiteSettingsRoute,
+  AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
+  AdminMasterDokumenRoute: AdminMasterDokumenRoute,
+  AdminMasterInvestorRoute: AdminMasterInvestorRoute,
+  AdminMasterKategoriPengeluaranRoute: AdminMasterKategoriPengeluaranRoute,
+  AdminMasterLeasingRoute: AdminMasterLeasingRoute,
+  AdminMasterMetodePembayaranRoute: AdminMasterMetodePembayaranRoute,
+  AdminMasterPengecekanRoute: AdminMasterPengecekanRoute,
+  AdminMasterPerlengkapanRoute: AdminMasterPerlengkapanRoute,
+  AdminMasterSumberLeadRoute: AdminMasterSumberLeadRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
