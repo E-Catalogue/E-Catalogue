@@ -7,7 +7,8 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
-import { Can } from '@/features/auth/permissions';
+import { Can, RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
 import { API_ORIGIN } from '@/core/api/client';
 import { formatDate } from '@/core/utils/format';
@@ -37,7 +38,8 @@ const mediaUrl = (url?: string | null) => {
   return `${API_ORIGIN}/${url.replace(/^\/+/, '')}`;
 };
 
-export const TestDrivePage = () => {
+const TestDrivePageInner = () => {
+  const { can } = usePermissions();
   const [page] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -59,7 +61,12 @@ export const TestDrivePage = () => {
     { header: 'Status', align: 'center', cell: (t) => <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold ${STATUS_CLASS[t.status]}`}>{STATUS_LABEL[t.status]}</span> },
     { header: 'Foto KTP', align: 'center', cell: (t) => t.fotoKtpUrl ? <a href={mediaUrl(t.fotoKtpUrl)} target="_blank" rel="noreferrer" className="inline-flex justify-center text-primary"><FileImage size={16} /></a> : '-' },
     { header: 'Foto SIM', align: 'center', cell: (t) => t.fotoSimUrl ? <a href={mediaUrl(t.fotoSimUrl)} target="_blank" rel="noreferrer" className="inline-flex justify-center text-primary"><FileImage size={16} /></a> : '-' },
-    { header: '', align: 'right', cell: (t) => <RowActions onEdit={() => setForm({ item: t })} onDelete={() => setToDelete(t)} /> },
+    { header: '', align: 'right', cell: (t) => (
+      <RowActions
+        onEdit={can('TEST_DRIVE_UPDATE') ? () => setForm({ item: t }) : undefined}
+        onDelete={can('TEST_DRIVE_DELETE') ? () => setToDelete(t) : undefined}
+      />
+    ) },
   ];
 
   return (
@@ -107,3 +114,9 @@ export const TestDrivePage = () => {
     </div>
   );
 };
+
+export const TestDrivePage = () => (
+  <RequirePermission code="TEST_DRIVE_READ">
+    <TestDrivePageInner />
+  </RequirePermission>
+);

@@ -11,6 +11,8 @@ import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { SelectField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useUnitModals } from '@/features/units/useUnitModals';
+import { RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateRekondisi, useRekondisiStatusCheck, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
@@ -275,7 +277,8 @@ const CreateRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => vo
   );
 };
 
-export const InventoryPage = () => {
+const InventoryPageInner = () => {
+  const { can } = usePermissions();
   const [tab, setTab]           = useState<StatusUnit | 'all'>('all');
   const [query, setQuery]       = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -333,22 +336,22 @@ export const InventoryPage = () => {
     {
       header: 'Harga Beli',
       align: 'right',
-      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.hargaBeli)}</span>,
+      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.purchaseCost)}</span>,
     },
     {
       header: 'HPP',
       align: 'right',
-      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.hpp)}</span>,
+      cell: (u) => <span className="font-bold text-ink text-[13px]">{idr(u.pricingCostBasis)}</span>,
     },
     {
       header: 'Target',
       align: 'right',
-      cell: (u) => <span className="font-bold text-primary text-[13px]">{idr(u.hargaTargetJual)}</span>,
+      cell: (u) => <span className="font-bold text-primary text-[13px]">{idr(u.targetPrice)}</span>,
     },
     {
       header: 'OTR',
       align: 'right',
-      cell: (u) => <span className="font-bold text-primary text-[13px]">{idr(u.hargaOtrSaatIni)}</span>,
+      cell: (u) => <span className="font-bold text-primary text-[13px]">{idr(u.otrPrice)}</span>,
     },
     {
       header: 'Status',
@@ -361,15 +364,17 @@ export const InventoryPage = () => {
       cell: (u) => (
         <ActionMenu items={[
           { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(u) },
-          { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(u) },
-          { icon: <RefreshCw size={13} />, label: 'Ubah Status', onClick: () => setStatusUnit(u) },
-          {
+          ...(can('UNIT_UPDATE') ? [
+            { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(u) },
+            { icon: <RefreshCw size={13} />, label: 'Ubah Status', onClick: () => setStatusUnit(u) },
+          ] : []),
+          ...(can('REKONDISI_CREATE') ? [{
             icon: <Wrench size={13} />,
             label: 'Tambah Rekondisi',
             onClick: () => setRekondisiTarget(u),
             dividerAfter: true,
-          },
-          { icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(u), variant: 'danger' },
+          }] : []),
+          ...(can('UNIT_DELETE') ? [{ icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(u), variant: 'danger' as const }] : []),
         ]} />
       ),
     },
@@ -380,7 +385,7 @@ export const InventoryPage = () => {
       <PageHeader
         title="Inventori"
         description={`${rows.length} dari ${all.length} unit`}
-        action={<Button icon={<Plus size={16} strokeWidth={2.5} />} onClick={m.openCreate}>Tambah Unit</Button>}
+        action={can('UNIT_CREATE') ? <Button icon={<Plus size={16} strokeWidth={2.5} />} onClick={m.openCreate}>Tambah Unit</Button> : undefined}
       />
 
       {/* Toolbar */}
@@ -478,3 +483,9 @@ export const InventoryPage = () => {
     </div>
   );
 };
+
+export const InventoryPage = () => (
+  <RequirePermission code="UNIT_READ">
+    <InventoryPageInner />
+  </RequirePermission>
+);

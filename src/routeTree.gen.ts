@@ -18,13 +18,13 @@ import { Route as PublicSimulasiRouteImport } from './routes/_public/simulasi'
 import { Route as PublicKontakRouteImport } from './routes/_public/kontak'
 import { Route as AdminVendorRouteImport } from './routes/_admin/vendor'
 import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
-import { Route as AdminTargetPenjualanRouteImport } from './routes/_admin/target-penjualan'
-import { Route as AdminTargetPendapatanRouteImport } from './routes/_admin/target-pendapatan'
+import { Route as AdminTargetsRouteImport } from './routes/_admin/targets'
 import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
 import { Route as AdminReadyStockRouteImport } from './routes/_admin/ready-stock'
 import { Route as AdminPenjualanRouteImport } from './routes/_admin/penjualan'
 import { Route as AdminPengeluaranRouteImport } from './routes/_admin/pengeluaran'
 import { Route as AdminPengaturanRouteImport } from './routes/_admin/pengaturan'
+import { Route as AdminPembukuanRouteImport } from './routes/_admin/pembukuan'
 import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
 import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
 import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
@@ -45,6 +45,7 @@ import { Route as AdminMasterPengecekanRouteImport } from './routes/_admin/maste
 import { Route as AdminMasterMetodePembayaranRouteImport } from './routes/_admin/master.metode-pembayaran'
 import { Route as AdminMasterLeasingRouteImport } from './routes/_admin/master.leasing'
 import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_admin/master.kategori-pengeluaran'
+import { Route as AdminMasterInvestorObligationRouteImport } from './routes/_admin/master.investor-obligation'
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
 import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
@@ -101,14 +102,9 @@ const AdminTestDriveRoute = AdminTestDriveRouteImport.update({
   path: '/test-drive',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminTargetPenjualanRoute = AdminTargetPenjualanRouteImport.update({
-  id: '/target-penjualan',
-  path: '/target-penjualan',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTargetPendapatanRoute = AdminTargetPendapatanRouteImport.update({
-  id: '/target-pendapatan',
-  path: '/target-pendapatan',
+const AdminTargetsRoute = AdminTargetsRouteImport.update({
+  id: '/targets',
+  path: '/targets',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRekondisiRoute = AdminRekondisiRouteImport.update({
@@ -134,6 +130,11 @@ const AdminPengeluaranRoute = AdminPengeluaranRouteImport.update({
 const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
   id: '/pengaturan',
   path: '/pengaturan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPembukuanRoute = AdminPembukuanRouteImport.update({
+  id: '/pembukuan',
+  path: '/pembukuan',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPembelianRoute = AdminPembelianRouteImport.update({
@@ -238,6 +239,12 @@ const AdminMasterKategoriPengeluaranRoute =
     path: '/master/kategori-pengeluaran',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminMasterInvestorObligationRoute =
+  AdminMasterInvestorObligationRouteImport.update({
+    id: '/master/investor-obligation',
+    path: '/master/investor-obligation',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminMasterInvestorRoute = AdminMasterInvestorRouteImport.update({
   id: '/master/investor',
   path: '/master/investor',
@@ -314,13 +321,13 @@ export interface FileRoutesByFullPath {
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
   '/pembelian': typeof AdminPembelianRoute
+  '/pembukuan': typeof AdminPembukuanRoute
   '/pengaturan': typeof AdminPengaturanRoute
   '/pengeluaran': typeof AdminPengeluaranRoute
   '/penjualan': typeof AdminPenjualanRoute
   '/ready-stock': typeof AdminReadyStockRoute
   '/rekondisi': typeof AdminRekondisiRoute
-  '/target-pendapatan': typeof AdminTargetPendapatanRoute
-  '/target-penjualan': typeof AdminTargetPenjualanRoute
+  '/targets': typeof AdminTargetsRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
   '/kontak': typeof PublicKontakRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
+  '/master/investor-obligation': typeof AdminMasterInvestorObligationRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/master/leasing': typeof AdminMasterLeasingRoute
   '/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
@@ -362,13 +370,13 @@ export interface FileRoutesByTo {
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
   '/pembelian': typeof AdminPembelianRoute
+  '/pembukuan': typeof AdminPembukuanRoute
   '/pengaturan': typeof AdminPengaturanRoute
   '/pengeluaran': typeof AdminPengeluaranRoute
   '/penjualan': typeof AdminPenjualanRoute
   '/ready-stock': typeof AdminReadyStockRoute
   '/rekondisi': typeof AdminRekondisiRoute
-  '/target-pendapatan': typeof AdminTargetPendapatanRoute
-  '/target-penjualan': typeof AdminTargetPenjualanRoute
+  '/targets': typeof AdminTargetsRoute
   '/test-drive': typeof AdminTestDriveRoute
   '/vendor': typeof AdminVendorRoute
   '/kontak': typeof PublicKontakRoute
@@ -386,6 +394,7 @@ export interface FileRoutesByTo {
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
+  '/master/investor-obligation': typeof AdminMasterInvestorObligationRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/master/leasing': typeof AdminMasterLeasingRoute
   '/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
@@ -412,13 +421,13 @@ export interface FileRoutesById {
   '/_admin/payroll': typeof AdminPayrollRoute
   '/_admin/pembayaran': typeof AdminPembayaranRoute
   '/_admin/pembelian': typeof AdminPembelianRoute
+  '/_admin/pembukuan': typeof AdminPembukuanRoute
   '/_admin/pengaturan': typeof AdminPengaturanRoute
   '/_admin/pengeluaran': typeof AdminPengeluaranRoute
   '/_admin/penjualan': typeof AdminPenjualanRoute
   '/_admin/ready-stock': typeof AdminReadyStockRoute
   '/_admin/rekondisi': typeof AdminRekondisiRoute
-  '/_admin/target-pendapatan': typeof AdminTargetPendapatanRoute
-  '/_admin/target-penjualan': typeof AdminTargetPenjualanRoute
+  '/_admin/targets': typeof AdminTargetsRoute
   '/_admin/test-drive': typeof AdminTestDriveRoute
   '/_admin/vendor': typeof AdminVendorRoute
   '/_public/kontak': typeof PublicKontakRoute
@@ -437,6 +446,7 @@ export interface FileRoutesById {
   '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
+  '/_admin/master/investor-obligation': typeof AdminMasterInvestorObligationRoute
   '/_admin/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/_admin/master/leasing': typeof AdminMasterLeasingRoute
   '/_admin/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
@@ -463,13 +473,13 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/pembayaran'
     | '/pembelian'
+    | '/pembukuan'
     | '/pengaturan'
     | '/pengeluaran'
     | '/penjualan'
     | '/ready-stock'
     | '/rekondisi'
-    | '/target-pendapatan'
-    | '/target-penjualan'
+    | '/targets'
     | '/test-drive'
     | '/vendor'
     | '/kontak'
@@ -487,6 +497,7 @@ export interface FileRouteTypes {
     | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
+    | '/master/investor-obligation'
     | '/master/kategori-pengeluaran'
     | '/master/leasing'
     | '/master/metode-pembayaran'
@@ -511,13 +522,13 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/pembayaran'
     | '/pembelian'
+    | '/pembukuan'
     | '/pengaturan'
     | '/pengeluaran'
     | '/penjualan'
     | '/ready-stock'
     | '/rekondisi'
-    | '/target-pendapatan'
-    | '/target-penjualan'
+    | '/targets'
     | '/test-drive'
     | '/vendor'
     | '/kontak'
@@ -535,6 +546,7 @@ export interface FileRouteTypes {
     | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
+    | '/master/investor-obligation'
     | '/master/kategori-pengeluaran'
     | '/master/leasing'
     | '/master/metode-pembayaran'
@@ -560,13 +572,13 @@ export interface FileRouteTypes {
     | '/_admin/payroll'
     | '/_admin/pembayaran'
     | '/_admin/pembelian'
+    | '/_admin/pembukuan'
     | '/_admin/pengaturan'
     | '/_admin/pengeluaran'
     | '/_admin/penjualan'
     | '/_admin/ready-stock'
     | '/_admin/rekondisi'
-    | '/_admin/target-pendapatan'
-    | '/_admin/target-penjualan'
+    | '/_admin/targets'
     | '/_admin/test-drive'
     | '/_admin/vendor'
     | '/_public/kontak'
@@ -585,6 +597,7 @@ export interface FileRouteTypes {
     | '/_admin/cms/testimoni'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
+    | '/_admin/master/investor-obligation'
     | '/_admin/master/kategori-pengeluaran'
     | '/_admin/master/leasing'
     | '/_admin/master/metode-pembayaran'
@@ -666,18 +679,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTestDriveRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/target-penjualan': {
-      id: '/_admin/target-penjualan'
-      path: '/target-penjualan'
-      fullPath: '/target-penjualan'
-      preLoaderRoute: typeof AdminTargetPenjualanRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/target-pendapatan': {
-      id: '/_admin/target-pendapatan'
-      path: '/target-pendapatan'
-      fullPath: '/target-pendapatan'
-      preLoaderRoute: typeof AdminTargetPendapatanRouteImport
+    '/_admin/targets': {
+      id: '/_admin/targets'
+      path: '/targets'
+      fullPath: '/targets'
+      preLoaderRoute: typeof AdminTargetsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/rekondisi': {
@@ -713,6 +719,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan'
       fullPath: '/pengaturan'
       preLoaderRoute: typeof AdminPengaturanRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/pembukuan': {
+      id: '/_admin/pembukuan'
+      path: '/pembukuan'
+      fullPath: '/pembukuan'
+      preLoaderRoute: typeof AdminPembukuanRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/pembelian': {
@@ -855,6 +868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterKategoriPengeluaranRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/master/investor-obligation': {
+      id: '/_admin/master/investor-obligation'
+      path: '/master/investor-obligation'
+      fullPath: '/master/investor-obligation'
+      preLoaderRoute: typeof AdminMasterInvestorObligationRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/master/investor': {
       id: '/_admin/master/investor'
       path: '/master/investor'
@@ -955,13 +975,13 @@ interface AdminRouteChildren {
   AdminPayrollRoute: typeof AdminPayrollRoute
   AdminPembayaranRoute: typeof AdminPembayaranRoute
   AdminPembelianRoute: typeof AdminPembelianRoute
+  AdminPembukuanRoute: typeof AdminPembukuanRoute
   AdminPengaturanRoute: typeof AdminPengaturanRoute
   AdminPengeluaranRoute: typeof AdminPengeluaranRoute
   AdminPenjualanRoute: typeof AdminPenjualanRoute
   AdminReadyStockRoute: typeof AdminReadyStockRoute
   AdminRekondisiRoute: typeof AdminRekondisiRoute
-  AdminTargetPendapatanRoute: typeof AdminTargetPendapatanRoute
-  AdminTargetPenjualanRoute: typeof AdminTargetPenjualanRoute
+  AdminTargetsRoute: typeof AdminTargetsRoute
   AdminTestDriveRoute: typeof AdminTestDriveRoute
   AdminVendorRoute: typeof AdminVendorRoute
   AdminAccessControlMenusRoute: typeof AdminAccessControlMenusRoute
@@ -976,6 +996,7 @@ interface AdminRouteChildren {
   AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
+  AdminMasterInvestorObligationRoute: typeof AdminMasterInvestorObligationRoute
   AdminMasterKategoriPengeluaranRoute: typeof AdminMasterKategoriPengeluaranRoute
   AdminMasterLeasingRoute: typeof AdminMasterLeasingRoute
   AdminMasterMetodePembayaranRoute: typeof AdminMasterMetodePembayaranRoute
@@ -997,13 +1018,13 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPayrollRoute: AdminPayrollRoute,
   AdminPembayaranRoute: AdminPembayaranRoute,
   AdminPembelianRoute: AdminPembelianRoute,
+  AdminPembukuanRoute: AdminPembukuanRoute,
   AdminPengaturanRoute: AdminPengaturanRoute,
   AdminPengeluaranRoute: AdminPengeluaranRoute,
   AdminPenjualanRoute: AdminPenjualanRoute,
   AdminReadyStockRoute: AdminReadyStockRoute,
   AdminRekondisiRoute: AdminRekondisiRoute,
-  AdminTargetPendapatanRoute: AdminTargetPendapatanRoute,
-  AdminTargetPenjualanRoute: AdminTargetPenjualanRoute,
+  AdminTargetsRoute: AdminTargetsRoute,
   AdminTestDriveRoute: AdminTestDriveRoute,
   AdminVendorRoute: AdminVendorRoute,
   AdminAccessControlMenusRoute: AdminAccessControlMenusRoute,
@@ -1018,6 +1039,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,
+  AdminMasterInvestorObligationRoute: AdminMasterInvestorObligationRoute,
   AdminMasterKategoriPengeluaranRoute: AdminMasterKategoriPengeluaranRoute,
   AdminMasterLeasingRoute: AdminMasterLeasingRoute,
   AdminMasterMetodePembayaranRoute: AdminMasterMetodePembayaranRoute,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Search, Loader2, Landmark, Wallet } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { Plus, Search, Loader2, Landmark, Wallet, HandCoins } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -8,7 +9,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { InvestorFormModal } from './InvestorFormModal';
-import { InvestorModalModal } from './InvestorModalModal';
+import { InvestorCapitalModal } from './InvestorCapitalModal';
 import { ActiveBadge } from './ActiveBadge';
 import { useInvestors, useInvestorMutations } from './master.hooks';
 import { useDebouncedValue } from './useDebouncedValue';
@@ -55,11 +56,10 @@ export const InvestorPage = () => {
       <RowActions
         onEdit={can('INVESTOR_UPDATE') ? () => setForm({ item: r }) : undefined}
         onDelete={can('INVESTOR_DELETE') ? () => setToDelete(r) : undefined}
-        extra={can('INVESTOR_UPDATE') ? [{
-          label: 'Kelola Modal (segera diperbarui)',
+        extra={can('INVESTOR_CAPITAL_READ') ? [{
+          label: 'Kelola Modal',
           icon: <Wallet size={13} />,
           onClick: () => setModalFor(r),
-          disabled: true,
         }] : undefined}
       />
     ) },
@@ -72,9 +72,16 @@ export const InvestorPage = () => {
           title="Investor"
           description="Master investor & rincian modal/bagi hasil"
           action={
-            can('INVESTOR_CREATE') && (
-              <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Investor</Button>
-            )
+            <div className="flex flex-wrap items-center gap-2">
+              {can('INVESTOR_OBLIGATION_READ') && (
+                <Link to="/master/investor-obligation">
+                  <Button variant="secondary" icon={<HandCoins size={17} strokeWidth={2.5} />}>Kewajiban Investor</Button>
+                </Link>
+              )}
+              {can('INVESTOR_CREATE') && (
+                <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Investor</Button>
+              )}
+            </div>
           }
         />
 
@@ -110,7 +117,7 @@ export const InvestorPage = () => {
           submitting={m.create.isPending || m.update.isPending}
           onSubmit={handleSubmit}
         />
-        <InvestorModalModal open={!!modalFor} investor={modalFor} onClose={() => setModalFor(null)} />
+        <InvestorCapitalModal open={!!modalFor} investor={modalFor} onClose={() => setModalFor(null)} />
         <ConfirmDialog
           open={!!toDelete}
           onClose={() => setToDelete(null)}

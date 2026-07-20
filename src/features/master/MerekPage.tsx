@@ -13,9 +13,12 @@ import { ActiveBadge } from './ActiveBadge';
 import { useMereks, useMerekMutations } from './master.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import { useDebouncedValue } from './useDebouncedValue';
+import { RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 import type { Merek } from './types';
 
-export const MerekPage = () => {
+const MerekPageInner = () => {
+  const { can } = usePermissions();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
@@ -39,10 +42,15 @@ export const MerekPage = () => {
     { header: 'Status', align: 'center', cell: (r) => <ActiveBadge active={r.isActive} /> },
     { header: '', align: 'right', cell: (r) => (
       <div className="flex items-center justify-end gap-1">
-        <button onClick={() => setTipeFor(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors" title="Kelola tipe">
-          <Layers size={14} /> Tipe
-        </button>
-        <RowActions onEdit={() => setForm({ item: r })} onDelete={() => setToDelete(r)} />
+        {can('TIPE_READ') && (
+          <button onClick={() => setTipeFor(r)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent-blue hover:bg-accent-blue/10 transition-colors" title="Kelola tipe">
+            <Layers size={14} /> Tipe
+          </button>
+        )}
+        <RowActions
+          onEdit={can('MEREK_UPDATE') ? () => setForm({ item: r }) : undefined}
+          onDelete={can('MEREK_DELETE') ? () => setToDelete(r) : undefined}
+        />
       </div>
     ) },
   ];
@@ -52,7 +60,7 @@ export const MerekPage = () => {
       <PageHeader
         title="Merek"
         description="Master merek kendaraan & tipe/varian-nya"
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Merek</Button>}
+        action={can('MEREK_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Merek</Button> : undefined}
       />
 
       <div className="relative max-w-xs">
@@ -103,3 +111,9 @@ export const MerekPage = () => {
     </div>
   );
 };
+
+export const MerekPage = () => (
+  <RequirePermission code="MEREK_READ">
+    <MerekPageInner />
+  </RequirePermission>
+);

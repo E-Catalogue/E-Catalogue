@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { merekApi, tipeApi, vendorApi, branchApi, investorApi, investorModalApi } from './master.api';
+import { merekApi, tipeApi, vendorApi, branchApi, investorApi, capitalApi } from './master.api';
 import { pengecekanApi } from './simpleMaster.api';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
-import type { ListParams, Investor, InvestorModal } from './types';
+import type { ListParams, Investor, CapitalMutationPayload } from './types';
 
 const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil', message, variant: 'success' }));
+
+/** Header opsional `{ 'X-Branch-Id': branchId }` — lihat src/features/auth/useBranchScope.ts. */
+type BranchHeaders = Record<string, string> | undefined;
 
 // ---------- Merek ----------
 export const useMereks = (params: ListParams) =>
@@ -91,20 +94,47 @@ export const useInvestorMutations = () => {
   };
 };
 
-// ---------- Investor Modal (nested) ----------
-export const useInvestorModals = (investorId: string | null, params: ListParams) =>
+// ---------- Investor Capital (nested) ----------
+// Query key menyertakan `branchKey` (README §8) supaya cache Cabang A tidak bocor ke Cabang B
+// saat Owner memindahkan selector — lihat pola sama di investor-obligation.hooks.ts.
+export const useCapitalAccounts = (branchKey: string, investorId: string | null, headers: BranchHeaders) =>
   useQuery({
-    queryKey: ['investor-modals', investorId, params],
-    queryFn: () => investorModalApi.list(investorId as string, params),
+    queryKey: ['capital-accounts', branchKey, investorId],
+    queryFn: () => capitalApi.accounts(investorId as string, headers),
     enabled: !!investorId,
   });
 
-export const useInvestorModalMutations = (investorId: string) => {
+export const useCapitalTransactions = (branchKey: string, investorId: string | null, params: ListParams, headers: BranchHeaders) =>
+  useQuery({
+    queryKey: ['capital-transactions', branchKey, investorId, params],
+    queryFn: () => capitalApi.transactions(investorId as string, params, headers),
+    enabled: !!investorId,
+  });
+
+/**
+ * Deposit/withdrawal modal investor — mutation finansial (README §14: Idempotency-Key wajib,
+ * README §16: response adalah CapitalTransaction, BUKAN saldo akun terbaru — invalidate
+ * capital-accounts, capital-transactions, DAN cash-accounts/cash-transactions/cash-flow-dashboard).
+ */
+export const useCapitalMutations = (branchKey: string, investorId: string) => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['investor-modals', investorId] });
+  const inval = () => {
+    qc.invalidateQueries({ queryKey: ['capital-accounts', branchKey, investorId] });
+    qc.invalidateQueries({ queryKey: ['capital-transactions', branchKey, investorId] });
+    qc.invalidateQueries({ queryKey: ['cash-accounts'] });
+    qc.invalidateQueries({ queryKey: ['cash-transactions'] });
+    qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
+  };
   return {
-    create: useMutation({ mutationFn: (body: Partial<InvestorModal>) => investorModalApi.create(investorId, body), onSuccess: () => { toast('Modal investor ditambahkan'); inval(); } }),
-    update: useMutation({ mutationFn: (v: { id: string; body: Partial<InvestorModal> }) => investorModalApi.update(investorId, v.id, v.body), onSuccess: () => { toast('Modal investor diperbarui'); inval(); } }),
-    remove: useMutation({ mutationFn: (id: string) => investorModalApi.remove(investorId, id), onSuccess: () => { toast('Modal investor dihapus'); inval(); } }),
+    deposit: useMutation({
+      mutationFn: (v: { body: CapitalMutationPayload; headers: BranchHeaders; idempotencyKey: string }) =>
+        capitalApi.deposit(investorId, v.body, v.headers, v.idempotencyKey),
+      onSuccess: () => { toast('Setoran modal investor berhasil diposting'); inval(); },
+    }),
+    withdraw: useMutation({
+      mutationFn: (v: { body: CapitalMutationPayload; headers: BranchHeaders; idempotencyKey: string }) =>
+        capitalApi.withdraw(investorId, v.body, v.headers, v.idempotencyKey),
+      onSuccess: () => { toast('Penarikan modal investor berhasil diposting'); inval(); },
+    }),
   };
 };

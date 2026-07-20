@@ -11,6 +11,9 @@ import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { SelectField } from '@/shared/components/ui/Field';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
+import { useBranchScope } from '@/features/auth/useBranchScope';
+import { RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 import { useLookupUnits } from '@/features/finance/finance.hooks';
 import type { LookupUnit } from '@/features/finance/types';
 import { useCreateRekondisi } from '@/features/units/unit.hooks';
@@ -51,7 +54,8 @@ const CreateRekondisiModal = ({
   const [search, setSearch] = useState('');
   const [unitId, setUnitId] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data: unitsRes, isLoading } = useLookupUnits({ search: debounced || undefined, statusUnit: 'INVENTORY' });
+  const { branchKey, branchHeader } = useBranchScope();
+  const { data: unitsRes, isLoading } = useLookupUnits(branchKey, { search: debounced || undefined, statusUnit: 'INVENTORY' }, branchHeader);
   const createM = useCreateRekondisi();
   const units = unitsRes?.data ?? [];
   const selected = units.find((unit) => unit.id === unitId);
@@ -132,15 +136,17 @@ const CreateRekondisiModal = ({
   );
 };
 
-export const RekondisiPage = () => {
+const RekondisiPageInner = () => {
+  const { can } = usePermissions();
   const [status, setStatus] = useState<RekondisiStatus | ''>('');
   const [unitSearch, setUnitSearch] = useState('');
   const [unitId, setUnitId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailUnit, setDetailUnit] = useState<{ id: string; label?: string } | null>(null);
   const debouncedUnit = useDebouncedValue(unitSearch, 350);
+  const { branchKey, branchHeader } = useBranchScope();
 
-  const { data: unitLookup } = useLookupUnits({ search: debouncedUnit || undefined, statusUnit: 'INVENTORY' });
+  const { data: unitLookup } = useLookupUnits(branchKey, { search: debouncedUnit || undefined, statusUnit: 'INVENTORY' }, branchHeader);
   const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined });
 
   const rows: Rekondisi[] = data?.data ?? [];
@@ -217,7 +223,7 @@ export const RekondisiPage = () => {
       <PageHeader
         title="Rekondisi"
         description={`${total} data rekondisi`}
-        action={<Button icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>Buat Rekondisi</Button>}
+        action={can('REKONDISI_CREATE') ? <Button icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>Buat Rekondisi</Button> : undefined}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_260px] gap-3">
@@ -279,3 +285,9 @@ export const RekondisiPage = () => {
     </div>
   );
 };
+
+export const RekondisiPage = () => (
+  <RequirePermission code="REKONDISI_READ">
+    <RekondisiPageInner />
+  </RequirePermission>
+);

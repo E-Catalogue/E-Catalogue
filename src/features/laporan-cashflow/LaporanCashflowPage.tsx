@@ -7,14 +7,18 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { TextField } from '@/shared/components/ui/Field';
 import { formatCurrency } from '@/core/utils/format';
+import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useCashDashboard } from '@/features/finance/finance.hooks';
+import { isConsolidatedCashDashboard } from '@/features/finance/types';
+import { RequirePermission } from '@/features/auth/permissions';
 
-export const LaporanCashflowPage = () => {
+const LaporanCashflowPageInner = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const { branchKey, branchHeader } = useBranchScope();
 
-  const dashboard = useCashDashboard({ dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
-  const summary = dashboard.data?.summary;
+  const dashboard = useCashDashboard(branchKey, { dateFrom: dateFrom || undefined, dateTo: dateTo || undefined }, branchHeader);
+  const summary = dashboard.data ? (isConsolidatedCashDashboard(dashboard.data) ? dashboard.data.consolidated : dashboard.data.summary) : undefined;
   const accounts = dashboard.data?.accounts ?? [];
   const netCash = summary ? summary.totalIn - summary.totalOut : 0;
   const totalAccountsBal = accounts.reduce((acc, a) => acc + (a.endingBalance || 0), 0);
@@ -143,3 +147,11 @@ export const LaporanCashflowPage = () => {
     </div>
   );
 };
+
+/** Data halaman ini seluruhnya dari `/cash-flow/dashboard` (backend: `CASH_TRANSACTION_READ`) —
+ * `LAPORAN_READ` diterima juga karena menu backend "Laporan" menunjuk ke halaman ini. */
+export const LaporanCashflowPage = () => (
+  <RequirePermission any={['CASH_TRANSACTION_READ', 'LAPORAN_READ']}>
+    <LaporanCashflowPageInner />
+  </RequirePermission>
+);

@@ -7,6 +7,7 @@ import { NameFormModal, type NameActiveValues } from './NameFormModal';
 import { ActiveBadge } from './ActiveBadge';
 import { useTipes, useTipeMutations } from './master.hooks';
 import { notifyApiError } from '@/core/api/notify';
+import { usePermissions } from '@/features/auth/usePermissions';
 import type { Merek, Tipe } from './types';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export const TipeModal = ({ open, onClose, merek }: Props) => {
+  const { can } = usePermissions();
   const merekId = merek?.id ?? '';
   const { data, isLoading } = useTipes(open ? merekId : null, { page: 1, limit: 100 });
   const m = useTipeMutations(merekId);
@@ -43,7 +45,7 @@ export const TipeModal = ({ open, onClose, merek }: Props) => {
       >
         <div className="flex justify-between items-center mb-3">
           <p className="text-[13px] font-semibold text-muted">{tipes.length} tipe</p>
-          <Button icon={<Plus size={16} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Tipe</Button>
+          {can('TIPE_CREATE') && <Button icon={<Plus size={16} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Tipe</Button>}
         </div>
 
         {isLoading ? (
@@ -57,8 +59,8 @@ export const TipeModal = ({ open, onClose, merek }: Props) => {
                 <span className="font-bold text-ink text-[13px]">{t.name}</span>
                 <div className="flex items-center gap-2">
                   <ActiveBadge active={t.isActive} />
-                  <button onClick={() => setForm({ item: t })} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10" title="Edit"><Pencil size={14} /></button>
-                  <button onClick={() => setToDelete(t)} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10" title="Hapus"><Trash2 size={14} /></button>
+                  {can('TIPE_UPDATE') && <button onClick={() => setForm({ item: t })} className="p-1.5 rounded-lg text-muted hover:text-accent-blue hover:bg-accent-blue/10" title="Edit"><Pencil size={14} /></button>}
+                  {can('TIPE_DELETE') && <button onClick={() => setToDelete(t)} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10" title="Hapus"><Trash2 size={14} /></button>}
                 </div>
               </div>
             ))}
@@ -78,7 +80,9 @@ export const TipeModal = ({ open, onClose, merek }: Props) => {
       <ConfirmDialog
         open={!!toDelete}
         onClose={() => setToDelete(null)}
-        onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onError: (e) => notifyApiError(e) })}
+        onConfirm={() => toDelete && m.remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })}
+        loading={m.remove.isPending}
+        closeOnConfirm={false}
         title="Hapus Tipe"
         message={toDelete ? `Hapus tipe "${toDelete.name}"?` : ''}
       />

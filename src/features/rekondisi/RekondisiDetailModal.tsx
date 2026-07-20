@@ -10,11 +10,10 @@ import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { CashAccountSelect } from '@/features/finance/components';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { API_ORIGIN } from '@/core/api/client';
-import { useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations } from './rekondisi.hooks';
+import {
+  useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations, useRekondisiLookups,
+} from './rekondisi.hooks';
 import { useRekondisis } from './rekondisi.hooks';
-import { useVendors, usePengecekan } from '@/features/master/master.hooks';
-import type { Vendor } from '@/features/master/types';
-import type { SimpleMaster } from '@/features/master/simpleMaster.api';
 import { useCreateRekondisi, useRekondisiStatusCheck } from '@/features/units/unit.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import {
@@ -217,16 +216,16 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
   const { data: itemsRes } = useRekondisiDetails(open ? r.id : undefined);
   const items: RekondisiDetail[] = itemsRes?.data ?? rekondisi.rekondisiDetails ?? [];
 
-  const { data: vendorsRes } = useVendors({ limit: 100 });
-  const { data: pengecekanRes } = usePengecekan({ limit: 100 });
-  const vendors: Vendor[] = vendorsRes?.data ?? [];
-  const pengecekans: SimpleMaster[] = pengecekanRes?.data ?? [];
+  const { data: lookupsRes } = useRekondisiLookups(open);
+  const vendors = lookupsRes?.data.vendors ?? [];
+  const pengecekans = lookupsRes?.data.checks ?? [];
 
   const { can } = usePermissions();
   const m = useRekondisiMutations();
   const dm = useRekondisiDetailMutations(r.id);
-  const canEdit = rekondisi.status === 'DRAFT';
-  const canPay = rekondisi.status === 'COMPLETED' && !rekondisi.paidAt && !rekondisi.cashTransactionId;
+  // Gate ganda: status DAN permission backend (`REKONDISI_UPDATE`/`REKONDISI_PAY` di rekondisi.route.js).
+  const canEdit = rekondisi.status === 'DRAFT' && can('REKONDISI_UPDATE');
+  const canPay = rekondisi.status === 'COMPLETED' && !rekondisi.paidAt && !rekondisi.cashTransactionId && can('REKONDISI_PAY');
   const hasVendor = !!rekondisi.vendorId;
   const showInfoForm = canEdit && (!hasVendor || editInfo);
   const canSubmit = rekondisi.status === 'DRAFT' && hasVendor && items.length > 0;
@@ -284,7 +283,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 ) : (
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 text-[12px]">
-                      <p className="text-muted font-medium">Vendor: <span className="text-ink font-bold">{rekondisi.vendor?.name ?? '-'}</span></p>
+                      <p className="text-muted font-medium">Vendor: <span className="text-ink font-bold">{rekondisi.vendor ? `${rekondisi.vendor.code ? `${rekondisi.vendor.code} — ` : ''}${rekondisi.vendor.name}` : '-'}</span></p>
                       <p className="text-muted font-medium">Keterangan: <span className="text-ink font-semibold">{rekondisi.keterangan ?? '-'}</span></p>
                       <p className="text-muted font-medium">Tanggal: <span className="text-ink font-semibold">{rekondisi.tanggal ? new Date(rekondisi.tanggal).toLocaleDateString('id-ID') : '-'}</span></p>
                     </div>
@@ -372,7 +371,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                   </div>
                 )}
 
-                {rekondisi.status === 'DRAFT' && (
+                {canEdit && (
                   <div className="mt-3">
                     <button
                       onClick={() => setConfirmSubmit(true)}
@@ -451,6 +450,9 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 {step < 3 ? (
                   <Locked text="Menunggu persetujuan sebelum pengerjaan dimulai." />
                 ) : rekondisi.status === 'APPROVED' ? (
+                  !can('REKONDISI_UPDATE') ? (
+                    <Locked text="Menunggu petugas berwenang memulai pengerjaan." />
+                  ) : (
                   <>
                     <button onClick={() => setConfirmProgress(true)} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-blue text-white font-bold text-[12px] hover:bg-accent-blue/90 transition-colors">
                       <Play size={13} /> Mulai Pengerjaan
@@ -468,6 +470,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                       confirmLabel="Ya, Mulai"
                     />
                   </>
+                  )
                 ) : (
                   <p className="text-[12px] font-semibold text-accent-green flex items-center gap-1.5"><Check size={14} /> Pengerjaan dimulai</p>
                 )}
@@ -479,7 +482,9 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 {step < 4 ? (
                   <Locked text="Menunggu pengerjaan dimulai." />
                 ) : rekondisi.status === 'IN_PROGRESS' ? (
-                  <DoneForm rekondisiId={r.id} onDone={() => {}} />
+                  can('REKONDISI_UPDATE')
+                    ? <DoneForm rekondisiId={r.id} onDone={() => {}} />
+                    : <Locked text="Menunggu petugas berwenang menyelesaikan rekondisi." />
                 ) : (
                   <p className="text-[12px] font-semibold text-accent-green flex items-center gap-1.5"><Check size={14} /> Selesai, total {idr(rekondisi.total)}</p>
                 )}
@@ -495,7 +500,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 ) : rekondisi.paidAt ? (
                   <p className="text-[12px] font-semibold text-accent-green flex items-center gap-1.5"><Check size={14} /> Lunas — dibayar {new Date(rekondisi.paidAt).toLocaleDateString('id-ID')}</p>
                 ) : (
-                  <Locked text="Menunggu rekondisi diselesaikan." />
+                  <Locked text="Menunggu pembayaran diproses petugas berwenang." />
                 )}
               </section>
 

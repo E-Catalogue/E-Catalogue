@@ -22,6 +22,7 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { formatCurrency } from '@/core/utils/format';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useBranches } from '@/features/master/master.hooks';
+import { RequirePermission } from '@/features/auth/permissions';
 import { dashboardApi } from './dashboard.api';
 import {
   isDashboardConsolidated,
@@ -49,7 +50,7 @@ const formatPeriodLabel = (period: string) => {
 
 const asPct = (value: number) => Math.max(0, Math.min(Math.round(value), 999));
 
-export const DashboardPage = () => {
+const DashboardPageInner = () => {
   const [period, setPeriod] = useState(currentMonth());
   const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
   const { data: branchesResp } = useBranches({ page: 1, limit: 100 });
@@ -340,3 +341,9 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
     </div>
   );
 };
+
+export const DashboardPage = () => (
+  <RequirePermission code="DASHBOARD_READ">
+    <DashboardPageInner />
+  </RequirePermission>
+);

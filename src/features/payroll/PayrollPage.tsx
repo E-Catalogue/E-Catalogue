@@ -8,10 +8,11 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
-import { Can } from '@/features/auth/permissions';
+import { Can, RequirePermission } from '@/features/auth/permissions';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect, SalesSelect } from '@/features/finance/components';
+import { useBranchScope } from '@/features/auth/useBranchScope';
 import { usePayrollBaseSalaries, usePayrollBaseSalaryMutations, usePayrollRun, usePayrollRunMutations, usePayrollRuns, useSalesIncentiveMutations, useSalesIncentives } from '@/features/finance/finance.hooks';
 import { fromIsoDate, showName, toIsoDate } from '@/features/finance/finance.utils';
 import type { PayrollBaseSalary, PayrollItem, PayrollRun, SalesIncentive } from '@/features/finance/types';
@@ -23,14 +24,15 @@ const month = () => new Date().toISOString().slice(0, 7);
 
 const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onClose: () => void }) => {
   const mutations = usePayrollBaseSalaryMutations();
+  const { branchHeader } = useBranchScope();
   const [form, setForm] = useState({ userId: item?.userId ?? '', amount: String(item?.amount ?? ''), effectiveStart: fromIsoDate(item?.effectiveStart) || today(), effectiveEnd: fromIsoDate(item?.effectiveEnd), isActive: item?.isActive ?? true });
   const set = (key: keyof typeof form, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const body = { ...form, amount: Number(form.amount || 0), effectiveStart: toIsoDate(form.effectiveStart), effectiveEnd: form.effectiveEnd ? toIsoDate(form.effectiveEnd) : null };
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => onClose() };
-    if (item) mutations.update.mutate({ id: item.id, body }, opts);
-    else mutations.create.mutate(body, opts);
+    if (item) mutations.update.mutate({ id: item.id, body, headers: branchHeader }, opts);
+    else mutations.create.mutate({ body, headers: branchHeader }, opts);
   };
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Master Gapok' : 'Tambah Master Gapok'} icon={<Users size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="base-salary-form" disabled={mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
@@ -47,6 +49,7 @@ const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onC
 
 const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose: () => void }) => {
   const mutations = useSalesIncentiveMutations();
+  const { branchHeader } = useBranchScope();
   const readonly = item?.status === 'INCLUDED' || item?.status === 'PAID';
   const [form, setForm] = useState({ salesId: item?.salesId ?? '', leadOrderId: item?.leadOrderId ?? '', amount: String(item?.amount ?? ''), period: item?.period ?? month(), description: item?.description ?? '', status: item?.status ?? 'DRAFT' });
   const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
@@ -54,8 +57,8 @@ const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose
     e.preventDefault();
     const body = { ...form, amount: Number(form.amount || 0) };
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => onClose() };
-    if (item) mutations.update.mutate({ id: item.id, body }, opts);
-    else mutations.create.mutate(body, opts);
+    if (item) mutations.update.mutate({ id: item.id, body, headers: branchHeader }, opts);
+    else mutations.create.mutate({ body, headers: branchHeader }, opts);
   };
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Insentif Sales' : 'Tambah Insentif Sales'} icon={<ReceiptText size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="incentive-form" disabled={readonly || mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
@@ -73,6 +76,7 @@ const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose
 
 const GeneratePayrollForm = ({ onClose }: { onClose: () => void }) => {
   const mutations = usePayrollRunMutations();
+  const { branchHeader } = useBranchScope();
   const [period, setPeriod] = useState(month());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const submit = (e: FormEvent) => {
@@ -85,7 +89,7 @@ const GeneratePayrollForm = ({ onClose }: { onClose: () => void }) => {
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        onConfirm={() => mutations.generate.mutate({ period }, { onError: (e) => notifyApiError(e), onSuccess: () => { setConfirmOpen(false); onClose(); } })}
+        onConfirm={() => mutations.generate.mutate({ body: { period }, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => { setConfirmOpen(false); onClose(); } })}
         loading={mutations.generate.isPending}
         closeOnConfirm={false}
         tone="primary"
@@ -100,10 +104,11 @@ const GeneratePayrollForm = ({ onClose }: { onClose: () => void }) => {
 
 const PayPayrollForm = ({ item, onClose }: { item: PayrollRun; onClose: () => void }) => {
   const mutations = usePayrollRunMutations();
+  const { branchHeader } = useBranchScope();
   const [form, setForm] = useState({ cashAccountId: '', paidDate: today(), description: `Pembayaran payroll ${item.period}` });
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    mutations.pay.mutate({ id: item.id, body: { ...form, paidDate: toIsoDate(form.paidDate) } }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
+    mutations.pay.mutate({ id: item.id, body: { ...form, paidDate: toIsoDate(form.paidDate) }, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
   };
   return (
     <Modal open onClose={onClose} title="Bayar Payroll" icon={<Banknote size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="pay-payroll-form" disabled={mutations.pay.isPending}>Bayar Payroll</Button></>}>
@@ -118,11 +123,12 @@ const PayPayrollForm = ({ item, onClose }: { item: PayrollRun; onClose: () => vo
 };
 
 const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => {
-  const { data } = usePayrollRun(id);
+  const { branchKey, branchHeader } = useBranchScope();
+  const { data } = usePayrollRun(branchKey, id, branchHeader);
   const mutations = usePayrollRunMutations();
   const [pay, setPay] = useState<PayrollRun | null>(null);
   const updateItem = (item: PayrollItem, key: 'allowance' | 'deduction', value: string) => {
-    mutations.updateItem.mutate({ id, itemId: item.id, body: { allowance: key === 'allowance' ? Number(value || 0) : item.allowance, deduction: key === 'deduction' ? Number(value || 0) : item.deduction } }, { onError: (e) => notifyApiError(e) });
+    mutations.updateItem.mutate({ id, itemId: item.id, body: { allowance: key === 'allowance' ? Number(value || 0) : item.allowance, deduction: key === 'deduction' ? Number(value || 0) : item.deduction }, headers: branchHeader }, { onError: (e) => notifyApiError(e) });
   };
   const run = data;
   return (
@@ -153,7 +159,7 @@ const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => 
   );
 };
 
-export const PayrollPage = () => {
+const PayrollPageInner = () => {
   const [tab, setTab] = useState<Tab>('base');
   const [baseForm, setBaseForm] = useState<PayrollBaseSalary | null | undefined>();
   const [baseDelete, setBaseDelete] = useState<PayrollBaseSalary | null>(null);
@@ -161,9 +167,10 @@ export const PayrollPage = () => {
   const [incentiveDelete, setIncentiveDelete] = useState<SalesIncentive | null>(null);
   const [generate, setGenerate] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
-  const base = usePayrollBaseSalaries({ page: 1, limit: 50 });
-  const incentives = useSalesIncentives({ page: 1, limit: 50 });
-  const runs = usePayrollRuns({ page: 1, limit: 50 });
+  const { branchKey, branchHeader } = useBranchScope();
+  const base = usePayrollBaseSalaries(branchKey, { page: 1, limit: 50 }, branchHeader);
+  const incentives = useSalesIncentives(branchKey, { page: 1, limit: 50 }, branchHeader);
+  const runs = usePayrollRuns(branchKey, { page: 1, limit: 50 }, branchHeader);
   const baseMutations = usePayrollBaseSalaryMutations();
   const incentiveMutations = useSalesIncentiveMutations();
   const baseColumns: Column<PayrollBaseSalary>[] = [
@@ -201,8 +208,14 @@ export const PayrollPage = () => {
       {incentiveForm !== undefined && <IncentiveForm item={incentiveForm} onClose={() => setIncentiveForm(undefined)} />}
       {generate && <GeneratePayrollForm onClose={() => setGenerate(false)} />}
       {detailId && <PayrollDetail id={detailId} onClose={() => setDetailId(null)} />}
-      <ConfirmDialog open={!!baseDelete} onClose={() => setBaseDelete(null)} onConfirm={() => baseDelete && baseMutations.remove.mutate(baseDelete.id, { onError: (e) => notifyApiError(e), onSuccess: () => setBaseDelete(null) })} title="Nonaktifkan Gapok" message={baseDelete ? `Nonaktifkan gapok ${showName(baseDelete.user)}?` : ''} />
-      <ConfirmDialog open={!!incentiveDelete} onClose={() => setIncentiveDelete(null)} onConfirm={() => incentiveDelete && incentiveMutations.remove.mutate(incentiveDelete.id, { onError: (e) => notifyApiError(e), onSuccess: () => setIncentiveDelete(null) })} title="Batalkan Insentif" message={incentiveDelete ? `Batalkan insentif ${formatCurrency(incentiveDelete.amount)}?` : ''} />
+      <ConfirmDialog open={!!baseDelete} onClose={() => setBaseDelete(null)} onConfirm={() => baseDelete && baseMutations.remove.mutate({ id: baseDelete.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setBaseDelete(null) })} loading={baseMutations.remove.isPending} closeOnConfirm={false} title="Nonaktifkan Gapok" message={baseDelete ? `Nonaktifkan gapok ${showName(baseDelete.user)}?` : ''} />
+      <ConfirmDialog open={!!incentiveDelete} onClose={() => setIncentiveDelete(null)} onConfirm={() => incentiveDelete && incentiveMutations.remove.mutate({ id: incentiveDelete.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setIncentiveDelete(null) })} loading={incentiveMutations.remove.isPending} closeOnConfirm={false} title="Batalkan Insentif" message={incentiveDelete ? `Batalkan insentif ${formatCurrency(incentiveDelete.amount)}?` : ''} />
     </div>
   );
 };
+
+export const PayrollPage = () => (
+  <RequirePermission code="PAYROLL_READ">
+    <PayrollPageInner />
+  </RequirePermission>
+);

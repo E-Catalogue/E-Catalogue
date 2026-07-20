@@ -8,12 +8,13 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
-import { Can } from '@/features/auth/permissions';
+import { Can, RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 // import { kategoriPengeluaranApi } from '@/features/master/simpleMaster.api';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField, ExpenseCategorySelect, FinanceStatusBadge } from '@/features/finance/components';
+import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useLookupRecurringExpenses, useOperationalExpenseMutations, useOperationalExpenses, useRecurringExpenseMutations, useRecurringExpenses } from '@/features/finance/finance.hooks';
 import { fromIsoDate, toIsoDate } from '@/features/finance/finance.utils';
 import type { LookupRecurringExpense, OperationalExpense, OperationalExpenseType, RecurringExpense } from '@/features/finance/types';
@@ -25,6 +26,7 @@ const month = () => new Date().toISOString().slice(0, 7);
 
 const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClose: () => void }) => {
   const mutations = useOperationalExpenseMutations();
+  const { branchHeader } = useBranchScope();
   const locked = item?.status === 'PAID' || !!item?.cashTransactionId;
   const [form, setForm] = useState({
     type: item?.type ?? 'NORMAL',
@@ -36,8 +38,8 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
     expensePeriodEnd: fromIsoDate(item?.expensePeriodEnd),
     dueDate: fromIsoDate(item?.dueDate),
     description: item?.description ?? '',
-    proofUrl: item?.proofUrl ?? '',
   });
+  const [proof, setProof] = useState<File | null>(null);
   const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -49,11 +51,10 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
       expensePeriodStart: form.type === 'BACKDATE' && form.expensePeriodStart ? toIsoDate(form.expensePeriodStart) : null,
       expensePeriodEnd: form.type === 'BACKDATE' && form.expensePeriodEnd ? toIsoDate(form.expensePeriodEnd) : null,
       dueDate: form.type === 'BACKDATE' && form.dueDate ? toIsoDate(form.dueDate) : null,
-      proofUrl: form.proofUrl || null,
     };
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => onClose() };
-    if (item) mutations.update.mutate({ id: item.id, body }, opts);
-    else mutations.create.mutate(body, opts);
+    if (item) mutations.update.mutate({ id: item.id, body, headers: branchHeader, proof }, opts);
+    else mutations.create.mutate({ body, headers: branchHeader, proof }, opts);
   };
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Pengeluaran' : 'Catat Pengeluaran'} icon={<ReceiptText size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="expense-form" disabled={locked || mutations.create.isPending || mutations.update.isPending}>Simpan Draft</Button></>}>
@@ -71,7 +72,17 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
           </>
         )}
         <TextField label="Keterangan" wrapClass="sm:col-span-2" disabled={!!locked} value={form.description} onChange={(e) => set('description', e.target.value)} />
-        <TextField label="URL Bukti" wrapClass="sm:col-span-2" disabled={!!locked} value={form.proofUrl} onChange={(e) => set('proofUrl', e.target.value)} />
+        <div className="sm:col-span-2">
+          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Bukti Pengeluaran</label>
+          {item?.proofUrl && !proof && <p className="text-[12px] text-muted font-medium mb-1.5">Bukti sudah diunggah sebelumnya — pilih file baru untuk menggantinya.</p>}
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            disabled={!!locked}
+            onChange={(e) => setProof(e.target.files?.[0] ?? null)}
+            className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5 disabled:opacity-60"
+          />
+        </div>
       </form>
     </Modal>
   );
@@ -79,10 +90,12 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
 
 const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: () => void }) => {
   const mutations = useOperationalExpenseMutations();
+  const { branchHeader } = useBranchScope();
   const [form, setForm] = useState({ cashAccountId: '', paidDate: today(), description: item.description ?? '' });
+  const [proof, setProof] = useState<File | null>(null);
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    mutations.pay.mutate({ id: item.id, body: { ...form, paidDate: toIsoDate(form.paidDate) } }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
+    mutations.pay.mutate({ id: item.id, body: { ...form, paidDate: toIsoDate(form.paidDate) }, headers: branchHeader, proof }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
   };
   return (
     <Modal open onClose={onClose} title="Bayar Pengeluaran" icon={<Wallet size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="pay-expense-form" disabled={mutations.pay.isPending}>Bayar</Button></>}>
@@ -94,6 +107,15 @@ const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: 
         <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} />
         <TextField label="Tanggal Bayar" required type="date" value={form.paidDate} onChange={(e) => setForm((f) => ({ ...f, paidDate: e.target.value }))} />
         <TextField label="Keterangan" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Bukti Pembayaran (opsional)</label>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(e) => setProof(e.target.files?.[0] ?? null)}
+            className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5"
+          />
+        </div>
       </form>
     </Modal>
   );
@@ -101,14 +123,15 @@ const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: 
 
 const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClose: () => void }) => {
   const mutations = useRecurringExpenseMutations();
+  const { branchHeader } = useBranchScope();
   const [form, setForm] = useState({ name: item?.name ?? '', kategoriPengeluaranId: item?.kategoriPengeluaranId ?? '', defaultAmount: String(item?.defaultAmount ?? ''), description: item?.description ?? '', isActive: item?.isActive ?? true });
   const set = (key: keyof typeof form, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const body = { ...form, defaultAmount: Number(form.defaultAmount || 0) };
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => onClose() };
-    if (item) mutations.update.mutate({ id: item.id, body }, opts);
-    else mutations.create.mutate(body, opts);
+    if (item) mutations.update.mutate({ id: item.id, body, headers: branchHeader }, opts);
+    else mutations.create.mutate({ body, headers: branchHeader }, opts);
   };
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Pengeluaran Rutin' : 'Tambah Pengeluaran Rutin'} icon={<CalendarClock size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="recurring-form" disabled={mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
@@ -125,7 +148,8 @@ const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClo
 
 const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
   const mutations = useRecurringExpenseMutations();
-  const { data, isLoading, isError, refetch } = useLookupRecurringExpenses({ isActive: 'true' });
+  const { branchKey, branchHeader } = useBranchScope();
+  const { data, isLoading, isError, refetch } = useLookupRecurringExpenses(branchKey, { isActive: 'true' }, branchHeader);
   const items = data?.data ?? [];
   const [period, setPeriod] = useState(month());
   const [selected, setSelected] = useState<Record<string, { checked: boolean; amount: string }>>({});
@@ -134,7 +158,7 @@ const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
     const chosen = items
       .filter((item) => selected[item.id]?.checked ?? true)
       .map((item) => ({ recurringExpenseId: item.id, amount: Number(selected[item.id]?.amount || item.defaultAmount || 0) }));
-    mutations.generate.mutate({ period, items: chosen }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
+    mutations.generate.mutate({ body: { period, items: chosen }, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
   };
   const rowAmount = (item: LookupRecurringExpense) => selected[item.id]?.amount ?? String(item.defaultAmount);
   return (
@@ -163,7 +187,7 @@ const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-export const PengeluaranPage = () => {
+const PengeluaranPageInner = () => {
   const { can } = usePermissions();
   const [tab, setTab] = useState<Tab>('expenses');
   const [status, setStatus] = useState('');
@@ -173,8 +197,9 @@ export const PengeluaranPage = () => {
   const [recurringForm, setRecurringForm] = useState<RecurringExpense | null | undefined>();
   const [removeRecurring, setRemoveRecurring] = useState<RecurringExpense | null>(null);
   const [generate, setGenerate] = useState(false);
-  const expenses = useOperationalExpenses({ page: 1, limit: 50, status: status || undefined });
-  const recurring = useRecurringExpenses({ page: 1, limit: 100 });
+  const { branchKey, branchHeader } = useBranchScope();
+  const expenses = useOperationalExpenses(branchKey, { page: 1, limit: 50, status: status || undefined }, branchHeader);
+  const recurring = useRecurringExpenses(branchKey, { page: 1, limit: 100 }, branchHeader);
   const expenseMutations = useOperationalExpenseMutations();
   const recurringMutations = useRecurringExpenseMutations();
   const totalDraft = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.status === 'DRAFT').reduce((s, x) => s + x.amount, 0), [expenses.data]);
@@ -212,8 +237,14 @@ export const PengeluaranPage = () => {
       {payExpense && <PayExpenseForm item={payExpense} onClose={() => setPayExpense(null)} />}
       {recurringForm !== undefined && <RecurringForm item={recurringForm} onClose={() => setRecurringForm(undefined)} />}
       {generate && <GenerateRecurringForm onClose={() => setGenerate(false)} />}
-      <ConfirmDialog open={!!cancelExpense} onClose={() => setCancelExpense(null)} onConfirm={() => cancelExpense && expenseMutations.remove.mutate(cancelExpense.id, { onError: (e) => notifyApiError(e), onSuccess: () => setCancelExpense(null) })} title="Batalkan Pengeluaran" message={cancelExpense ? `Batalkan pengeluaran "${cancelExpense.title}"?` : ''} />
-      <ConfirmDialog open={!!removeRecurring} onClose={() => setRemoveRecurring(null)} onConfirm={() => removeRecurring && recurringMutations.remove.mutate(removeRecurring.id, { onError: (e) => notifyApiError(e), onSuccess: () => setRemoveRecurring(null) })} title="Nonaktifkan Pengeluaran Rutin" message={removeRecurring ? `Nonaktifkan template "${removeRecurring.name}"?` : ''} />
+      <ConfirmDialog open={!!cancelExpense} onClose={() => setCancelExpense(null)} onConfirm={() => cancelExpense && expenseMutations.remove.mutate({ id: cancelExpense.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setCancelExpense(null) })} loading={expenseMutations.remove.isPending} closeOnConfirm={false} title="Batalkan Pengeluaran" message={cancelExpense ? `Batalkan pengeluaran "${cancelExpense.title}"?` : ''} />
+      <ConfirmDialog open={!!removeRecurring} onClose={() => setRemoveRecurring(null)} onConfirm={() => removeRecurring && recurringMutations.remove.mutate({ id: removeRecurring.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setRemoveRecurring(null) })} loading={recurringMutations.remove.isPending} closeOnConfirm={false} title="Nonaktifkan Pengeluaran Rutin" message={removeRecurring ? `Nonaktifkan template "${removeRecurring.name}"?` : ''} />
     </div>
   );
 };
+
+export const PengeluaranPage = () => (
+  <RequirePermission any={['OPERATIONAL_EXPENSE_READ', 'RECURRING_EXPENSE_READ']}>
+    <PengeluaranPageInner />
+  </RequirePermission>
+);

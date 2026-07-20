@@ -5,6 +5,19 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import type { RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams } from './rekondisi.types';
 
+/**
+ * Lookup vendor/pengecekan/kas untuk dropdown form rekondisi (`GET /rekondisis/lookups`).
+ * Menggantikan `useVendors`/`usePengecekan` dari master.hooks agar tidak butuh permission
+ * CRUD master hanya untuk isi dropdown (ecatalogue-be/.prd/README.md §9).
+ */
+export function useRekondisiLookups(enabled = true) {
+  return useQuery({
+    queryKey: ['rekondisi-lookups'],
+    queryFn: () => rekondisiApi.getLookups(),
+    enabled,
+  });
+}
+
 export function useRekondisis(params?: RekondisiListParams, enabled = true) {
   return useQuery({
     queryKey: ['rekondisis', params],

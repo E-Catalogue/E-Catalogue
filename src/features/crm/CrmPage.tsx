@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Plus, Search, Users, Phone, Mail,
+  Plus, Search, Users, Phone, Mail, RefreshCw,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -9,13 +9,27 @@ import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { Modal } from '@/shared/components/ui/Modal';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { SelectField } from '@/shared/components/ui/Field';
 import { LeadFormModal } from './LeadFormModal';
 import { useLeads, useLeadMutations } from './crm.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import type { Lead } from './crm.types';
+import { RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
+import { LEAD_STATUS_LABEL, LEAD_STATUS_COLOR, type Lead, type LeadStatus } from './crm.types';
 
-export const CrmPage = () => {
+/** Opsi status manual — `WON` sengaja tidak ditawarkan karena hanya boleh berasal dari transisi order DEAL (lihat PRD CRM/Lead §"Panduan UI"). */
+const LEAD_STATUS_OPTIONS: LeadStatus[] = ['NEW', 'INTERESTED', 'FOLLOW_UP', 'TEST_DRIVE', 'QUALIFIED', 'LOST'];
+
+/**
+ * `LEAD_DELETE` ada di `prisma/seed.js` tapi backend TIDAK punya route `DELETE /leads/:id`
+ * sama sekali (`lead.route.js` cuma GET/POST/PATCH/PATCH-status) — permission itu belum
+ * dipakai di mana pun, jadi sengaja TIDAK ada tombol hapus di sini (bukan gap FE).
+ */
+const CrmPageInner = () => {
+  const { can } = usePermissions();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
@@ -23,12 +37,20 @@ export const CrmPage = () => {
   const m = useLeadMutations();
 
   const [form, setForm] = useState<{ item: Lead | null } | null>(null);
+  const [statusTarget, setStatusTarget] = useState<Lead | null>(null);
+  const [statusValue, setStatusValue] = useState<LeadStatus>('NEW');
+  const [confirmStatus, setConfirmStatus] = useState(false);
   const leads = data?.data ?? [];
 
   const handleSubmit = (values: Partial<Lead>) => {
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setForm(null) };
     if (form?.item) m.update.mutate({ id: form.item.id, body: values }, opts);
     else m.create.mutate(values, opts);
+  };
+
+  const openStatusChange = (lead: Lead) => {
+    setStatusTarget(lead);
+    setStatusValue(lead.status);
   };
 
   const columns: Column<Lead>[] = [
@@ -53,9 +75,27 @@ export const CrmPage = () => {
     { header: 'Sumber', cell: (r) => r.sumberLead?.name ?? <span className="text-muted">-</span> },
     { header: 'Pekerjaan', cell: (r) => r.pekerjaan ?? <span className="text-muted">-</span> },
     {
+      header: 'Status',
+      cell: (r) => (
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${LEAD_STATUS_COLOR[r.status]}`}>
+          {LEAD_STATUS_LABEL[r.status]}
+        </span>
+      ),
+    },
+    {
       header: '',
       align: 'right',
-      cell: (r) => <RowActions onEdit={() => setForm({ item: r })} />,
+      cell: (r) => (
+        <RowActions
+          onEdit={can('LEAD_UPDATE') ? () => setForm({ item: r }) : undefined}
+          extra={can('LEAD_UPDATE') ? [{
+            label: 'Ubah Status',
+            icon: <RefreshCw size={13} />,
+            onClick: () => openStatusChange(r),
+            disabled: r.status === 'WON',
+          }] : []}
+        />
+      ),
     },
   ];
 
@@ -64,7 +104,7 @@ export const CrmPage = () => {
       <PageHeader
         title="CRM / Lead"
         description="Data customer & prospek penjualan"
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Lead</Button>}
+        action={can('LEAD_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Lead</Button> : undefined}
       />
 
       <div className="relative w-full sm:max-w-xs">
@@ -99,6 +139,52 @@ export const CrmPage = () => {
         submitting={m.create.isPending || m.update.isPending}
         onSubmit={handleSubmit}
       />
+
+      {statusTarget && (
+        <Modal
+          open={!!statusTarget}
+          onClose={() => setStatusTarget(null)}
+          icon={<RefreshCw size={18} />}
+          title="Ubah Status Lead"
+          subtitle={statusTarget.nama}
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setStatusTarget(null)}>Batal</Button>
+              <Button onClick={() => setConfirmStatus(true)}>Simpan</Button>
+            </>
+          }
+        >
+          <SelectField
+            label="Status"
+            value={statusValue}
+            onChange={(e) => setStatusValue(e.target.value as LeadStatus)}
+            options={LEAD_STATUS_OPTIONS.map((s) => ({ value: s, label: LEAD_STATUS_LABEL[s] }))}
+          />
+        </Modal>
+      )}
+
+      <ConfirmDialog
+        open={confirmStatus}
+        onClose={() => setConfirmStatus(false)}
+        onConfirm={() => statusTarget && m.updateStatus.mutate(
+          { id: statusTarget.id, status: statusValue },
+          { onSuccess: () => { setConfirmStatus(false); setStatusTarget(null); }, onError: (err) => notifyApiError(err) },
+        )}
+        closeOnConfirm={false}
+        loading={m.updateStatus.isPending}
+        tone="primary"
+        icon={RefreshCw}
+        title="Ubah Status Lead"
+        message={`Ubah status lead "${statusTarget?.nama ?? ''}" menjadi "${LEAD_STATUS_LABEL[statusValue]}"?`}
+        confirmLabel="Ya, Ubah"
+      />
     </div>
   );
 };
+
+export const CrmPage = () => (
+  <RequirePermission code="LEAD_READ">
+    <CrmPageInner />
+  </RequirePermission>
+);

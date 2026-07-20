@@ -207,6 +207,29 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmFinalize}
+        onClose={() => setConfirmFinalize(false)}
+        onConfirm={handleFinalizePricing}
+        closeOnConfirm={false}
+        loading={finalizePricing.isPending}
+        tone="primary"
+        icon={CheckCircle}
+        title="Finalisasi Harga Awal"
+        confirmLabel="Ya, Finalisasi"
+        message={`Harga beli Rp ${formatNumber(current.purchaseCost)} ditambah rekondisi pertama akan dikunci sebagai basis HPP, lalu target dan OTR dihitung dari pricing policy cabang. Tindakan ini tidak dapat dibatalkan.`}
+      >
+        <label className="mt-3 flex items-start gap-2.5 text-[12px] font-semibold text-ink-soft cursor-pointer">
+          <input
+            type="checkbox"
+            checked={confirmNoRekondisi}
+            onChange={(e) => setConfirmNoRekondisi(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+          />
+          Unit ini tidak memiliki rekondisi pertama — lanjutkan tanpa rekondisi.
+        </label>
+      </ConfirmDialog>
     </Modal>
   );
 };

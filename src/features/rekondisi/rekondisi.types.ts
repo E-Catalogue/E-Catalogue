@@ -7,7 +7,7 @@ export interface Rekondisi {
   tanggal: string;
   seq: number;
   vendorId: string | null;
-  vendor?: { id: string; name: string } | null;
+  vendor?: { id: string; name: string; code?: string; isActive?: boolean } | null;
   unit?: { id: string; platNomor: string; statusUnit: string };
   keterangan: string | null;
   nominal: number;
@@ -64,6 +64,17 @@ export interface RekondisiListParams {
   limit?: number;
   unitId?: string;
   status?: RekondisiStatus;
+}
+
+/**
+ * `GET /rekondisis/lookups` — bounded-context lookup untuk dropdown vendor/pengecekan/kas
+ * pada form rekondisi. Dipakai agar UI tidak perlu permission `VENDOR_READ`/`PENGECEKAN_READ`
+ * hanya untuk isi dropdown (lihat ecatalogue-be/.prd/README.md §9).
+ */
+export interface RekondisiLookups {
+  vendors: { id: string; name: string }[];
+  checks: { id: string; name: string; code: string }[];
+  cashAccounts: { id: string; branchId: string; name: string; code: string; type: string; defaultPayment: boolean }[];
 }
 
 export const REKONDISI_STATUS_LABEL: Record<RekondisiStatus, string> = {

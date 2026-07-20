@@ -117,7 +117,7 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
   };
 
   const leadOptions = [{ value: '', label: 'Pilih lead/customer' }, ...((leadsRes?.data ?? []).map((l) => ({ value: l.id, label: `${l.nama}${l.noHp ? ` - ${l.noHp}` : ''}` })))];
-  const unitOptions = [{ value: '', label: 'Pilih unit READY STOCK' }, ...((unitRes?.data ?? []).map((u) => ({ value: u.id, label: `${u.platNomor} - ${u.merekName} ${u.tipeName} ${u.tahun} - ${u.warna}` })))];
+  const unitOptions = [{ value: '', label: 'Pilih unit READY STOCK' }, ...((unitRes?.data ?? []).map((u) => ({ value: u.id, label: `${u.platNomor} - ${u.merek?.name ?? ''} ${u.tipe?.name ?? ''} ${u.tahun} - ${u.warna}` })))];
   const salesOptions = [{ value: '', label: 'Pilih sales' }, ...((salesRes ?? []).map((s) => ({ value: s.id, label: `${s.name}${s.username ? ` (${s.username})` : ''}` })))];
 
   return (

@@ -27,9 +27,9 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
       : DEFAULT_CAR_IMAGE);
 
   const backendUnit = unit as BackendUnit;
-  const otrPrice = isMock ? null : backendUnit.hargaOtrSaatIni;
-  const targetPrice = isMock ? null : backendUnit.hargaTargetJual;
-  const displayPrice = isMock ? (unit as MockUnit).price : (otrPrice || targetPrice || backendUnit.hargaBeli || 0);
+  const otrPrice = isMock ? null : backendUnit.otrPrice;
+  const targetPrice = isMock ? null : backendUnit.targetPrice;
+  const displayPrice = isMock ? (unit as MockUnit).price : (otrPrice || targetPrice || backendUnit.purchaseCost || 0);
 
   const createdAt = isMock ? undefined : (unit as BackendUnit).createdAt;
   const isNew = isMock 

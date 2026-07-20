@@ -1,8 +1,13 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { Rekondisi, RekondisiDetail, RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams } from './rekondisi.types';
+import type { Rekondisi, RekondisiDetail, RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams, RekondisiLookups } from './rekondisi.types';
 
 export const rekondisiApi = {
+  getLookups: async () => {
+    const res = await apiClient.get<ApiResponse<RekondisiLookups>>('/rekondisis/lookups');
+    return res.data;
+  },
+
   list: async (params?: RekondisiListParams) => {
     const res = await apiClient.get<ApiResponse<Rekondisi[]>>('/rekondisis', { params });
     return res.data;

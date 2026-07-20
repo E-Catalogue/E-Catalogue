@@ -12,6 +12,9 @@ import { ActiveBadge } from './ActiveBadge';
 import { useVendors, useVendorMutations } from './master.hooks';
 import { useDebouncedValue } from './useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
+import { getApiErrorCode } from '@/core/api/apiError';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
 import type { Vendor } from './types';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -30,12 +33,24 @@ export const VendorPage = () => {
   const vendors = data?.data ?? [];
 
   const handleSubmit = (values: Partial<Vendor>) => {
-    const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setForm(null) };
+    const opts = {
+      // 409 DUPLICATE_DATA (unique constraint `code`): beri pesan spesifik, modal TIDAK ditutup
+      // supaya isi form dipertahankan (PRD update_vendor_code §Penanganan Error).
+      onError: (e: unknown) => {
+        if (getApiErrorCode(e) === 'DUPLICATE_DATA') {
+          store.dispatch(showToast({ type: 'general', variant: 'error', title: 'Gagal', message: 'Code vendor sudah digunakan. Gunakan code lain.' }));
+          return;
+        }
+        notifyApiError(e);
+      },
+      onSuccess: () => setForm(null),
+    };
     if (form?.item) m.update.mutate({ id: form.item.id, body: values }, opts);
     else m.create.mutate(values, opts);
   };
 
   const columns: Column<Vendor>[] = [
+    { header: 'Code', cell: (r) => <span className="font-mono text-[12px] font-bold text-ink-soft">{r.code}</span> },
     { header: 'Vendor', cell: (r) => <span className="font-bold text-ink">{r.name}</span> },
     { header: 'Telepon', cell: (r) => r.phone || '-' },
     { header: 'Alamat', cell: (r) => r.address || '-' },
@@ -66,7 +81,7 @@ export const VendorPage = () => {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Cari vendor..."
+            placeholder="Cari nama vendor..."
             className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
           />
         </div>

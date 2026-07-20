@@ -2,13 +2,15 @@ export type TestDriveStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 
 export interface TestDriveUnitLookup {
   id: string;
+  branchId: string;
   platNomor: string;
-  merekName: string;
-  tipeName: string;
   tahun: number;
   warna: string;
-  hargaOtrSaatIni?: number | null;
+  otrPrice?: number | null;
   statusUnit: 'READY_STOCK';
+  branch?: { id: string; nama: string; code: string };
+  merek?: { name: string } | null;
+  tipe?: { name: string } | null;
 }
 
 export interface TestDriveSalesLookup {

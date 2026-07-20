@@ -1,6 +1,12 @@
 import { apiClient, API_ORIGIN } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { Merek, Tipe, Vendor, Branch, BranchImage, Investor, InvestorModal, ListParams } from './types';
+import type {
+  Merek, Tipe, Vendor, Branch, BranchImage, Investor, ListParams,
+  CapitalAccount, CapitalAccountsConsolidated, CapitalTransaction, CapitalMutationPayload,
+} from './types';
+
+/** Header opsional `{ 'X-Branch-Id': branchId }` — wajib diisi caller untuk mutation Owner (README §8). */
+type BranchHeaders = Record<string, string> | undefined;
 
 // URL publik untuk media (gambar) berdasarkan id.
 export const mediaUrl = (id: string) => `${API_ORIGIN}/m/${id}`;
@@ -54,10 +60,25 @@ export const investorApi = {
   remove: (id: string) => apiClient.delete(`/investors/${id}`).then((r) => r.data),
 };
 
-// ---- Investor Modal (nested di investor) ----
-export const investorModalApi = {
-  list: (investorId: string, params: ListParams) => apiClient.get<ApiResponse<InvestorModal[]>>(`/investors/${investorId}/modals`, { params }).then((r) => r.data),
-  create: (investorId: string, body: Partial<InvestorModal>) => apiClient.post<ApiResponse<InvestorModal>>(`/investors/${investorId}/modals`, body).then((r) => r.data.data),
-  update: (investorId: string, id: string, body: Partial<InvestorModal>) => apiClient.patch<ApiResponse<InvestorModal>>(`/investors/${investorId}/modals/${id}`, body).then((r) => r.data.data),
-  remove: (investorId: string, id: string) => apiClient.delete(`/investors/${investorId}/modals/${id}`).then((r) => r.data),
+// ---- Investor Capital (nested di investor) ----
+// Endpoint lama `/investors/:id/modals` sudah 410 Gone (INVESTOR_MODAL_DEPRECATED) — JANGAN dipanggil lagi.
+// Mount path dikonfirmasi dari ecatalogue-be/src/modules/investor/capital/capital.route.js.
+export const capitalApi = {
+  accounts: (investorId: string, headers?: BranchHeaders) =>
+    apiClient
+      .get<ApiResponse<CapitalAccount[] | CapitalAccountsConsolidated>>(`/investors/${investorId}/capital-accounts`, { headers })
+      .then((r) => r.data),
+  transactions: (investorId: string, params: ListParams, headers?: BranchHeaders) =>
+    apiClient
+      .get<ApiResponse<CapitalTransaction[]>>(`/investors/${investorId}/capital-transactions`, { params, headers })
+      .then((r) => r.data),
+  /** Wajib header `Idempotency-Key` (README §14) — response `data` adalah CapitalTransaction, BUKAN saldo akun; refetch capital-accounts terpisah. */
+  deposit: (investorId: string, body: CapitalMutationPayload, headers: BranchHeaders, idempotencyKey: string) =>
+    apiClient
+      .post<ApiResponse<CapitalTransaction>>(`/investors/${investorId}/capital/deposits`, body, { headers: { ...headers, 'Idempotency-Key': idempotencyKey } })
+      .then((r) => r.data),
+  withdraw: (investorId: string, body: CapitalMutationPayload, headers: BranchHeaders, idempotencyKey: string) =>
+    apiClient
+      .post<ApiResponse<CapitalTransaction>>(`/investors/${investorId}/capital/withdrawals`, body, { headers: { ...headers, 'Idempotency-Key': idempotencyKey } })
+      .then((r) => r.data),
 };

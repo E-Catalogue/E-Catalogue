@@ -27,7 +27,8 @@ import {
   UserCog,
   SquareMenu,
   Target,
-  DollarSign,
+  HandCoins,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -49,8 +50,10 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/crm', label: 'CRM / Lead', icon: Users, group: 'operasional', code: 'CRM' },
   { path: '/test-drive', label: 'Test Drive', icon: KeyRound, group: 'operasional', code: 'TEST_DRIVE' },
   { path: '/penjualan', label: 'Penjualan', icon: ReceiptText, group: 'operasional', code: 'PENJUALAN' },
-  { path: '/target-penjualan', label: 'Target Penjualan', icon: Target, group: 'operasional', code: 'SALES_TARGET' },
-  { path: '/target-pendapatan', label: 'Target Pendapatan', icon: DollarSign, group: 'operasional', code: 'REVENUE_TARGET' },
+  // SALES_TARGET/REVENUE_TARGET (dua menu terpisah) sudah deprecated permanen di backend
+  // (prisma/seed.js deprecatedMenuCodes) — diganti satu resource BranchTarget yang menyimpan
+  // unitTarget+revenueTarget sekaligus, menu tunggal "Target Cabang & Sales" (code BRANCH_TARGET).
+  { path: '/targets', label: 'Target Cabang & Sales', icon: Target, group: 'operasional', code: 'BRANCH_TARGET' },
   { path: '/pembayaran', label: 'Pembayaran', icon: Wallet, group: 'operasional', code: 'PEMBAYARAN' },
   { path: '/pengeluaran', label: 'Pengeluaran', icon: TrendingDown, group: 'operasional', code: 'PENGELUARAN' },
   { path: '/payroll', label: 'Payroll', icon: Banknote, group: 'operasional', code: 'PAYROLL' },
@@ -65,12 +68,20 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/master/dokumen', label: 'Dokumen', icon: FileText, group: 'master', code: 'DOKUMEN' },
   { path: '/master/perlengkapan', label: 'Perlengkapan', icon: Package, group: 'master', code: 'PERLENGKAPAN' },
   { path: '/master/investor', label: 'Investor', icon: PiggyBank, group: 'master', code: 'INVESTOR' },
+  // Kewajiban Investor: backend TIDAK punya baris menu terpisah — permission
+  // INVESTOR_OBLIGATION_READ/GENERATE/PAY/REVERSE (prisma/seed.js) dibundel di bawah
+  // menu "Investor" (code INVESTOR, path /master/investor) yang sama. Karena itu item
+  // ini sengaja TANPA `code` (kalau diberi code: 'INVESTOR', akan menimpa mapping
+  // PATH_BY_CODE untuk halaman Investor CRUD). Halaman ini dijangkau lewat tautan di
+  // InvestorPage dan lewat sidebar statis (fallback saat groupMenus dari /auth/me kosong).
+  { path: '/master/investor-obligation', label: 'Kewajiban Investor', icon: HandCoins, group: 'master' },
   { path: '/access-control/roles', label: 'Role', icon: ShieldCheck, group: 'akses', code: 'ROLE' },
   { path: '/access-control/users', label: 'User', icon: UserCog, group: 'akses', code: 'USER' },
   { path: '/access-control/menus', label: 'Menu & Permission', icon: SquareMenu, group: 'akses', code: 'MENU' },
   { path: '/dashboard-cashflow', label: 'Dashboard Cashflow', icon: Wallet, group: 'lainnya', code: 'DASBOARD_CASHFLOW' },
   { path: '/cashflow', label: 'Cash Flow', icon: ArrowLeftRight, group: 'lainnya', code: 'CASHFLOW' },
   { path: '/laporan-cashflow', label: 'Laporan Cashflow', icon: BarChart3, group: 'lainnya', code: 'LAPORAN_CASHFLOW' },
+  { path: '/pembukuan', label: 'Pembukuan Cabang', icon: BookOpen, group: 'lainnya', code: 'BOOK' },
   { path: '/pengaturan', label: 'Pengaturan', icon: Settings, group: 'lainnya', code: 'PENGATURAN' },
 ];
 
@@ -82,9 +93,6 @@ export const PATH_BY_CODE: Record<string, string> = {
   LAPORAN_CASHFLOW: '/laporan-cashflow',
   CASHFLOW_REPORT: '/laporan-cashflow',
   FINANCE_REPORT: '/laporan-cashflow',
-  SALES_TARGET: '/target-penjualan',
-  REVENUE_TARGET: '/target-pendapatan',
-  TARGET_PENJUALAN: '/target-penjualan',
   DASBOARD_CASHFLOW: '/dashboard-cashflow',
   DASHBOARD_CASHFLOW: '/dashboard-cashflow',
   UNIT: '/inventory',

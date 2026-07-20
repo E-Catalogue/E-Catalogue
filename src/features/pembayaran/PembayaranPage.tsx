@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, Wallet,
+  Search, Wallet, AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -9,6 +9,9 @@ import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { SelectField } from '@/shared/components/ui/Field';
+import { RequirePermission } from '@/features/auth/permissions';
+import { useBranchScope } from '@/features/auth/useBranchScope';
+import { useBranches } from '@/features/master/master.hooks';
 import { OrderDetailModal } from '@/features/penjualan/OrderDetailModal';
 import { useLeadOrders } from '@/features/crm/crm.hooks';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
@@ -24,16 +27,21 @@ const PAID_OPTIONS = [
 ];
 
 export const PembayaranPage = () => {
+  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
+  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
+  const branches = branchesRes?.data ?? [];
+  const mutationBlocked = isOwner && !selectedBranchId;
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filterPaid, setFilterPaid] = useState('');
   const debounced = useDebouncedValue(search, 350);
 
-  const { data, isLoading, isError } = useLeadOrders({
+  const { data, isLoading, isError } = useLeadOrders(branchKey, {
     page, limit: 15,
     search: debounced || undefined,
     isPaid: filterPaid === '' ? undefined : filterPaid === 'true',
-  });
+  }, branchHeader);
 
   const [detail, setDetail] = useState<string | null>(null);
   const orders = data?.data ?? [];
@@ -99,58 +107,79 @@ export const PembayaranPage = () => {
   ];
 
   return (
-    <div className="max-w-[1600px] mx-auto  space-y-5">
-      <PageHeader
-        title="Pembayaran"
-        description="Riwayat pembayaran per sales order"
-      />
+    <RequirePermission code="LEAD_PAYMENT_READ">
+      <div className="max-w-[1600px] mx-auto  space-y-5">
+        <PageHeader
+          title="Pembayaran"
+          description="Riwayat pembayaran per sales order"
+        />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard label="Total Terbayar (halaman ini)" value={idr(totalTerbayar)} color="text-green-600" icon="text-white bg-green-500" />
-        <SummaryCard label="Total Sisa Tagihan" value={idr(totalSisa)} color="text-red-600" icon="text-white bg-red-400" />
-        <SummaryCard label="Sudah Lunas" value={`${lunas} dari ${orders.length} order`} color="text-ink" icon="text-white bg-primary" />
-      </div>
+        {mutationBlocked && (
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
+            <AlertTriangle size={16} className="shrink-0" />
+            Pilih cabang konkret di filter untuk mencatat pembayaran atau reversal.
+          </div>
+        )}
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[220px] max-w-xs">
-          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Cari no. order / customer..."
-            className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <SummaryCard label="Total Terbayar (halaman ini)" value={idr(totalTerbayar)} color="text-green-600" icon="text-white bg-green-500" />
+          <SummaryCard label="Total Sisa Tagihan" value={idr(totalSisa)} color="text-red-600" icon="text-white bg-red-400" />
+          <SummaryCard label="Sudah Lunas" value={`${lunas} dari ${orders.length} order`} color="text-ink" icon="text-white bg-primary" />
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-xs">
+            <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Cari no. order / customer..."
+              className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+            />
+          </div>
+          {isOwner && (
+            <SelectField
+              label=""
+              value={selectedBranchId ?? ''}
+              onChange={(e) => { setSelectedBranchId(e.target.value || null); setPage(1); }}
+              options={[{ value: '', label: 'Semua Cabang' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
+              wrapClass="min-w-[180px]"
+            />
+          )}
+          <SelectField
+            label=""
+            value={filterPaid}
+            onChange={(e) => { setFilterPaid(e.target.value); setPage(1); }}
+            options={PAID_OPTIONS}
+            wrapClass="min-w-[160px]"
           />
         </div>
-        <SelectField
-          label=""
-          value={filterPaid}
-          onChange={(e) => { setFilterPaid(e.target.value); setPage(1); }}
-          options={PAID_OPTIONS}
-          wrapClass="min-w-[160px]"
+
+        <SectionCard title={`Riwayat Pembayaran (${data?.meta?.total ?? 0})`} icon={<Wallet size={16} />} bodyClassName="p-0 md:p-0">
+          {isLoading ? (
+            <TableSkeleton rows={6} cols={5} />
+          ) : isError ? (
+            <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada data pembayaran.</div>
+          ) : (
+            <>
+              <DataTable columns={columns} data={orders} rowKey={(r) => r.id} />
+              <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+            </>
+          )}
+        </SectionCard>
+
+        <OrderDetailModal
+          open={!!detail}
+          onClose={() => setDetail(null)}
+          orderId={detail}
+          branchKey={branchKey}
+          branchHeader={branchHeader}
+          mutationBlocked={mutationBlocked}
         />
       </div>
-
-      <SectionCard title={`Riwayat Pembayaran (${data?.meta?.total ?? 0})`} icon={<Wallet size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? (
-          <TableSkeleton rows={6} cols={5} />
-        ) : isError ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada data pembayaran.</div>
-        ) : (
-          <>
-            <DataTable columns={columns} data={orders} rowKey={(r) => r.id} />
-            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
-          </>
-        )}
-      </SectionCard>
-
-      <OrderDetailModal
-        open={!!detail}
-        onClose={() => setDetail(null)}
-        orderId={detail}
-      />
-    </div>
+    </RequirePermission>
   );
 };
 

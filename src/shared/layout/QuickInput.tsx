@@ -4,11 +4,13 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { UnitFormModal } from '@/features/units/UnitFormModal';
 import { LeadFormModal } from '@/features/crm/LeadFormModal';
 import { TestDriveFormModal } from '@/features/test-drive/TestDriveFormModal';
-import { SaleFormModal } from '@/features/penjualan/SaleFormModal';
+import { SalesOrderFormModal } from '@/features/penjualan/SalesOrderFormModal';
 import { PaymentFormModal } from '@/features/pembayaran/PaymentFormModal';
-import { useLeadMutations } from '@/features/crm/crm.hooks';
+import { useAppSelector } from '@/app/store';
+import { useBranchScope } from '@/features/auth/useBranchScope';
+import { useLeadMutations, useLeadOrderMutations } from '@/features/crm/crm.hooks';
 import { notifyApiError } from '@/core/api/notify';
-import type { Lead } from '@/features/crm/crm.types';
+import type { Lead, LeadOrder } from '@/features/crm/crm.types';
 
 type Action = 'unit' | 'lead' | 'testdrive' | 'sale' | 'payment';
 
@@ -28,6 +30,9 @@ export const QuickInput = ({ expanded }: QuickInputProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState<Action | null>(null);
   const leadM = useLeadMutations();
+  const currentUserId = useAppSelector((s) => s.auth.user?.id);
+  const { branchKey, branchHeader } = useBranchScope();
+  const orderM = useLeadOrderMutations(branchKey);
 
   const launch = (a: Action) => { setMenuOpen(false); setActive(a); };
 
@@ -36,6 +41,13 @@ export const QuickInput = ({ expanded }: QuickInputProps) => {
       onError: (e: unknown) => notifyApiError(e),
       onSuccess: () => setActive(null),
     });
+  };
+
+  const handleOrderSubmit = (values: Partial<LeadOrder>) => {
+    orderM.create.mutate(
+      { body: values as never, headers: branchHeader },
+      { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setActive(null) },
+    );
   };
 
   return (
@@ -75,7 +87,13 @@ export const QuickInput = ({ expanded }: QuickInputProps) => {
       <UnitFormModal open={active === 'unit'} onClose={() => setActive(null)} />
       <LeadFormModal open={active === 'lead'} onClose={() => setActive(null)} submitting={leadM.create.isPending} onSubmit={handleLeadSubmit} />
       <TestDriveFormModal open={active === 'testdrive'} onClose={() => setActive(null)} />
-      <SaleFormModal open={active === 'sale'} onClose={() => setActive(null)} />
+      <SalesOrderFormModal
+        open={active === 'sale'}
+        onClose={() => setActive(null)}
+        submitting={orderM.create.isPending}
+        currentUserId={currentUserId}
+        onSubmit={handleOrderSubmit}
+      />
       <PaymentFormModal open={active === 'payment'} onClose={() => setActive(null)} />
     </>
   );

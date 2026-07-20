@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Plus, Search, ReceiptText, RefreshCw,
+  Plus, Search, ReceiptText, RefreshCw, AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -11,12 +11,15 @@ import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { SelectField } from '@/shared/components/ui/Field';
+import { RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
+import { useBranchScope } from '@/features/auth/useBranchScope';
+import { useBranches } from '@/features/master/master.hooks';
 import { SalesOrderFormModal } from './SalesOrderFormModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { OrderStatusModal } from './OrderStatusModal';
 import { useLeadOrders, useLeadOrderMutations } from '@/features/crm/crm.hooks';
 import { leadOrderApi } from '@/features/crm/crm.api';
-import { notifyApiError } from '@/core/api/notify';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { useAppSelector } from '@/app/store';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, type LeadOrder, type OrderStatus } from '@/features/crm/crm.types';
@@ -31,23 +34,29 @@ const STATUS_FILTER_OPTIONS = [
 
 export const PenjualanPage = () => {
   const currentUserId = useAppSelector((s) => s.auth.user?.id);
+  const { can } = usePermissions();
+  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
+  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
+  const branches = branchesRes?.data ?? [];
+  const mutationBlocked = isOwner && !selectedBranchId;
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSales, setFilterSales] = useState('');
   const debounced = useDebouncedValue(search, 350);
 
-  const { data, isLoading, isError } = useLeadOrders({
+  const { data, isLoading, isError } = useLeadOrders(branchKey, {
     page, limit: 15,
     search: debounced || undefined,
     status: (filterStatus as OrderStatus) || undefined,
     salesId: filterSales || undefined,
-  });
+  }, branchHeader);
   const { data: salesRes } = useQuery({
     queryKey: ['sales-combobox'],
     queryFn: leadOrderApi.sales,
   });
-  const m = useLeadOrderMutations();
+  const m = useLeadOrderMutations(branchKey);
 
   const [form, setForm] = useState<{ item: LeadOrder | null } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
@@ -60,9 +69,8 @@ export const PenjualanPage = () => {
   ];
 
   const handleSubmit = (values: Partial<LeadOrder>) => {
-    const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => setForm(null) };
-    if (form?.item) m.update.mutate({ id: form.item.id, body: values }, opts);
-    else m.create.mutate(values as never, opts);
+    if (form?.item) m.update.mutate({ id: form.item.id, body: values, headers: branchHeader }, { onSuccess: () => setForm(null) });
+    else m.create.mutate({ body: values as never, headers: branchHeader }, { onSuccess: () => setForm(null) });
   };
 
   const columns: Column<LeadOrder>[] = [
@@ -95,13 +103,19 @@ export const PenjualanPage = () => {
       header: 'Status',
       align: 'center',
       cell: (r) => (
-        <button
-          onClick={() => setStatusModal(r)}
-          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-opacity hover:opacity-70 ${ORDER_STATUS_COLOR[r.status]}`}
-          title="Klik untuk ubah status"
-        >
-          {ORDER_STATUS_LABEL[r.status]}
-        </button>
+        r.status === 'BOOKING' ? (
+          <button
+            onClick={() => setStatusModal(r)}
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-opacity hover:opacity-70 ${ORDER_STATUS_COLOR[r.status]}`}
+            title="Klik untuk proses DEAL / batalkan"
+          >
+            {ORDER_STATUS_LABEL[r.status]}
+          </button>
+        ) : (
+          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${ORDER_STATUS_COLOR[r.status]}`}>
+            {ORDER_STATUS_LABEL[r.status]}
+          </span>
+        )
       ),
     },
     {
@@ -124,94 +138,124 @@ export const PenjualanPage = () => {
       cell: (r) => (
         <RowActions
           onView={() => setDetail(r.id)}
-          onEdit={() => setForm({ item: r })}
-          extra={[{ label: 'Ubah Status', icon: <RefreshCw size={13} />, onClick: () => setStatusModal(r) }]}
+          onEdit={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? () => setForm({ item: r }) : undefined}
+          extra={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? [{ label: 'Ubah Status', icon: <RefreshCw size={13} />, onClick: () => setStatusModal(r) }] : []}
         />
       ),
     },
   ];
 
   return (
-    <div className="max-w-[1600px] mx-auto  space-y-5">
-      <PageHeader
-        title="Penjualan"
-        description="Sales order & manajemen transaksi"
-        action={<Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Buat Order</Button>}
-      />
+    <RequirePermission code="LEAD_ORDER_READ">
+      <div className="max-w-[1600px] mx-auto  space-y-5">
+        <PageHeader
+          title="Penjualan"
+          description="Sales order & manajemen transaksi"
+          action={can('LEAD_ORDER_CREATE') && (
+            <Button
+              icon={<Plus size={17} strokeWidth={2.5} />}
+              onClick={() => setForm({ item: null })}
+              disabled={mutationBlocked}
+              title={mutationBlocked ? 'Pilih cabang terlebih dahulu untuk membuat order' : undefined}
+            >
+              Buat Order
+            </Button>
+          )}
+        />
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[220px] max-w-xs">
-          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Cari no. order / customer..."
-            className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+        {mutationBlocked && (
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
+            <AlertTriangle size={16} className="shrink-0" />
+            Pilih cabang konkret di filter untuk membuat order, mengubah status, atau mencatat pembayaran.
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-xs">
+            <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Cari no. order / customer..."
+              className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+            />
+          </div>
+          {isOwner && (
+            <SelectField
+              label=""
+              value={selectedBranchId ?? ''}
+              onChange={(e) => { setSelectedBranchId(e.target.value || null); setPage(1); }}
+              options={[{ value: '', label: 'Semua Cabang' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
+              wrapClass="min-w-[180px]"
+            />
+          )}
+          <SelectField
+            label=""
+            value={filterStatus}
+            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+            options={STATUS_FILTER_OPTIONS}
+            wrapClass="min-w-[180px]"
+          />
+          <SelectField
+            label=""
+            value={filterSales}
+            onChange={(e) => { setFilterSales(e.target.value); setPage(1); }}
+            options={salesFilterOptions}
+            wrapClass="min-w-[180px]"
           />
         </div>
-        <SelectField
-          label=""
-          value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-          options={STATUS_FILTER_OPTIONS}
-          wrapClass="min-w-[180px]"
+
+        <SectionCard title={`Daftar Order (${data?.meta?.total ?? 0})`} icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0">
+          {isLoading ? (
+            <TableSkeleton rows={6} cols={5} />
+          ) : isError ? (
+            <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada order.</div>
+          ) : (
+            <>
+              <DataTable columns={columns} data={orders} rowKey={(r) => r.id} />
+              <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+            </>
+          )}
+        </SectionCard>
+
+        <SalesOrderFormModal
+          open={!!form}
+          onClose={() => setForm(null)}
+          item={form?.item}
+          submitting={m.create.isPending || m.update.isPending}
+          currentUserId={currentUserId}
+          onSubmit={handleSubmit}
         />
-        <SelectField
-          label=""
-          value={filterSales}
-          onChange={(e) => { setFilterSales(e.target.value); setPage(1); }}
-          options={salesFilterOptions}
-          wrapClass="min-w-[180px]"
+
+        <OrderDetailModal
+          open={!!detail}
+          onClose={() => setDetail(null)}
+          orderId={detail}
+          branchKey={branchKey}
+          branchHeader={branchHeader}
+          mutationBlocked={mutationBlocked}
+          onEdit={can('LEAD_ORDER_UPDATE') ? () => {
+            const o = orders.find((r) => r.id === detail);
+            if (o && o.status === 'BOOKING') { setForm({ item: o }); setDetail(null); }
+          } : undefined}
+        />
+
+        <OrderStatusModal
+          open={!!statusModal}
+          onClose={() => setStatusModal(null)}
+          order={statusModal}
+          submitting={m.updateStatus.isPending}
+          onSubmit={(status) =>
+            statusModal &&
+            m.updateStatus.mutate(
+              { id: statusModal.id, status, headers: branchHeader },
+              { onSuccess: () => setStatusModal(null) },
+            )
+          }
         />
       </div>
-
-      <SectionCard title={`Daftar Order (${data?.meta?.total ?? 0})`} icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? (
-          <TableSkeleton rows={6} cols={5} />
-        ) : isError ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada order.</div>
-        ) : (
-          <>
-            <DataTable columns={columns} data={orders} rowKey={(r) => r.id} />
-            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
-          </>
-        )}
-      </SectionCard>
-
-      <SalesOrderFormModal
-        open={!!form}
-        onClose={() => setForm(null)}
-        item={form?.item}
-        submitting={m.create.isPending || m.update.isPending}
-        currentUserId={currentUserId}
-        onSubmit={handleSubmit}
-      />
-
-      <OrderDetailModal
-        open={!!detail}
-        onClose={() => setDetail(null)}
-        orderId={detail}
-        onEdit={() => {
-          const o = orders.find((r) => r.id === detail);
-          if (o) { setForm({ item: o }); setDetail(null); }
-        }}
-      />
-
-      <OrderStatusModal
-        open={!!statusModal}
-        onClose={() => setStatusModal(null)}
-        order={statusModal}
-        submitting={m.updateStatus.isPending}
-        onSubmit={(status) =>
-          statusModal &&
-          m.updateStatus.mutate(
-            { id: statusModal.id, status },
-            { onError: (e) => notifyApiError(e), onSuccess: () => setStatusModal(null) },
-          )
-        }
-      />
-    </div>
+    </RequirePermission>
   );
 };

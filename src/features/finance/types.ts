@@ -14,7 +14,9 @@ export type CashSourceType =
   | 'PAYROLL'
   | 'INVESTOR_MODAL'
   | 'MANUAL_ADJUSTMENT'
-  | 'TRANSFER';
+  | 'TRANSFER'
+  | 'INTER_BRANCH_TRANSFER'
+  | 'REVERSAL';
 
 export interface CashAccount {
   id: string;
@@ -41,24 +43,55 @@ export interface CashTransaction {
   description?: string | null;
   proofUrl?: string | null;
   transferGroupId?: string | null;
+  branchId?: string;
+  /** Terisi kalau baris ini SENDIRI adalah hasil reversal dari transaksi lain. */
+  reversalOfId?: string | null;
+  /** Terisi kalau baris ini SUDAH dibalik — cegah reversal dobel (409 `CASH_TRANSACTION_ALREADY_REVERSED`). */
+  reversedAt?: string | null;
   createdById?: string | null;
+  reversedById?: string | null;
+  branch?: { id: string; nama: string; code: string };
   cashAccount?: Pick<CashAccount, 'id' | 'name' | 'code'>;
   createdBy?: { id: string; name?: string | null; username?: string | null } | null;
+  reversedBy?: { id: string; name?: string | null; username?: string | null } | null;
 }
 
-export interface CashDashboard {
-  summary: {
-    openingBalance: number;
-    totalIn: number;
-    totalOut: number;
-    endingBalance: number;
-  };
-  accounts: Array<Pick<CashAccount, 'id' | 'name' | 'code' | 'type' | 'openingBalance' | 'defaultPayment'> & {
-    totalIn: number;
-    totalOut: number;
-    endingBalance: number;
-  }>;
+export interface CashDashboardSummary {
+  openingBalance: number;
+  totalIn: number;
+  totalOut: number;
+  endingBalance: number;
 }
+
+export type CashDashboardAccount = Pick<CashAccount, 'id' | 'name' | 'code' | 'type' | 'openingBalance' | 'defaultPayment'> & {
+  totalIn: number;
+  totalOut: number;
+  endingBalance: number;
+  branchId?: string;
+  branch?: { id: string; nama: string; code: string };
+};
+
+/**
+ * `GET /cash-flow/dashboard` (README §8/§16 — mirip pola "Owner capital account"):
+ * - scope single (Owner dengan branch terpilih, atau non-Owner): `{ summary, accounts }`.
+ * - scope all (Owner tanpa header): `{ consolidated, accounts, breakdown }` — TIDAK ada `summary`.
+ * Gunakan type guard `isConsolidatedCashDashboard`, jangan asumsikan `summary` selalu ada.
+ */
+export interface CashDashboardSingle {
+  summary: CashDashboardSummary;
+  accounts: CashDashboardAccount[];
+}
+
+export interface CashDashboardConsolidated {
+  consolidated: CashDashboardSummary;
+  accounts: CashDashboardAccount[];
+  breakdown: Array<{ branch: { id: string; nama: string; code: string } | null; accounts: CashDashboardAccount[]; summary: CashDashboardSummary }>;
+}
+
+export type CashDashboard = CashDashboardSingle | CashDashboardConsolidated;
+
+export const isConsolidatedCashDashboard = (d: CashDashboard): d is CashDashboardConsolidated =>
+  (d as CashDashboardConsolidated).consolidated !== undefined;
 
 export type OperationalExpenseType = 'NORMAL' | 'BACKDATE';
 export type FinanceStatus = 'DRAFT' | 'PAID' | 'CANCELLED';
