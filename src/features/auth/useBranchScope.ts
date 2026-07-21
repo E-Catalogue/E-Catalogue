@@ -7,18 +7,22 @@ import { useAppSelector } from '@/app/store';
  * baru modul-modul tertentu (cash-account, cash-transaction, payroll, target, book)
  * yang butuh ini; lihat TASK.md "Gap sistemik" untuk daftar modul yang perlu diadopsi.
  *
- * - Owner: default `selectedBranchId = null` ("semua cabang") sampai dia memilih satu.
+ * - Owner/Admin: default `selectedBranchId = null` ("semua cabang") sampai memilih satu.
  *   `branchHeader` hanya terisi kalau Owner sudah memilih cabang konkret — mengosongkan
  *   header ADALAH sinyal "semua cabang" untuk GET. Jangan pernah mengirim `X-Branch-Id: '*'`.
- * - Non-Owner: selalu terikat ke `user.branch.id` miliknya sendiri, tidak ada selector.
+ * - Role lain: selalu terikat ke `user.branch.id` miliknya sendiri, tidak ada selector.
  *
- * Untuk MUTATION, Owner wajib pilih cabang konkret dulu (backend balas 422
+ * Untuk MUTATION, Owner/Admin wajib pilih cabang konkret dulu (backend balas 422
  * `BRANCH_CONTEXT_REQUIRED` kalau tidak) — hook ini hanya menyediakan header,
  * caller bertanggung jawab menahan submit selama `isOwner && !selectedBranchId`.
  */
+export const hasAllBranchScope = (roleCode?: string | null) =>
+  roleCode === 'OWNER' || roleCode === 'ADMIN';
+
 export const useBranchScope = () => {
   const user = useAppSelector((s) => s.auth.user);
-  const isOwner = user?.role?.code === 'OWNER';
+  // Nama ini dipertahankan untuk kompatibilitas consumer; nilainya berarti role global.
+  const isOwner = hasAllBranchScope(user?.role?.code);
   const userBranchId = user?.branch?.id ?? null;
 
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);

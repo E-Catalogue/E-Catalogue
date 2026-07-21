@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Loader2, Database } from 'lucide-react';
+import { Plus, Search, Database } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -67,7 +67,7 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode, perm
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: [api.path, { page, search: debounced }],
     queryFn: () => api.list({ page, limit: 10, search: debounced }),
   });
@@ -114,10 +114,9 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode, perm
       </div>
 
       <SectionCard title={`Daftar ${title}`} icon={icon ?? <Database size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
-          : isError ? <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-          : rows.length === 0 ? <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada data.</div>
-          : <><DataTable columns={columns} data={rows} rowKey={(r) => r.id} /><div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div></>}
+        <DataTable columns={columns} data={rows} rowKey={(r) => r.id} loading={isLoading} refreshing={isFetching && !isLoading}
+          error={isError} onRetry={() => refetch()} emptyState={{ title: debounced ? `${title} tidak ditemukan` : `Belum ada ${title.toLowerCase()}`, description: debounced ? 'Ubah kata pencarian untuk melihat hasil lain.' : `Tambahkan data ${title.toLowerCase()} agar dapat digunakan pada modul terkait.` }} />
+        {!isLoading && !isError && rows.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
       <FormModal open={!!form} onClose={() => setForm(null)} item={form?.item} withCode={withCode} submitting={create.isPending || update.isPending} onSubmit={handleSubmit} />

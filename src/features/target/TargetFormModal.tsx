@@ -7,6 +7,7 @@ import { TextField, NumericField } from '@/shared/components/ui/Field';
 import { classifyAxiosError } from '@/core/api/errorHandler';
 import type { ApiErrorBody } from '@/core/api/types';
 import { notifyApiError } from '@/core/api/notify';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { useTargetMutations } from './target.hooks';
 import type { BranchTarget } from './target.types';
 
@@ -24,6 +25,7 @@ interface Props {
 
 /** Create/Edit BranchTarget. Edit hanya diizinkan saat status === 'DRAFT' (double-guard, page sudah gating). */
 export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader }: Props) => {
+  const confirmAction = useConfirmedAction();
   const isEdit = !!target;
   // Parent (TargetPage) me-remount komponen ini lewat `key` setiap kali modal dibuka,
   // jadi state cukup di-init langsung dari `target` tanpa perlu useEffect untuk menyinkronkannya.
@@ -66,9 +68,25 @@ export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader
         onClose();
         return;
       }
-      m.update.mutate({ id: target.id, body: data }, { onSuccess: onClose, onError: handleError });
+      const body = { ...data };
+      confirmAction({
+        title: 'Simpan Perubahan Target',
+        message: `Simpan perubahan target periode ${period}?`,
+        confirmLabel: 'Simpan Perubahan',
+        execute: () => m.update.mutateAsync({ id: target.id, body }),
+        onSuccess: onClose,
+        onError: handleError,
+      });
     } else {
-      m.create.mutate({ period, unitTarget, revenueTarget }, { onSuccess: onClose, onError: handleError });
+      const body = { period, unitTarget, revenueTarget };
+      confirmAction({
+        title: 'Buat Target Cabang',
+        message: `Buat target cabang untuk periode ${period}?`,
+        confirmLabel: 'Buat Target',
+        execute: () => m.create.mutateAsync(body),
+        onSuccess: onClose,
+        onError: handleError,
+      });
     }
   };
 
@@ -76,15 +94,14 @@ export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader
     <Modal
       open={open}
       onClose={onClose}
+      busy={pending}
       icon={<Target size={20} />}
       title={isEdit ? 'Edit Target Cabang' : 'Buat Target Cabang'}
       subtitle={isEdit ? target?.branch?.nama : 'Target unit & revenue untuk satu periode'}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={pending}>Batal</Button>
-          <Button type="submit" form="target-form" disabled={pending || disabled}>
-            {pending ? 'Menyimpan...' : 'Simpan'}
-          </Button>
+          <Button type="submit" form="target-form" loading={pending} disabled={disabled}>Simpan</Button>
         </>
       }
     >

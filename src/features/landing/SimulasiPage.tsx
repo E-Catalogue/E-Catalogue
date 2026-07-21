@@ -13,7 +13,7 @@ export const SimulasiPage = () => {
   const { data: catalog } = usePublicCatalog({ limit: 100 });
   const { data: settings } = usePublicSiteSettings();
   const calcM = useCalculateCredit();
-  const units = catalog?.data ?? [];
+  const units = useMemo(() => catalog?.data ?? [], [catalog?.data]);
 
   const [unitId, setUnitId] = useState('');
   const selected = units.find((u) => u.id === unitId);

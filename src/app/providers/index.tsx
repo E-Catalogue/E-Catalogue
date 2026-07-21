@@ -6,6 +6,7 @@ import { queryClient } from '../queryClient';
 import { AuthBootstrap } from './AuthBootstrap';
 import { GlobalErrorModal } from '@/shared/components/ui/GlobalErrorModal';
 import { ToastStack } from '@/shared/components/ui/ToastStack';
+import { ConfirmedActionProvider } from '@/shared/components/ui/ConfirmedActionProvider';
 import '@/core/api/interceptor';
 
 interface AppProviderProps {
@@ -17,9 +18,11 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <AuthBootstrap>
-          {children}
-          <GlobalErrorModal />
-          <ToastStack />
+          <ConfirmedActionProvider>
+            {children}
+            <GlobalErrorModal />
+            <ToastStack />
+          </ConfirmedActionProvider>
         </AuthBootstrap>
       </QueryClientProvider>
     </Provider>

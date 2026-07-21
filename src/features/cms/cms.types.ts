@@ -142,7 +142,7 @@ export interface AboutVisiMisi extends SectionMeta {
 export interface AboutValues extends SectionMeta {
   eyebrow: string; title: string; items: CmsIconItem[];
 }
-export interface AboutCta extends HomepageCta {}
+export type AboutCta = HomepageCta;
 
 /* ── Header halaman ── */
 export interface ContactPage extends SectionMeta { eyebrow: string; title: string; subtitle: string; }

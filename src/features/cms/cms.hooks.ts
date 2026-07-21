@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
@@ -41,13 +41,16 @@ export const useUploadCmsImage = (folder: CmsUploadFolder) =>
 export function useSectionForm<T extends { isVisible?: boolean }>(page: 'homepage' | 'about', section: string) {
   const q = useCmsSection<T>(page, section);
   const m = useUpdateCmsSection<T>(page, section);
-  const [form, setForm] = useState<T | null>(null);
+  const [draft, setDraft] = useState<T | null>(null);
+  const form = draft ?? q.data ?? null;
+  const setForm = setDraft;
 
-  useEffect(() => { if (q.data && !form) setForm(structuredClone(q.data)); }, [q.data, form]);
-
-  const patch = (p: Partial<T>) => setForm((prev) => (prev ? { ...prev, ...p } : prev));
-  const save = () => { if (form) m.mutate(form, { onError: (e) => notifyApiError(e) }); };
-  const toggleVisible = () => setForm((prev) => (prev ? { ...prev, isVisible: !prev.isVisible } : prev));
+  const patch = (p: Partial<T>) => setDraft((prev) => ({ ...(prev ?? q.data) as T, ...p }));
+  const save = () => { if (form) m.mutate(form, { onError: (e) => notifyApiError(e), onSuccess: () => setDraft(null) }); };
+  const toggleVisible = () => setDraft((prev) => {
+    const current = prev ?? q.data;
+    return current ? { ...current, isVisible: !current.isVisible } : null;
+  });
 
   return { form, setForm, patch, save, toggleVisible, isLoading: q.isLoading, isError: q.isError, saving: m.isPending };
 }

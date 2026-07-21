@@ -11,6 +11,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { Modal } from '@/shared/components/ui/Modal';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SelectField } from '@/shared/components/ui/Field';
 import { LeadFormModal } from './LeadFormModal';
 import { useLeads, useLeadMutations } from './crm.hooks';
@@ -123,7 +124,7 @@ const CrmPageInner = () => {
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
         ) : leads.length === 0 ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada lead.</div>
+          <EmptyState icon={Users} title="Belum ada lead" description="Tambahkan lead untuk memulai proses CRM dan tindak lanjut penjualan." />
         ) : (
           <>
             <DataTable columns={columns} data={leads} rowKey={(r) => r.id} />

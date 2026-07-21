@@ -24,6 +24,16 @@ export interface Vendor {
   updatedAt?: string;
 }
 
+export interface VendorCreateInput {
+  code: string;
+  name: string;
+  address?: string | null;
+  phone?: string | null;
+  isActive?: boolean;
+}
+
+export type VendorUpdateInput = Partial<VendorCreateInput>;
+
 export interface BranchImage {
   id: string;
   url?: string | null;

@@ -1,7 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useIsMutating } from '@tanstack/react-query';
+
+const modalStack: string[] = [];
 
 interface ModalProps {
   open: boolean;
@@ -13,6 +16,12 @@ interface ModalProps {
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  /** Blokir Escape, backdrop, dan tombol tutup saat aksi async sedang berjalan. */
+  busy?: boolean;
+  /** Gunakan false untuk dialog yang memang tidak boleh ditutup dari luar. */
+  dismissible?: boolean;
+  /** Default true: editor/detail tidak dapat ditutup selama mutation global berjalan. */
+  blockWhileMutating?: boolean;
 }
 
 const SIZES = {
@@ -22,17 +31,29 @@ const SIZES = {
   xl: 'max-w-4xl',
 };
 
-export const Modal = ({ open, onClose, title, subtitle, icon, children, footer, size = 'md', className = '' }: ModalProps) => {
+export const Modal = ({
+  open, onClose, title, subtitle, icon, children, footer, size = 'md', className = '',
+  busy = false, dismissible = true, blockWhileMutating = true,
+}: ModalProps) => {
+  const mutationCount = useIsMutating();
+  const [modalId] = useState(() => crypto.randomUUID());
+  const effectiveBusy = busy || (blockWhileMutating && mutationCount > 0);
+  const canDismiss = dismissible && !effectiveBusy;
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    modalStack.push(modalId);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && modalStack.at(-1) === modalId && canDismiss) onClose();
+    };
     document.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handler);
+      const index = modalStack.lastIndexOf(modalId);
+      if (index >= 0) modalStack.splice(index, 1);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open, onClose, canDismiss, modalId]);
 
   return createPortal(
     <AnimatePresence>
@@ -44,7 +65,7 @@ export const Modal = ({ open, onClose, title, subtitle, icon, children, footer, 
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 bg-ink/50 backdrop-blur-sm" 
-            onClick={onClose} 
+            onClick={() => canDismiss && onClose()}
           />
 
           <motion.div
@@ -70,7 +91,9 @@ export const Modal = ({ open, onClose, title, subtitle, icon, children, footer, 
                   </div>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={() => canDismiss && onClose()}
+                  disabled={!canDismiss}
+                  aria-label="Tutup dialog"
                   className="p-2 -mr-1 rounded-xl text-muted hover:text-primary hover:bg-primary-light transition-colors shrink-0"
                 >
                   <X size={20} strokeWidth={2.4} />

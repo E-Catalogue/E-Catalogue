@@ -4,7 +4,6 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
-import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { Button } from '@/shared/components/ui/Button';
 import { SelectField } from '@/shared/components/ui/Field';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
@@ -29,7 +28,8 @@ const TargetPageInner = () => {
   const [periodInput, setPeriodInput] = useState(currentPeriod());
   const period = PERIOD_RE.test(periodInput) ? periodInput : undefined;
 
-  const { data, isLoading, isError } = useTargetBranches({ period }, branchKey, branchHeader);
+  const query = useTargetBranches({ period }, branchKey, branchHeader);
+  const { data } = query;
   const rows: BranchTarget[] = data?.data ?? [];
 
   // Backend lookup cabang tidak ada di modul ini — turunkan opsi selector dari cabang yang muncul
@@ -143,19 +143,22 @@ const TargetPageInner = () => {
       </div>
 
       <SectionCard title={`Daftar Target (${rows.length})`} icon={<Target size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? (
-          <TableSkeleton rows={6} cols={6} />
-        ) : isError ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat target.</div>
-        ) : rows.length === 0 ? (
-          <div className="text-center py-16">
-            <Target size={32} className="text-muted mx-auto mb-3" />
-            <p className="font-bold text-ink text-[14px]">Belum ada target untuk periode ini.</p>
-            <p className="text-muted text-[12px] font-medium mt-1">Buat target cabang untuk mulai memantau pencapaian.</p>
-          </div>
-        ) : (
-          <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
-        )}
+        <DataTable
+          columns={columns}
+          data={rows}
+          rowKey={(r) => r.id}
+          loading={query.isLoading}
+          refreshing={query.isFetching && !query.isLoading}
+          error={query.isError}
+          onRetry={() => query.refetch()}
+          emptyState={{
+            icon: Target,
+            title: isOwner && branches.length === 0 ? 'Belum ada cabang yang dapat dipilih' : 'Belum ada target untuk periode ini',
+            description: isOwner && branches.length === 0
+              ? 'Backend Target aktif belum menyediakan lookup cabang. Buat target setelah konteks cabang tersedia.'
+              : 'Buat target cabang untuk mulai memantau pencapaian.',
+          }}
+        />
       </SectionCard>
 
       <TargetFormModal

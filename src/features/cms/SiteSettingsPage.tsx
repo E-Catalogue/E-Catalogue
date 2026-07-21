@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Settings, Save, Building2, Phone, Share2, Link2, Plus, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -21,17 +21,11 @@ const empty: SiteSettingsRaw = {
 export const SiteSettingsPage = () => {
   const { data, isLoading, isError } = useSiteSettings();
   const { update, uploadLogo, uploadFavicon } = useSiteSettingsMutations();
-  const [f, setF] = useState<SiteSettingsRaw>(empty);
-  const [seeded, setSeeded] = useState(false);
+  const [draft, setDraft] = useState<SiteSettingsRaw | null>(null);
+  const f = draft ?? (data ? { ...empty, ...data, navLinks: data.navLinks ?? [] } : empty);
+  const setF = setDraft;
 
-  useEffect(() => {
-    if (data && !seeded) {
-      setF({ ...empty, ...data, navLinks: data.navLinks ?? [] });
-      setSeeded(true);
-    }
-  }, [data, seeded]);
-
-  const set = <K extends keyof SiteSettingsRaw>(k: K, v: SiteSettingsRaw[K]) => setF((p) => ({ ...p, [k]: v }));
+  const set = <K extends keyof SiteSettingsRaw>(k: K, v: SiteSettingsRaw[K]) => setF((p) => ({ ...(p ?? f), [k]: v }));
   const setLink = (i: number, patch: Partial<NavLink>) => set('navLinks', (f.navLinks ?? []).map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
   if (isLoading) return <div className="flex items-center justify-center py-24 text-muted"><Loader2 size={24} className="animate-spin" /></div>;

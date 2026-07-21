@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
+import { useId, useState, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
 
 const baseInput =
   'w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold text-ink placeholder:text-muted placeholder:font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all';
@@ -8,12 +8,13 @@ interface LabelWrapProps {
   required?: boolean;
   children: ReactNode;
   className?: string;
+  htmlFor?: string;
 }
 
-export const FieldWrap = ({ label, required, children, className = '' }: LabelWrapProps) => (
+export const FieldWrap = ({ label, required, children, className = '', htmlFor }: LabelWrapProps) => (
   <div className={className}>
     {label && (
-      <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
+      <label htmlFor={htmlFor} className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
         {label} {required && <span className="text-primary">*</span>}
       </label>
     )}
@@ -27,11 +28,15 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   wrapClass?: string;
 }
 
-export const TextField = ({ label, required, wrapClass, className = '', ...rest }: TextFieldProps) => (
-  <FieldWrap label={label} required={required} className={wrapClass}>
-    <input className={`${baseInput} ${className}`} {...rest} />
-  </FieldWrap>
-);
+export const TextField = ({ label, required, wrapClass, className = '', id, ...rest }: TextFieldProps) => {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+  return (
+    <FieldWrap label={label} required={required} className={wrapClass} htmlFor={inputId}>
+      <input id={inputId} className={`${baseInput} ${className}`} {...rest} />
+    </FieldWrap>
+  );
+};
 
 interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
@@ -40,15 +45,17 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   wrapClass?: string;
 }
 
-export const SelectField = ({ label, required, options, wrapClass, className = '', ...rest }: SelectFieldProps) => (
-  <FieldWrap label={label} required={required} className={wrapClass}>
-    <select className={`${baseInput} cursor-pointer ${className}`} {...rest}>
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
-  </FieldWrap>
-);
+export const SelectField = ({ label, required, options, wrapClass, className = '', id, ...rest }: SelectFieldProps) => {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+  return (
+    <FieldWrap label={label} required={required} className={wrapClass} htmlFor={inputId}>
+      <select id={inputId} className={`${baseInput} cursor-pointer ${className}`} {...rest}>
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </FieldWrap>
+  );
+};
 
 // ── NumericField ──────────────────────────────────────────────────────────────
 // Solves the "can't clear leading zero" problem of <input type="number">.
@@ -84,6 +91,7 @@ export const NumericField = ({
   label, value, onChange, required, wrapClass, className = '',
   placeholder = '0', prefix, suffix, min, max, decimal = false,
 }: NumericFieldProps) => {
+  const inputId = useId();
   const [focused, setFocused] = useState(false);
   // raw: what the user is typing while focused
   const [raw, setRaw] = useState('');
@@ -121,7 +129,7 @@ export const NumericField = ({
   const hasSuf = !!suffix;
 
   return (
-    <FieldWrap label={label} required={required} className={wrapClass}>
+    <FieldWrap label={label} required={required} className={wrapClass} htmlFor={inputId}>
       <div className="relative">
         {hasPre && (
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-[13px] font-bold select-none pointer-events-none">
@@ -129,6 +137,7 @@ export const NumericField = ({
           </span>
         )}
         <input
+          id={inputId}
           type="text"
           inputMode={decimal ? 'decimal' : 'numeric'}
           value={displayValue}

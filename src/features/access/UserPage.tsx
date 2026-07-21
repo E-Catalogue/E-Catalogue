@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Plus, Search, Loader2, UserCog } from 'lucide-react';
+import { Plus, Search, UserCog } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -70,7 +70,7 @@ const UserPageInner = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data, isLoading, isError } = useUsers({ page, limit: 10, search: debounced });
+  const { data, isLoading, isFetching, isError, refetch } = useUsers({ page, limit: 10, search: debounced });
   const m = useUserMutations();
   const { can } = usePermissions();
 
@@ -124,10 +124,9 @@ const UserPageInner = () => {
       </div>
 
       <SectionCard title="Daftar User" icon={<UserCog size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
-          : isError ? <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-          : users.length === 0 ? <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada user.</div>
-          : <><DataTable columns={columns} data={users} rowKey={(u) => u.id} /><div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div></>}
+        <DataTable columns={columns} data={users} rowKey={(u) => u.id} loading={isLoading} refreshing={isFetching && !isLoading}
+          error={isError} onRetry={() => refetch()} emptyState={{ title: debounced ? 'User tidak ditemukan' : 'Belum ada user', description: debounced ? 'Ubah kata pencarian untuk melihat hasil lain.' : 'Tambahkan akun pengguna untuk memberikan akses platform.' }} />
+        {!isLoading && !isError && users.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
       <UserFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} canRoleUpdate={can('USER_ROLE_UPDATE')} canBranchUpdate={can('USER_BRANCH_UPDATE')} />

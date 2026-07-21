@@ -229,10 +229,10 @@ const PengeluaranPageInner = () => {
             <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Draft Belum Dibayar</p><p className="text-xl font-extrabold text-semantic-error mt-1">{formatCurrency(totalDraft, { compact: true })}</p></div>
             <SelectField label="Filter Status" value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: '', label: 'Semua' }, { value: 'DRAFT', label: 'Draft' }, { value: 'PAID', label: 'Sudah Dibayar' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />
           </div>
-          <SectionCard title="Daftar Pengeluaran" icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={expenseColumns} data={expenses.data?.data ?? []} rowKey={(e) => e.id} /></SectionCard>
+          <SectionCard title="Daftar Pengeluaran" icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={expenseColumns} data={expenses.data?.data ?? []} rowKey={(e) => e.id} loading={expenses.isLoading} refreshing={expenses.isFetching && !expenses.isLoading} error={expenses.isError} onRetry={() => expenses.refetch()} emptyState={{ title: 'Belum ada pengeluaran', description: status ? 'Tidak ada pengeluaran dengan status yang dipilih.' : 'Catat pengeluaran operasional agar tampil di sini.' }} /></SectionCard>
         </>
       )}
-      {tab === 'recurring' && <SectionCard title="Template Pengeluaran Rutin" icon={<CalendarClock size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={recurringColumns} data={recurring.data?.data ?? []} rowKey={(r) => r.id} /></SectionCard>}
+      {tab === 'recurring' && <SectionCard title="Template Pengeluaran Rutin" icon={<CalendarClock size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={recurringColumns} data={recurring.data?.data ?? []} rowKey={(r) => r.id} loading={recurring.isLoading} refreshing={recurring.isFetching && !recurring.isLoading} error={recurring.isError} onRetry={() => recurring.refetch()} emptyState={{ title: 'Belum ada template rutin', description: 'Tambahkan template untuk mempercepat pencatatan pengeluaran berkala.' }} /></SectionCard>}
       {expenseForm !== undefined && <ExpenseForm item={expenseForm} onClose={() => setExpenseForm(undefined)} />}
       {payExpense && <PayExpenseForm item={payExpense} onClose={() => setPayExpense(null)} />}
       {recurringForm !== undefined && <RecurringForm item={recurringForm} onClose={() => setRecurringForm(undefined)} />}

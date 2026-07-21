@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Tag, Images, Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { cmsImageUrl } from './cms.api';
 import { useCmsCatalog, useCmsCatalogMutations, useCatalogPage, useUpdateCatalogPage } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import type { CmsCatalogRow, CatalogPage as CatalogPageType, PriceRange } from './cms.types';
 
 type ViewFilter = 'all' | 'published' | 'hidden';
@@ -26,9 +27,10 @@ const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { comp
 const CatalogHeaderEditor = () => {
   const { data, isLoading } = useCatalogPage();
   const update = useUpdateCatalogPage();
-  const [f, setF] = useState<CatalogPageType | null>(null);
+  const [draft, setDraft] = useState<CatalogPageType | null>(null);
+  const f = draft ?? data ?? null;
+  const setF = setDraft;
   const [open, setOpen] = useState(false);
-  useEffect(() => { if (data && !f) setF(structuredClone(data)); }, [data, f]);
   if (isLoading || !f) return null;
 
   const setRange = (i: number, patch: Partial<PriceRange>) => setF({ ...f, priceRanges: f.priceRanges.map((r, idx) => (idx === i ? { ...r, ...patch } : r)) });
@@ -75,17 +77,27 @@ const CatalogHeaderEditor = () => {
 /* ── Modal kelola galeri foto ── */
 const GalleryModal = ({ row, onClose }: { row: CmsCatalogRow; onClose: () => void }) => {
   const m = useCmsCatalogMutations();
-  const imgs = row.images ?? [];
+  const confirmAction = useConfirmedAction();
+  const [imgs, setImgs] = useState(() => row.images ?? []);
+  const orderDirty = (row.images ?? []).map((image) => image.id).join(',') !== imgs.map((image) => image.id).join(',');
   const move = (idx: number, dir: -1 | 1) => {
     const next = [...imgs];
     const j = idx + dir;
     if (j < 0 || j >= next.length) return;
     [next[idx], next[j]] = [next[j], next[idx]];
-    m.reorderImages.mutate({ id: row.id, orderedIds: next.map((i) => i.id) }, { onError: (e) => notifyApiError(e) });
+    setImgs(next);
   };
+  const saveOrder = () => confirmAction({
+    title: 'Simpan Urutan Foto',
+    message: 'Simpan urutan foto katalog sesuai susunan saat ini?',
+    confirmLabel: 'Simpan Urutan',
+    execute: () => m.reorderImages.mutateAsync({ id: row.id, orderedIds: imgs.map((image) => image.id) }),
+    onError: notifyApiError,
+  });
   return (
     <Modal open onClose={onClose} title="Kelola Foto Unit" subtitle={`${row.merek?.name ?? ''} ${row.tipe?.name ?? ''} · ${row.platNomor}`} icon={<Images size={18} />} size="lg"
-      footer={<Button variant="secondary" onClick={onClose}>Tutup</Button>}>
+      busy={m.uploadImage.isPending || m.reorderImages.isPending || m.deleteImage.isPending}
+      footer={<><Button variant="secondary" onClick={onClose}>Tutup</Button>{orderDirty && <Button onClick={saveOrder} loading={m.reorderImages.isPending}>Simpan Urutan</Button>}</>}>
       <div className="space-y-4">
         <ImageUpload label="Tambah Foto" aspect="aspect-[16/7]" previewUrl={null} isUploading={m.uploadImage.isPending}
           onFile={(file) => m.uploadImage.mutate({ id: row.id, file }, { onError: (e) => notifyApiError(e) })} />

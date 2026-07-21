@@ -3,7 +3,8 @@ import { merekApi, tipeApi, vendorApi, branchApi, investorApi, capitalApi } from
 import { pengecekanApi } from './simpleMaster.api';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
-import type { ListParams, Investor, CapitalMutationPayload } from './types';
+import type { ListParams, Investor, CapitalMutationPayload, VendorCreateInput, VendorUpdateInput } from './types';
+import { refreshAfterMutation } from '@/core/query/refreshAfterMutation';
 
 const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil', message, variant: 'success' }));
 
@@ -46,13 +47,20 @@ export const useTipeMutations = (merekId: string) => {
 export const useVendors = (params: ListParams) =>
   useQuery({ queryKey: ['vendors', params], queryFn: () => vendorApi.list(params) });
 
+export const useVendor = (id: string | null) =>
+  useQuery({ queryKey: ['vendor', id], queryFn: () => vendorApi.get(id as string), enabled: !!id });
+
 export const useVendorMutations = () => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['vendors'] });
+  const refresh = (id?: string) => refreshAfterMutation(qc, [
+    ['vendors'],
+    ['rekondisi-lookups'],
+    ...(id ? [['vendor', id] as const] : []),
+  ]);
   return {
-    create: useMutation({ mutationFn: vendorApi.create, onSuccess: () => { toast('Vendor ditambahkan'); inval(); } }),
-    update: useMutation({ mutationFn: (v: { id: string; body: Record<string, unknown> }) => vendorApi.update(v.id, v.body), onSuccess: () => { toast('Vendor diperbarui'); inval(); } }),
-    remove: useMutation({ mutationFn: vendorApi.remove, onSuccess: () => { toast('Vendor dihapus'); inval(); } }),
+    create: useMutation({ mutationFn: (body: VendorCreateInput) => vendorApi.create(body), onSuccess: async () => { await refresh(); toast('Vendor ditambahkan'); } }),
+    update: useMutation({ mutationFn: (v: { id: string; body: VendorUpdateInput }) => vendorApi.update(v.id, v.body), onSuccess: async (_data, v) => { await refresh(v.id); toast('Vendor diperbarui'); } }),
+    remove: useMutation({ mutationFn: vendorApi.remove, onSuccess: async (_data, id) => { await refresh(id); toast('Vendor dihapus'); } }),
   };
 };
 

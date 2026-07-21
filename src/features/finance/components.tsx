@@ -13,6 +13,7 @@ type BranchHeaders = Record<string, string> | undefined;
  * terposting). Dikonfirmasi dari kode backend (`cash-transaction.service.js` `lockAndAssertBalance`,
  * `assertOpenPeriod`, `cash-account.service.js` `assertActiveCashAccount`, `branch-scope.middleware.js`).
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const FINANCE_ERROR_BANNER: Record<string, { title: string; message: string }> = {
   BRANCH_CONTEXT_REQUIRED: { title: 'Cabang belum dipilih', message: 'Pilih cabang konkret terlebih dahulu, lalu coba lagi.' },
   INSUFFICIENT_BALANCE: { title: 'Saldo akun kas tidak mencukupi', message: 'Draft dipertahankan — periksa saldo akun kas sebelum mencoba lagi.' },

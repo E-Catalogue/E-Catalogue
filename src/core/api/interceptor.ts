@@ -8,6 +8,10 @@ import { showToast } from '@/app/store/uiSlice';
 import { classifyAxiosError } from './errorHandler';
 import type { ApiResponse, ApiErrorBody } from './types';
 import type { AuthPayload } from '@/features/auth/types';
+import {
+  consumeMutationConfirmationLease,
+  requestTransportConfirmation,
+} from './mutationConfirmation';
 
 const isAuthEndpoint = (url?: string) =>
   !!url && (url.includes('/auth/login') || url.includes('/auth/refresh'));
@@ -24,7 +28,32 @@ const errorCode = (error: AxiosError) =>
   (error.response?.data as ApiErrorBody | undefined)?.error?.code;
 
 // ---- Request: lampirkan bearer token ----
-apiClient.interceptors.request.use((config) => {
+type ConfirmedRequestConfig = InternalAxiosRequestConfig & { _mutationConfirmed?: boolean };
+
+const isPersistentMutation = (config: InternalAxiosRequestConfig) => {
+  const method = config.method?.toUpperCase();
+  if (!method || !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return false;
+  const url = config.url ?? '';
+  return !url.includes('/auth/') && !url.includes('/public/credit-simulation/calculate');
+};
+
+const mutationLabel = (method?: string) => method?.toUpperCase() === 'DELETE' ? 'Hapus Data' : 'Simpan Perubahan';
+
+apiClient.interceptors.request.use(async (rawConfig) => {
+  const config = rawConfig as ConfirmedRequestConfig;
+  if (isPersistentMutation(config) && !config._mutationConfirmed) {
+    if (!consumeMutationConfirmationLease()) {
+      const approved = await requestTransportConfirmation({
+        title: mutationLabel(config.method),
+        message: 'Lanjutkan aksi ini? Perubahan akan disimpan ke server.',
+        confirmLabel: config.method?.toUpperCase() === 'DELETE' ? 'Hapus' : 'Simpan',
+      });
+      // ConfirmDialog transport juga menghasilkan lease; buang agar tidak bocor ke request berikutnya.
+      consumeMutationConfirmationLease();
+      if (!approved) throw new axios.CanceledError('Aksi dibatalkan pengguna');
+    }
+    config._mutationConfirmed = true;
+  }
   const token = getAccessToken();
   if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
   return config;

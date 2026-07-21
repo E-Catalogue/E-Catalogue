@@ -35,7 +35,10 @@ export const usePublicCreditConfig = () =>
   useQuery({ queryKey: ['public', 'credit-config'], queryFn: landingApi.getCreditConfig, staleTime: FIVE_MIN });
 
 export const useCalculateCredit = () =>
-  useMutation({ mutationFn: (body: CreditCalcInput) => landingApi.calculateCredit(body) });
+  useMutation({
+    mutationFn: (body: CreditCalcInput) => landingApi.calculateCredit(body),
+    meta: { skipGlobalRefresh: true },
+  });
 
 export const useSubmitContact = () =>
   useMutation({ mutationFn: landingApi.submitContact });

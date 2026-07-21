@@ -11,6 +11,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
@@ -188,7 +189,7 @@ export const TestimoniPage = () => {
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat testimoni.</div>
         ) : rows.length === 0 ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Tidak ada testimoni ditemukan.</div>
+          <EmptyState icon={Quote} title="Testimoni tidak ditemukan" description="Tambahkan testimoni baru atau ubah filter pencarian." />
         ) : (
           <>
             <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />

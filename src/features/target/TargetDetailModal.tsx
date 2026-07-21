@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import type { AxiosError } from 'axios';
-import { Target, Loader2, Plus, Trash2, PlayCircle, Lock, TrendingUp } from 'lucide-react';
+import { Target, Plus, Trash2, PlayCircle, Lock, TrendingUp, Users } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { SelectField, NumericField } from '@/shared/components/ui/Field';
 import { classifyAxiosError } from '@/core/api/errorHandler';
 import type { ApiErrorBody } from '@/core/api/types';
@@ -60,7 +63,7 @@ export const TargetDetailModal = ({ open, onClose, targetId, branchKey, branchHe
         size="xl"
         footer={<Button variant="secondary" onClick={onClose}>Tutup Jendela</Button>}
       >
-        <div className="flex items-center justify-center py-16"><Loader2 size={24} className="animate-spin text-muted" /></div>
+        <div className="space-y-3 py-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
       </Modal>
     );
   }
@@ -85,6 +88,7 @@ interface LoadedProps {
 
 const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: LoadedProps) => {
   const { can } = usePermissions();
+  const confirmAction = useConfirmedAction();
 
   const isClosed = target.status === 'CLOSED';
   const { data: achRes } = useTargetAchievement(!isClosed ? target.period : undefined, branchKey, branchHeader);
@@ -151,7 +155,16 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
     setDistError(null);
     setDupSalesIds(new Set());
     const sales = rows.filter((r) => r.salesId).map(({ salesId, unitTarget, revenueTarget }) => ({ salesId, unitTarget, revenueTarget }));
-    m.replaceSales.mutate({ id: target.id, body: { sales } }, { onError: handleDistError });
+    const body = { sales };
+    confirmAction({
+      title: 'Simpan Distribusi Sales',
+      message: sales.length === 0
+        ? 'Kosongkan seluruh distribusi sales pada target ini?'
+        : `Simpan distribusi untuk ${sales.length} sales?`,
+      confirmLabel: 'Simpan Distribusi',
+      execute: () => m.replaceSales.mutateAsync({ id: target.id, body }),
+      onError: handleDistError,
+    });
   };
 
   const doActivate = () => {
@@ -172,6 +185,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
       <Modal
         open
         onClose={onClose}
+        busy={m.replaceSales.isPending || m.activate.isPending || m.close.isPending}
         icon={<Target size={20} />}
         title="Detail Target Cabang"
         subtitle={`${target.branch?.nama ?? target.branchId} · ${target.period}`}
@@ -243,9 +257,12 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
             {target.status === 'DRAFT' && can('TARGET_UPDATE') ? (
               <div className="space-y-2">
                 {rows.length === 0 && (
-                  <p className="text-center py-6 text-[12px] text-muted border border-dashed border-border rounded-xl">
-                    Belum ada distribusi sales. Klik &quot;Tambah Sales&quot;.
-                  </p>
+                  <EmptyState
+                    icon={Users}
+                    title="Belum ada distribusi sales"
+                    description="Klik Tambah Sales untuk membagi target. Pada kontrak backend aktif, total distribusi harus sama sebelum target dapat diaktifkan."
+                    className="border border-dashed border-border rounded-xl !py-7"
+                  />
                 )}
                 {rows.map((row) => (
                   <div key={row.key} className={`flex flex-wrap items-end gap-2 p-3 rounded-xl border ${dupSalesIds.has(row.salesId) ? 'border-semantic-error bg-semantic-error/5' : 'border-border'}`}>
@@ -278,7 +295,12 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
             ) : (
               <div className="border border-border rounded-xl overflow-hidden">
                 {(target.salesTargets ?? []).length === 0 ? (
-                  <p className="text-center py-6 text-[12px] text-muted">Belum ada distribusi sales.</p>
+                  <EmptyState
+                    icon={Users}
+                    title="Belum ada distribusi sales"
+                    description="Target cabang ini belum memiliki target individual untuk sales."
+                    className="!py-7"
+                  />
                 ) : (
                   target.salesTargets!.map((st) => {
                     const ach = isClosed ? { unitActual: st.actualUnit ?? 0, revenueActual: st.actualRevenue ?? 0 } : salesAchievement.get(st.salesId);

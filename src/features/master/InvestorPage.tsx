@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Plus, Search, Loader2, Landmark, Wallet, HandCoins } from 'lucide-react';
+import { Plus, Search, Landmark, Wallet, HandCoins } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -23,7 +23,7 @@ export const InvestorPage = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data, isLoading, isError } = useInvestors({ page, limit: 10, search: debounced });
+  const { data, isLoading, isFetching, isError, refetch } = useInvestors({ page, limit: 10, search: debounced });
   const m = useInvestorMutations();
 
   const [form, setForm] = useState<{ item: Investor | null } | null>(null);
@@ -96,18 +96,9 @@ export const InvestorPage = () => {
         </div>
 
         <SectionCard title="Daftar Investor" icon={<Landmark size={16} />} bodyClassName="p-0 md:p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
-          ) : isError ? (
-            <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-          ) : investors.length === 0 ? (
-            <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada investor.</div>
-          ) : (
-            <>
-              <DataTable columns={columns} data={investors} rowKey={(r) => r.id} />
-              <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
-            </>
-          )}
+          <DataTable columns={columns} data={investors} rowKey={(r) => r.id} loading={isLoading} refreshing={isFetching && !isLoading}
+            error={isError} onRetry={() => refetch()} emptyState={{ icon: Landmark, title: debounced ? 'Investor tidak ditemukan' : 'Belum ada investor', description: debounced ? 'Ubah kata pencarian untuk melihat hasil lain.' : 'Tambahkan investor untuk mengelola pendanaan dan kewajiban.' }} />
+          {!isLoading && !isError && investors.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
         </SectionCard>
 
         <InvestorFormModal

@@ -38,6 +38,15 @@ const ToastCard = ({ item }: { item: ToastItem }) => {
         <div className="flex-1 min-w-0 pt-0.5">
           <p className="text-[13px] font-bold text-ink leading-snug">{item.title}</p>
           {item.message && <p className="text-[12px] text-muted font-medium mt-0.5 leading-snug">{item.message}</p>}
+          {item.action?.type === 'reload-page' && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-2 text-[12px] font-bold text-primary hover:underline"
+            >
+              {item.action.label}
+            </button>
+          )}
         </div>
         <button
           type="button"

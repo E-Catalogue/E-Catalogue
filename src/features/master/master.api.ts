@@ -1,7 +1,7 @@
 import { apiClient, API_ORIGIN } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  Merek, Tipe, Vendor, Branch, BranchImage, Investor, ListParams,
+  Merek, Tipe, Vendor, VendorCreateInput, VendorUpdateInput, Branch, BranchImage, Investor, ListParams,
   CapitalAccount, CapitalAccountsConsolidated, CapitalTransaction, CapitalMutationPayload,
 } from './types';
 
@@ -30,8 +30,9 @@ export const tipeApi = {
 // ---- Vendor ----
 export const vendorApi = {
   list: (params: ListParams) => apiClient.get<ApiResponse<Vendor[]>>('/vendors', { params }).then((r) => r.data),
-  create: (body: Partial<Vendor>) => apiClient.post<ApiResponse<Vendor>>('/vendors', body).then((r) => r.data.data),
-  update: (id: string, body: Partial<Vendor>) => apiClient.patch<ApiResponse<Vendor>>(`/vendors/${id}`, body).then((r) => r.data.data),
+  get: (id: string) => apiClient.get<ApiResponse<Vendor>>(`/vendors/${id}`).then((r) => r.data.data),
+  create: (body: VendorCreateInput) => apiClient.post<ApiResponse<Vendor>>('/vendors', body).then((r) => r.data.data),
+  update: (id: string, body: VendorUpdateInput) => apiClient.patch<ApiResponse<Vendor>>(`/vendors/${id}`, body).then((r) => r.data.data),
   remove: (id: string) => apiClient.delete(`/vendors/${id}`).then((r) => r.data),
 };
 

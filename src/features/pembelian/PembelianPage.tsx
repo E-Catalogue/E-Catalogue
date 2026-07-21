@@ -1,4 +1,4 @@
-import { Plus, ShoppingCart, TrendingUp, Wallet, Loader2 } from 'lucide-react';
+import { Plus, ShoppingCart, TrendingUp, Wallet } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -21,7 +21,7 @@ import type { Unit } from '@/features/units/unit.types';
  */
 const PembelianPageInner = () => {
   const { can } = usePermissions();
-  const { data, isLoading, isError } = useUnits({ page: 1, limit: 100 });
+  const { data, isLoading, isFetching, isError, refetch } = useUnits({ page: 1, limit: 100 });
   const m = useUnitModals();
 
   const units: Unit[] = data?.data ?? [];
@@ -73,18 +73,8 @@ const PembelianPageInner = () => {
       </div>
 
       <SectionCard title="Daftar Pembelian Unit" bodyClassName="p-0 md:p-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16"><Loader2 size={22} className="animate-spin text-muted" /></div>
-        ) : isError ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data pembelian unit.</div>
-        ) : units.length === 0 ? (
-          <div className="text-center py-16">
-            <ShoppingCart size={32} className="text-muted mx-auto mb-3" />
-            <p className="font-bold text-ink text-[14px]">Belum ada unit yang dibeli.</p>
-          </div>
-        ) : (
-          <DataTable columns={columns} data={units} rowKey={(u) => u.id} />
-        )}
+        <DataTable columns={columns} data={units} rowKey={(u) => u.id} loading={isLoading} refreshing={isFetching && !isLoading}
+          error={isError} onRetry={() => refetch()} emptyState={{ icon: ShoppingCart, title: 'Belum ada unit yang dibeli', description: 'Input pembelian unit agar riwayat akuisisi tampil di sini.' }} />
       </SectionCard>
 
       {m.modals}

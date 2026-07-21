@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { PiggyBank, Search, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { PiggyBank, Search, RefreshCw, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { SelectField, TextField } from '@/shared/components/ui/Field';
 import { RequirePermission } from '@/features/auth/permissions';
@@ -238,11 +240,11 @@ export const InvestorObligationPage = () => {
 
         <SectionCard title="Daftar Kewajiban" icon={<PiggyBank size={16} />} bodyClassName="p-0 md:p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
+            <TableSkeleton rows={6} cols={6} />
           ) : isError ? (
             <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
           ) : obligations.length === 0 ? (
-            <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada kewajiban investor.</div>
+            <EmptyState icon={PiggyBank} title="Belum ada kewajiban investor" description="Kewajiban akan tampil setelah proses generate atau transaksi terkait membentuk kewajiban." />
           ) : (
             <>
               <DataTable columns={columns} data={obligations} rowKey={(r) => r.id} />

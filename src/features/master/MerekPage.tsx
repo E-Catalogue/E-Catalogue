@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Loader2, Tag, Layers } from 'lucide-react';
+import { Plus, Search, Tag, Layers } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -22,7 +22,7 @@ const MerekPageInner = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data, isLoading, isError } = useMereks({ page, limit: 10, search: debounced });
+  const { data, isLoading, isFetching, isError, refetch } = useMereks({ page, limit: 10, search: debounced });
   const m = useMerekMutations();
 
   const [form, setForm] = useState<{ item: Merek | null } | null>(null);
@@ -74,18 +74,9 @@ const MerekPageInner = () => {
       </div>
 
       <SectionCard title="Daftar Merek" icon={<Tag size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
-        ) : isError ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-        ) : mereks.length === 0 ? (
-          <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada merek.</div>
-        ) : (
-          <>
-            <DataTable columns={columns} data={mereks} rowKey={(r) => r.id} />
-            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
-          </>
-        )}
+        <DataTable columns={columns} data={mereks} rowKey={(r) => r.id} loading={isLoading} refreshing={isFetching && !isLoading}
+          error={isError} onRetry={() => refetch()} emptyState={{ title: debounced ? 'Merek tidak ditemukan' : 'Belum ada merek', description: debounced ? 'Ubah kata pencarian untuk melihat hasil lain.' : 'Tambahkan merek kendaraan beserta tipe yang tersedia.' }} />
+        {!isLoading && !isError && mereks.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
       <NameFormModal

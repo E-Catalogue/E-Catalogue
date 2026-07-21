@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { AlertTriangle, type LucideIcon } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
+import { grantMutationConfirmationLease } from '@/core/api/mutationConfirmation';
 
 type Tone = 'danger' | 'warning' | 'primary';
 
@@ -44,7 +45,7 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps) => {
   const t = TONES[tone];
   return (
-    <Modal open={open} onClose={onClose} size="sm">
+    <Modal open={open} onClose={onClose} size="sm" busy={loading} blockWhileMutating={false}>
       <div className="text-center py-2">
         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${t.wrap}`}>
           <Icon size={28} strokeWidth={2.2} />
@@ -54,7 +55,11 @@ export const ConfirmDialog = ({
         {children && <div className="text-left mt-3">{children}</div>}
         <div className="flex gap-2.5 mt-6">
           <Button variant="secondary" block onClick={onClose} disabled={loading}>{cancelLabel}</Button>
-          <Button variant={t.btn} block loading={loading} onClick={() => { onConfirm(); if (closeOnConfirm && !loading) onClose(); }}>
+          <Button variant={t.btn} block loading={loading} onClick={() => {
+            grantMutationConfirmationLease();
+            onConfirm();
+            if (closeOnConfirm && !loading) onClose();
+          }}>
             {confirmLabel}
           </Button>
         </div>

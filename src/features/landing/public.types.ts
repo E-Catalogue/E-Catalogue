@@ -9,6 +9,8 @@ import type {
 export type { SiteSettings, CreditSimConfig };
 
 export type PublicTransmisi = 'AT' | 'MT' | 'CVT';
+export interface CatalogMainImage { filename: string }
+export type PublicCatalogStatus = 'ready' | 'booked';
 
 export interface CatalogCard {
   id: string;
@@ -24,7 +26,7 @@ export interface CatalogCard {
   warna: string;
   statusKatalog: 'READY' | 'BOOKED';
   isNew: boolean;
-  image: any;
+  image: CatalogMainImage | null;
   createdAt: string;
 
   brand: string;
@@ -35,7 +37,7 @@ export interface CatalogCard {
   transmission: string;
   fuel: string;
   color: string;
-  status: any;
+  status: PublicCatalogStatus;
 }
 
 export interface CatalogImage { id: string; filename: string; sortOrder: number; }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calculator, Save, Loader2, Percent, Wallet, Calendar, ExternalLink } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -12,12 +12,12 @@ import type { CreditSimConfig } from './cms.types';
 export const CreditSimPage = () => {
   const { data, isLoading, isError } = useCreditSimConfig();
   const { update } = useCreditSimMutations();
-  const [f, setF] = useState<CreditSimConfig | null>(null);
-  const [tenorText, setTenorText] = useState('');
-
-  useEffect(() => {
-    if (data && !f) { setF(structuredClone(data)); setTenorText(data.tenorOptions.join(', ')); }
-  }, [data, f]);
+  const [draft, setDraft] = useState<CreditSimConfig | null>(null);
+  const [tenorDraft, setTenorDraft] = useState<string | null>(null);
+  const f = draft ?? data ?? null;
+  const tenorText = tenorDraft ?? data?.tenorOptions.join(', ') ?? '';
+  const setF = setDraft;
+  const setTenorText = setTenorDraft;
 
   if (isLoading || !f) {
     if (isError) return <div className="text-center py-24 text-muted font-semibold text-sm">Gagal memuat konfigurasi.</div>;

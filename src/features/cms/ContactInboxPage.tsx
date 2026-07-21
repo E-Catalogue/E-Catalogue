@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Inbox, Save, Mail, Phone, Trash2, MailOpen, CornerUpLeft, Archive, ExternalLink,
 } from 'lucide-react';
@@ -11,6 +11,7 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { formatDate } from '@/core/utils/format';
 import { notifyApiError } from '@/core/api/notify';
 import { TextArea } from './CmsKit';
@@ -35,8 +36,9 @@ const TABS: { key: ContactStatus | 'ALL'; label: string }[] = [
 const HeaderEditor = () => {
   const { data, isLoading } = useContactPage();
   const update = useUpdateContactPage();
-  const [f, setF] = useState<ContactPage | null>(null);
-  useEffect(() => { if (data && !f) setF(structuredClone(data)); }, [data, f]);
+  const [draft, setDraft] = useState<ContactPage | null>(null);
+  const f = draft ?? data ?? null;
+  const setF = setDraft;
   if (isLoading || !f) return null;
   return (
     <SectionCard title="Header Halaman Kontak" icon={<Mail size={16} />}
@@ -117,7 +119,7 @@ export const ContactInboxPage = () => {
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat pesan.</div>
         ) : rows.length === 0 ? (
-          <div className="text-center py-16"><Inbox size={32} className="text-muted mx-auto mb-3" /><p className="font-bold text-ink text-[14px]">Belum ada pesan.</p></div>
+          <EmptyState icon={Inbox} title="Belum ada pesan" description={tab === 'ALL' ? 'Pesan yang dikirim melalui formulir kontak akan tampil di sini.' : 'Tidak ada pesan dengan status yang dipilih.'} />
         ) : (
           <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
         )}

@@ -15,7 +15,30 @@ export interface CatalogPagePublic {
 
 export interface CatalogListResponse { data: CatalogCard[]; meta?: ApiMeta; }
 
-const mapCatalogUnit = <T extends Record<string, any>>(u: T): T => {
+type LegacyCatalogShape = {
+  merek?: { name?: string } | null;
+  tipe?: { name?: string } | null;
+  brand?: string;
+  model?: string;
+  year?: number;
+  tahun?: number;
+  price?: number;
+  harga?: number;
+  km?: number;
+  kilometer?: number;
+  transmission?: string;
+  transmisi?: string;
+  fuel?: string;
+  bahanBakar?: string | null;
+  color?: string;
+  warna?: string;
+  plate?: string;
+  plat?: string;
+  status?: 'ready' | 'booked';
+  statusKatalog?: string;
+};
+
+const mapCatalogUnit = <T extends LegacyCatalogShape>(u: T): T => {
   if (!u) return u;
   return {
     ...u,

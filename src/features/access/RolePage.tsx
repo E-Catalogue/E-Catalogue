@@ -107,7 +107,7 @@ const RolePageInner = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data, isLoading, isError } = useRoles({ page, limit: 10, search: debounced });
+  const { data, isLoading, isFetching, isError, refetch } = useRoles({ page, limit: 10, search: debounced });
   const m = useRoleMutations();
   const { can } = usePermissions();
 
@@ -147,10 +147,9 @@ const RolePageInner = () => {
       </div>
 
       <SectionCard title="Daftar Role" icon={<ShieldCheck size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={24} className="animate-spin" /></div>
-          : isError ? <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-          : roles.length === 0 ? <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada role.</div>
-          : <><DataTable columns={columns} data={roles} rowKey={(r) => r.id} /><div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div></>}
+        <DataTable columns={columns} data={roles} rowKey={(r) => r.id} loading={isLoading} refreshing={isFetching && !isLoading}
+          error={isError} onRetry={() => refetch()} emptyState={{ title: debounced ? 'Role tidak ditemukan' : 'Belum ada role', description: debounced ? 'Ubah kata pencarian untuk melihat hasil lain.' : 'Tambahkan role untuk mengatur hak akses pengguna.' }} />
+        {!isLoading && !isError && roles.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
       <RoleFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} />

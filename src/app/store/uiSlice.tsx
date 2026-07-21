@@ -17,6 +17,12 @@ interface ShowToastPayload {
   type?: GlobalErrorType;
   /** Menentukan ikon & warna, dan ke mana notifikasi dirutekan. Bila kosong, diturunkan dari title/type. */
   variant?: ToastVariant;
+  action?: ToastAction;
+}
+
+export interface ToastAction {
+  label: string;
+  type: 'reload-page';
 }
 
 interface ErrorModalState {
@@ -31,6 +37,7 @@ export interface ToastItem {
   title: string;
   message: string;
   variant: 'success' | 'info' | 'warning';
+  action?: ToastAction;
 }
 
 interface UiState {
@@ -70,7 +77,7 @@ export const uiSlice = createSlice({
       if (variant === 'error') {
         state.errorModal = { isOpen: true, title, message, type };
       } else {
-        state.toasts.push({ id: crypto.randomUUID(), title, message, variant });
+        state.toasts.push({ id: crypto.randomUUID(), title, message, variant, action: action.payload.action });
       }
     },
     hideToast: (state) => {

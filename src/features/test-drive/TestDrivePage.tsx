@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileImage, KeyRound, Loader2, Plus, Search } from 'lucide-react';
+import { FileImage, KeyRound, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -45,7 +45,7 @@ const TestDrivePageInner = () => {
   const [status, setStatus] = useState('');
   const [salesId, setSalesId] = useState('');
   const debounced = useDebouncedValue(search, 400);
-  const { data, isLoading, isError } = useTestDrives({ page, limit: 10, search: debounced || undefined, status: status || undefined, salesId: salesId || undefined });
+  const { data, isLoading, isFetching, isError, refetch } = useTestDrives({ page, limit: 10, search: debounced || undefined, status: status || undefined, salesId: salesId || undefined });
   const { data: salesRes } = useQuery({ queryKey: ['test-drive-sales'], queryFn: testDriveApi.sales });
   const mutations = useTestDriveMutations();
   const [form, setForm] = useState<{ item: TestDrive | null } | null>(null);
@@ -95,10 +95,8 @@ const TestDrivePageInner = () => {
       </div>
 
       <SectionCard title="Jadwal Test Drive" icon={<KeyRound size={16} />} bodyClassName="p-0 md:p-0">
-        {isLoading ? <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={22} className="animate-spin" /></div>
-          : isError ? <div className="text-center py-16 text-semantic-error font-semibold text-sm">Gagal memuat test drive.</div>
-          : rows.length === 0 ? <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada test drive.</div>
-          : <DataTable columns={columns} data={rows} rowKey={(t) => t.id} />}
+        <DataTable columns={columns} data={rows} rowKey={(t) => t.id} loading={isLoading} refreshing={isFetching && !isLoading}
+          error={isError} onRetry={() => refetch()} emptyState={{ title: debounced || status || salesId ? 'Jadwal tidak ditemukan' : 'Belum ada test drive', description: debounced || status || salesId ? 'Ubah filter untuk melihat jadwal lainnya.' : 'Jadwalkan test drive untuk pelanggan dan unit yang tersedia.' }} />
       </SectionCard>
 
       <TestDriveFormModal open={!!form} item={form?.item} onClose={() => setForm(null)} />

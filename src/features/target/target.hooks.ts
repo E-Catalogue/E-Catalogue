@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { targetApi } from './target.api';
-import { notifyApiError } from '@/core/api/notify';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
+import { refreshAfterMutation } from '@/core/query/refreshAfterMutation';
 import type {
   BranchTargetCreateInput,
   BranchTargetUpdateInput,
@@ -42,40 +42,33 @@ export const useTargetBranch = (id: string | undefined, branchKey: string, heade
   });
 
 export const useTargetMutations = (branchKey: string, headers?: BranchHeaders) => {
-  const qc = useQueryClient();
-  const inval = (id?: string) => {
-    qc.invalidateQueries({ queryKey: ['targets'] });
-    if (id) qc.invalidateQueries({ queryKey: ['target', branchKey, id] });
-    // Broad invalidate (semua period/branch) — target achievement juga harus di-refresh oleh mutation
-    // DEAL di modul lead-order (README §18), lihat crm.hooks.ts.
-    qc.invalidateQueries({ queryKey: ['target-achievement'] });
-  };
+  const queryClient = useQueryClient();
+  const refresh = (id?: string) => refreshAfterMutation(queryClient, [
+    ['targets'],
+    ['target-achievement'],
+    ...(id ? [['target', branchKey, id] as const] : []),
+  ]);
 
   return {
     create: useMutation({
       mutationFn: (body: BranchTargetCreateInput) => targetApi.create(body, headers),
-      onSuccess: () => { toast('Target dibuat'); inval(); },
-      onError: (e: unknown) => notifyApiError(e),
+      onSuccess: async () => { await refresh(); toast('Target dibuat'); },
     }),
     update: useMutation({
       mutationFn: ({ id, body }: { id: string; body: BranchTargetUpdateInput }) => targetApi.update(id, body, headers),
-      onSuccess: (_, { id }) => { toast('Target diperbarui'); inval(id); },
-      onError: (e: unknown) => notifyApiError(e),
+      onSuccess: async (_, { id }) => { await refresh(id); toast('Target diperbarui'); },
     }),
     replaceSales: useMutation({
       mutationFn: ({ id, body }: { id: string; body: SalesTargetReplaceInput }) => targetApi.replaceSales(id, body, headers),
-      onSuccess: (_, { id }) => { toast('Distribusi sales disimpan'); inval(id); },
-      onError: (e: unknown) => notifyApiError(e),
+      onSuccess: async (_, { id }) => { await refresh(id); toast('Distribusi sales disimpan'); },
     }),
     activate: useMutation({
       mutationFn: (id: string) => targetApi.activate(id, headers),
-      onSuccess: (_, id) => { toast('Target diaktifkan'); inval(id); },
-      onError: (e: unknown) => notifyApiError(e),
+      onSuccess: async (_, id) => { await refresh(id); toast('Target diaktifkan'); },
     }),
     close: useMutation({
       mutationFn: (id: string) => targetApi.close(id, headers),
-      onSuccess: (_, id) => { toast('Target ditutup'); inval(id); },
-      onError: (e: unknown) => notifyApiError(e),
+      onSuccess: async (_, id) => { await refresh(id); toast('Target ditutup'); },
     }),
   };
 };

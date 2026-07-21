@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { ArrowDown, ArrowUp, BadgeCheck, Calendar, CheckCircle, Cog, Gauge, Hash, Image as ImageIcon, Pencil, Receipt, Star, Trash2, TrendingUp, Upload } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -11,6 +11,7 @@ import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
 import { notifyApiError } from '@/core/api/notify';
 import { useFinalizeInitialPricing, useUnit, useUnitImageMutations } from './unit.hooks';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 
 interface UnitDetailModalProps {
   open: boolean;
@@ -36,14 +37,24 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   const current = detailRes?.data ?? unit;
   const imageMutations = useUnitImageMutations(current?.id ?? '');
   const finalizePricing = useFinalizeInitialPricing();
+  const confirmAction = useConfirmedAction();
   const { can } = usePermissions();
   const [imageError, setImageError] = useState('');
   const [confirmFinalize, setConfirmFinalize] = useState(false);
   const [confirmNoRekondisi, setConfirmNoRekondisi] = useState(false);
+  const [draftImages, setDraftImages] = useState<NonNullable<Unit['unitImages']> | null>(null);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const pendingImageUrl = useMemo(() => pendingImage ? URL.createObjectURL(pendingImage) : '', [pendingImage]);
+
+  useEffect(() => {
+    return () => { if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl); };
+  }, [pendingImageUrl]);
 
   if (!current) return null;
 
-  const images = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
+  const serverImages = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
+  const images = draftImages ?? serverImages;
+  const imageOrderDirty = serverImages.map((image) => image.id).join(',') !== images.map((image) => image.id).join(',');
   const mainImage = images.find((img) => img.isMain) ?? images[0];
   const otrPrice = current.otrPrice ?? null;
   const targetPrice = current.targetPrice ?? null;
@@ -71,17 +82,25 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
     if (file.size > 5 * 1024 * 1024) return 'Ukuran file maksimal 5MB.';
     return '';
   };
-  const uploadImage = (event: ChangeEvent<HTMLInputElement>) => {
+  const selectImage = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     const error = validateImage(file);
     setImageError(error);
-    if (error) return;
-    imageMutations.upload.mutate(
-      { file, isMain: images.length === 0 },
-      { onError: (err) => notifyApiError(err) },
-    );
+    setPendingImage(error ? null : file);
     event.target.value = '';
+  };
+  const uploadImage = () => {
+    if (!pendingImage) return;
+    const file = pendingImage;
+    confirmAction({
+      title: 'Upload Gambar Unit',
+      message: `Upload ${file.name} ke galeri unit ini?`,
+      confirmLabel: 'Upload Gambar',
+      execute: () => imageMutations.upload.mutateAsync({ file, isMain: images.length === 0 }),
+      onSuccess: () => setPendingImage(null),
+      onError: notifyApiError,
+    });
   };
   const reorder = (imageId: string, direction: -1 | 1) => {
     const index = images.findIndex((img) => img.id === imageId);
@@ -89,14 +108,23 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
     if (index < 0 || target < 0 || target >= images.length) return;
     const next = [...images];
     [next[index], next[target]] = [next[target], next[index]];
-    imageMutations.reorder.mutate(next.map((img, idx) => ({ id: img.id, sequence: idx + 1 })), { onError: (err) => notifyApiError(err) });
+    setDraftImages(next);
   };
+  const saveImageOrder = () => confirmAction({
+    title: 'Simpan Urutan Gambar',
+    message: 'Simpan urutan galeri unit sesuai susunan saat ini?',
+    confirmLabel: 'Simpan Urutan',
+    execute: () => imageMutations.reorder.mutateAsync(images.map((img, idx) => ({ id: img.id, sequence: idx + 1 }))),
+    onSuccess: () => setDraftImages(null),
+    onError: notifyApiError,
+  });
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       size="lg"
+      busy={imageMutations.upload.isPending || imageMutations.reorder.isPending || imageMutations.remove.isPending || imageMutations.setMain.isPending || finalizePricing.isPending}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
@@ -177,12 +205,26 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
             <p className="text-[13px] font-extrabold text-ink">Galeri Unit</p>
             <p className="text-[11px] font-semibold text-muted">Upload, urutkan, dan pilih gambar utama</p>
           </div>
-          <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-[12px] font-bold cursor-pointer">
-            <Upload size={14} /> Upload
-            <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={uploadImage} className="hidden" />
-          </label>
+          <div className="flex items-center gap-2">
+            {imageOrderDirty && <Button size="sm" onClick={saveImageOrder} loading={imageMutations.reorder.isPending}>Simpan Urutan</Button>}
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-[12px] font-bold cursor-pointer">
+              <Upload size={14} /> Upload
+              <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={selectImage} className="hidden" />
+            </label>
+          </div>
         </div>
         {imageError && <p className="text-[12px] font-semibold text-semantic-error mb-2">{imageError}</p>}
+        {pendingImage && (
+          <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border bg-surface-soft p-3">
+            <img src={pendingImageUrl} alt="Preview gambar yang akan diupload" className="h-16 w-24 rounded-xl object-cover" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-extrabold text-ink">{pendingImage.name}</p>
+              <p className="text-[11px] font-semibold text-muted">{(pendingImage.size / 1024 / 1024).toFixed(2)} MB · Siap diupload</p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setPendingImage(null)}>Batal</Button>
+            <Button size="sm" onClick={uploadImage} loading={imageMutations.upload.isPending}>Upload</Button>
+          </div>
+        )}
         {images.length === 0 ? (
           <div className="border border-dashed border-border rounded-2xl py-8 text-center text-muted">
             <ImageIcon size={28} className="mx-auto mb-2" />
