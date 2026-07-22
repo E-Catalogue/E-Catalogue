@@ -3,7 +3,8 @@ import type { AxiosError } from 'axios';
 import { Target } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
-import { TextField, NumericField } from '@/shared/components/ui/Field';
+import { NumericField } from '@/shared/components/ui/Field';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { classifyAxiosError } from '@/core/api/errorHandler';
 import type { ApiErrorBody } from '@/core/api/types';
 import { notifyApiError } from '@/core/api/notify';
@@ -19,12 +20,15 @@ interface Props {
   open: boolean;
   onClose: () => void;
   target?: BranchTarget | null;
+  /** Cabang terpilih — WAJIB dikirim di body create sejak update_target. */
+  branchId: string;
+  branchName?: string;
   branchKey: string;
   branchHeader: Record<string, string> | undefined;
 }
 
 /** Create/Edit BranchTarget. Edit hanya diizinkan saat status === 'DRAFT' (double-guard, page sudah gating). */
-export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader }: Props) => {
+export const TargetFormModal = ({ open, onClose, target, branchId, branchName, branchKey, branchHeader }: Props) => {
   const confirmAction = useConfirmedAction();
   const isEdit = !!target;
   // Parent (TargetPage) me-remount komponen ini lewat `key` setiap kali modal dibuka,
@@ -78,10 +82,10 @@ export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader
         onError: handleError,
       });
     } else {
-      const body = { period, unitTarget, revenueTarget };
+      const body = { branchId, period, unitTarget, revenueTarget };
       confirmAction({
         title: 'Buat Target Cabang',
-        message: `Buat target cabang untuk periode ${period}?`,
+        message: `Buat target cabang${branchName ? ` ${branchName}` : ''} untuk periode ${period}?`,
         confirmLabel: 'Buat Target',
         execute: () => m.create.mutateAsync(body),
         onSuccess: onClose,
@@ -97,7 +101,7 @@ export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader
       busy={pending}
       icon={<Target size={20} />}
       title={isEdit ? 'Edit Target Cabang' : 'Buat Target Cabang'}
-      subtitle={isEdit ? target?.branch?.nama : 'Target unit & revenue untuk satu periode'}
+      subtitle={isEdit ? target?.branch?.nama : (branchName ? `Cabang ${branchName}` : 'Target unit & revenue untuk satu periode')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={pending}>Batal</Button>
@@ -112,12 +116,11 @@ export const TargetFormModal = ({ open, onClose, target, branchKey, branchHeader
       ) : (
         <form id="target-form" onSubmit={submit} className="space-y-4">
           <div>
-            <TextField
-              label="Periode (YYYY-MM)"
+            <MonthField
+              label="Periode"
               required
-              type="month"
               value={period}
-              onChange={(e) => { setPeriod(e.target.value); setPeriodError(null); }}
+              onChange={(v) => { setPeriod(v); setPeriodError(null); }}
             />
             {periodError && <p className="text-[11px] font-semibold text-semantic-error mt-1">{periodError}</p>}
           </div>

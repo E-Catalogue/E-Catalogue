@@ -92,6 +92,8 @@ export const QuickInput = ({ expanded }: QuickInputProps) => {
         onClose={() => setActive(null)}
         submitting={orderM.create.isPending}
         currentUserId={currentUserId}
+        branchKey={branchKey}
+        branchHeader={branchHeader}
         onSubmit={handleOrderSubmit}
       />
       <PaymentFormModal open={active === 'payment'} onClose={() => setActive(null)} />

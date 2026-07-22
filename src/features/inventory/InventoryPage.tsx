@@ -122,14 +122,12 @@ const FilterModal = ({
         </div>
 
         {merkList.length > 0 && (
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Merek</p>
-            <select value={draft.merek} onChange={(e) => set('merek', e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-border bg-surface text-[13px] font-semibold focus:outline-none focus:border-primary">
-              <option value="">Semua Merek</option>
-              {merkList.map((mk) => <option key={mk} value={mk}>{mk}</option>)}
-            </select>
-          </div>
+          <SelectField
+            label="Merek"
+            value={draft.merek}
+            onChange={(e) => set('merek', e.target.value)}
+            options={[{ value: '', label: 'Semua Merek' }, ...merkList.map((mk) => ({ value: mk, label: mk }))]}
+          />
         )}
       </div>
     </Modal>

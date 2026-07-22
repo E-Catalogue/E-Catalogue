@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
-import { TextField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { formatCurrency } from '@/core/utils/format';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useCashDashboard } from '@/features/finance/finance.hooks';
@@ -34,9 +34,9 @@ const LaporanCashflowPageInner = () => {
       <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-surface border border-border shadow-sm">
         <CalendarDays size={18} className="text-primary shrink-0" />
         <span className="text-sm font-extrabold text-ink shrink-0">Periode:</span>
-        <TextField label="" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} wrapClass="w-40" />
+        <DateField value={dateFrom} onChange={setDateFrom} wrapClass="w-44" clearable />
         <span className="text-muted text-sm">—</span>
-        <TextField label="" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} wrapClass="w-40" />
+        <DateField value={dateTo} onChange={setDateTo} wrapClass="w-44" clearable />
         {(dateFrom || dateTo) && (
           <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-[12px] font-bold text-primary hover:underline">Reset</button>
         )}

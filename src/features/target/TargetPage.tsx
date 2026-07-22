@@ -5,7 +5,7 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
-import { SelectField } from '@/shared/components/ui/Field';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RequirePermission } from '@/features/auth/permissions';
@@ -13,7 +13,7 @@ import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
-import { useTargetBranches, useTargetMutations } from './target.hooks';
+import { useTargetBranches, useTargetLookupBranches, useTargetMutations } from './target.hooks';
 import { TargetFormModal } from './TargetFormModal';
 import { TargetDetailModal } from './TargetDetailModal';
 import { TARGET_STATUS_COLOR, TARGET_STATUS_LABEL, type BranchTarget } from './target.types';
@@ -24,7 +24,8 @@ const currentPeriod = () => new Date().toISOString().slice(0, 7);
 
 const TargetPageInner = () => {
   const { can } = usePermissions();
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
+  const { isOwner, userBranchId, selectedBranchId, branchHeader, branchKey } = useBranchScope();
+  const effectiveBranchId = selectedBranchId ?? userBranchId ?? '';
   const [periodInput, setPeriodInput] = useState(currentPeriod());
   const period = PERIOD_RE.test(periodInput) ? periodInput : undefined;
 
@@ -32,11 +33,10 @@ const TargetPageInner = () => {
   const { data } = query;
   const rows: BranchTarget[] = data?.data ?? [];
 
-  // Backend lookup cabang tidak ada di modul ini — turunkan opsi selector dari cabang yang muncul
-  // pada data target (mode "semua cabang" Owner mengembalikan lintas cabang tanpa header).
-  const branches = Array.from(
-    new Map(rows.filter((r) => r.branch).map((r) => [r.branch!.id, r.branch!])).values(),
-  );
+  // Sejak update_target: pilihan cabang diambil dari `/targets/lookups/branches` (bukan diturunkan
+  // dari data target). Owner/Admin dapat semua cabang aktif; role lain hanya cabangnya.
+  const { data: branchLookup = [] } = useTargetLookupBranches(undefined, isOwner);
+  const branches = branchLookup.map((b) => ({ id: b.id, nama: b.nama }));
 
   const m = useTargetMutations(branchKey, branchHeader);
 
@@ -122,24 +122,8 @@ const TargetPageInner = () => {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-3">
-        {isOwner && (
-          <SelectField
-            label=""
-            value={selectedBranchId ?? ''}
-            onChange={(e) => setSelectedBranchId(e.target.value || null)}
-            options={[
-              { value: '', label: 'Semua Cabang' },
-              ...branches.map((b) => ({ value: b.id, label: b.nama })),
-            ]}
-          />
-        )}
-        <input
-          type="month"
-          value={periodInput}
-          onChange={(e) => setPeriodInput(e.target.value)}
-          className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-[220px] gap-3">
+        <MonthField value={periodInput} onChange={setPeriodInput} />
       </div>
 
       <SectionCard title={`Daftar Target (${rows.length})`} icon={<Target size={16} />} bodyClassName="p-0 md:p-0">
@@ -166,6 +150,8 @@ const TargetPageInner = () => {
         open={!!formTarget}
         onClose={() => setFormTarget(null)}
         target={formTarget?.item}
+        branchId={effectiveBranchId}
+        branchName={branches.find((b) => b.id === effectiveBranchId)?.nama}
         branchKey={branchKey}
         branchHeader={branchHeader}
       />

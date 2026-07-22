@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMutating } from '@tanstack/react-query';
+import { safeRandomUUID } from '@/core/utils/uuid';
 
 const modalStack: string[] = [];
 
@@ -36,7 +37,7 @@ export const Modal = ({
   busy = false, dismissible = true, blockWhileMutating = true,
 }: ModalProps) => {
   const mutationCount = useIsMutating();
-  const [modalId] = useState(() => crypto.randomUUID());
+  const [modalId] = useState(() => safeRandomUUID());
   const effectiveBusy = busy || (blockWhileMutating && mutationCount > 0);
   const canDismiss = dismissible && !effectiveBusy;
   useEffect(() => {

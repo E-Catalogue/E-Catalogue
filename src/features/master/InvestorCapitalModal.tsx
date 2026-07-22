@@ -11,15 +11,18 @@ import {
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
-import { TextField, SelectField, NumericField } from '@/shared/components/ui/Field';
+import { TextField, NumericField } from '@/shared/components/ui/Field';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
+import { DateField } from '@/shared/components/ui/DateField';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { CashAccountSelect } from '@/features/finance/components';
+import { useInvestorCapitalCashAccounts } from '@/features/finance/lookup';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
 import { getApiErrorCode, getApiErrorMessage } from '@/core/api/apiError';
 import { formatCurrency, formatDate } from '@/core/utils/format';
-import { useBranches, useCapitalAccounts, useCapitalMutations, useCapitalTransactions } from './master.hooks';
+import { useCapitalAccounts, useCapitalMutations, useCapitalTransactions } from './master.hooks';
 import {
   CAPITAL_TX_TYPE_LABEL, INVESTOR_SCHEME_LABEL,
   type CapitalAccount, type CapitalAccountsConsolidated, type CapitalTransaction,
@@ -80,6 +83,7 @@ interface MutationFormProps {
 }
 
 const DepositForm = ({ investorId, branchKey, branchHeader, onDone }: MutationFormProps) => {
+  const { data: cashAccounts = [], isLoading: cashLoading } = useInvestorCapitalCashAccounts(investorId, branchKey, { headers: branchHeader });
   const [cashAccountId, setCashAccountId] = useState('');
   const [amount, setAmount] = useState(0);
   const [transactionDate, setTransactionDate] = useState(today());
@@ -110,8 +114,8 @@ const DepositForm = ({ investorId, branchKey, branchHeader, onDone }: MutationFo
     <div className="space-y-3">
       {error && <InlineErrorBanner code={error.code} message={error.message} onDismiss={() => setError(null)} />}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={(v) => { setCashAccountId(v); idem.regenerate(); }} />
-        <TextField label="Tanggal" required type="date" value={transactionDate} onChange={(e) => { setTransactionDate(e.target.value); idem.regenerate(); }} />
+        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={(v) => { setCashAccountId(v); idem.regenerate(); }} accounts={cashAccounts} loading={cashLoading} />
+        <DateField label="Tanggal" required value={transactionDate} onChange={(v) => { setTransactionDate(v); idem.regenerate(); }} />
         <NumericField label="Nominal" required value={amount} onChange={(v) => { setAmount(v); idem.regenerate(); }} prefix="Rp" wrapClass="sm:col-span-2" />
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} placeholder="mis. Setoran modal awal" />
       </div>
@@ -133,6 +137,7 @@ const DepositForm = ({ investorId, branchKey, branchHeader, onDone }: MutationFo
 };
 
 const WithdrawalForm = ({ investorId, branchKey, branchHeader, availableBalance, onDone }: MutationFormProps) => {
+  const { data: cashAccounts = [], isLoading: cashLoading } = useInvestorCapitalCashAccounts(investorId, branchKey, { headers: branchHeader });
   const [cashAccountId, setCashAccountId] = useState('');
   const [amount, setAmount] = useState(0);
   const [transactionDate, setTransactionDate] = useState(today());
@@ -165,8 +170,8 @@ const WithdrawalForm = ({ investorId, branchKey, branchHeader, availableBalance,
     <div className="space-y-3">
       {error && <InlineErrorBanner code={error.code} message={error.message} onDismiss={() => setError(null)} />}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={(v) => { setCashAccountId(v); idem.regenerate(); }} />
-        <TextField label="Tanggal" required type="date" value={transactionDate} onChange={(e) => { setTransactionDate(e.target.value); idem.regenerate(); }} />
+        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={(v) => { setCashAccountId(v); idem.regenerate(); }} accounts={cashAccounts} loading={cashLoading} />
+        <DateField label="Tanggal" required value={transactionDate} onChange={(v) => { setTransactionDate(v); idem.regenerate(); }} />
         <NumericField label="Nominal" required value={amount} onChange={(v) => { setAmount(v); idem.regenerate(); }} prefix="Rp" wrapClass="sm:col-span-2" />
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} placeholder="mis. Penarikan sebagian modal" />
       </div>
@@ -216,9 +221,7 @@ interface Props {
 export const InvestorCapitalModal = ({ open, onClose, investor }: Props) => {
   const investorId = investor?.id ?? '';
   const { can } = usePermissions();
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
-  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
-  const branches = branchesRes?.data ?? [];
+  const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
 
   const [txPage, setTxPage] = useState(1);
   const [txType, setTxType] = useState<CapitalTransactionType | ''>('');
@@ -257,19 +260,10 @@ export const InvestorCapitalModal = ({ open, onClose, investor }: Props) => {
       footer={<Button variant="secondary" onClick={onClose}>Tutup</Button>}
     >
       <div className="space-y-5">
-        {isOwner && (
-          <SelectField
-            label="Cabang"
-            value={selectedBranchId ?? ''}
-            onChange={(e) => setSelectedBranchId(e.target.value || null)}
-            options={[{ value: '', label: 'Semua Cabang (ringkasan)' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
-          />
-        )}
-
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
             <AlertTriangle size={16} className="shrink-0" />
-            Pilih cabang konkret untuk melihat saldo per cabang dan melakukan setor/tarik modal.
+            Menampilkan ringkasan seluruh cabang. Pilih cabang aktif di header (pojok kanan atas) untuk melihat saldo per cabang dan melakukan setor/tarik modal.
           </div>
         )}
 
@@ -302,7 +296,7 @@ export const InvestorCapitalModal = ({ open, onClose, investor }: Props) => {
           </section>
         ) : (
           <section>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Saldo Modal — {singleAccount?.branch?.nama ?? branches.find((b) => b.id === selectedBranchId)?.nama ?? 'Cabang'}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Saldo Modal — {singleAccount?.branch?.nama ?? 'Cabang'}</p>
             <div className="grid grid-cols-3 gap-3">
               <BalanceCard label="Available" value={availableBalance} tone="primary" />
               <BalanceCard label="Allocated" value={allocatedBalance} tone="ink" />
@@ -331,16 +325,15 @@ export const InvestorCapitalModal = ({ open, onClose, investor }: Props) => {
         <section>
           <div className="flex items-center justify-between gap-3 mb-2">
             <p className="text-[11px] font-bold uppercase tracking-wide text-muted inline-flex items-center gap-1.5"><History size={13} /> Histori Transaksi</p>
-            <select
+            <SearchableSelect
               value={txType}
-              onChange={(e) => setTxType(e.target.value as CapitalTransactionType | '')}
-              className="h-8 px-2.5 rounded-lg border border-border text-[11px] font-semibold bg-surface focus:outline-none focus:border-primary"
-            >
-              <option value="">Semua tipe</option>
-              {(Object.keys(CAPITAL_TX_TYPE_LABEL) as CapitalTransactionType[]).map((t) => (
-                <option key={t} value={t}>{CAPITAL_TX_TYPE_LABEL[t]}</option>
-              ))}
-            </select>
+              onChange={(v) => setTxType(v as CapitalTransactionType | '')}
+              options={[
+                { value: '', label: 'Semua tipe' },
+                ...(Object.keys(CAPITAL_TX_TYPE_LABEL) as CapitalTransactionType[]).map((t) => ({ value: t, label: CAPITAL_TX_TYPE_LABEL[t] })),
+              ]}
+              wrapClass="w-40"
+            />
           </div>
           {txLoading ? (
             <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-muted" /></div>

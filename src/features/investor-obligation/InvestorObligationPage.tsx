@@ -9,11 +9,12 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { Pagination } from '@/shared/components/ui/Pagination';
-import { SelectField, TextField } from '@/shared/components/ui/Field';
+import { SelectField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
-import { useBranches, useInvestors } from '@/features/master/master.hooks';
+import { useInvestors } from '@/features/master/master.hooks';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { notifyApiError } from '@/core/api/notify';
 import { useInvestorObligationMutations, useInvestorObligations } from './investor-obligation.hooks';
@@ -85,11 +86,10 @@ const GenerateAction = ({
         message="Sistem akan membuat/memperbarui kewajiban FIXED_RETURN yang jatuh tempo sampai tanggal berikut untuk cabang aktif. Aman dipanggil ulang (idempotent per siklus)."
         confirmLabel="Ya, Generate"
       >
-        <TextField
+        <DateField
           label="Sampai Tanggal (opsional)"
-          type="date"
           value={throughDate}
-          onChange={(e) => setThroughDate(e.target.value)}
+          onChange={(v) => setThroughDate(v)}
         />
         <p className="text-[11px] text-muted font-medium mt-1.5">Kosongkan untuk memakai tanggal hari ini.</p>
       </ConfirmDialog>
@@ -99,9 +99,7 @@ const GenerateAction = ({
 
 export const InvestorObligationPage = () => {
   const { can } = usePermissions();
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
-  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
-  const branches = branchesRes?.data ?? [];
+  const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
   const { data: investorsRes } = useInvestors({ page: 1, limit: 100 });
   const investors = investorsRes?.data ?? [];
 
@@ -195,22 +193,14 @@ export const InvestorObligationPage = () => {
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
             <AlertTriangle size={16} className="shrink-0" />
-            Pilih cabang konkret di filter untuk melakukan aksi generate, pembayaran, atau reversal.
+            Pilih cabang aktif di header (pojok kanan atas) untuk melakukan aksi generate, pembayaran, atau reversal.
           </div>
         )}
 
         <SummaryCards branchKey={branchKey} headers={branchHeader} investorId={investorId || undefined} />
 
         <SectionCard title="Filter" icon={<Search size={16} />}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {isOwner && (
-              <SelectField
-                label="Cabang"
-                value={selectedBranchId ?? ''}
-                onChange={(e) => setSelectedBranchId(e.target.value || null)}
-                options={[{ value: '', label: 'Semua Cabang' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
-              />
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <SelectField
               label="Investor"
               value={investorId}
@@ -229,11 +219,10 @@ export const InvestorObligationPage = () => {
               onChange={(e) => { setType(e.target.value as InvestorObligationType | ''); setPage(1); }}
               options={[{ value: '', label: 'Semua Tipe' }, ...TYPE_OPTIONS.map((t) => ({ value: t, label: OBLIGATION_TYPE_LABEL[t] }))]}
             />
-            <TextField
+            <DateField
               label="Jatuh Tempo Sebelum"
-              type="date"
               value={dueBefore}
-              onChange={(e) => { setDueBefore(e.target.value); setPage(1); }}
+              onChange={(v) => { setDueBefore(v); setPage(1); }}
             />
           </div>
         </SectionCard>

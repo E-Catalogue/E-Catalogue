@@ -7,17 +7,30 @@ export interface TestDriveUnitLookup {
   tahun: number;
   warna: string;
   otrPrice?: number | null;
-  statusUnit: 'READY_STOCK';
-  branch?: { id: string; nama: string; code: string };
   merek?: { name: string } | null;
   tipe?: { name: string } | null;
 }
 
 export interface TestDriveSalesLookup {
   id: string;
+  branchId?: string;
   name: string;
-  email?: string | null;
   username?: string | null;
+}
+
+export interface TestDriveLeadLookup {
+  id: string;
+  branchId?: string;
+  nama: string;
+  nik?: string | null;
+  status?: string;
+}
+
+/** `.prd/update_module_owned_lookup_20260721.md` §4.10 — agregat lead/unit/sales. */
+export interface TestDriveFormLookup {
+  leads: TestDriveLeadLookup[];
+  units: TestDriveUnitLookup[];
+  sales: TestDriveSalesLookup[];
 }
 
 export interface TestDrive {

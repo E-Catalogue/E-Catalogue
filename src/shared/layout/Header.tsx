@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from '@tanstack/react-router';
-import { Menu, Search, Bell, CalendarDays, ChevronDown, Store, LogOut, ShieldOff, Command } from 'lucide-react';
+import { Menu, Search, ChevronDown, Store, LogOut, ShieldOff, Command } from 'lucide-react';
 import { MENU_ITEMS, isPathActive } from './menu';
 import { CURRENT_USER } from '@/shared/constants';
 import { useAppSelector, useAppDispatch } from '@/app/store';
@@ -9,6 +9,7 @@ import { clearCredentials } from '@/app/store/authSlice';
 import { authApi } from '@/features/auth/auth.api';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { MenuSearchModal } from '@/shared/components/ui/MenuSearchModal';
+import { BranchSwitcher } from './BranchSwitcher';
 
 interface HeaderProps {
   onOpenMobileSidebar: () => void;
@@ -111,6 +112,9 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
 
         {/* RIGHT: actions */}
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Branch switcher global (OWNER/ADMIN) — sumber kebenaran cabang aktif */}
+          <BranchSwitcher />
+
           {/* Mobile search trigger */}
           <button
             onClick={() => setSearchOpen(true)}
@@ -126,15 +130,6 @@ export const Header = ({ onOpenMobileSidebar, isProfileOpen, onToggleProfile }: 
           >
             <Store size={16} /> Katalog
           </Link>
-
-          <button className="relative p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
-            <Bell size={20} strokeWidth={2.2} />
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-surface">8</span>
-          </button>
-
-          <button className="hidden sm:flex p-2.5 rounded-xl bg-surface-soft text-ink-soft hover:text-primary hover:bg-primary-light transition-colors">
-            <CalendarDays size={20} strokeWidth={2.2} />
-          </button>
 
           <div className="relative">
             <button

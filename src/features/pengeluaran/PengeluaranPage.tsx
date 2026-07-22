@@ -6,6 +6,8 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can, RequirePermission } from '@/features/auth/permissions';
@@ -14,10 +16,11 @@ import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField, ExpenseCategorySelect, FinanceStatusBadge } from '@/features/finance/components';
+import { useOperationalExpenseCashAccounts, useOperationalExpenseCategories, useRecurringExpenseCategories, useRecurringExpenseTemplates, type RecurringTemplateOption } from '@/features/finance/lookup';
 import { useBranchScope } from '@/features/auth/useBranchScope';
-import { useLookupRecurringExpenses, useOperationalExpenseMutations, useOperationalExpenses, useRecurringExpenseMutations, useRecurringExpenses } from '@/features/finance/finance.hooks';
+import { useOperationalExpenseMutations, useOperationalExpenses, useRecurringExpenseMutations, useRecurringExpenses } from '@/features/finance/finance.hooks';
 import { fromIsoDate, toIsoDate } from '@/features/finance/finance.utils';
-import type { LookupRecurringExpense, OperationalExpense, OperationalExpenseType, RecurringExpense } from '@/features/finance/types';
+import type { OperationalExpense, OperationalExpenseType, RecurringExpense } from '@/features/finance/types';
 
 type Tab = 'expenses' | 'recurring';
 
@@ -26,7 +29,8 @@ const month = () => new Date().toISOString().slice(0, 7);
 
 const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClose: () => void }) => {
   const mutations = useOperationalExpenseMutations();
-  const { branchHeader } = useBranchScope();
+  const { branchHeader, branchKey } = useBranchScope();
+  const { data: categories = [], isLoading: categoriesLoading } = useOperationalExpenseCategories(branchKey, { headers: branchHeader });
   const locked = item?.status === 'PAID' || !!item?.cashTransactionId;
   const [form, setForm] = useState({
     type: item?.type ?? 'NORMAL',
@@ -61,14 +65,14 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
       <form id="expense-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <SelectField label="Tipe" value={form.type} disabled={!!locked} onChange={(e) => set('type', e.target.value)} options={[{ value: 'NORMAL', label: 'Normal' }, { value: 'BACKDATE', label: 'Backdate' }]} />
         <TextField label="Judul" required disabled={!!locked} value={form.title} onChange={(e) => set('title', e.target.value)} />
-        <ExpenseCategorySelect required disabled={!!locked} value={form.kategoriPengeluaranId} onChange={(value) => set('kategoriPengeluaranId', value)} />
+        <ExpenseCategorySelect required disabled={!!locked} value={form.kategoriPengeluaranId} onChange={(value) => set('kategoriPengeluaranId', value)} categories={categories} loading={categoriesLoading} />
         <CurrencyField label="Nominal" required disabled={!!locked} value={form.amount} onChange={(e) => set('amount', e.target.value)} />
-        <TextField label={form.type === 'BACKDATE' ? 'Tanggal Pencatatan' : 'Tanggal Pengeluaran'} required type="date" disabled={!!locked} value={form.expenseDate} onChange={(e) => set('expenseDate', e.target.value)} />
+        <DateField label={form.type === 'BACKDATE' ? 'Tanggal Pencatatan' : 'Tanggal Pengeluaran'} required disabled={!!locked} value={form.expenseDate} onChange={(v) => set('expenseDate', v)} />
         {form.type === 'BACKDATE' && (
           <>
-            <TextField label="Periode Dari" required type="date" disabled={!!locked} value={form.expensePeriodStart} onChange={(e) => set('expensePeriodStart', e.target.value)} />
-            <TextField label="Periode Sampai" required type="date" disabled={!!locked} value={form.expensePeriodEnd} onChange={(e) => set('expensePeriodEnd', e.target.value)} />
-            <TextField label="Jatuh Tempo" type="date" disabled={!!locked} value={form.dueDate} onChange={(e) => set('dueDate', e.target.value)} />
+            <DateField label="Periode Dari" required disabled={!!locked} value={form.expensePeriodStart} onChange={(v) => set('expensePeriodStart', v)} />
+            <DateField label="Periode Sampai" required disabled={!!locked} value={form.expensePeriodEnd} onChange={(v) => set('expensePeriodEnd', v)} />
+            <DateField label="Jatuh Tempo" disabled={!!locked} value={form.dueDate} onChange={(v) => set('dueDate', v)} />
           </>
         )}
         <TextField label="Keterangan" wrapClass="sm:col-span-2" disabled={!!locked} value={form.description} onChange={(e) => set('description', e.target.value)} />
@@ -90,7 +94,8 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
 
 const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: () => void }) => {
   const mutations = useOperationalExpenseMutations();
-  const { branchHeader } = useBranchScope();
+  const { branchHeader, branchKey } = useBranchScope();
+  const { data: cashAccounts = [], isLoading: cashLoading } = useOperationalExpenseCashAccounts(branchKey, { headers: branchHeader });
   const [form, setForm] = useState({ cashAccountId: '', paidDate: today(), description: item.description ?? '' });
   const [proof, setProof] = useState<File | null>(null);
   const submit = (e: FormEvent) => {
@@ -104,8 +109,8 @@ const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: 
           <p className="text-[11px] font-bold uppercase text-muted">{item.title}</p>
           <p className="text-lg font-extrabold text-semantic-error mt-1">{formatCurrency(item.amount)}</p>
         </div>
-        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} />
-        <TextField label="Tanggal Bayar" required type="date" value={form.paidDate} onChange={(e) => setForm((f) => ({ ...f, paidDate: e.target.value }))} />
+        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} accounts={cashAccounts} loading={cashLoading} />
+        <DateField label="Tanggal Bayar" required value={form.paidDate} onChange={(v) => setForm((f) => ({ ...f, paidDate: v }))} />
         <TextField label="Keterangan" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
         <div>
           <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Bukti Pembayaran (opsional)</label>
@@ -123,7 +128,8 @@ const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: 
 
 const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClose: () => void }) => {
   const mutations = useRecurringExpenseMutations();
-  const { branchHeader } = useBranchScope();
+  const { branchHeader, branchKey } = useBranchScope();
+  const { data: categories = [], isLoading: categoriesLoading } = useRecurringExpenseCategories(branchKey, { headers: branchHeader });
   const [form, setForm] = useState({ name: item?.name ?? '', kategoriPengeluaranId: item?.kategoriPengeluaranId ?? '', defaultAmount: String(item?.defaultAmount ?? ''), description: item?.description ?? '', isActive: item?.isActive ?? true });
   const set = (key: keyof typeof form, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
@@ -137,7 +143,7 @@ const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClo
     <Modal open onClose={onClose} title={item ? 'Edit Pengeluaran Rutin' : 'Tambah Pengeluaran Rutin'} icon={<CalendarClock size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="recurring-form" disabled={mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
       <form id="recurring-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TextField label="Nama" required value={form.name} onChange={(e) => set('name', e.target.value)} />
-        <ExpenseCategorySelect required value={form.kategoriPengeluaranId} onChange={(value) => set('kategoriPengeluaranId', value)} />
+        <ExpenseCategorySelect required value={form.kategoriPengeluaranId} onChange={(value) => set('kategoriPengeluaranId', value)} categories={categories} loading={categoriesLoading} />
         <CurrencyField label="Nominal Default" required value={form.defaultAmount} onChange={(e) => set('defaultAmount', e.target.value)} />
         <TextField label="Keterangan" value={form.description} onChange={(e) => set('description', e.target.value)} />
         <label className="sm:col-span-2 flex items-center gap-2.5 text-[13px] font-semibold text-ink-soft"><input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" /> Aktif</label>
@@ -149,8 +155,7 @@ const RecurringForm = ({ item, onClose }: { item: RecurringExpense | null; onClo
 const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
   const mutations = useRecurringExpenseMutations();
   const { branchKey, branchHeader } = useBranchScope();
-  const { data, isLoading, isError, refetch } = useLookupRecurringExpenses(branchKey, { isActive: 'true' }, branchHeader);
-  const items = data?.data ?? [];
+  const { data: items = [], isLoading, isError, refetch } = useRecurringExpenseTemplates(branchKey, { headers: branchHeader });
   const [period, setPeriod] = useState(month());
   const [selected, setSelected] = useState<Record<string, { checked: boolean; amount: string }>>({});
   const submit = (e: FormEvent) => {
@@ -160,11 +165,11 @@ const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
       .map((item) => ({ recurringExpenseId: item.id, amount: Number(selected[item.id]?.amount || item.defaultAmount || 0) }));
     mutations.generate.mutate({ body: { period, items: chosen }, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => onClose() });
   };
-  const rowAmount = (item: LookupRecurringExpense) => selected[item.id]?.amount ?? String(item.defaultAmount);
+  const rowAmount = (item: RecurringTemplateOption) => selected[item.id]?.amount ?? String(item.defaultAmount);
   return (
     <Modal open onClose={onClose} title="Generate Pengeluaran Rutin" icon={<CalendarClock size={20} />} size="lg" footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="generate-recurring-form" disabled={mutations.generate.isPending}>Generate</Button></>}>
       <form id="generate-recurring-form" onSubmit={submit} className="space-y-4">
-        <TextField label="Periode" required type="month" value={period} onChange={(e) => setPeriod(e.target.value)} />
+        <MonthField label="Periode" required value={period} onChange={setPeriod} />
         {isError ? (
           <div className="rounded-xl border border-border bg-surface-soft p-4 text-sm font-semibold text-muted">
             Gagal memuat template. <button type="button" className="font-bold text-primary" onClick={() => refetch()}>Coba lagi</button>
@@ -176,8 +181,8 @@ const GenerateRecurringForm = ({ onClose }: { onClose: () => void }) => {
           {!isLoading && items.map((item) => (
             <div key={item.id} className="grid grid-cols-[auto_1fr_160px] gap-3 items-center px-4 py-3">
               <input type="checkbox" checked={selected[item.id]?.checked ?? true} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: e.target.checked, amount: s[item.id]?.amount ?? String(item.defaultAmount) } }))} className="w-4 h-4 accent-[color:var(--color-primary)]" />
-              <div><p className="font-bold text-ink text-[13px]">{item.name}</p><p className="text-[11px] text-muted">{item.kategoriName}</p></div>
-              <input type="number" min={0} value={rowAmount(item)} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: s[item.id]?.checked ?? true, amount: e.target.value } }))} className="h-10 px-3 rounded-xl bg-surface-soft border border-border text-sm font-semibold" />
+              <div><p className="font-bold text-ink text-[13px]">{item.name}</p><p className="text-[11px] text-muted">{item.kategoriPengeluaran?.name ?? '-'}</p></div>
+              <CurrencyField label="" value={rowAmount(item)} onChange={(e) => setSelected((s) => ({ ...s, [item.id]: { checked: s[item.id]?.checked ?? true, amount: e.target.value } }))} />
             </div>
           ))}
         </div>

@@ -2,11 +2,13 @@ import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
 import uiReducer from './uiSlice';
 import authReducer from './authSlice';
+import branchReducer from './branchSlice';
 
 export const store = configureStore({
   reducer: {
     ui: uiReducer,
     auth: authReducer,
+    branch: branchReducer,
   },
 });
 

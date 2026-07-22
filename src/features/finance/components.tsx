@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, type ChangeEvent } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { SelectField, TextField } from '@/shared/components/ui/Field';
+import { NumericField } from '@/shared/components/ui/Field';
+import { SearchableSelect, type SearchableSelectOption } from '@/shared/components/ui/SearchableSelect';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
-import { useLookupCashAccounts, useLookupDealOrders, useLookupExpenseCategories, useLookupPayrollUsers, useLookupSales } from './finance.hooks';
 import { formatCurrency, formatDate } from '@/core/utils/format';
-
-type BranchHeaders = Record<string, string> | undefined;
+import type { CashAccountOption, CategoryOption } from './lookup';
 
 /**
  * Pesan banner inline per error code finansial dipakai lintas modul finance (README §17 — jangan
@@ -52,74 +51,92 @@ export const FinanceErrorBanner = ({ code, message, onDismiss }: { code?: string
   );
 };
 
-/** `branchKey`/`headers` opsional — diteruskan ke lookup query (README §8/§9). Backend
- * `finance/lookups/*` belum memfilter per branch (lihat catatan di finance.api.ts), tapi tetap
- * dikirim untuk konsistensi & agar cache tidak campur ketika Owner berpindah cabang. */
-interface SelectBaseProps {
+/**
+ * Select-select ini SEKARANG presentational — datanya dipasok caller lewat prop (bukan lagi fetch
+ * `/finance/lookups/*` internal, yang sudah dihapus backend, `.prd/update_module_owned_lookup`).
+ * Setiap halaman memanggil hook lookup module-nya sendiri (lihat `finance/lookup.ts`) dan mengoper
+ * hasilnya ke sini. Semua pakai `SearchableSelect` (ada input pencarian di dalam dropdown).
+ */
+interface PresentationalSelectProps {
   value: string;
   onChange: (value: string) => void;
   label?: string;
   required?: boolean;
   disabled?: boolean;
-  branchKey?: string;
-  headers?: BranchHeaders;
+  loading?: boolean;
 }
 
-export const CashAccountSelect = ({ value, onChange, label = 'Akun Kas', required, disabled, branchKey = 'all', headers }: SelectBaseProps) => {
-  const { data, isLoading } = useLookupCashAccounts(branchKey, { isActive: 'true' }, headers);
-  const options = useMemo(
-    () => [{ value: '', label: isLoading ? 'Memuat akun kas...' : 'Pilih akun kas' }, ...((data?.data ?? []).map((x) => ({ value: x.id, label: `${x.name} (${x.code} - ${x.type})${x.defaultPayment ? ' - Default Penjualan' : ''}` })))],
-    [data?.data, isLoading],
-  );
-  return <SelectField label={label} required={required} value={value} onChange={(e) => onChange(e.target.value)} options={options} disabled={disabled || isLoading} />;
+/** Format label akun kas: "Nama (KODE · TIPE)" + sublabel default penjualan. */
+const cashAccountOption = (x: CashAccountOption): SearchableSelectOption => ({
+  value: x.id,
+  label: `${x.name} (${x.code} · ${x.type})`,
+  sublabel: x.defaultPayment ? 'Default penjualan' : undefined,
+});
+
+export const CashAccountSelect = ({ value, onChange, label = 'Akun Kas', required, disabled, loading, accounts }: PresentationalSelectProps & { accounts: CashAccountOption[] }) => {
+  const options = useMemo(() => accounts.map(cashAccountOption), [accounts]);
+  return <SearchableSelect label={label} required={required} disabled={disabled} loading={loading} value={value} onChange={onChange} options={options} placeholder="Pilih akun kas" searchPlaceholder="Cari akun kas..." emptyMessage="Tidak ada akun kas aktif." />;
 };
 
-export const ExpenseCategorySelect = ({ value, onChange, label = 'Kategori', required, disabled, branchKey = 'all', headers }: SelectBaseProps) => {
-  const { data, isLoading } = useLookupExpenseCategories(branchKey, { isActive: 'true' }, headers);
-  const options = useMemo(
-    () => [{ value: '', label: isLoading ? 'Memuat kategori...' : 'Pilih kategori' }, ...((data?.data ?? []).map((x) => ({ value: x.id, label: x.code ? `${x.name} (${x.code})` : x.name })))],
-    [data?.data, isLoading],
-  );
-  return <SelectField label={label} required={required} value={value} onChange={(e) => onChange(e.target.value)} options={options} disabled={disabled || isLoading} />;
+export const ExpenseCategorySelect = ({ value, onChange, label = 'Kategori', required, disabled, loading, categories }: PresentationalSelectProps & { categories: CategoryOption[] }) => {
+  const options = useMemo(() => categories.map((x) => ({ value: x.id, label: x.code ? `${x.name} (${x.code})` : x.name })), [categories]);
+  return <SearchableSelect label={label} required={required} disabled={disabled} loading={loading} value={value} onChange={onChange} options={options} placeholder="Pilih kategori" searchPlaceholder="Cari kategori..." emptyMessage="Tidak ada kategori aktif." />;
 };
 
-export const PayrollUserSelect = ({ value, onChange, label = 'User', required, disabled, branchKey = 'all', headers }: SelectBaseProps) => {
-  const { data, isLoading } = useLookupPayrollUsers(branchKey, { isActive: 'true' }, headers);
-  const options = useMemo(
-    () => [{ value: '', label: isLoading ? 'Memuat user...' : 'Pilih user' }, ...((data?.data ?? []).map((x) => ({ value: x.id, label: `${x.name} (${x.username}${x.roleName ? ` - ${x.roleName}` : ''})` })))],
-    [data?.data, isLoading],
-  );
-  return <SelectField label={label} required={required} value={value} onChange={(e) => onChange(e.target.value)} options={options} disabled={disabled || isLoading} />;
+export interface UserOption { id: string; name: string; username: string; role?: { code?: string; name?: string } | null }
+export const PayrollUserSelect = ({ value, onChange, label = 'User', required, disabled, loading, users }: PresentationalSelectProps & { users: UserOption[] }) => {
+  const options = useMemo(() => users.map((x) => ({ value: x.id, label: x.name, sublabel: `${x.username}${x.role?.name ? ` · ${x.role.name}` : ''}` })), [users]);
+  return <SearchableSelect label={label} required={required} disabled={disabled} loading={loading} value={value} onChange={onChange} options={options} placeholder="Pilih user" searchPlaceholder="Cari user..." emptyMessage="Tidak ada user aktif." />;
 };
 
-export const SalesSelect = ({ value, onChange, label = 'Sales', required, disabled, branchKey = 'all', headers }: SelectBaseProps) => {
-  const { data, isLoading } = useLookupSales(branchKey, { isActive: 'true' }, headers);
-  const options = useMemo(
-    () => [{ value: '', label: isLoading ? 'Memuat sales...' : 'Pilih sales' }, ...((data?.data ?? []).map((x) => ({ value: x.id, label: `${x.name} (${x.username})` })))],
-    [data?.data, isLoading],
-  );
-  return <SelectField label={label} required={required} value={value} onChange={(e) => onChange(e.target.value)} options={options} disabled={disabled || isLoading} />;
+export const SalesSelect = ({ value, onChange, label = 'Sales', required, disabled, loading, sales }: PresentationalSelectProps & { sales: Array<{ id: string; name: string; username: string }> }) => {
+  const options = useMemo(() => sales.map((x) => ({ value: x.id, label: x.name, sublabel: x.username })), [sales]);
+  return <SearchableSelect label={label} required={required} disabled={disabled} loading={loading} value={value} onChange={onChange} options={options} placeholder="Pilih sales" searchPlaceholder="Cari sales..." emptyMessage="Tidak ada sales aktif." />;
 };
 
-export const DealOrderSelect = ({
-  value, onChange, salesId, period, label = 'Sales Order', required, disabled, branchKey = 'all', headers,
-}: SelectBaseProps & { salesId?: string; period?: string }) => {
-  const { data, isLoading } = useLookupDealOrders(branchKey, { salesId: salesId || undefined, period: period || undefined, withoutIncentive: 'true' }, headers);
-  const options = useMemo(
-    () => [
-      { value: '', label: isLoading ? 'Memuat order DEAL...' : 'Pilih order DEAL' },
-      ...((data?.data ?? []).map((x) => ({
-        value: x.id,
-        label: `${x.nomorOrder} - ${x.customerName ?? '-'} (${formatCurrency(x.hargaFinal, { compact: true })}${x.dealDate ? `, ${formatDate(x.dealDate)}` : ''})`,
-      }))),
-    ],
-    [data?.data, isLoading],
-  );
-  return <SelectField label={label} required={required} value={value} onChange={(e) => onChange(e.target.value)} options={options} disabled={disabled || isLoading} />;
+export interface DealOrderOption { id: string; nomorOrder: string; customerName?: string | null; hargaFinal: number; dealDate?: string | null }
+export const DealOrderSelect = ({ value, onChange, label = 'Sales Order', required, disabled, loading, orders }: PresentationalSelectProps & { orders: DealOrderOption[] }) => {
+  const options = useMemo(() => orders.map((x) => ({
+    value: x.id,
+    label: `${x.nomorOrder} · ${x.customerName ?? '-'}`,
+    sublabel: `${formatCurrency(x.hargaFinal, { compact: true })}${x.dealDate ? ` · ${formatDate(x.dealDate)}` : ''}`,
+  })), [orders]);
+  return <SearchableSelect label={label} required={required} disabled={disabled} loading={loading} value={value} onChange={onChange} options={options} placeholder="Pilih order DEAL" searchPlaceholder="Cari order..." emptyMessage="Tidak ada order DEAL." />;
 };
 
-export const CurrencyField = (props: Omit<Parameters<typeof TextField>[0], 'type' | 'min'>) => (
-  <TextField type="number" min={0} inputMode="numeric" {...props} />
-);
+interface CurrencyFieldProps {
+  label: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+  disabled?: boolean;
+  wrapClass?: string;
+  placeholder?: string;
+}
+
+/**
+ * Dulunya `<input type="number">` polos (tidak ada pemisah ribuan sama sekali selagi mengetik).
+ * Sekarang jadi wrapper tipis di atas `NumericField` (yang sudah benar format "1.000.000") supaya
+ * tetap kompatibel dengan pemakaian lama berbasis `value: string` + `onChange: (e) => void` tanpa
+ * mengubah semua pemanggil.
+ */
+export const CurrencyField = ({ label, value, onChange, required, disabled, wrapClass, placeholder }: CurrencyFieldProps) => {
+  const numValue = Number(value) || 0;
+  const handleChange = (v: number) => {
+    onChange({ target: { value: String(v) } } as ChangeEvent<HTMLInputElement>);
+  };
+  return (
+    <NumericField
+      label={label}
+      required={required}
+      disabled={disabled}
+      value={numValue}
+      onChange={handleChange}
+      prefix="Rp"
+      wrapClass={wrapClass}
+      placeholder={placeholder}
+    />
+  );
+};
 
 export const FinanceStatusBadge = ({ status }: { status: string }) => <StatusBadge status={status} />;

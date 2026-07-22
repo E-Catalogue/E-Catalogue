@@ -242,7 +242,19 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
                     <button type="button" title="Turun" disabled={index === images.length - 1} onClick={() => reorder(img.id, 1)} className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-primary-light disabled:opacity-40"><ArrowDown size={14} /></button>
                     <button type="button" title="Jadikan utama" disabled={!!img.isMain} onClick={() => imageMutations.setMain.mutate(img.id, { onError: (err) => notifyApiError(err) })} className="p-1.5 rounded-lg text-muted hover:text-accent-amber hover:bg-accent-amber/10 disabled:opacity-40"><Star size={14} /></button>
                   </div>
-                  <button type="button" title="Hapus" onClick={() => imageMutations.remove.mutate(img.id, { onError: (err) => notifyApiError(err) })} className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>
+                  <button
+                    type="button"
+                    title="Hapus"
+                    onClick={() => confirmAction({
+                      title: 'Hapus Foto Unit',
+                      message: 'Foto ini akan dihapus permanen dari unit. Lanjutkan?',
+                      confirmLabel: 'Hapus Foto',
+                      tone: 'danger',
+                      execute: () => imageMutations.remove.mutateAsync(img.id),
+                      onError: notifyApiError,
+                    })}
+                    className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"
+                  ><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}

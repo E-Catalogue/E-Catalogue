@@ -3,9 +3,15 @@ import type { ApiResponse } from '@/core/api/types';
 import type { Rekondisi, RekondisiDetail, RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams, RekondisiLookups } from './rekondisi.types';
 
 export const rekondisiApi = {
-  getLookups: async () => {
-    const res = await apiClient.get<ApiResponse<RekondisiLookups>>('/rekondisis/lookups');
-    return res.data;
+  // `.prd/update_module_owned_lookup_20260721.md` §4.12 — aggregate `/rekondisis/lookups` DIHAPUS,
+  // dipecah jadi 3 endpoint terpisah (vendor & checks tidak branch-scoped; cash-accounts branch-scoped).
+  getVendorLookup: async () => {
+    const res = await apiClient.get<ApiResponse<RekondisiLookups['vendors']>>('/rekondisis/lookups/vendors');
+    return res.data.data ?? [];
+  },
+  getCheckLookup: async () => {
+    const res = await apiClient.get<ApiResponse<RekondisiLookups['checks']>>('/rekondisis/lookups/checks');
+    return res.data.data ?? [];
   },
 
   list: async (params?: RekondisiListParams) => {

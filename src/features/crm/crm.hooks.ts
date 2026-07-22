@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  leadApi, leadOrderApi, leadPaymentApi, settlementApi, unitApi,
+  leadApi, leadOrderApi, leadOrderLookupApi, leadPaymentApi, settlementApi, unitApi,
 } from './crm.api';
 import type { LeadListParams, OrderListParams } from './crm.api';
 import { store } from '@/app/store';
@@ -54,6 +54,14 @@ const paymentKeys = {
 const settlementKeys = {
   detail: (branchKey: string, orderId?: string | null) => ['lead-order-settlement', branchKey, orderId] as const,
 };
+
+/** `/leads/lookups` — sumber lead untuk form lead (PRD §4.7). */
+export const useLeadSourceLookup = (enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'lead', 'sources'], queryFn: () => leadApi.lookupSources(), enabled });
+
+/** `/lead-orders/lookups/order-form` — agregat lead/sumber/unit/sales/leasing untuk form order (PRD §4.9). */
+export const useLeadOrderFormLookup = (branchKey: string, headers: BranchHeaders, enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'lead-order', 'order-form', branchKey], queryFn: () => leadOrderLookupApi.orderForm(headers), enabled });
 
 export const useLeadOrders = (branchKey: string, params: OrderListParams, headers: BranchHeaders) =>
   useQuery({ queryKey: orderKeys.list(branchKey, params), queryFn: () => leadOrderApi.list(params, headers) });

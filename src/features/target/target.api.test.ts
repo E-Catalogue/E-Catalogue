@@ -14,12 +14,12 @@ describe('targetApi kontrak backend aktif', () => {
     mocks.post.mockResolvedValue({ data: { success: true, message: 'ok', data: {} } });
   });
 
-  it('create memakai X-Branch-Id dan tidak menyisipkan branchId ke body', async () => {
-    const body = { period: '2026-07', unitTarget: 10, revenueTarget: 2_000_000_000 };
+  it('create mengirim branchId di body (update_target) + header X-Branch-Id untuk validasi scope', async () => {
+    const body = { branchId: 'branch-1', period: '2026-07', unitTarget: 10, revenueTarget: 2_000_000_000 };
     const headers = { 'X-Branch-Id': 'branch-1' };
     await targetApi.create(body, headers);
     expect(mocks.post).toHaveBeenCalledWith('/targets/branches', body, { headers });
-    expect(mocks.post.mock.calls[0][1]).not.toHaveProperty('branchId');
+    expect(mocks.post.mock.calls[0][1]).toHaveProperty('branchId', 'branch-1');
   });
 
   it('activate mengirim request tanpa body bisnis', async () => {

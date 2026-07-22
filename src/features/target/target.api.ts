@@ -6,6 +6,7 @@ import type {
   BranchTargetUpdateInput,
   SalesTargetReplaceInput,
   TargetAchievementConsolidated,
+  TargetBranchLookup,
   TargetListParams,
   TargetSalesLookup,
 } from './target.types';
@@ -14,8 +15,12 @@ import type {
 type BranchHeaders = Record<string, string> | undefined;
 
 export const targetApi = {
-  /** Owner mode "all" (tanpa header) balikin sales lintas SEMUA cabang — jangan dipakai untuk wizard
-   * distribusi tanpa branch header konkret (lihat README §9). */
+  /** `/targets/lookups/branches` — cabang yang dapat dipilih (Owner/Admin = semua aktif, lainnya = miliknya). */
+  lookupBranches: (headers?: BranchHeaders) =>
+    apiClient.get<ApiResponse<TargetBranchLookup[]>>('/targets/lookups/branches', { headers }).then((r) => r.data.data ?? []),
+
+  /** Sales pada cabang terpilih — backend pakai `requireBranchId(scope)` dari header X-Branch-Id
+   * (kode backend menang atas PRD yang menyebut query `?branchId=`). Kirim header cabang konkret. */
   lookupSales: (headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<TargetSalesLookup[]>>('/targets/lookups/sales', { headers }).then((r) => r.data),
 
@@ -31,8 +36,8 @@ export const targetApi = {
   getBranch: (id: string, headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<BranchTarget>>(`/targets/branches/${id}`, { headers }).then((r) => r.data.data),
 
-  /** Backend `create()` memanggil `requireBranchId()` — Owner WAJIB pilih cabang konkret. `branchId`
-   * TIDAK PERNAH dikirim di body, backend ambil dari header/session. */
+  /** Sejak update_target: `branchId` WAJIB di BODY (backend pakai `payload.branchId`, bukan header).
+   * Header tetap dikirim untuk validasi scope Owner/Admin (`scope.branchId === payload.branchId`). */
   create: (body: BranchTargetCreateInput, headers: BranchHeaders) =>
     apiClient.post<ApiResponse<BranchTarget>>('/targets/branches', body, { headers }).then((r) => r.data),
 
@@ -44,7 +49,8 @@ export const targetApi = {
   replaceSales: (id: string, body: SalesTargetReplaceInput, headers?: BranchHeaders) =>
     apiClient.put<ApiResponse<BranchTarget>>(`/targets/branches/${id}/sales`, body, { headers }).then((r) => r.data),
 
-  /** Tidak ada body. Backend cek sum(salesTargets) === unitTarget/revenueTarget PERSIS (Decimal-exact). */
+  /** Tidak ada body. Sejak update_target: aktivasi TIDAK lagi menuntut sum(salesTargets) sama dengan
+   * target cabang — distribusi sales opsional, `TARGET_DISTRIBUTION_MISMATCH` tidak dipakai lagi. */
   activate: (id: string, headers?: BranchHeaders) =>
     apiClient.post<ApiResponse<BranchTarget>>(`/targets/branches/${id}/activate`, undefined, { headers }).then((r) => r.data),
 

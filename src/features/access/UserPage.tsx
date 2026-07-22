@@ -6,11 +6,11 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField } from '@/shared/components/ui/Field';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { Pagination } from '@/shared/components/ui/Pagination';
-import { useUsers, useUserMutations, useRoles } from './access.hooks';
-import { useBranches } from '@/features/master/master.hooks';
+import { useUsers, useUserMutations, useUserFormLookup } from './access.hooks';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -32,8 +32,7 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
   open: boolean; onClose: () => void; item?: AccessUser | null; submitting?: boolean; onSubmit: (v: FormState) => void;
   canRoleUpdate?: boolean; canBranchUpdate?: boolean;
 }) => {
-  const { data: roles } = useRoles({ page: 1, limit: 100 });
-  const { data: branches } = useBranches({ page: 1, limit: 100 });
+  const { data: lookup } = useUserFormLookup(open);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [seedId, setSeedId] = useState<string | undefined>('init');
 
@@ -44,8 +43,8 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
   const set = (k: keyof FormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const submit = (e: FormEvent) => { e.preventDefault(); onSubmit(form); };
 
-  const roleOpts = [{ value: '', label: '— Pilih role —' }, ...(roles?.data ?? []).map((r) => ({ value: r.id, label: r.name }))];
-  const branchOpts = [{ value: '', label: '— Tanpa cabang —' }, ...(branches?.data ?? []).map((b) => ({ value: b.id, label: b.nama }))];
+  const roleOpts = (lookup?.roles ?? []).map((r) => ({ value: r.id, label: r.name }));
+  const branchOpts = (lookup?.branches ?? []).map((b) => ({ value: b.id, label: b.nama }));
 
   return (
     <Modal open={open} onClose={onClose} icon={<UserCog size={20} />} title={item ? 'Edit User' : 'Tambah User'} size="lg"
@@ -55,8 +54,8 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
         <TextField label="Username" required value={form.username} onChange={(e) => set('username', e.target.value)} placeholder="username" />
         <TextField label="Email" type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="email@contoh.com" />
         <TextField label={item ? 'Password (kosongkan jika tetap)' : 'Password'} type="password" required={!item} value={form.password} onChange={(e) => set('password', e.target.value)} placeholder="••••••••" />
-        <SelectField label="Role" required value={form.roleId} onChange={(e) => set('roleId', e.target.value)} options={roleOpts} disabled={!!item && !canRoleUpdate} />
-        <SelectField label="Cabang" value={form.branchId} onChange={(e) => set('branchId', e.target.value)} options={branchOpts} disabled={!!item && !canBranchUpdate} />
+        <SearchableSelect label="Role" required value={form.roleId} onChange={(v) => set('roleId', v)} options={roleOpts} disabled={!!item && !canRoleUpdate} placeholder="Pilih role" searchPlaceholder="Cari role..." />
+        <SearchableSelect label="Cabang" value={form.branchId} onChange={(v) => set('branchId', v)} options={branchOpts} disabled={!!item && !canBranchUpdate} clearable placeholder="Tanpa cabang" searchPlaceholder="Cari cabang..." />
         <label className="sm:col-span-2 flex items-center gap-2.5 cursor-pointer select-none">
           <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" />
           <span className="text-[13px] font-semibold text-ink-soft">Aktif</span>

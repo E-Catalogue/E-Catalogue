@@ -6,18 +6,19 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can, RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
-import { useBranches } from '@/features/master/master.hooks';
 import { Power } from 'lucide-react';
 import { getApiErrorCode, getApiErrorMessage } from '@/core/api/apiError';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField, FinanceErrorBanner } from '@/features/finance/components';
+import { useCashTransactionCashAccounts } from '@/features/finance/lookup';
 import { useCashAccountMutations, useCashAccounts, useCashDashboard, useCashTransactionMutations, useCashTransactions } from '@/features/finance/finance.hooks';
 import { toIsoDate } from '@/features/finance/finance.utils';
 import { isConsolidatedCashDashboard, type CashAccount, type CashAccountType, type CashTransaction } from '@/features/finance/types';
@@ -58,7 +59,7 @@ const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAc
       <div className="space-y-3">
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
-            <AlertTriangle size={16} className="shrink-0" /> Pilih cabang konkret pada filter halaman untuk {item ? 'mengubah' : 'menambah'} akun kas.
+            <AlertTriangle size={16} className="shrink-0" /> Pilih cabang aktif di header (pojok kanan atas) untuk {item ? 'mengubah' : 'menambah'} akun kas.
           </div>
         )}
         {error && <FinanceErrorBanner code={error.code} message={error.message} onDismiss={() => setError(null)} />}
@@ -84,6 +85,10 @@ const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAc
 const TransactionForm = ({ mode, onClose, branchKey, headers, mutationBlocked }: { mode: TxModal; onClose: () => void; branchKey: string; headers: BranchHeaders; mutationBlocked: boolean }) => {
   const mutations = useCashTransactionMutations();
   const idem = useIdempotencyKey();
+  // Akun kas cabang terpilih (untuk semua transaksi). Untuk inter-branch, tujuan bisa cabang lain,
+  // jadi diambil terpisah tanpa header (Owner/Admin → semua cabang).
+  const { data: scopedAccounts = [], isLoading: scopedLoading } = useCashTransactionCashAccounts(branchKey, { headers });
+  const { data: allAccounts = [], isLoading: allLoading } = useCashTransactionCashAccounts('all', { enabled: mode === 'inter-branch-transfer' });
   const [form, setForm] = useState({
     cashAccountId: '',
     fromCashAccountId: '',
@@ -135,27 +140,27 @@ const TransactionForm = ({ mode, onClose, branchKey, headers, mutationBlocked }:
       <div className="space-y-3">
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
-            <AlertTriangle size={16} className="shrink-0" /> Pilih cabang konkret pada filter halaman untuk melakukan transaksi kas.
+            <AlertTriangle size={16} className="shrink-0" /> Pilih cabang aktif di header (pojok kanan atas) untuk melakukan transaksi kas.
           </div>
         )}
         {error && <FinanceErrorBanner code={error.code} message={error.message} onDismiss={() => setError(null)} />}
         <form id="cash-tx-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {mode === 'transfer' ? (
             <>
-              <CashAccountSelect label="Dari Akun" required disabled={mutationBlocked} branchKey={branchKey} headers={headers} value={form.fromCashAccountId} onChange={(v) => set('fromCashAccountId', v)} />
-              <CashAccountSelect label="Ke Akun" required disabled={mutationBlocked} branchKey={branchKey} headers={headers} value={form.toCashAccountId} onChange={(v) => set('toCashAccountId', v)} />
+              <CashAccountSelect label="Dari Akun" required disabled={mutationBlocked} accounts={scopedAccounts} loading={scopedLoading} value={form.fromCashAccountId} onChange={(v) => set('fromCashAccountId', v)} />
+              <CashAccountSelect label="Ke Akun" required disabled={mutationBlocked} accounts={scopedAccounts} loading={scopedLoading} value={form.toCashAccountId} onChange={(v) => set('toCashAccountId', v)} />
             </>
           ) : mode === 'inter-branch-transfer' ? (
             <>
-              <CashAccountSelect label="Dari Akun (cabang terpilih)" required disabled={mutationBlocked} branchKey={branchKey} headers={headers} value={form.fromCashAccountId} onChange={(v) => set('fromCashAccountId', v)} />
-              <CashAccountSelect label="Ke Akun (cabang lain)" required disabled={mutationBlocked} value={form.toCashAccountId} onChange={(v) => set('toCashAccountId', v)} />
+              <CashAccountSelect label="Dari Akun (cabang terpilih)" required disabled={mutationBlocked} accounts={scopedAccounts} loading={scopedLoading} value={form.fromCashAccountId} onChange={(v) => set('fromCashAccountId', v)} />
+              <CashAccountSelect label="Ke Akun (cabang lain)" required disabled={mutationBlocked} accounts={allAccounts} loading={allLoading} value={form.toCashAccountId} onChange={(v) => set('toCashAccountId', v)} />
             </>
           ) : (
-            <CashAccountSelect required disabled={mutationBlocked} branchKey={branchKey} headers={headers} value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} />
+            <CashAccountSelect required disabled={mutationBlocked} accounts={scopedAccounts} loading={scopedLoading} value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} />
           )}
           {mode === 'adjustment' && <SelectField label="Tipe" disabled={mutationBlocked} value={form.type} onChange={(e) => set('type', e.target.value)} options={[{ value: 'IN', label: 'Tambah Saldo' }, { value: 'OUT', label: 'Kurangi Saldo' }]} />}
           <CurrencyField label="Nominal" required disabled={mutationBlocked} value={form.amount} onChange={(e) => set('amount', e.target.value)} />
-          <TextField label="Tanggal" required type="date" disabled={mutationBlocked} value={form.transactionDate} onChange={(e) => set('transactionDate', e.target.value)} />
+          <DateField label="Tanggal" required disabled={mutationBlocked} value={form.transactionDate} onChange={(v) => set('transactionDate', v)} />
           <TextField label="Keterangan" wrapClass="sm:col-span-2" disabled={mutationBlocked} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
           <TextField label="URL Bukti" wrapClass="sm:col-span-2" disabled={mutationBlocked} value={form.proofUrl} onChange={(e) => setForm((f) => ({ ...f, proofUrl: e.target.value }))} />
         </form>
@@ -180,9 +185,7 @@ const TransactionForm = ({ mode, onClose, branchKey, headers, mutationBlocked }:
 
 const CashFlowPageInner = () => {
   const { can } = usePermissions();
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
-  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
-  const branches = branchesRes?.data ?? [];
+  const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
   const mutationBlocked = isOwner && !selectedBranchId;
 
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -195,6 +198,7 @@ const CashFlowPageInner = () => {
   const dashboardParams = { dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined };
   const dashboard = useCashDashboard(branchKey, dashboardParams, branchHeader);
   const accounts = useCashAccounts(branchKey, { page: 1, limit: 100 }, branchHeader, { enabled: can('CASH_ACCOUNT_READ') });
+  const { data: filterAccounts = [], isLoading: filterAccountsLoading } = useCashTransactionCashAccounts(branchKey, { headers: branchHeader });
   const ledger = useCashTransactions(branchKey, { page: 1, limit: 50, type: filters.type || undefined, cashAccountId: filters.cashAccountId || undefined, dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined }, branchHeader);
   const accountMutations = useCashAccountMutations();
   const txMutations = useCashTransactionMutations();
@@ -253,7 +257,7 @@ const CashFlowPageInner = () => {
       {mutationBlocked && (
         <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
           <AlertTriangle size={16} className="shrink-0" />
-          Pilih cabang konkret di filter untuk mencatat transaksi kas atau mengelola akun kas.
+          Pilih cabang aktif lewat tombol cabang di header (pojok kanan atas) untuk mencatat transaksi kas atau mengelola akun kas.
         </div>
       )}
       <div className="flex flex-wrap gap-2">
@@ -261,19 +265,11 @@ const CashFlowPageInner = () => {
           <button key={x.id} onClick={() => setTab(x.id as Tab)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === x.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>{x.label}</button>
         ))}
       </div>
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${isOwner ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
-        {isOwner && (
-          <SelectField
-            label="Cabang"
-            value={selectedBranchId ?? ''}
-            onChange={(e) => setSelectedBranchId(e.target.value || null)}
-            options={[{ value: '', label: 'Semua Cabang' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
-          />
-        )}
-        <TextField label="Dari Tanggal" type="date" value={filters.dateFrom} onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))} />
-        <TextField label="Sampai Tanggal" type="date" value={filters.dateTo} onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <DateField label="Dari Tanggal" value={filters.dateFrom} onChange={(v) => setFilters((f) => ({ ...f, dateFrom: v }))} />
+        <DateField label="Sampai Tanggal" value={filters.dateTo} onChange={(v) => setFilters((f) => ({ ...f, dateTo: v }))} />
         <SelectField label="Tipe Ledger" value={filters.type} onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))} options={[{ value: '', label: 'Semua' }, { value: 'IN', label: 'IN' }, { value: 'OUT', label: 'OUT' }, { value: 'TRANSFER', label: 'TRANSFER' }]} />
-        <CashAccountSelect label="Filter Akun" branchKey={branchKey} headers={branchHeader} value={filters.cashAccountId} onChange={(v) => setFilters((f) => ({ ...f, cashAccountId: v }))} />
+        <CashAccountSelect label="Filter Akun" accounts={filterAccounts} loading={filterAccountsLoading} value={filters.cashAccountId} onChange={(v) => setFilters((f) => ({ ...f, cashAccountId: v }))} />
       </div>
       {tab === 'dashboard' && (
         <>

@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { UserPlus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
-import { sumberLeadApi } from '@/features/master/simpleMaster.api';
+import { TextField } from '@/shared/components/ui/Field';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
+import { useLeadSourceLookup } from './crm.hooks';
 import type { Lead } from './crm.types';
 
 interface Props {
@@ -23,15 +23,8 @@ export const LeadFormModal = ({ open, onClose, item, submitting, onSubmit }: Pro
   if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ?? empty()); }
   if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(empty()); }
 
-  const { data: sumberRes } = useQuery({
-    queryKey: ['sumber-lead-dropdown'],
-    queryFn: () => sumberLeadApi.list({ page: 1, limit: 100 }),
-    enabled: open,
-  });
-  const sumberOptions = [
-    { value: '', label: 'Pilih Sumber Lead...' },
-    ...(sumberRes?.data ?? []).filter((s) => s.isActive).map((s) => ({ value: s.id, label: s.name })),
-  ];
+  const { data: sources = [], isLoading: sourcesLoading } = useLeadSourceLookup(open);
+  const sumberOptions = sources.map((s) => ({ value: s.id, label: s.name, sublabel: s.code || undefined }));
 
   const set = (k: keyof Lead, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const submit = (e: FormEvent) => {
@@ -61,7 +54,7 @@ export const LeadFormModal = ({ open, onClose, item, submitting, onSubmit }: Pro
         <TextField label="Email" type="email" value={form.email ?? ''} onChange={(e) => set('email', e.target.value)} placeholder="email@contoh.com" />
         <TextField label="Pekerjaan" value={form.pekerjaan ?? ''} onChange={(e) => set('pekerjaan', e.target.value)} placeholder="mis. Karyawan Swasta" />
         <TextField label="Alamat" wrapClass="sm:col-span-2" value={form.alamat ?? ''} onChange={(e) => set('alamat', e.target.value)} placeholder="Alamat lengkap" />
-        <SelectField label="Sumber Lead" wrapClass="sm:col-span-2" value={form.sumberLeadId ?? ''} onChange={(e) => set('sumberLeadId', e.target.value)} options={sumberOptions} />
+        <SearchableSelect label="Sumber Lead" wrapClass="sm:col-span-2" value={form.sumberLeadId ?? ''} onChange={(v) => set('sumberLeadId', v)} options={sumberOptions} loading={sourcesLoading} clearable placeholder="Pilih sumber lead" searchPlaceholder="Cari sumber..." />
       </form>
     </Modal>
   );

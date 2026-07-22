@@ -7,7 +7,9 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TextField, NumericField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { CashAccountSelect } from '@/features/finance/components';
+import { useInvestorObligationCashAccounts } from '@/features/finance/lookup';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
 import { getApiErrorCode, getApiErrorMessage } from '@/core/api/apiError';
@@ -71,6 +73,7 @@ const PayForm = ({
   const idem = useIdempotencyKey();
   const m = useInvestorObligationMutations(branchKey);
   const qc = useQueryClient();
+  const { data: cashAccounts = [], isLoading: cashLoading } = useInvestorObligationCashAccounts(branchKey, { headers });
 
   const valid = !!cashAccountId && amount > 0 && amount <= remaining && !!paidAt;
 
@@ -111,8 +114,8 @@ const PayForm = ({
     <div className="space-y-3">
       {error && <InlineErrorBanner code={error.code} message={error.message} onDismiss={() => setError(null)} />}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={(v) => { setCashAccountId(v); idem.regenerate(); }} />
-        <TextField label="Tanggal Bayar" required type="date" value={paidAt} onChange={(e) => { setPaidAt(e.target.value); idem.regenerate(); }} />
+        <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={(v) => { setCashAccountId(v); idem.regenerate(); }} accounts={cashAccounts} loading={cashLoading} />
+        <DateField label="Tanggal Bayar" required value={paidAt} onChange={(v) => { setPaidAt(v); idem.regenerate(); }} />
         <NumericField label="Nominal" required value={amount} onChange={(v) => { setAmount(v); idem.regenerate(); }} prefix="Rp" max={remaining} wrapClass="sm:col-span-2" />
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} />
       </div>
@@ -192,7 +195,7 @@ const PaymentRow = ({
         )}
       >
         <div className="space-y-2.5">
-          <TextField label="Tanggal Transaksi" type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} />
+          <DateField label="Tanggal Transaksi" value={transactionDate} onChange={(v) => setTransactionDate(v)} />
           <TextField label="Keterangan (opsional)" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} />
         </div>
       </ConfirmDialog>

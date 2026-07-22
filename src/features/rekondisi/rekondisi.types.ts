@@ -72,7 +72,7 @@ export interface RekondisiListParams {
  * hanya untuk isi dropdown (lihat ecatalogue-be/.prd/README.md §9).
  */
 export interface RekondisiLookups {
-  vendors: { id: string; name: string }[];
+  vendors: { id: string; name: string; code?: string }[];
   checks: { id: string; name: string; code: string }[];
   cashAccounts: { id: string; branchId: string; name: string; code: string; type: string; defaultPayment: boolean }[];
 }

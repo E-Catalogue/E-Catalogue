@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  CheckCircle2, Eye, Plus, Search, Wrench,
+  CheckCircle2, Eye, Plus, Wrench,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -10,13 +10,11 @@ import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { SelectField } from '@/shared/components/ui/Field';
-import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import { useBranchScope } from '@/features/auth/useBranchScope';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
-import { useLookupUnits } from '@/features/finance/finance.hooks';
-import type { LookupUnit } from '@/features/finance/types';
-import { useCreateRekondisi } from '@/features/units/unit.hooks';
+import { useCreateRekondisi, useUnits } from '@/features/units/unit.hooks';
+import type { Unit } from '@/features/units/unit.types';
 import { unitApi } from '@/features/units/unit.api';
 import { notifyApiError } from '@/core/api/notify';
 import { store } from '@/app/store';
@@ -49,15 +47,15 @@ const CreateRekondisiModal = ({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated: (unit: LookupUnit) => void;
+  onCreated: (unit: Unit) => void;
 }) => {
-  const [search, setSearch] = useState('');
   const [unitId, setUnitId] = useState('');
-  const debounced = useDebouncedValue(search, 350);
-  const { branchKey, branchHeader } = useBranchScope();
-  const { data: unitsRes, isLoading } = useLookupUnits(branchKey, { search: debounced || undefined, statusUnit: 'INVENTORY' }, branchHeader);
+  // Backend TIDAK menyediakan lookup unit khusus rekondisi (`/finance/lookups/units` dihapus, dan
+  // rekondisi.route.js hanya punya vendors/checks/cash-accounts). Rekondisi memang operasi berbasis
+  // unit, jadi pakai daftar unit nyata `/units` lalu saring status INVENTORY di klien.
+  const { data: unitsRes, isLoading } = useUnits({ page: 1, limit: 100 });
   const createM = useCreateRekondisi();
-  const units = unitsRes?.data ?? [];
+  const units = (unitsRes?.data ?? []).filter((u) => u.statusUnit === 'INVENTORY');
   const selected = units.find((unit) => unit.id === unitId);
 
   const handleCreate = async () => {
@@ -98,34 +96,20 @@ const CreateRekondisiModal = ({
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Cari Unit</label>
-          <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari plat, merek, atau tipe..."
-              className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-soft border border-border text-sm font-medium focus:outline-none focus:border-primary"
-            />
-          </div>
-        </div>
-        <SelectField
+        <SearchableSelect
           label="Unit Inventory"
           required
           value={unitId}
-          onChange={(e) => setUnitId(e.target.value)}
-          options={[
-            { value: '', label: isLoading ? 'Memuat unit...' : 'Pilih unit' },
-            ...units.map((unit) => ({
-              value: unit.id,
-              label: `${unit.platNomor} - ${unit.merekName} ${unit.tipeName}`,
-            })),
-          ]}
+          onChange={setUnitId}
+          loading={isLoading}
+          options={units.map((unit) => ({ value: unit.id, label: `${unit.platNomor} · ${unit.merek?.name ?? ''} ${unit.tipe?.name ?? ''}`.trim() }))}
+          placeholder="Pilih unit inventory"
+          searchPlaceholder="Cari plat / merek / tipe..."
+          emptyMessage="Tidak ada unit berstatus Inventory."
         />
         {selected && (
           <div className="rounded-xl border border-border bg-surface-soft p-3 text-[12px] font-semibold text-ink-soft">
-            Harga beli: <span className="font-bold text-ink">{idr(selected.hargaBeli)}</span>
+            Harga beli: <span className="font-bold text-ink">{idr(selected.purchaseCost)}</span>
             {selected.purchaseCashTransactionId && (
               <span className="ml-2 text-primary">Pembelian sudah tercatat kas</span>
             )}
@@ -139,18 +123,16 @@ const CreateRekondisiModal = ({
 const RekondisiPageInner = () => {
   const { can } = usePermissions();
   const [status, setStatus] = useState<RekondisiStatus | ''>('');
-  const [unitSearch, setUnitSearch] = useState('');
   const [unitId, setUnitId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailUnit, setDetailUnit] = useState<{ id: string; label?: string } | null>(null);
-  const debouncedUnit = useDebouncedValue(unitSearch, 350);
-  const { branchKey, branchHeader } = useBranchScope();
 
-  const { data: unitLookup } = useLookupUnits(branchKey, { search: debouncedUnit || undefined, statusUnit: 'INVENTORY' }, branchHeader);
+  // Filter unit: pakai daftar unit nyata (lihat catatan di CreateRekondisiModal — tidak ada lookup rekondisi).
+  const { data: unitLookup } = useUnits({ page: 1, limit: 100 });
   const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined });
 
   const rows: Rekondisi[] = data?.data ?? [];
-  const units = unitLookup?.data ?? [];
+  const units = (unitLookup?.data ?? []).filter((u) => u.statusUnit === 'INVENTORY');
   const total = data?.meta?.total ?? rows.length;
 
   const columns: Column<Rekondisi>[] = [
@@ -226,32 +208,22 @@ const RekondisiPageInner = () => {
         action={can('REKONDISI_CREATE') ? <Button icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>Buat Rekondisi</Button> : undefined}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_260px] gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-3">
         <SelectField
           label=""
           value={status}
           onChange={(e) => setStatus(e.target.value as RekondisiStatus | '')}
           options={STATUS_OPTIONS}
         />
-        <div className="relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-          <input
-            value={unitSearch}
-            onChange={(e) => setUnitSearch(e.target.value)}
-            placeholder="Cari unit untuk filter..."
-            className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
-          />
-        </div>
-        <select
+        <SearchableSelect
           value={unitId}
-          onChange={(e) => setUnitId(e.target.value)}
-          className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold"
-        >
-          <option value="">Semua Unit</option>
-          {units.map((unit) => (
-            <option key={unit.id} value={unit.id}>{unit.platNomor} - {unit.merekName} {unit.tipeName}</option>
-          ))}
-        </select>
+          onChange={setUnitId}
+          clearable
+          options={units.map((unit) => ({ value: unit.id, label: `${unit.platNomor} · ${unit.merek?.name ?? ''} ${unit.tipe?.name ?? ''}`.trim() }))}
+          placeholder="Semua Unit"
+          searchPlaceholder="Cari unit..."
+          emptyMessage="Tidak ada unit."
+        />
       </div>
 
       <SectionCard title={`Daftar Rekondisi (${rows.length})`} icon={<Wrench size={16} />} bodyClassName="p-0 md:p-0">
@@ -273,7 +245,7 @@ const RekondisiPageInner = () => {
       <CreateRekondisiModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={(unit) => setDetailUnit({ id: unit.id, label: `${unit.platNomor} - ${unit.merekName} ${unit.tipeName}` })}
+        onCreated={(unit) => setDetailUnit({ id: unit.id, label: `${unit.platNomor} · ${unit.merek?.name ?? ''} ${unit.tipe?.name ?? ''}`.trim() })}
       />
 
       <RekondisiDetailModal

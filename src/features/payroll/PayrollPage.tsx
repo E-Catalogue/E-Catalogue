@@ -6,12 +6,15 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can, RequirePermission } from '@/features/auth/permissions';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect, SalesSelect } from '@/features/finance/components';
+import { usePayrollCashAccounts, usePayrollDealOrderLookup, usePayrollSalesLookup, usePayrollUserLookup } from '@/features/finance/lookup';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { usePayrollBaseSalaries, usePayrollBaseSalaryMutations, usePayrollRun, usePayrollRunMutations, usePayrollRuns, useSalesIncentiveMutations, useSalesIncentives } from '@/features/finance/finance.hooks';
 import { fromIsoDate, showName, toIsoDate } from '@/features/finance/finance.utils';
@@ -24,7 +27,8 @@ const month = () => new Date().toISOString().slice(0, 7);
 
 const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onClose: () => void }) => {
   const mutations = usePayrollBaseSalaryMutations();
-  const { branchHeader } = useBranchScope();
+  const { branchHeader, branchKey } = useBranchScope();
+  const { data: users = [], isLoading: usersLoading } = usePayrollUserLookup(branchKey, { headers: branchHeader });
   const [form, setForm] = useState({ userId: item?.userId ?? '', amount: String(item?.amount ?? ''), effectiveStart: fromIsoDate(item?.effectiveStart) || today(), effectiveEnd: fromIsoDate(item?.effectiveEnd), isActive: item?.isActive ?? true });
   const set = (key: keyof typeof form, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
@@ -37,10 +41,10 @@ const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onC
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Master Gapok' : 'Tambah Master Gapok'} icon={<Users size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="base-salary-form" disabled={mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
       <form id="base-salary-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <PayrollUserSelect required value={form.userId} onChange={(value) => set('userId', value)} />
+        <PayrollUserSelect required value={form.userId} onChange={(value) => set('userId', value)} users={users} loading={usersLoading} />
         <CurrencyField label="Gapok" required value={form.amount} onChange={(e) => set('amount', e.target.value)} />
-        <TextField label="Berlaku Mulai" required type="date" value={form.effectiveStart} onChange={(e) => set('effectiveStart', e.target.value)} />
-        <TextField label="Berlaku Sampai" type="date" value={form.effectiveEnd} onChange={(e) => set('effectiveEnd', e.target.value)} />
+        <DateField label="Berlaku Mulai" required value={form.effectiveStart} onChange={(v) => set('effectiveStart', v)} />
+        <DateField label="Berlaku Sampai" value={form.effectiveEnd} onChange={(v) => set('effectiveEnd', v)} clearable />
         <label className="sm:col-span-2 flex items-center gap-2.5 text-[13px] font-semibold text-ink-soft"><input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" /> Aktif</label>
       </form>
     </Modal>
@@ -49,8 +53,10 @@ const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onC
 
 const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose: () => void }) => {
   const mutations = useSalesIncentiveMutations();
-  const { branchHeader } = useBranchScope();
+  const { branchHeader, branchKey } = useBranchScope();
   const readonly = item?.status === 'INCLUDED' || item?.status === 'PAID';
+  const { data: sales = [], isLoading: salesLoading } = usePayrollSalesLookup(branchKey, { headers: branchHeader });
+  const { data: dealOrders = [], isLoading: dealOrdersLoading } = usePayrollDealOrderLookup(branchKey, { headers: branchHeader });
   const [form, setForm] = useState({ salesId: item?.salesId ?? '', leadOrderId: item?.leadOrderId ?? '', amount: String(item?.amount ?? ''), period: item?.period ?? month(), description: item?.description ?? '', status: item?.status ?? 'DRAFT' });
   const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
@@ -63,10 +69,19 @@ const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose
   return (
     <Modal open onClose={onClose} title={item ? 'Edit Insentif Sales' : 'Tambah Insentif Sales'} icon={<ReceiptText size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="incentive-form" disabled={readonly || mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
       <form id="incentive-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SalesSelect required disabled={readonly} value={form.salesId} onChange={(value) => setForm((f) => ({ ...f, salesId: value, leadOrderId: '' }))} />
-        <DealOrderSelect required disabled={readonly || !form.salesId} value={form.leadOrderId} salesId={form.salesId} period={form.period} onChange={(value) => set('leadOrderId', value)} />
+        <SalesSelect required disabled={readonly} value={form.salesId} onChange={(value) => setForm((f) => ({ ...f, salesId: value, leadOrderId: '' }))} sales={sales} loading={salesLoading} />
+        <DealOrderSelect
+          required
+          disabled={readonly || !form.salesId}
+          value={form.leadOrderId}
+          onChange={(value) => set('leadOrderId', value)}
+          loading={dealOrdersLoading}
+          orders={dealOrders
+            .filter((o) => !form.salesId || o.salesId === form.salesId)
+            .map((o) => ({ id: o.id, nomorOrder: o.nomorOrder, customerName: o.lead?.nama ?? o.sales?.name, hargaFinal: o.hargaFinal, dealDate: o.dealAt }))}
+        />
         <CurrencyField label="Nominal" required disabled={readonly} value={form.amount} onChange={(e) => set('amount', e.target.value)} />
-        <TextField label="Periode" required type="month" disabled={readonly} value={form.period} onChange={(e) => set('period', e.target.value)} />
+        <MonthField label="Periode" required disabled={readonly} value={form.period} onChange={(v) => set('period', v)} />
         {item && <SelectField label="Status" disabled={readonly} value={form.status} onChange={(e) => set('status', e.target.value)} options={[{ value: 'DRAFT', label: 'Draft' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />}
         <TextField label="Keterangan" wrapClass="sm:col-span-2" disabled={readonly} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </form>
@@ -85,7 +100,7 @@ const GeneratePayrollForm = ({ onClose }: { onClose: () => void }) => {
   };
   return (
     <Modal open onClose={onClose} title="Generate Payroll" icon={<CalendarDays size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="generate-payroll-form" disabled={mutations.generate.isPending}>Generate</Button></>}>
-      <form id="generate-payroll-form" onSubmit={submit}><TextField label="Periode" required type="month" value={period} onChange={(e) => setPeriod(e.target.value)} /></form>
+      <form id="generate-payroll-form" onSubmit={submit}><MonthField label="Periode" required value={period} onChange={setPeriod} /></form>
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -104,7 +119,8 @@ const GeneratePayrollForm = ({ onClose }: { onClose: () => void }) => {
 
 const PayPayrollForm = ({ item, onClose }: { item: PayrollRun; onClose: () => void }) => {
   const mutations = usePayrollRunMutations();
-  const { branchHeader } = useBranchScope();
+  const { branchHeader, branchKey } = useBranchScope();
+  const { data: cashAccounts = [], isLoading: cashLoading } = usePayrollCashAccounts(branchKey, { headers: branchHeader });
   const [form, setForm] = useState({ cashAccountId: '', paidDate: today(), description: `Pembayaran payroll ${item.period}` });
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -114,8 +130,8 @@ const PayPayrollForm = ({ item, onClose }: { item: PayrollRun; onClose: () => vo
     <Modal open onClose={onClose} title="Bayar Payroll" icon={<Banknote size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="pay-payroll-form" disabled={mutations.pay.isPending}>Bayar Payroll</Button></>}>
       <form id="pay-payroll-form" onSubmit={submit} className="space-y-4">
         <div className="rounded-xl bg-surface-soft border border-border p-4"><p className="text-[11px] font-bold uppercase text-muted">Total Dibayar</p><p className="text-lg font-extrabold text-semantic-error mt-1">{formatCurrency(item.totalPaid)}</p></div>
-        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} />
-        <TextField label="Tanggal Bayar" required type="date" value={form.paidDate} onChange={(e) => setForm((f) => ({ ...f, paidDate: e.target.value }))} />
+        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} accounts={cashAccounts} loading={cashLoading} />
+        <DateField label="Tanggal Bayar" required value={form.paidDate} onChange={(v) => setForm((f) => ({ ...f, paidDate: v }))} />
         <TextField label="Keterangan" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
       </form>
     </Modal>
@@ -127,7 +143,8 @@ const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => 
   const { data } = usePayrollRun(branchKey, id, branchHeader);
   const mutations = usePayrollRunMutations();
   const [pay, setPay] = useState<PayrollRun | null>(null);
-  const updateItem = (item: PayrollItem, key: 'allowance' | 'deduction', value: string) => {
+  const updateItem = (item: PayrollItem, key: 'allowance' | 'deduction', rawValue: string) => {
+    const value = rawValue.replace(/\D/g, '');
     mutations.updateItem.mutate({ id, itemId: item.id, body: { allowance: key === 'allowance' ? Number(value || 0) : item.allowance, deduction: key === 'deduction' ? Number(value || 0) : item.deduction }, headers: branchHeader }, { onError: (e) => notifyApiError(e) });
   };
   const run = data;
@@ -148,8 +165,8 @@ const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => 
             { header: 'User', cell: (i: PayrollItem) => <span className="font-bold text-ink">{showName(i.user)}</span> },
             { header: 'Gapok', align: 'right' as const, cell: (i: PayrollItem) => formatCurrency(i.baseSalary) },
             { header: 'Insentif', align: 'right' as const, cell: (i: PayrollItem) => formatCurrency(i.incentive) },
-            { header: 'Tunjangan', align: 'right' as const, cell: (i: PayrollItem) => run.status === 'DRAFT' ? <input type="number" min={0} defaultValue={i.allowance} onBlur={(e) => updateItem(i, 'allowance', e.target.value)} className="w-28 h-9 px-2 rounded-lg bg-surface border border-border text-right" /> : formatCurrency(i.allowance) },
-            { header: 'Potongan', align: 'right' as const, cell: (i: PayrollItem) => run.status === 'DRAFT' ? <input type="number" min={0} defaultValue={i.deduction} onBlur={(e) => updateItem(i, 'deduction', e.target.value)} className="w-28 h-9 px-2 rounded-lg bg-surface border border-border text-right" /> : formatCurrency(i.deduction) },
+            { header: 'Tunjangan', align: 'right' as const, cell: (i: PayrollItem) => run.status === 'DRAFT' ? <input key={i.id} type="text" inputMode="numeric" defaultValue={i.allowance ? i.allowance.toLocaleString('id-ID') : ''} placeholder="0" onBlur={(e) => updateItem(i, 'allowance', e.target.value)} className="w-28 h-9 px-2 rounded-lg bg-surface border border-border text-right" /> : formatCurrency(i.allowance) },
+            { header: 'Potongan', align: 'right' as const, cell: (i: PayrollItem) => run.status === 'DRAFT' ? <input key={i.id} type="text" inputMode="numeric" defaultValue={i.deduction ? i.deduction.toLocaleString('id-ID') : ''} placeholder="0" onBlur={(e) => updateItem(i, 'deduction', e.target.value)} className="w-28 h-9 px-2 rounded-lg bg-surface border border-border text-right" /> : formatCurrency(i.deduction) },
             { header: 'Total', align: 'right' as const, cell: (i: PayrollItem) => <span className="font-bold">{formatCurrency(i.total)}</span> },
           ]} data={run.items ?? []} rowKey={(i) => i.id} />
         </div>

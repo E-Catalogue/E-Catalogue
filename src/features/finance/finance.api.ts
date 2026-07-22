@@ -11,15 +11,6 @@ import type {
   RecurringExpense,
   SalesIncentive,
   ListParams,
-  LookupCashAccount,
-  LookupDealOrder,
-  LookupExpenseCategory,
-  LookupInvestor,
-  LookupPayrollRun,
-  LookupRecurringExpense,
-  LookupRekondisiPayable,
-  LookupUnit,
-  LookupUser,
 } from './types';
 
 /** Header opsional `{ 'X-Branch-Id': branchId }` — wajib diisi caller untuk mutation Owner yang backend-nya
@@ -172,34 +163,4 @@ export const payrollApi = {
     pay: (id: string, body: { cashAccountId: string; paidDate: string; description?: string }, headers?: BranchHeaders) =>
       apiClient.post<ApiResponse<PayrollRun>>(`/payroll/runs/${id}/pay`, body, { headers }).then((r) => r.data),
   },
-};
-
-/**
- * CATATAN KONTRAK: route `finance/lookups/*` melewati `resolveBranchScope` (jadi header ini tidak ditolak),
- * TAPI `lookup.controller.js` tidak pernah meneruskan `req.branchScope` ke service/repository — seluruh
- * query lookup (termasuk `cash-accounts` yang resource-nya branch-scoped) TIDAK difilter per cabang di
- * backend saat ini. Header tetap dikirim di sini untuk konsistensi & forward-compat bila backend menambah
- * filter branch di kemudian hari, tapi jangan mengasumsikan hasil lookup sudah terfilter per cabang.
- */
-export const financeLookupApi = {
-  cashAccounts: (params: { search?: string; type?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupCashAccount[]>>('/finance/lookups/cash-accounts', { params, headers }).then((r) => r.data),
-  expenseCategories: (params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupExpenseCategory[]>>('/finance/lookups/expense-categories', { params, headers }).then((r) => r.data),
-  payrollUsers: (params: { search?: string; isActive?: string; role?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupUser[]>>('/finance/lookups/payroll-users', { params, headers }).then((r) => r.data),
-  sales: (params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupUser[]>>('/finance/lookups/sales', { params, headers }).then((r) => r.data),
-  dealOrders: (params: { search?: string; salesId?: string; period?: string; withoutIncentive?: string } = {}, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupDealOrder[]>>('/finance/lookups/deal-orders', { params, headers }).then((r) => r.data),
-  recurringExpenses: (params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupRecurringExpense[]>>('/finance/lookups/recurring-expenses', { params, headers }).then((r) => r.data),
-  payrollRuns: (params: { period?: string; status?: string } = {}, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupPayrollRun[]>>('/finance/lookups/payroll-runs', { params, headers }).then((r) => r.data),
-  units: (params: { search?: string; statusUnit?: string } = {}, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupUnit[]>>('/finance/lookups/units', { params, headers }).then((r) => r.data),
-  rekondisisPayable: (params: { search?: string; unitId?: string } = {}, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupRekondisiPayable[]>>('/finance/lookups/rekondisis-payable', { params, headers }).then((r) => r.data),
-  investors: (params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-    apiClient.get<ApiResponse<LookupInvestor[]>>('/finance/lookups/investors', { params, headers }).then((r) => r.data),
 };

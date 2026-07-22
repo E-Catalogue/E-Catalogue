@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { safeRandomUUID } from '@/core/utils/uuid';
 
 export type GlobalErrorType =
   | 'general'
@@ -77,7 +78,7 @@ export const uiSlice = createSlice({
       if (variant === 'error') {
         state.errorModal = { isOpen: true, title, message, type };
       } else {
-        state.toasts.push({ id: crypto.randomUUID(), title, message, variant, action: action.payload.action });
+        state.toasts.push({ id: safeRandomUUID(), title, message, variant, action: action.payload.action });
       }
     },
     hideToast: (state) => {

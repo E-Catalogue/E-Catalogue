@@ -1,14 +1,12 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { KeyRound, Search } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { KeyRound } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
-import { leadApi } from '@/features/crm/crm.api';
-import { useDebouncedValue } from '@/features/master/useDebouncedValue';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
+import { DateField } from '@/shared/components/ui/DateField';
 import { notifyApiError } from '@/core/api/notify';
-import { useTestDriveMutations, useTestDriveUnits } from './testDrive.hooks';
-import { testDriveApi } from './testDrive.api';
+import { useTestDriveMutations, useTestDriveLookups } from './testDrive.hooks';
 import type { TestDrive, TestDriveStatus } from './testDrive.types';
 
 interface Props {
@@ -63,25 +61,11 @@ const validateImage = (file: File | null) => {
 export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
   const [form, setForm] = useState<FormState>(item ? toForm(item) : empty());
   const [seedId, setSeedId] = useState<string | undefined>(item?.id);
-  const [leadSearch, setLeadSearch] = useState('');
-  const [unitSearch, setUnitSearch] = useState('');
-  const debouncedLead = useDebouncedValue(leadSearch, 350);
-  const debouncedUnit = useDebouncedValue(unitSearch, 350);
   const [fileError, setFileError] = useState('');
   if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ? toForm(item) : empty()); setFileError(''); }
   if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(empty()); setFileError(''); }
 
-  const { data: leadsRes } = useQuery({
-    queryKey: ['test-drive-leads', debouncedLead],
-    queryFn: () => leadApi.list({ page: 1, limit: 20, search: debouncedLead }),
-    enabled: open,
-  });
-  const { data: unitRes } = useTestDriveUnits({ search: debouncedUnit || undefined }, open);
-  const { data: salesRes } = useQuery({
-    queryKey: ['test-drive-sales'],
-    queryFn: testDriveApi.sales,
-    enabled: open,
-  });
+  const { data: lookup, isLoading: lookupLoading } = useTestDriveLookups(open);
   const mutations = useTestDriveMutations();
   const pending = mutations.create.isPending || mutations.update.isPending;
 
@@ -116,9 +100,9 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     else mutations.create.mutate(body, opts);
   };
 
-  const leadOptions = [{ value: '', label: 'Pilih lead/customer' }, ...((leadsRes?.data ?? []).map((l) => ({ value: l.id, label: `${l.nama}${l.noHp ? ` - ${l.noHp}` : ''}` })))];
-  const unitOptions = [{ value: '', label: 'Pilih unit READY STOCK' }, ...((unitRes?.data ?? []).map((u) => ({ value: u.id, label: `${u.platNomor} - ${u.merek?.name ?? ''} ${u.tipe?.name ?? ''} ${u.tahun} - ${u.warna}` })))];
-  const salesOptions = [{ value: '', label: 'Pilih sales' }, ...((salesRes ?? []).map((s) => ({ value: s.id, label: `${s.name}${s.username ? ` (${s.username})` : ''}` })))];
+  const leadOptions = (lookup?.leads ?? []).map((l) => ({ value: l.id, label: l.nama, sublabel: l.nik || undefined }));
+  const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: `${u.platNomor} · ${u.merek?.name ?? ''} ${u.tipe?.name ?? ''}`.trim(), sublabel: `${u.tahun} · ${u.warna}` }));
+  const salesOptions = (lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name, sublabel: s.username || undefined }));
 
   return (
     <Modal
@@ -130,29 +114,11 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
       footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="td-form" disabled={pending}>{item ? 'Simpan' : 'Jadwalkan'}</Button></>}
     >
       <form id="td-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="sm:col-span-2 space-y-1.5">
-          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted">Lead / Customer <span className="text-primary">*</span></label>
-          <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input value={leadSearch} onChange={(e) => setLeadSearch(e.target.value)} placeholder="Cari customer..." className="w-full h-9 pl-8 pr-3 rounded-lg bg-surface-soft border border-border text-sm focus:outline-none focus:border-primary mb-1.5" />
-          </div>
-          <select required value={form.leadId} onChange={(e) => set('leadId', e.target.value)} className="w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold">
-            {leadOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </div>
-        <div className="sm:col-span-2 space-y-1.5">
-          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted">Unit Ready Stock <span className="text-primary">*</span></label>
-          <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input value={unitSearch} onChange={(e) => setUnitSearch(e.target.value)} placeholder="Cari plat / merek / tipe..." className="w-full h-9 pl-8 pr-3 rounded-lg bg-surface-soft border border-border text-sm focus:outline-none focus:border-primary mb-1.5" />
-          </div>
-          <select required value={form.unitId} onChange={(e) => set('unitId', e.target.value)} className="w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold">
-            {unitOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </div>
-        <SelectField label="Sales (opsional)" value={form.salesId} onChange={(e) => set('salesId', e.target.value)} options={salesOptions} />
+        <SearchableSelect label="Lead / Customer" required wrapClass="sm:col-span-2" value={form.leadId} onChange={(v) => set('leadId', v)} options={leadOptions} loading={lookupLoading} placeholder="Pilih lead" searchPlaceholder="Cari customer / NIK..." emptyMessage="Tidak ada lead aktif." />
+        <SearchableSelect label="Unit Ready Stock" required wrapClass="sm:col-span-2" value={form.unitId} onChange={(v) => set('unitId', v)} options={unitOptions} loading={lookupLoading} placeholder="Pilih unit" searchPlaceholder="Cari plat / merek / tipe..." emptyMessage="Tidak ada unit ready stock." />
+        <SearchableSelect label="Sales (opsional)" value={form.salesId} onChange={(v) => set('salesId', v)} options={salesOptions} loading={lookupLoading} clearable placeholder="Pilih sales" searchPlaceholder="Cari sales..." />
         <SelectField label="Status" value={form.status} onChange={(e) => set('status', e.target.value as TestDriveStatus)} options={[{ value: 'SCHEDULED', label: 'Dijadwalkan' }, { value: 'COMPLETED', label: 'Selesai' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />
-        <TextField label="Tanggal" required type="date" value={form.scheduledDate} onChange={(e) => set('scheduledDate', e.target.value)} />
+        <DateField label="Tanggal" required value={form.scheduledDate} onChange={(v) => set('scheduledDate', v)} />
         <TextField label="Jam" required type="time" value={form.scheduledTime} onChange={(e) => set('scheduledTime', e.target.value)} />
         <TextField label="Foto KTP" required={!item} type="file" accept="image/jpeg,image/jpg,image/png" onChange={fileChange('fotoKtp')} />
         <TextField label="Foto SIM" required={!item} type="file" accept="image/jpeg,image/jpg,image/png" onChange={fileChange('fotoSim')} />

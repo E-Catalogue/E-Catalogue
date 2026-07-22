@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Car, Percent, Calendar, Info, ArrowRight, Wallet, Loader2 } from 'lucide-react';
 import { PublicHeader } from './PublicHeader';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
@@ -65,10 +66,14 @@ export const SimulasiPage = () => {
         <div className="bg-surface rounded-2xl border border-border p-6 md:p-7 space-y-7">
           <div>
             <label className="flex items-center gap-2 text-[12px] font-bold text-ink mb-2"><Car size={15} className="text-primary" /> Pilih Mobil</label>
-            <select value={unitId} onChange={(e) => setUnitId(e.target.value)} className="w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
-              {units.length === 0 && <option value="">Memuat unit…</option>}
-              {units.map((u) => <option key={u.id} value={u.id}>{u.merek?.name} {u.tipe?.name} {u.variant ?? ''} — {formatCurrency(u.harga, { compact: true })}</option>)}
-            </select>
+            <SearchableSelect
+              value={unitId}
+              onChange={setUnitId}
+              options={units.map((u) => ({ value: u.id, label: `${u.merek?.name ?? ''} ${u.tipe?.name ?? ''} ${u.variant ?? ''}`.trim(), sublabel: formatCurrency(u.harga, { compact: true }) }))}
+              placeholder={units.length === 0 ? 'Memuat unit…' : 'Pilih mobil...'}
+              searchPlaceholder="Cari merek, model..."
+              disabled={units.length === 0}
+            />
             <div className="flex items-center justify-between mt-2.5 px-3.5 py-2.5 rounded-xl bg-primary-light/60 border border-primary/15">
               <span className="text-[12px] font-semibold text-ink-soft">Harga Mobil</span>
               <span className="text-[14px] font-extrabold text-primary">{formatCurrency(price)}</span>

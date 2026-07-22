@@ -2,6 +2,20 @@ import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type { Role, AccessUser, MenuGroup, MenuItem, Permission, ListParams } from './types';
 
+/**
+ * `.prd/update_module_owned_lookup_20260721.md` §4.2/§4.4/§4.5 — lookup form akses kontrol memakai
+ * endpoint module-owned `authorizeAny` (bukan CRUD `/roles`/`/branches` yang butuh permission penuh).
+ */
+export interface UserFormLookup {
+  roles: { id: string; name: string; code: string }[];
+  branches: { id: string; nama: string; code: string; lokasi?: string | null }[];
+}
+export interface RolePermissionLookup {
+  id: string;
+  name: string;
+  code: string;
+  menu: { id: string; name: string; code: string; groupMenu: { id: string; name: string; code: string } };
+}
 // ---- Roles ----
 export const roleApi = {
   list: (params: ListParams) => apiClient.get<ApiResponse<Role[]>>('/roles', { params }).then((r) => r.data),
@@ -10,6 +24,8 @@ export const roleApi = {
   update: (id: string, body: Partial<Role>) => apiClient.patch<ApiResponse<Role>>(`/roles/${id}`, body).then((r) => r.data.data),
   remove: (id: string) => apiClient.delete(`/roles/${id}`).then((r) => r.data),
   setPermissions: (id: string, permissionIds: string[]) => apiClient.put<ApiResponse<Role>>(`/roles/${id}/permissions`, { permissionIds }).then((r) => r.data.data),
+  /** `/roles/lookups/permissions` — daftar permission (dengan menu+groupMenu) untuk assignment role (§4.4). */
+  lookupPermissions: () => apiClient.get<ApiResponse<RolePermissionLookup[]>>('/roles/lookups/permissions').then((r) => r.data.data ?? []),
 };
 
 // ---- Users ----
@@ -21,6 +37,8 @@ export const userApi = {
   remove: (id: string) => apiClient.delete(`/users/${id}`).then((r) => r.data),
   setRole: (id: string, roleId: string) => apiClient.put<ApiResponse<AccessUser>>(`/users/${id}/role`, { roleId }).then((r) => r.data.data),
   setBranch: (id: string, branchId: string) => apiClient.put<ApiResponse<AccessUser>>(`/users/${id}/branch`, { branchId }).then((r) => r.data.data),
+  /** `/users/lookups` — role & cabang untuk form user (§4.2). */
+  lookups: () => apiClient.get<ApiResponse<UserFormLookup>>('/users/lookups').then((r) => r.data.data),
 };
 
 // ---- Menus / Groups / Permissions ----
@@ -39,12 +57,4 @@ export const menuApi = {
   createPermission: (menuId: string, body: Partial<Permission>) => apiClient.post<ApiResponse<Permission>>(`/menus/${menuId}/permissions`, body).then((r) => r.data.data),
   updatePermission: (menuId: string, permId: string, body: Partial<Permission>) => apiClient.patch<ApiResponse<Permission>>(`/menus/${menuId}/permissions/${permId}`, body).then((r) => r.data.data),
   removePermission: (menuId: string, permId: string) => apiClient.delete(`/menus/${menuId}/permissions/${permId}`).then((r) => r.data),
-};
-
-// Kumpulkan semua permission (flatten dari group → menu → permissions).
-export const fetchAllPermissions = async (): Promise<Permission[]> => {
-  const res = await menuApi.listGroups({ page: 1, limit: 100 });
-  const perms: Permission[] = [];
-  (res.data ?? []).forEach((g) => g.menus?.forEach((m) => m.permissions?.forEach((p) => perms.push(p))));
-  return perms;
 };

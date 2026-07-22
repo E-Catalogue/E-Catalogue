@@ -27,11 +27,22 @@ const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { comp
 const CatalogHeaderEditor = () => {
   const { data, isLoading } = useCatalogPage();
   const update = useUpdateCatalogPage();
+  const confirmAction = useConfirmedAction();
   const [draft, setDraft] = useState<CatalogPageType | null>(null);
   const f = draft ?? data ?? null;
   const setF = setDraft;
   const [open, setOpen] = useState(false);
   if (isLoading || !f) return null;
+
+  const save = () => confirmAction({
+    title: 'Simpan Header Katalog',
+    message: 'Perubahan akan langsung tayang di halaman katalog publik. Lanjutkan?',
+    confirmLabel: 'Simpan',
+    tone: 'primary',
+    execute: () => update.mutateAsync(f),
+    onSuccess: () => setDraft(null),
+    onError: (e) => notifyApiError(e),
+  });
 
   const setRange = (i: number, patch: Partial<PriceRange>) => setF({ ...f, priceRanges: f.priceRanges.map((r, idx) => (idx === i ? { ...r, ...patch } : r)) });
 
@@ -66,7 +77,7 @@ const CatalogHeaderEditor = () => {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button icon={<Save size={15} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Header'}</Button>
+            <Button icon={<Save size={15} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Header'}</Button>
           </div>
         </div>
       )}
@@ -112,7 +123,17 @@ const GalleryModal = ({ row, onClose }: { row: CmsCatalogRow; onClose: () => voi
                 <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                   <button onClick={() => move(i, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg bg-white/90 text-ink flex items-center justify-center disabled:opacity-30"><ArrowLeft size={13} /></button>
                   <button onClick={() => move(i, 1)} disabled={i === imgs.length - 1} className="w-7 h-7 rounded-lg bg-white/90 text-ink flex items-center justify-center disabled:opacity-30"><ArrowRight size={13} /></button>
-                  <button onClick={() => m.deleteImage.mutate({ id: row.id, imageId: img.id }, { onError: (e) => notifyApiError(e) })} className="w-7 h-7 rounded-lg bg-semantic-error text-white flex items-center justify-center"><Trash2 size={13} /></button>
+                  <button
+                    onClick={() => confirmAction({
+                      title: 'Hapus Foto',
+                      message: 'Foto ini akan dihapus permanen dari galeri unit. Lanjutkan?',
+                      confirmLabel: 'Hapus Foto',
+                      tone: 'danger',
+                      execute: () => m.deleteImage.mutateAsync({ id: row.id, imageId: img.id }),
+                      onError: notifyApiError,
+                    })}
+                    className="w-7 h-7 rounded-lg bg-semantic-error text-white flex items-center justify-center"
+                  ><Trash2 size={13} /></button>
                 </div>
               </div>
             ))}

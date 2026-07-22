@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { safeRandomUUID } from '@/core/utils/uuid';
 
 /**
  * Idempotency-Key untuk mutation finansial (ecatalogue-be/.prd/README.md §14: payment
@@ -14,7 +15,7 @@ import { useState } from 'react';
  * 4. Setelah mutation sukses, buang draft (komponen unmount) — key otomatis hilang.
  */
 export const useIdempotencyKey = () => {
-  const [key, setKey] = useState(() => crypto.randomUUID());
-  const regenerate = () => setKey(crypto.randomUUID());
+  const [key, setKey] = useState(() => safeRandomUUID());
+  const regenerate = () => setKey(safeRandomUUID());
   return { key, regenerate };
 };

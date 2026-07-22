@@ -2,7 +2,7 @@ import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
   Lead, LeadOrder, LeadPayment, LeadPaymentReverseResult, LeadStatus,
-  OrderStatus, SaleSettlement, SalesComboboxUser, UnitSummary,
+  OrderStatus, SaleSettlement, UnitSummary,
 } from './crm.types';
 
 /** Header opsional `{ 'X-Branch-Id': branchId }` — wajib diisi caller untuk mutation Owner (README §8). */
@@ -44,12 +44,31 @@ export const leadApi = {
   /** `PATCH /leads/:id/status` — endpoint terpisah dari update umum, khusus transisi status funnel lead. */
   updateStatus: (id: string, status: LeadStatus) =>
     apiClient.patch<ApiResponse<Lead>>(`/leads/${id}/status`, { status }).then((r) => r.data.data),
+  /** `/leads/lookups` — pilihan sumber lead untuk form (PRD §4.7, `authorizeAny`). */
+  lookupSources: () =>
+    apiClient.get<ApiResponse<{ id: string; name: string; code: string }[]>>('/leads/lookups').then((r) => r.data.data ?? []),
+};
+
+/**
+ * `.prd/update_module_owned_lookup_20260721.md` §4.9 — form order & pembayaran memakai lookup
+ * agregat `/lead-orders/lookups/order-form` (menggantikan `/lead-orders/sales` + CRUD Lead/Unit/
+ * Leasing/Sumber Lead yang lama). Akun kas pembayaran dipisah lagi via `useLeadOrderCashAccounts`.
+ */
+export interface LeadOrderFormLookup {
+  leads: { id: string; branchId: string; nama: string; nik: string; status: string }[];
+  sources: { id: string; name: string; code: string }[];
+  units: { id: string; branchId: string; platNomor: string; otrPrice: number; merek?: { name: string } | null; tipe?: { name: string } | null }[];
+  sales: { id: string; branchId: string; name: string; username: string }[];
+  leasings: { id: string; name: string; code: string }[];
+}
+
+export const leadOrderLookupApi = {
+  orderForm: (headers?: BranchHeaders) =>
+    apiClient.get<ApiResponse<LeadOrderFormLookup>>('/lead-orders/lookups/order-form', { headers }).then((r) => r.data.data),
 };
 
 // ---- Sales Order (lead-order.route.js — branch-scoped via resolveBranchScope) ----
 export const leadOrderApi = {
-  sales: () =>
-    apiClient.get<ApiResponse<SalesComboboxUser[]>>('/lead-orders/sales').then((r) => r.data.data),
   list: (params: OrderListParams, headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<LeadOrder[]>>('/lead-orders', { params, headers }).then((r) => r.data),
   get: (id: string, headers?: BranchHeaders) =>

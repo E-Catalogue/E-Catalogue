@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { roleApi, userApi, menuApi, fetchAllPermissions } from './access.api';
+import { roleApi, userApi, menuApi } from './access.api';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import type { ListParams } from './types';
@@ -10,8 +10,12 @@ const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil',
 export const useRoles = (params: ListParams) =>
   useQuery({ queryKey: ['roles', params], queryFn: () => roleApi.list(params) });
 
-export const useAllPermissions = (enabled = true) =>
-  useQuery({ queryKey: ['permissions', 'all'], queryFn: fetchAllPermissions, enabled });
+// ---------- Module-owned lookups (PRD update_module_owned_lookup) ----------
+export const useUserFormLookup = (enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'user', 'form'], queryFn: () => userApi.lookups(), enabled });
+
+export const useRolePermissionLookup = (enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'role', 'permissions'], queryFn: () => roleApi.lookupPermissions(), enabled });
 
 export const useRoleMutations = () => {
   const qc = useQueryClient();

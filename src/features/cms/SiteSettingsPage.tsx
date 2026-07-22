@@ -5,6 +5,7 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
 import { notifyApiError } from '@/core/api/notify';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { cmsImageUrl } from './cms.api';
 import { useSiteSettings, useSiteSettingsMutations } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
@@ -21,6 +22,7 @@ const empty: SiteSettingsRaw = {
 export const SiteSettingsPage = () => {
   const { data, isLoading, isError } = useSiteSettings();
   const { update, uploadLogo, uploadFavicon } = useSiteSettingsMutations();
+  const confirmAction = useConfirmedAction();
   const [draft, setDraft] = useState<SiteSettingsRaw | null>(null);
   const f = draft ?? (data ? { ...empty, ...data, navLinks: data.navLinks ?? [] } : empty);
   const setF = setDraft;
@@ -41,7 +43,15 @@ export const SiteSettingsPage = () => {
       socialTiktok: f.socialTiktok || null, socialWebsite: f.socialWebsite || null,
       copyrightText: f.copyrightText || null,
     };
-    update.mutate(body, { onError: (e) => notifyApiError(e) });
+    confirmAction({
+      title: 'Simpan Pengaturan Situs',
+      message: 'Perubahan akan langsung tayang di website publik. Lanjutkan?',
+      confirmLabel: 'Simpan',
+      tone: 'primary',
+      execute: () => update.mutateAsync(body),
+      onSuccess: () => setDraft(null),
+      onError: (e) => notifyApiError(e),
+    });
   };
 
   return (

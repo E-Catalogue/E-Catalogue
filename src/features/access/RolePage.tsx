@@ -9,8 +9,8 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { Pagination } from '@/shared/components/ui/Pagination';
-import { useRoles, useRoleMutations, useMenuGroups } from './access.hooks';
-import { roleApi } from './access.api';
+import { useRoles, useRoleMutations, useRolePermissionLookup } from './access.hooks';
+import { roleApi, type RolePermissionLookup } from './access.api';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -51,10 +51,30 @@ const RoleFormModal = ({ open, onClose, item, submitting, onSubmit }: {
 };
 
 // ---- Set Permissions ----
+/** Bentuk `groupMenu → menu → permission[]` dari daftar flat `/roles/lookups/permissions` (PRD §4.4). */
+interface PermGroup { id: string; name: string; menus: { id: string; name: string; permissions: RolePermissionLookup[] }[] }
+const groupPermissions = (perms: RolePermissionLookup[]): PermGroup[] => {
+  const groups = new Map<string, PermGroup>();
+  for (const p of perms) {
+    const gm = p.menu.groupMenu;
+    let g = groups.get(gm.id);
+    if (!g) { g = { id: gm.id, name: gm.name, menus: [] }; groups.set(gm.id, g); }
+    let menu = g.menus.find((m) => m.id === p.menu.id);
+    if (!menu) { menu = { id: p.menu.id, name: p.menu.name, permissions: [] }; g.menus.push(menu); }
+    menu.permissions.push(p);
+  }
+  return [...groups.values()];
+};
+
 const PermissionsModal = ({ open, onClose, role }: { open: boolean; onClose: () => void; role: Role | null }) => {
-  const { data: groups, isLoading } = useMenuGroups({ page: 1, limit: 100 });
+  const { data: permissions = [], isLoading } = useRolePermissionLookup(open);
   const m = useRoleMutations();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  // Reset input pencarian saat modal dibuka untuk role berbeda (pola derived-state, bukan efek).
+  const [seedRoleId, setSeedRoleId] = useState<string | null>(null);
+  if (open && role && seedRoleId !== role.id) { setSeedRoleId(role.id); setSearch(''); }
+  if (!open && seedRoleId !== null) setSeedRoleId(null);
 
   useEffect(() => {
     if (open && role) {
@@ -69,28 +89,38 @@ const PermissionsModal = ({ open, onClose, role }: { open: boolean; onClose: () 
     m.setPermissions.mutate({ id: role.id, permissionIds: [...selected] }, { onError: (e) => notifyApiError(e), onSuccess: onClose });
   };
 
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? permissions.filter((p) => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.menu.name.toLowerCase().includes(q))
+    : permissions;
+  const grouped = groupPermissions(filtered);
+
   return (
-    <Modal open={open} onClose={onClose} icon={<KeyRound size={20} />} title={`Permission — ${role?.name ?? ''}`} subtitle="Pilih hak akses untuk role ini" size="lg"
+    <Modal open={open} onClose={onClose} icon={<KeyRound size={20} />} title={`Permission — ${role?.name ?? ''}`} subtitle={`${selected.size} permission dipilih`} size="lg"
       footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button onClick={save} disabled={m.setPermissions.isPending}>{m.setPermissions.isPending ? 'Menyimpan...' : 'Simpan'}</Button></>}>
       {isLoading ? (
         <div className="flex items-center justify-center py-12 text-muted"><Loader2 size={22} className="animate-spin" /></div>
       ) : (
-        <div className="space-y-5">
-          {(groups?.data ?? []).map((g) => (
+        <div className="space-y-4">
+          <div className="relative sticky top-0 z-10 bg-surface pb-1">
+            <Search size={15} className="absolute left-3 top-[13px] text-muted pointer-events-none" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari permission / menu..." className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-soft border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
+          </div>
+          {grouped.length === 0 && <p className="text-center py-8 text-[12px] text-muted">Tidak ada permission yang cocok.</p>}
+          {grouped.map((g) => (
             <div key={g.id}>
               <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">{g.name}</p>
               <div className="space-y-3">
-                {(g.menus ?? []).map((menu) => (
+                {g.menus.map((menu) => (
                   <div key={menu.id} className="rounded-xl border border-border p-3">
                     <p className="text-[12px] font-extrabold text-ink mb-2">{menu.name}</p>
                     <div className="flex flex-wrap gap-2">
-                      {(menu.permissions ?? []).map((p) => (
+                      {menu.permissions.map((p) => (
                         <label key={p.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${selected.has(p.id) ? 'bg-primary text-white border-primary' : 'bg-surface border-border text-ink-soft hover:border-primary'}`}>
                           <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} className="hidden" />
                           {p.name}
                         </label>
                       ))}
-                      {(menu.permissions ?? []).length === 0 && <span className="text-[11px] text-muted">Tidak ada permission</span>}
                     </div>
                   </div>
                 ))}

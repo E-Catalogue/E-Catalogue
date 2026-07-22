@@ -1,4 +1,5 @@
-import { useId, useState, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
+import { useId, useMemo, useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { SearchableSelect } from './SearchableSelect';
 
 const baseInput =
   'w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold text-ink placeholder:text-muted placeholder:font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all';
@@ -38,22 +39,36 @@ export const TextField = ({ label, required, wrapClass, className = '', id, ...r
   );
 };
 
-interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectFieldProps {
   label: string;
   required?: boolean;
   options: { value: string; label: string }[];
   wrapClass?: string;
+  value?: string;
+  onChange?: (e: { target: { value: string } }) => void;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
-export const SelectField = ({ label, required, options, wrapClass, className = '', id, ...rest }: SelectFieldProps) => {
-  const generatedId = useId();
-  const inputId = id ?? generatedId;
+/**
+ * Dropdown bertema (bukan `<select>` polos) — dibangun di atas `SearchableSelect` supaya SEMUA
+ * dropdown di app (filter maupun form) konsisten punya input pencarian & popover cantik, bukan
+ * default browser. Signature `onChange={(e) => ...e.target.value}` dipertahankan biar drop-in
+ * compatible dengan seluruh caller lama.
+ */
+export const SelectField = ({ label, required, options, wrapClass, value, onChange, disabled, placeholder }: SelectFieldProps) => {
+  const searchableOptions = useMemo(() => options.map((o) => ({ value: o.value, label: o.label })), [options]);
   return (
-    <FieldWrap label={label} required={required} className={wrapClass} htmlFor={inputId}>
-      <select id={inputId} className={`${baseInput} cursor-pointer ${className}`} {...rest}>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </FieldWrap>
+    <SearchableSelect
+      label={label}
+      required={required}
+      wrapClass={wrapClass}
+      value={value ?? ''}
+      onChange={(v) => onChange?.({ target: { value: v } })}
+      options={searchableOptions}
+      disabled={disabled}
+      placeholder={placeholder ?? 'Pilih...'}
+    />
   );
 };
 
@@ -76,10 +91,13 @@ interface NumericFieldProps {
   max?: number;
   /** Allow decimal input (for percentages etc.) */
   decimal?: boolean;
+  /** Default true (format "1.000.000" ala Rupiah). Set false untuk angka polos non-uang (mis. Tahun) — "2026" bukan "2.026". */
+  thousands?: boolean;
+  disabled?: boolean;
 }
 
-const fmt = (n: number) =>
-  n === 0 ? '' : n.toLocaleString('id-ID');
+const fmt = (n: number, thousands: boolean) =>
+  n === 0 ? '' : (thousands ? n.toLocaleString('id-ID') : String(n));
 
 const parseNum = (s: string, decimal: boolean) => {
   const clean = s.replace(/\./g, '').replace(',', '.');
@@ -89,14 +107,14 @@ const parseNum = (s: string, decimal: boolean) => {
 
 export const NumericField = ({
   label, value, onChange, required, wrapClass, className = '',
-  placeholder = '0', prefix, suffix, min, max, decimal = false,
+  placeholder = '0', prefix, suffix, min, max, decimal = false, thousands = true, disabled,
 }: NumericFieldProps) => {
   const inputId = useId();
   const [focused, setFocused] = useState(false);
   // raw: what the user is typing while focused
   const [raw, setRaw] = useState('');
 
-  const displayValue = focused ? raw : fmt(value);
+  const displayValue = focused ? raw : fmt(value, thousands);
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const s = value === 0 ? '' : String(value);
@@ -145,7 +163,8 @@ export const NumericField = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`${baseInput} ${hasPre ? 'pl-10' : ''} ${hasSuf ? 'pr-12' : ''} ${className}`}
+          disabled={disabled}
+          className={`${baseInput} ${hasPre ? 'pl-10' : ''} ${hasSuf ? 'pr-12' : ''} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         />
         {hasSuf && (
           <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted text-[13px] font-semibold select-none pointer-events-none">

@@ -5,6 +5,7 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { notifyApiError } from '@/core/api/notify';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { TextArea } from './CmsKit';
 import { useCreditSimConfig, useCreditSimMutations } from './cms.hooks';
 import type { CreditSimConfig } from './cms.types';
@@ -12,6 +13,7 @@ import type { CreditSimConfig } from './cms.types';
 export const CreditSimPage = () => {
   const { data, isLoading, isError } = useCreditSimConfig();
   const { update } = useCreditSimMutations();
+  const confirmAction = useConfirmedAction();
   const [draft, setDraft] = useState<CreditSimConfig | null>(null);
   const [tenorDraft, setTenorDraft] = useState<string | null>(null);
   const f = draft ?? data ?? null;
@@ -29,7 +31,15 @@ export const CreditSimPage = () => {
 
   const save = () => {
     const tenorOptions = tenorText.split(',').map((s) => Number(s.trim())).filter((n) => n > 0);
-    update.mutate({ ...f, tenorOptions }, { onError: (e) => notifyApiError(e) });
+    confirmAction({
+      title: 'Simpan Konfigurasi Simulasi Kredit',
+      message: 'Perubahan akan langsung berlaku pada kalkulator simulasi kredit di website publik. Lanjutkan?',
+      confirmLabel: 'Simpan',
+      tone: 'primary',
+      execute: () => update.mutateAsync({ ...f, tenorOptions }),
+      onSuccess: () => setDraft(null),
+      onError: (e) => notifyApiError(e),
+    });
   };
 
   return (

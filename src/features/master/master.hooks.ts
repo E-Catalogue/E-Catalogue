@@ -65,6 +65,10 @@ export const useVendorMutations = () => {
 };
 
 // ---------- Branch ----------
+/** `/branches/lookups/pics` — user aktif untuk pilihan PIC form cabang (PRD §4.3). */
+export const useBranchPicLookup = (enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'branch', 'pics'], queryFn: () => branchApi.lookupPics(), enabled });
+
 export const useBranches = (params: ListParams) =>
   useQuery({ queryKey: ['branches', params], queryFn: () => branchApi.list(params) });
 

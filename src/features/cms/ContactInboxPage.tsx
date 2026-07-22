@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { formatDate } from '@/core/utils/format';
 import { notifyApiError } from '@/core/api/notify';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { TextArea } from './CmsKit';
 import {
   useContactPage, useUpdateContactPage,
@@ -36,13 +37,23 @@ const TABS: { key: ContactStatus | 'ALL'; label: string }[] = [
 const HeaderEditor = () => {
   const { data, isLoading } = useContactPage();
   const update = useUpdateContactPage();
+  const confirmAction = useConfirmedAction();
   const [draft, setDraft] = useState<ContactPage | null>(null);
   const f = draft ?? data ?? null;
   const setF = setDraft;
   if (isLoading || !f) return null;
+  const save = () => confirmAction({
+    title: 'Simpan Header Halaman Kontak',
+    message: 'Perubahan akan langsung tayang di halaman kontak publik. Lanjutkan?',
+    confirmLabel: 'Simpan',
+    tone: 'primary',
+    execute: () => update.mutateAsync(f),
+    onSuccess: () => setDraft(null),
+    onError: (e) => notifyApiError(e),
+  });
   return (
     <SectionCard title="Header Halaman Kontak" icon={<Mail size={16} />}
-      action={<Button icon={<Save size={14} />} onClick={() => update.mutate(f, { onError: (e) => notifyApiError(e) })} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>}>
+      action={<Button icon={<Save size={14} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Eyebrow" value={f.eyebrow} onChange={(e) => setF({ ...f, eyebrow: e.target.value })} />
         <TextField label="Judul" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />

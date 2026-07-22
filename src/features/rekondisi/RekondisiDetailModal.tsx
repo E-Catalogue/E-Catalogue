@@ -6,14 +6,17 @@ import {
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField, NumericField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { API_ORIGIN } from '@/core/api/client';
 import {
-  useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations, useRekondisiLookups,
+  useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations, useRekondisiVendorLookup, useRekondisiCheckLookup,
 } from './rekondisi.hooks';
 import { useRekondisis } from './rekondisi.hooks';
+import { useRekondisiCashAccounts } from '@/features/finance/lookup';
 import { useCreateRekondisi, useRekondisiStatusCheck } from '@/features/units/unit.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import {
@@ -23,6 +26,26 @@ import {
 
 const idr = (n?: number | null) =>
   n == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+
+/** Input nominal ringkas (h-8, dipakai di baris form inline) dengan pemisah ribuan — dulunya
+ * `<input type="number">` polos tanpa format sama sekali selagi mengetik. */
+const MiniCurrencyInput = ({ value, onChange, className = '', placeholder = 'Nominal' }: { value: string; onChange: (v: string) => void; className?: string; placeholder?: string }) => {
+  const [focused, setFocused] = useState(false);
+  const digits = value.replace(/\D/g, '');
+  const display = focused ? digits : (digits ? Number(digits).toLocaleString('id-ID') : '');
+  return (
+    <input
+      required
+      inputMode="numeric"
+      value={display}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
+      placeholder={placeholder}
+      className={`h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary ${className}`}
+    />
+  );
+};
 
 const today = () => new Date().toISOString().slice(0, 10);
 const mediaUrl = (url?: string | null) => {
@@ -125,10 +148,7 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
             { label: 'Biaya Admin', val: adminFee, set: setAdminFee },
             { label: 'Biaya Lain', val: additionalFee, set: setAdditionalFee },
           ].map((f) => (
-            <div key={f.label}>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">{f.label}</p>
-              <input type="number" min={0} value={f.val} onChange={(e) => f.set(e.target.value)} placeholder="0" className="w-full h-9 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
-            </div>
+            <NumericField key={f.label} label={f.label} prefix="Rp" min={0} value={Number(f.val) || 0} onChange={(v) => f.set(String(v))} />
           ))}
         </div>
         <div>
@@ -161,14 +181,15 @@ const PayForm = ({ rekondisiId }: { rekondisiId: string }) => {
   const [paidDate, setPaidDate] = useState(today());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const m = useRekondisiMutations();
+  const { data: cashAccounts = [], isLoading: cashLoading } = useRekondisiCashAccounts('all');
 
   return (
     <>
       <form onSubmit={(e) => { e.preventDefault(); setConfirmOpen(true); }} className="space-y-3">
         <p className="text-[12px] text-muted font-medium">Catat pembayaran rekondisi ke vendor dari akun kas.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={setCashAccountId} />
-          <TextField label="Tanggal Bayar" required type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
+          <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={setCashAccountId} accounts={cashAccounts} loading={cashLoading} />
+          <DateField label="Tanggal Bayar" required value={paidDate} onChange={setPaidDate} />
         </div>
         <button type="submit" disabled={!cashAccountId || !paidDate} className="w-full h-10 rounded-xl bg-primary text-white text-[12px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-60">
           <Receipt size={14} /> Bayar Rekondisi
@@ -216,9 +237,8 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
   const { data: itemsRes } = useRekondisiDetails(open ? r.id : undefined);
   const items: RekondisiDetail[] = itemsRes?.data ?? rekondisi.rekondisiDetails ?? [];
 
-  const { data: lookupsRes } = useRekondisiLookups(open);
-  const vendors = lookupsRes?.data.vendors ?? [];
-  const pengecekans = lookupsRes?.data.checks ?? [];
+  const { data: vendors = [] } = useRekondisiVendorLookup(open);
+  const { data: pengecekans = [] } = useRekondisiCheckLookup(open);
 
   const { can } = usePermissions();
   const m = useRekondisiMutations();
@@ -261,7 +281,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 {showInfoForm ? (
                   <>
                     <form onSubmit={(e) => { e.preventDefault(); if (vendorId) setConfirmInfo(true); }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <SelectField label="Vendor / Bengkel" required value={vendorId} onChange={(e) => setVendorId(e.target.value)} options={[{ value: '', label: 'Pilih vendor...' }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]} />
+                      <SearchableSelect label="Vendor / Bengkel" required value={vendorId} onChange={setVendorId} options={vendors.map((v) => ({ value: v.id, label: v.code ? `${v.code} — ${v.name}` : v.name }))} placeholder="Pilih vendor" searchPlaceholder="Cari vendor..." emptyMessage="Tidak ada vendor aktif." />
                       <TextField label="Keterangan" value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="Contoh: Perbaikan AC dan kaki-kaki" />
                       <div className="sm:col-span-2 flex gap-2">
                         <Button type="submit" disabled={!vendorId}>Simpan</Button>
@@ -302,12 +322,16 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 {addForm && (
                   <>
                     <form onSubmit={(e) => { e.preventDefault(); if (newPengecekanId && newNom) setConfirmAddItem(true); }} className="flex flex-wrap items-center gap-2 mb-3 p-3 bg-surface border border-border rounded-xl">
-                      <select required value={newPengecekanId} onChange={(e) => setNewPengecekanId(e.target.value)} className="flex-1 min-w-[140px] h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary">
-                        <option value="">Pilih pengecekan...</option>
-                        {pengecekans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        required
+                        value={newPengecekanId}
+                        onChange={setNewPengecekanId}
+                        options={pengecekans.map((p) => ({ value: p.id, label: p.name }))}
+                        placeholder="Pilih pengecekan..."
+                        wrapClass="flex-1 min-w-[140px]"
+                      />
                       <input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Deskripsi (opsional)" className="w-40 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
-                      <input required type="number" min={0} value={newNom} onChange={(e) => setNewNom(e.target.value)} placeholder="Nominal" className="w-28 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
+                      <MiniCurrencyInput value={newNom} onChange={setNewNom} className="w-28" />
                       <button type="submit" className="h-8 px-3 rounded-lg bg-primary text-white text-[11px] font-bold">Tambah</button>
                       <button type="button" onClick={() => setAddForm(false)} className="h-8 px-2.5 rounded-lg border border-border text-[11px] font-bold text-muted">Batal</button>
                     </form>
@@ -333,7 +357,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                     <form onSubmit={(e) => { e.preventDefault(); setConfirmEditItem(true); }} className="flex items-center gap-2 mb-3 px-3 py-2.5 bg-surface-soft/60 border border-border rounded-xl">
                       <span className="text-[12px] font-semibold text-muted shrink-0 w-28 truncate">{editItem.pengecekan?.name}</span>
                       <input value={itemDesc} onChange={(e) => setItemDesc(e.target.value)} placeholder="Deskripsi" className="flex-1 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
-                      <input value={itemNom} onChange={(e) => setItemNom(e.target.value)} type="number" min={0} required placeholder="Nominal" className="w-32 h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary" />
+                      <MiniCurrencyInput value={itemNom} onChange={setItemNom} className="w-32" />
                       <button type="submit" className="px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold">Simpan</button>
                       <button type="button" onClick={() => setEditItem(null)} className="px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-bold text-muted">Batal</button>
                     </form>

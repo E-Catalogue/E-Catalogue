@@ -39,6 +39,26 @@ const isPersistentMutation = (config: InternalAxiosRequestConfig) => {
 
 const mutationLabel = (method?: string) => method?.toUpperCase() === 'DELETE' ? 'Hapus Data' : 'Simpan Perubahan';
 
+// Role dengan akses lintas-cabang (global). Selain ini, user selalu terikat branch-nya sendiri.
+const GLOBAL_BRANCH_ROLE_CODES = new Set(['OWNER', 'ADMIN']);
+
+/**
+ * Cabang aktif dari SATU sumber kebenaran global (Redux `branchSlice` + `auth`).
+ * - OWNER/ADMIN: `selectedBranchId` dari header switcher (bisa `null` = "semua cabang", hanya READ).
+ * - Role lain: selalu `user.branch.id`.
+ * Dipakai interceptor untuk melampirkan `X-Branch-Id` OTOMATIS ke semua request — jadi tiap modul
+ * branch-scoped (unit, lead, rekondisi, test-drive, finance, dst.) tidak perlu meneruskan header
+ * manual dan tidak ada lagi celah "lupa kirim header" (penyebab error BRANCH_CONTEXT_REQUIRED).
+ */
+const resolveActiveBranchId = (): string | null => {
+  const state = store.getState();
+  const roleCode = state.auth.user?.role?.code;
+  if (GLOBAL_BRANCH_ROLE_CODES.has(roleCode ?? '')) {
+    return state.branch.selectedBranchId ?? null;
+  }
+  return state.auth.user?.branch?.id ?? null;
+};
+
 apiClient.interceptors.request.use(async (rawConfig) => {
   const config = rawConfig as ConfirmedRequestConfig;
   if (isPersistentMutation(config) && !config._mutationConfirmed) {
@@ -56,6 +76,12 @@ apiClient.interceptors.request.use(async (rawConfig) => {
   }
   const token = getAccessToken();
   if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
+
+  // Lampirkan X-Branch-Id dari state global bila belum di-set eksplisit oleh pemanggil.
+  if (config.headers && !config.headers.has('X-Branch-Id')) {
+    const branchId = resolveActiveBranchId();
+    if (branchId) config.headers.set('X-Branch-Id', branchId);
+  }
   return config;
 });
 

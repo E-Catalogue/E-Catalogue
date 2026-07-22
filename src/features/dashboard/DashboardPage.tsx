@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
   Building2,
-  CalendarDays,
   Car,
   CreditCard,
   DollarSign,
@@ -17,11 +16,11 @@ import {
   Wallet,
 } from 'lucide-react';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { StatCardSkeleton, TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { formatCurrency } from '@/core/utils/format';
 import { useBranchScope } from '@/features/auth/useBranchScope';
-import { useBranches } from '@/features/master/master.hooks';
 import { RequirePermission } from '@/features/auth/permissions';
 import { dashboardApi } from './dashboard.api';
 import {
@@ -52,9 +51,7 @@ const asPct = (value: number) => Math.max(0, Math.min(Math.round(value), 999));
 
 const DashboardPageInner = () => {
   const [period, setPeriod] = useState(currentMonth());
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
-  const { data: branchesResp } = useBranches({ page: 1, limit: 100 });
-  const branches = branchesResp?.data ?? [];
+  const { branchHeader, branchKey } = useBranchScope();
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['dashboard-overview', period, branchKey],
@@ -71,30 +68,11 @@ const DashboardPageInner = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {isOwner && (
-            <label className="flex items-center gap-2 bg-surface-soft border border-border rounded-xl px-3 py-2 text-[12px] font-bold text-ink">
-              <Building2 size={15} className="text-primary" />
-              <select
-                value={selectedBranchId ?? ''}
-                onChange={(event) => setSelectedBranchId(event.target.value || null)}
-                className="bg-transparent outline-none font-bold max-w-[160px]"
-              >
-                <option value="">Semua Cabang</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>{branch.nama}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          <label className="flex items-center gap-2 bg-surface-soft border border-border rounded-xl px-3 py-2 text-[12px] font-bold text-ink">
-            <CalendarDays size={15} className="text-primary" />
-            <input
-              type="month"
-              value={period}
-              onChange={(event) => setPeriod(event.target.value || currentMonth())}
-              className="bg-transparent outline-none w-32 font-bold"
-            />
-          </label>
+          <MonthField
+            value={period}
+            onChange={(v) => setPeriod(v || currentMonth())}
+            wrapClass="w-full sm:w-36"
+          />
         </div>
       </div>
 

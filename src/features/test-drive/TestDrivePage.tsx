@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { FileImage, KeyRound, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -7,6 +6,7 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { Can, RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
@@ -14,8 +14,7 @@ import { API_ORIGIN } from '@/core/api/client';
 import { formatDate } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { TestDriveFormModal } from './TestDriveFormModal';
-import { useTestDriveMutations, useTestDrives } from './testDrive.hooks';
-import { testDriveApi } from './testDrive.api';
+import { useTestDriveMutations, useTestDrives, useTestDriveLookups } from './testDrive.hooks';
 import type { TestDrive, TestDriveStatus } from './testDrive.types';
 
 const STATUS_CLASS: Record<TestDriveStatus, string> = {
@@ -46,13 +45,13 @@ const TestDrivePageInner = () => {
   const [salesId, setSalesId] = useState('');
   const debounced = useDebouncedValue(search, 400);
   const { data, isLoading, isFetching, isError, refetch } = useTestDrives({ page, limit: 10, search: debounced || undefined, status: status || undefined, salesId: salesId || undefined });
-  const { data: salesRes } = useQuery({ queryKey: ['test-drive-sales'], queryFn: testDriveApi.sales });
+  const { data: lookup } = useTestDriveLookups();
   const mutations = useTestDriveMutations();
   const [form, setForm] = useState<{ item: TestDrive | null } | null>(null);
   const [toDelete, setToDelete] = useState<TestDrive | null>(null);
 
   const rows = data?.data ?? [];
-  const salesOptions = salesRes ?? [];
+  const salesOptions = lookup?.sales ?? [];
   const columns: Column<TestDrive>[] = [
     { header: 'Jadwal', cell: (t) => <span className="font-bold text-ink">{formatDate(t.scheduledAt)}</span> },
     { header: 'Customer', cell: (t) => <span className="font-bold text-ink">{t.lead?.nama ?? t.leadId}</span> },
@@ -82,16 +81,21 @@ const TestDrivePageInner = () => {
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari customer, unit, sales..." className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
         </div>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold">
-          <option value="">Semua Status</option>
-          <option value="SCHEDULED">Dijadwalkan</option>
-          <option value="COMPLETED">Selesai</option>
-          <option value="CANCELLED">Dibatalkan</option>
-        </select>
-        <select value={salesId} onChange={(e) => setSalesId(e.target.value)} className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold">
-          <option value="">Semua Sales</option>
-          {salesOptions.map((sales) => <option key={sales.id} value={sales.id}>{sales.name}</option>)}
-        </select>
+        <SearchableSelect
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: '', label: 'Semua Status' },
+            { value: 'SCHEDULED', label: 'Dijadwalkan' },
+            { value: 'COMPLETED', label: 'Selesai' },
+            { value: 'CANCELLED', label: 'Dibatalkan' },
+          ]}
+        />
+        <SearchableSelect
+          value={salesId}
+          onChange={setSalesId}
+          options={[{ value: '', label: 'Semua Sales' }, ...salesOptions.map((sales) => ({ value: sales.id, label: sales.name }))]}
+        />
       </div>
 
       <SectionCard title="Jadwal Test Drive" icon={<KeyRound size={16} />} bodyClassName="p-0 md:p-0">

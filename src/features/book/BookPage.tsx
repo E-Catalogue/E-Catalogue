@@ -8,16 +8,16 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { Button } from '@/shared/components/ui/Button';
-import { SelectField } from '@/shared/components/ui/Field';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
-import { useBranches } from '@/features/master/master.hooks';
 import { getApiErrorCode, getApiErrorMessage } from '@/core/api/apiError';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, FinanceErrorBanner } from '@/features/finance/components';
+import { useBookCashAccounts } from '@/features/finance/lookup';
 import {
   useBookCashSummary, useBookLedger, useBookMutations, useBookPeriods, useBookProfitSummary, useTaxSettings,
 } from './book.hooks';
@@ -200,12 +200,13 @@ const LedgerTab = ({ branchKey, branchHeader, period }: { branchKey: string; bra
   const [page, setPage] = useState(1);
   const [cashAccountId, setCashAccountId] = useState('');
   const ledger = useBookLedger(branchKey, { period, page, limit: 20, cashAccountId: cashAccountId || undefined }, branchHeader);
+  const { data: cashAccounts = [], isLoading: cashLoading } = useBookCashAccounts(branchKey, { headers: branchHeader });
 
   return (
     <SectionCard
       title="Buku Kas (Ledger)"
       icon={<BookOpen size={16} />}
-      action={<div className="w-56"><CashAccountSelect label="" value={cashAccountId} onChange={(v) => { setCashAccountId(v); setPage(1); }} branchKey={branchKey} headers={branchHeader} /></div>}
+      action={<div className="w-56"><CashAccountSelect label="" value={cashAccountId} onChange={(v) => { setCashAccountId(v); setPage(1); }} accounts={cashAccounts} loading={cashLoading} /></div>}
       bodyClassName="p-0 md:p-0"
     >
       {ledger.isLoading ? (
@@ -251,6 +252,7 @@ const TaxSettingForm = ({
   branchKey: string; branchHeader: Record<string, string> | undefined; mutationBlocked: boolean;
 }) => {
   const m = useBookMutations();
+  const { data: cashAccounts = [], isLoading: cashLoading } = useBookCashAccounts(branchKey, { headers: branchHeader, enabled: !mutationBlocked });
   const [formError, setFormError] = useState<{ code?: string; message: string } | null>(null);
   const [taxRatePercent, setTaxRatePercent] = useState(() => String(initial?.setting?.taxRatePercent ?? 5));
   const [sourceCashAccountId, setSourceCashAccountId] = useState(() => initial?.setting?.sourceCashAccountId ?? '');
@@ -281,8 +283,8 @@ const TaxSettingForm = ({
             className="w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all disabled:opacity-50"
           />
         </div>
-        <CashAccountSelect label="Akun Kas Sumber" required value={sourceCashAccountId} onChange={setSourceCashAccountId} branchKey={branchKey} headers={branchHeader} disabled={mutationBlocked} />
-        <CashAccountSelect label="Akun Kas Cadangan" required value={reserveCashAccountId} onChange={setReserveCashAccountId} branchKey={branchKey} headers={branchHeader} disabled={mutationBlocked} />
+        <CashAccountSelect label="Akun Kas Sumber" required value={sourceCashAccountId} onChange={setSourceCashAccountId} accounts={cashAccounts} loading={cashLoading} disabled={mutationBlocked} />
+        <CashAccountSelect label="Akun Kas Cadangan" required value={reserveCashAccountId} onChange={setReserveCashAccountId} accounts={cashAccounts} loading={cashLoading} disabled={mutationBlocked} />
       </div>
       <div className="mt-4">
         <Button
@@ -403,9 +405,7 @@ const TaxSettingsTab = ({
 
 const BookPageInner = () => {
   const { can } = usePermissions();
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
-  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
-  const branches = branchesRes?.data ?? [];
+  const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
 
   const [tab, setTab] = useState<Tab>('ringkasan');
   const [periodInput, setPeriodInput] = useState(currentPeriod());
@@ -422,21 +422,8 @@ const BookPageInner = () => {
     <div className="max-w-[1600px] mx-auto space-y-5">
       <PageHeader title="Pembukuan Cabang" description="Ringkasan kas, laba rugi, ledger, dan pengaturan pajak per periode" />
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-3">
-        {isOwner && (
-          <SelectField
-            label=""
-            value={selectedBranchId ?? ''}
-            onChange={(e) => setSelectedBranchId(e.target.value || null)}
-            options={[{ value: '', label: 'Semua Cabang' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
-          />
-        )}
-        <input
-          type="month"
-          value={periodInput}
-          onChange={(e) => setPeriodInput(e.target.value)}
-          className="h-11 px-3.5 rounded-xl bg-surface border border-border text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-[220px] gap-3">
+        <MonthField value={periodInput} onChange={setPeriodInput} />
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">

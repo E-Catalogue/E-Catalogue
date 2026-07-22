@@ -8,7 +8,9 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TextField, SelectField, NumericField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { CashAccountSelect } from '@/features/finance/components';
+import { useLeadOrderCashAccounts } from '@/features/finance/lookup';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
 import { apiClient } from '@/core/api/client';
@@ -121,6 +123,8 @@ export const PayForm = ({ orderId, branchKey, headers, disabled, disabledReason 
   const idem = useIdempotencyKey();
   const m = useLeadPaymentMutations(branchKey, orderId);
   const qc = useQueryClient();
+  // Akun kas pembayaran hanya dimuat saat form pembayaran aktif (PRD §4.9 / §7.3).
+  const { data: cashAccounts = [], isLoading: cashLoading } = useLeadOrderCashAccounts(branchKey, { headers, enabled: !disabled });
 
   const set = <K extends keyof PaymentFormState>(k: K, v: PaymentFormState[K], resetKey = true) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -179,9 +183,9 @@ export const PayForm = ({ orderId, branchKey, headers, disabled, disabledReason 
       {error && <InlineErrorBanner code={error.code} message={error.message} onDismiss={() => setError(null)} />}
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); if (valid) setConfirmOpen(true); }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <NumericField label="Jumlah (Rp)" required value={form.amount} onChange={(v) => set('amount', v)} prefix="Rp" />
-        <TextField label="Tanggal Bayar" required type="date" value={form.paymentDate} onChange={(e) => set('paymentDate', e.target.value)} />
+        <DateField label="Tanggal Bayar" required value={form.paymentDate} onChange={(v) => set('paymentDate', v)} />
         <SelectField label="Jenis Pembayaran" required value={form.jenisPembayaran} onChange={(e) => set('jenisPembayaran', e.target.value as JenisPembayaran)} options={JENIS_OPTIONS} />
-        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} />
+        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={cashLoading} />
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={form.description} onChange={(e) => set('description', e.target.value, false)} />
         <div className="sm:col-span-2">
           <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Bukti Pembayaran (opsional)</label>
@@ -267,7 +271,7 @@ const PaymentRow = ({
         )}
       >
         <div className="space-y-2.5">
-          <TextField label="Tanggal Transaksi" type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} />
+          <DateField label="Tanggal Transaksi" value={transactionDate} onChange={(v) => setTransactionDate(v)} />
           <TextField label="Keterangan (opsional)" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} />
         </div>
       </ConfirmDialog>

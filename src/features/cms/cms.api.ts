@@ -27,6 +27,19 @@ export const sectionApi = {
     apiClient.post<ApiResponse<{ filename: string }>>(`/cms/${page}/hero-image`, fileForm(file), uploadCfg).then((r) => r.data.data),
 };
 
+/**
+ * `.prd/update_module_owned_lookup_20260721.md` §4.20 — pilihan merek & unit unggulan homepage
+ * memakai `/cms/homepage/lookups` (bukan CRUD Merek/Unit atau CMS Catalog). Unit hanya yang aktif
+ * berstatus READY_STOCK.
+ */
+export interface HomepageLookup {
+  brands: { id: string; name: string }[];
+  units: { id: string; branchId?: string; platNomor: string; isPublished?: boolean; merek?: { name: string } | null; tipe?: { name: string } | null }[];
+}
+export const homepageLookupApi = {
+  get: () => apiClient.get<ApiResponse<HomepageLookup>>('/cms/homepage/lookups').then((r) => r.data.data),
+};
+
 /** Upload generik → simpan filename ke field *Filename lalu PUT section. */
 export const uploadCmsImage = (folder: CmsUploadFolder, file: File) =>
   apiClient.post<ApiResponse<{ filename: string; folder: string; path: string }>>(`/cms/uploads/${folder}`, fileForm(file), uploadCfg).then((r) => r.data.data);

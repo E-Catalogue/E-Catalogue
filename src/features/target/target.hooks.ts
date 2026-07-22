@@ -14,9 +14,17 @@ type BranchHeaders = Record<string, string> | undefined;
 
 const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil', message, variant: 'success' }));
 
+/** `/targets/lookups/branches` — pilihan cabang untuk halaman Target (update_target §1). */
+export const useTargetLookupBranches = (headers?: BranchHeaders, enabled = true) =>
+  useQuery({
+    queryKey: ['lookup', 'target', 'branches', headers?.['X-Branch-Id'] ?? 'all'],
+    queryFn: () => targetApi.lookupBranches(headers),
+    enabled,
+  });
+
 export const useTargetLookupSales = (headers: BranchHeaders, enabled = true) =>
   useQuery({
-    queryKey: ['target-sales-lookup', headers?.['X-Branch-Id'] ?? 'none'],
+    queryKey: ['lookup', 'target', 'sales', headers?.['X-Branch-Id'] ?? 'none'],
     queryFn: () => targetApi.lookupSales(headers),
     enabled,
   });

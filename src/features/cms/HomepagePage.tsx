@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Home, Loader2, ExternalLink } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Home, Loader2, ExternalLink, Search, Check } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
 import { notifyApiError } from '@/core/api/notify';
 import { cmsImageUrl } from './cms.api';
-import { useSectionForm, useUploadHeroImage } from './cms.hooks';
+import { useSectionForm, useUploadHeroImage, useHomepageLookup } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
 import { SectionBar, SectionCardShell, TextArea, IconItemsEditor, AutoValueField, ModeSelect } from './CmsKit';
 import type {
@@ -14,6 +14,53 @@ import type {
 } from './cms.types';
 
 const Spinner = () => <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={22} className="animate-spin" /></div>;
+
+/** Checklist multi-pilih dengan input pencarian — untuk memilih merek/unit unggulan manual (PRD §4.20). */
+const ManualPicker = ({ options, selected, onChange, loading, searchPlaceholder }: {
+  options: { id: string; label: string; sublabel?: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  loading?: boolean;
+  searchPlaceholder: string;
+}) => {
+  const [search, setSearch] = useState('');
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(q) || o.sublabel?.toLowerCase().includes(q));
+  }, [options, search]);
+  const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  return (
+    <div className="rounded-2xl border border-border bg-surface-soft p-3.5 mt-3">
+      <div className="flex items-center justify-between gap-3 mb-2.5">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Pilih Manual</p>
+        <span className="text-[10px] font-extrabold text-muted bg-surface px-2 py-1 rounded-full">{selected.length} dipilih</span>
+      </div>
+      <div className="relative mb-2.5">
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchPlaceholder} className="w-full h-9 pl-8 pr-3 rounded-lg bg-surface border border-border text-[12px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
+      </div>
+      {loading ? (
+        <p className="text-[12px] font-semibold text-muted py-4 text-center">Memuat data...</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-[12px] font-semibold text-muted py-4 text-center">Tidak ada hasil.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-1.5 max-h-64 overflow-y-auto pr-1 scrollbar-slim">
+          {filtered.map((o) => {
+            const on = selected.includes(o.id);
+            return (
+              <button key={o.id} type="button" onClick={() => toggle(o.id)}
+                className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-[12px] font-semibold transition-colors ${on ? 'border-primary bg-primary/8 text-primary' : 'border-border bg-surface text-ink-soft hover:border-primary/60'}`}>
+                <span className="min-w-0"><span className="block truncate">{o.label}</span>{o.sublabel && <span className="block truncate text-[11px] font-medium text-muted">{o.sublabel}</span>}</span>
+                {on && <Check size={14} className="shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ── Hero ── */
 const HeroEditor = () => {
@@ -66,6 +113,7 @@ const HeroEditor = () => {
 /* ── Brands ── */
 const BrandsEditor = () => {
   const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageBrands>('homepage', 'brands');
+  const { data: lookup, isLoading: lookupLoading } = useHomepageLookup(!!form && form.mode === 'manual');
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
@@ -76,7 +124,16 @@ const BrandsEditor = () => {
       </div>
       <ModeSelect value={form.mode} onChange={(v) => patch({ mode: v })}
         autoLabel="Otomatis (terpopuler)" manualLabel="Pilih Sendiri"
-        hint={form.mode === 'auto' ? 'Menampilkan merek terbanyak dari unit yang tayang secara otomatis.' : 'Pilih merek tertentu untuk ditampilkan (pengaturan daftar merek via API/menu Merek).'} />
+        hint={form.mode === 'auto' ? 'Menampilkan merek terbanyak dari unit yang tayang secara otomatis.' : 'Pilih merek tertentu untuk ditampilkan di beranda.'} />
+      {form.mode === 'manual' && (
+        <ManualPicker
+          loading={lookupLoading}
+          options={(lookup?.brands ?? []).map((b) => ({ id: b.id, label: b.name }))}
+          selected={form.brandIds ?? []}
+          onChange={(next) => patch({ brandIds: next })}
+          searchPlaceholder="Cari merek..."
+        />
+      )}
     </SectionCardShell>
   );
 };
@@ -104,6 +161,7 @@ const IconListSection = ({ section, title, hint, field }: {
 /* ── Featured ── */
 const FeaturedEditor = () => {
   const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageFeatured>('homepage', 'featured');
+  const { data: lookup, isLoading: lookupLoading } = useHomepageLookup(!!form && form.mode === 'manual');
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
@@ -117,7 +175,16 @@ const FeaturedEditor = () => {
       </div>
       <ModeSelect value={form.mode} onChange={(v) => patch({ mode: v })}
         autoLabel="Otomatis (terbaru)" manualLabel="Pilih Sendiri"
-        hint={form.mode === 'auto' ? 'Menampilkan unit tayang terbaru secara otomatis.' : 'Pilih unit tertentu untuk ditonjolkan (atur di halaman Katalog / via API).'} />
+        hint={form.mode === 'auto' ? 'Menampilkan unit tayang terbaru secara otomatis.' : 'Pilih unit tertentu untuk ditonjolkan di beranda.'} />
+      {form.mode === 'manual' && (
+        <ManualPicker
+          loading={lookupLoading}
+          options={(lookup?.units ?? []).map((u) => ({ id: u.id, label: `${u.platNomor} · ${u.merek?.name ?? ''} ${u.tipe?.name ?? ''}`.trim(), sublabel: u.isPublished ? 'Tayang' : 'Belum tayang' }))}
+          selected={form.unitIds ?? []}
+          onChange={(next) => patch({ unitIds: next })}
+          searchPlaceholder="Cari plat / merek / tipe..."
+        />
+      )}
     </SectionCardShell>
   );
 };

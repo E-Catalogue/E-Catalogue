@@ -6,16 +6,15 @@ import { showToast } from '@/app/store/uiSlice';
 import type { RekondisiFormData, RekondisiDetailFormData, RekondisiDoneFormData, RekondisiPayFormData, RekondisiListParams } from './rekondisi.types';
 
 /**
- * Lookup vendor/pengecekan/kas untuk dropdown form rekondisi (`GET /rekondisis/lookups`).
- * Menggantikan `useVendors`/`usePengecekan` dari master.hooks agar tidak butuh permission
- * CRUD master hanya untuk isi dropdown (ecatalogue-be/.prd/README.md §9).
+ * Lookup vendor & pengecekan untuk dropdown form rekondisi — endpoint module-owned terpisah
+ * (`.prd/update_module_owned_lookup_20260721.md` §4.12). Akun kas pembayaran dipisah lagi ke
+ * `useRekondisiCashAccounts` (finance/lookup.ts) karena branch-scoped & hanya perlu saat bayar.
  */
-export function useRekondisiLookups(enabled = true) {
-  return useQuery({
-    queryKey: ['rekondisi-lookups'],
-    queryFn: () => rekondisiApi.getLookups(),
-    enabled,
-  });
+export function useRekondisiVendorLookup(enabled = true) {
+  return useQuery({ queryKey: ['lookup', 'rekondisi', 'vendors'], queryFn: () => rekondisiApi.getVendorLookup(), enabled });
+}
+export function useRekondisiCheckLookup(enabled = true) {
+  return useQuery({ queryKey: ['lookup', 'rekondisi', 'checks'], queryFn: () => rekondisiApi.getCheckLookup(), enabled });
 }
 
 export function useRekondisis(params?: RekondisiListParams, enabled = true) {

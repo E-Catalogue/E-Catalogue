@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import {
   Plus, Search, ReceiptText, RefreshCw, AlertTriangle,
 } from 'lucide-react';
@@ -14,12 +13,10 @@ import { SelectField } from '@/shared/components/ui/Field';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
-import { useBranches } from '@/features/master/master.hooks';
 import { SalesOrderFormModal } from './SalesOrderFormModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { OrderStatusModal } from './OrderStatusModal';
-import { useLeadOrders, useLeadOrderMutations } from '@/features/crm/crm.hooks';
-import { leadOrderApi } from '@/features/crm/crm.api';
+import { useLeadOrders, useLeadOrderMutations, useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { useAppSelector } from '@/app/store';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, type LeadOrder, type OrderStatus } from '@/features/crm/crm.types';
@@ -35,9 +32,7 @@ const STATUS_FILTER_OPTIONS = [
 export const PenjualanPage = () => {
   const currentUserId = useAppSelector((s) => s.auth.user?.id);
   const { can } = usePermissions();
-  const { isOwner, selectedBranchId, setSelectedBranchId, branchHeader, branchKey } = useBranchScope();
-  const { data: branchesRes } = useBranches({ page: 1, limit: 100 });
-  const branches = branchesRes?.data ?? [];
+  const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
   const mutationBlocked = isOwner && !selectedBranchId;
 
   const [page, setPage] = useState(1);
@@ -52,10 +47,7 @@ export const PenjualanPage = () => {
     status: (filterStatus as OrderStatus) || undefined,
     salesId: filterSales || undefined,
   }, branchHeader);
-  const { data: salesRes } = useQuery({
-    queryKey: ['sales-combobox'],
-    queryFn: leadOrderApi.sales,
-  });
+  const { data: lookup } = useLeadOrderFormLookup(branchKey, branchHeader);
   const m = useLeadOrderMutations(branchKey);
 
   const [form, setForm] = useState<{ item: LeadOrder | null } | null>(null);
@@ -65,7 +57,7 @@ export const PenjualanPage = () => {
   const orders = data?.data ?? [];
   const salesFilterOptions = [
     { value: '', label: 'Semua Sales' },
-    ...(salesRes ?? []).map((s) => ({ value: s.id, label: s.name })),
+    ...(lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name })),
   ];
 
   const handleSubmit = (values: Partial<LeadOrder>) => {
@@ -166,7 +158,7 @@ export const PenjualanPage = () => {
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
             <AlertTriangle size={16} className="shrink-0" />
-            Pilih cabang konkret di filter untuk membuat order, mengubah status, atau mencatat pembayaran.
+            Pilih cabang aktif di header (pojok kanan atas) untuk membuat order, mengubah status, atau mencatat pembayaran.
           </div>
         )}
 
@@ -180,15 +172,6 @@ export const PenjualanPage = () => {
               className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
             />
           </div>
-          {isOwner && (
-            <SelectField
-              label=""
-              value={selectedBranchId ?? ''}
-              onChange={(e) => { setSelectedBranchId(e.target.value || null); setPage(1); }}
-              options={[{ value: '', label: 'Semua Cabang' }, ...branches.map((b) => ({ value: b.id, label: b.nama }))]}
-              wrapClass="min-w-[180px]"
-            />
-          )}
           <SelectField
             label=""
             value={filterStatus}
@@ -226,6 +209,8 @@ export const PenjualanPage = () => {
           item={form?.item}
           submitting={m.create.isPending || m.update.isPending}
           currentUserId={currentUserId}
+          branchKey={branchKey}
+          branchHeader={branchHeader}
           onSubmit={handleSubmit}
         />
 

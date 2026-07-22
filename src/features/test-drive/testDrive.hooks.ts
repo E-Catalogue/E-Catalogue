@@ -9,8 +9,9 @@ const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil',
 export const useTestDrives = (params: TestDriveListParams) =>
   useQuery({ queryKey: ['test-drives', params], queryFn: () => testDriveApi.list(params) });
 
-export const useTestDriveUnits = (params: { search?: string }, enabled = true) =>
-  useQuery({ queryKey: ['test-drive-units', params], queryFn: () => testDriveApi.units(params), enabled });
+/** `/test-drives/lookups` — agregat lead/unit-ready-stock/sales (PRD §4.10). */
+export const useTestDriveLookups = (enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'test-drive', 'form'], queryFn: () => testDriveApi.lookups(), enabled });
 
 export const useTestDriveMutations = () => {
   const qc = useQueryClient();

@@ -76,14 +76,12 @@ export const AutoValueField = ({ label = 'Nilai', value, onChange, autoHint = 'D
     <div className="min-w-0">
       <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">{label}</label>
       <div className="flex items-center gap-1.5">
-        <select
-          value={isAuto ? 'auto' : 'manual'}
-          onChange={(e) => onChange(e.target.value === 'auto' ? 'auto' : '')}
-          className="h-10 px-2 rounded-lg bg-surface border border-border text-[12px] font-bold text-ink-soft focus:outline-none focus:border-primary cursor-pointer shrink-0"
-        >
-          <option value="manual">Manual</option>
-          <option value="auto">Otomatis</option>
-        </select>
+        <div className="inline-flex h-10 p-0.5 rounded-lg bg-surface border border-border shrink-0">
+          <button type="button" onClick={() => onChange('')}
+            className={`px-2.5 rounded-md text-[11px] font-bold transition-colors ${!isAuto ? 'bg-primary text-white' : 'text-ink-soft'}`}>Manual</button>
+          <button type="button" onClick={() => onChange('auto')}
+            className={`px-2.5 rounded-md text-[11px] font-bold transition-colors ${isAuto ? 'bg-primary text-white' : 'text-ink-soft'}`}>Otomatis</button>
+        </div>
         {isAuto ? (
           <span className="flex-1 h-10 flex items-center gap-1.5 px-2.5 rounded-lg bg-accent-green/8 border border-dashed border-accent-green/30 text-[11px] font-bold text-accent-green truncate">
             <Sparkles size={12} /> {autoHint}

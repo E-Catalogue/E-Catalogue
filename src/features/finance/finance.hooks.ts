@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { cashAccountApi, cashTransactionApi, financeLookupApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
+import { cashAccountApi, cashTransactionApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
@@ -249,37 +249,3 @@ export const usePayrollRunMutations = () => {
     }),
   };
 };
-
-// ── Lookups (README §9) ───────────────────────────────────────────────────────
-// CATATAN: backend `finance/lookups/*` belum benar-benar memfilter per branch (lihat finance.api.ts) —
-// `branchKey`/`headers` tetap dijadikan bagian query key & dikirim untuk konsistensi dan forward-compat.
-
-export const useLookupCashAccounts = (branchKey: string, params: { search?: string; type?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'cash-accounts', branchKey, params], queryFn: () => financeLookupApi.cashAccounts(params, headers) });
-
-export const useLookupExpenseCategories = (branchKey: string, params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'expense-categories', branchKey, params], queryFn: () => financeLookupApi.expenseCategories(params, headers) });
-
-export const useLookupPayrollUsers = (branchKey: string, params: { search?: string; isActive?: string; role?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'payroll-users', branchKey, params], queryFn: () => financeLookupApi.payrollUsers(params, headers) });
-
-export const useLookupSales = (branchKey: string, params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'sales', branchKey, params], queryFn: () => financeLookupApi.sales(params, headers) });
-
-export const useLookupDealOrders = (branchKey: string, params: { search?: string; salesId?: string; period?: string; withoutIncentive?: string } = {}, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'deal-orders', branchKey, params], queryFn: () => financeLookupApi.dealOrders(params, headers) });
-
-export const useLookupRecurringExpenses = (branchKey: string, params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'recurring-expenses', branchKey, params], queryFn: () => financeLookupApi.recurringExpenses(params, headers) });
-
-export const useLookupPayrollRuns = (branchKey: string, params: { period?: string; status?: string } = {}, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'payroll-runs', branchKey, params], queryFn: () => financeLookupApi.payrollRuns(params, headers) });
-
-export const useLookupUnits = (branchKey: string, params: { search?: string; statusUnit?: string } = {}, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'units', branchKey, params], queryFn: () => financeLookupApi.units(params, headers) });
-
-export const useLookupRekondisisPayable = (branchKey: string, params: { search?: string; unitId?: string } = {}, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'rekondisis-payable', branchKey, params], queryFn: () => financeLookupApi.rekondisisPayable(params, headers) });
-
-export const useLookupInvestors = (branchKey: string, params: { search?: string; isActive?: string } = { isActive: 'true' }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['finance-lookups', 'investors', branchKey, params], queryFn: () => financeLookupApi.investors(params, headers) });

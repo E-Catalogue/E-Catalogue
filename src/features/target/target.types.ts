@@ -7,6 +7,14 @@ export interface TargetSalesLookup {
   username: string;
 }
 
+/** `/targets/lookups/branches` — cabang yang dapat dipilih user (PRD update_target §1 / lookup §4.11). */
+export interface TargetBranchLookup {
+  id: string;
+  nama: string;
+  code: string;
+  lokasi?: string | null;
+}
+
 export interface SalesTargetAchievement {
   unitActual: number;
   revenueActual: number;
@@ -59,12 +67,15 @@ export interface BranchTarget {
 }
 
 export interface BranchTargetCreateInput {
+  /** WAJIB sejak update_target — cabang dipilih eksplisit, backend TIDAK lagi ambil dari user.branch. */
+  branchId: string;
   period: string;
   unitTarget: number;
   revenueTarget: number;
 }
 
-export type BranchTargetUpdateInput = Partial<BranchTargetCreateInput>;
+/** Update TIDAK boleh mengubah cabang (backend `delete data.branchId`) — hanya period/target. */
+export type BranchTargetUpdateInput = Partial<Omit<BranchTargetCreateInput, 'branchId'>>;
 
 export interface SalesTargetReplaceRow {
   salesId: string;

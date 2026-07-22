@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
+import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import {
-  sectionApi, uploadCmsImage,
+  sectionApi, uploadCmsImage, homepageLookupApi,
   siteSettingsApi, contactPageApi, catalogPageApi,
   testimonialApi, contactMessageApi, creditSimApi, cmsCatalogApi,
 } from './cms.api';
@@ -15,6 +16,10 @@ import type {
 } from './cms.types';
 
 const toastOk = (message: string) => store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message }));
+
+/** `/cms/homepage/lookups` — merek & unit READY_STOCK untuk pilihan manual homepage (PRD §4.20). */
+export const useHomepageLookup = (enabled = true) =>
+  useQuery({ queryKey: ['lookup', 'cms-homepage', 'featured'], queryFn: () => homepageLookupApi.get(), enabled });
 
 /* ── Section generik homepage/about ── */
 export const useCmsSection = <T>(page: 'homepage' | 'about', section: string) =>
@@ -41,12 +46,24 @@ export const useUploadCmsImage = (folder: CmsUploadFolder) =>
 export function useSectionForm<T extends { isVisible?: boolean }>(page: 'homepage' | 'about', section: string) {
   const q = useCmsSection<T>(page, section);
   const m = useUpdateCmsSection<T>(page, section);
+  const confirmAction = useConfirmedAction();
   const [draft, setDraft] = useState<T | null>(null);
   const form = draft ?? q.data ?? null;
   const setForm = setDraft;
 
   const patch = (p: Partial<T>) => setDraft((prev) => ({ ...(prev ?? q.data) as T, ...p }));
-  const save = () => { if (form) m.mutate(form, { onError: (e) => notifyApiError(e), onSuccess: () => setDraft(null) }); };
+  const save = () => {
+    if (!form) return;
+    confirmAction({
+      title: 'Simpan Perubahan',
+      message: 'Perubahan section ini akan langsung tayang di situs publik. Lanjutkan?',
+      confirmLabel: 'Simpan',
+      tone: 'primary',
+      execute: () => m.mutateAsync(form),
+      onSuccess: () => setDraft(null),
+      onError: (e) => notifyApiError(e),
+    });
+  };
   const toggleVisible = () => setDraft((prev) => {
     const current = prev ?? q.data;
     return current ? { ...current, isVisible: !current.isVisible } : null;

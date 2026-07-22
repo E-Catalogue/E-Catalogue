@@ -4,6 +4,7 @@ import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2, ChevronLeft, Che
 import { PublicUnitCard } from './PublicUnitCard';
 import { PublicHeader } from './PublicHeader';
 import { PriceRangeSlider } from './PriceRangeSlider';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CustomerServerError } from './CustomerStates';
 import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
@@ -125,10 +126,12 @@ export const KatalogPage = () => {
             <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Cari merek, model, atau varian..."
               className="w-full h-12 pl-11 pr-4 rounded-2xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
           </div>
-          <select value={sort} onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}
-            className="h-12 px-4 rounded-2xl bg-surface border border-border text-sm font-bold text-ink-soft cursor-pointer focus:outline-none focus:border-primary">
-            {SORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
+          <SearchableSelect
+            value={sort}
+            onChange={(v) => { setSort(v as SortKey); setPage(1); }}
+            options={SORTS.map((s) => ({ value: s.key, label: s.label }))}
+            wrapClass="sm:w-52"
+          />
           <button onClick={() => setShowFilter(true)} className="lg:hidden h-12 px-4 rounded-2xl bg-primary text-white font-bold text-[13px] inline-flex items-center justify-center gap-2">
             <SlidersHorizontal size={17} /> Filter {activeFilters.length > 0 && `(${activeFilters.length})`}
           </button>

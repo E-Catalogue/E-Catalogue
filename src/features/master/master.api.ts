@@ -37,8 +37,12 @@ export const vendorApi = {
 };
 
 // ---- Branch + media ----
+export interface BranchPicOption { id: string; name: string; username: string; branchId?: string | null }
+
 export const branchApi = {
   list: (params: ListParams) => apiClient.get<ApiResponse<Branch[]>>('/branches', { params }).then((r) => r.data),
+  /** `/branches/lookups/pics` — user aktif untuk pilihan PIC (PRD §4.3, `authorizeAny`). */
+  lookupPics: () => apiClient.get<ApiResponse<BranchPicOption[]>>('/branches/lookups/pics').then((r) => r.data.data ?? []),
   get: (id: string) => apiClient.get<ApiResponse<Branch>>(`/branches/${id}`).then((r) => r.data.data),
   create: (body: Partial<Branch>) => apiClient.post<ApiResponse<Branch>>('/branches', body).then((r) => r.data.data),
   update: (id: string, body: Partial<Branch>) => apiClient.patch<ApiResponse<Branch>>(`/branches/${id}`, body).then((r) => r.data.data),
