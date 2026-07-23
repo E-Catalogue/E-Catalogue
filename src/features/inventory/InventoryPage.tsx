@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -13,7 +13,7 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
-import { useCreateRekondisi, useRekondisiStatusCheck, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
+import { useCreateRekondisi, useRekondisiStatusCheck, useUnit, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import type { Unit, StatusUnit } from '@/features/units/unit.types';
@@ -284,9 +284,11 @@ const InventoryPageInner = () => {
   const [filter, setFilter]     = useState<FilterState>(FILTER_DEFAULT);
   const [statusUnit, setStatusUnit] = useState<Unit | null>(null);
   const [rekondisiTarget, setRekondisiTarget] = useState<Unit | null>(null);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const debounced               = useDebouncedValue(query, 400);
 
   const { data, isLoading, isError } = useUnits({ page: 1, limit: 100, search: debounced || undefined });
+  const { data: editUnitData, error: editUnitError } = useUnit(editingUnitId ?? undefined);
 
   const all: Unit[] = data?.data ?? [];
   const merkList = [...new Set(all.map((u) => u.merek?.name).filter(Boolean))].sort() as string[];
@@ -300,6 +302,18 @@ const InventoryPageInner = () => {
   const activeFilters = [filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax)].filter(Boolean).length;
 
   const m = useUnitModals();
+
+  useEffect(() => {
+    if (!editingUnitId || !editUnitData?.data) return;
+    m.openEdit(editUnitData.data);
+    setEditingUnitId(null);
+  }, [editingUnitId, editUnitData, m.openEdit]);
+
+  useEffect(() => {
+    if (!editingUnitId || !editUnitError) return;
+    notifyApiError(editUnitError);
+    setEditingUnitId(null);
+  }, [editingUnitId, editUnitError]);
 
   const columns: Column<Unit>[] = [
     {
@@ -364,7 +378,7 @@ const InventoryPageInner = () => {
         <ActionMenu items={[
           { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(u) },
           ...(can('UNIT_UPDATE') ? [
-            { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(u) },
+            { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => setEditingUnitId(u.id) },
             { icon: <RefreshCw size={13} />, label: 'Ubah Status', onClick: () => setStatusUnit(u) },
           ] : []),
           ...(can('REKONDISI_CREATE') ? [{
