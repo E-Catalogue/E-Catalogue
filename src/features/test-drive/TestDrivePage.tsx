@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileImage, KeyRound, Plus, Search } from 'lucide-react';
+import { FileImage, KeyRound, Loader2, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -11,7 +11,7 @@ import { unitDisplayName } from '@/features/units/unit.display';
 import { Can, RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
-import { API_ORIGIN } from '@/core/api/client';
+import { apiClient } from '@/core/api/client';
 import { formatDate } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { TestDriveFormModal } from './TestDriveFormModal';
@@ -30,12 +30,35 @@ const STATUS_LABEL: Record<TestDriveStatus, string> = {
   CANCELLED: 'Dibatalkan',
 };
 
-const mediaUrl = (url?: string | null) => {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  const legacyPrefix = 'src/media/public/images/';
-  if (url.startsWith(legacyPrefix)) return `${API_ORIGIN}/public/${url.slice(legacyPrefix.length)}`;
-  return `${API_ORIGIN}/${url.replace(/^\/+/, '')}`;
+const PrivateMediaLink = ({ url, label }: { url: string; label: string }) => {
+  const [loading, setLoading] = useState(false);
+
+  const open = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(url, { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data as Blob);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (error) {
+      notifyApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={loading}
+      title={label}
+      aria-label={label}
+      className="inline-flex justify-center text-primary disabled:opacity-50"
+    >
+      {loading ? <Loader2 size={16} className="animate-spin" /> : <FileImage size={16} />}
+    </button>
+  );
 };
 
 const TestDrivePageInner = () => {
@@ -64,8 +87,8 @@ const TestDrivePageInner = () => {
     ) : t.unitId },
     { header: 'Sales', cell: (t) => t.sales?.name ?? '-' },
     { header: 'Status', align: 'center', cell: (t) => <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold ${STATUS_CLASS[t.status]}`}>{STATUS_LABEL[t.status]}</span> },
-    { header: 'Foto KTP', align: 'center', cell: (t) => t.fotoKtpUrl ? <a href={mediaUrl(t.fotoKtpUrl)} target="_blank" rel="noreferrer" className="inline-flex justify-center text-primary"><FileImage size={16} /></a> : '-' },
-    { header: 'Foto SIM', align: 'center', cell: (t) => t.fotoSimUrl ? <a href={mediaUrl(t.fotoSimUrl)} target="_blank" rel="noreferrer" className="inline-flex justify-center text-primary"><FileImage size={16} /></a> : '-' },
+    { header: 'Foto KTP', align: 'center', cell: (t) => t.fotoKtpUrl ? <PrivateMediaLink url={t.fotoKtpUrl} label="Lihat foto KTP" /> : '-' },
+    { header: 'Foto SIM', align: 'center', cell: (t) => t.fotoSimUrl ? <PrivateMediaLink url={t.fotoSimUrl} label="Lihat foto SIM" /> : '-' },
     { header: '', align: 'right', cell: (t) => (
       <RowActions
         onEdit={can('TEST_DRIVE_UPDATE') ? () => setForm({ item: t }) : undefined}
