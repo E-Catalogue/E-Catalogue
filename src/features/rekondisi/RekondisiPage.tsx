@@ -14,6 +14,7 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateRekondisi, useUnits } from '@/features/units/unit.hooks';
+import { unitOptionLabel, unitDisplayName } from '@/features/units/unit.display';
 import type { Unit } from '@/features/units/unit.types';
 import { unitApi } from '@/features/units/unit.api';
 import { notifyApiError } from '@/core/api/notify';
@@ -102,7 +103,7 @@ const CreateRekondisiModal = ({
           value={unitId}
           onChange={setUnitId}
           loading={isLoading}
-          options={units.map((unit) => ({ value: unit.id, label: `${unit.platNomor} · ${unit.merek?.name ?? ''} ${unit.tipe?.name ?? ''}`.trim() }))}
+          options={units.map((unit) => ({ value: unit.id, label: unitOptionLabel(unit), sublabel: [unit.merek?.name, unit.tipe?.name].filter(Boolean).join(' ') || undefined }))}
           placeholder="Pilih unit inventory"
           searchPlaceholder="Cari plat / merek / tipe..."
           emptyMessage="Tidak ada unit berstatus Inventory."
@@ -139,9 +140,9 @@ const RekondisiPageInner = () => {
     {
       header: 'Unit',
       cell: (r) => (
-        <div>
-          <p className="font-bold text-ink text-[13px]">{r.unit?.platNomor ?? r.unitId}</p>
-          <p className="text-[11px] text-muted font-medium mt-0.5">Seq #{r.seq}</p>
+        <div className="min-w-0">
+          <p className="font-bold text-ink text-[13px] truncate" title={r.unit ? unitDisplayName(r.unit) : r.unitId}>{r.unit ? unitDisplayName(r.unit) : r.unitId}</p>
+          <p className="text-[11px] text-muted font-medium mt-0.5 truncate">{r.unit?.platNomor ? `${r.unit.platNomor} · ` : ''}Seq #{r.seq}</p>
         </div>
       ),
     },
@@ -219,7 +220,7 @@ const RekondisiPageInner = () => {
           value={unitId}
           onChange={setUnitId}
           clearable
-          options={units.map((unit) => ({ value: unit.id, label: `${unit.platNomor} · ${unit.merek?.name ?? ''} ${unit.tipe?.name ?? ''}`.trim() }))}
+          options={units.map((unit) => ({ value: unit.id, label: unitOptionLabel(unit), sublabel: [unit.merek?.name, unit.tipe?.name].filter(Boolean).join(' ') || undefined }))}
           placeholder="Semua Unit"
           searchPlaceholder="Cari unit..."
           emptyMessage="Tidak ada unit."

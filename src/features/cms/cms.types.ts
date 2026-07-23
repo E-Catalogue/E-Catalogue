@@ -195,6 +195,8 @@ export type StatusKatalog = 'READY' | 'BOOKED';
 export interface CmsCatalogImage { id: string; filename: string; sortOrder: number; }
 export interface CmsCatalogRow {
   id: string;
+  /** Nama Unit (teks utama kolom Unit di CMS) — PRD frontend_unit_name_20260722. */
+  name: string;
   merek: { id: string; name: string } | null;
   tipe: { id: string; name: string } | null;
   variant: string | null;

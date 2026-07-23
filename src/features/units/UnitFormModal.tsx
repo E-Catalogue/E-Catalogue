@@ -8,6 +8,7 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { notifyApiError } from '@/core/api/notify';
 import { useCreateUnit, useUnitLookups, useUpdateUnit } from './unit.hooks';
+import { unitDisplayName } from './unit.display';
 import type { FinalCyclePolicy, FundingSource, MasterDokumen, MasterKelengkapan, Transmisi, Unit, UnitFormData } from './unit.types';
 
 interface UnitFormModalProps {
@@ -26,6 +27,7 @@ type UnitFormState = UnitFormData & {
 const today = () => new Date().toISOString().slice(0, 10);
 
 const emptyUnitForm = (): UnitFormState => ({
+  name: '',
   merekId: '',
   tipeId: '',
   platNomor: '',
@@ -49,6 +51,7 @@ const emptyUnitForm = (): UnitFormState => ({
 const toForm = (unit?: Unit | null): UnitFormState => {
   if (!unit) return emptyUnitForm();
   return {
+    name: unit.name ?? '',
     merekId: unit.merekId ?? '',
     tipeId: unit.tipeId ?? '',
     platNomor: unit.platNomor ?? '',
@@ -182,6 +185,14 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     });
   };
 
+  // Validasi Nama Unit (PRD frontend_unit_name_20260722 §7.3): wajib, 2–191 karakter setelah trim.
+  const nameTrimmed = form.name.trim();
+  const nameError =
+    nameTrimmed.length === 0 ? 'Nama unit wajib diisi.'
+    : nameTrimmed.length < 2 ? 'Nama unit minimal 2 karakter.'
+    : nameTrimmed.length > 191 ? 'Nama unit maksimal 191 karakter.'
+    : null;
+
   // Sumber dana hanya berlaku saat CREATE — backend tidak menerima `funding` pada PUT /units/:id.
   const fundingRequiresInvestor = form.fundingSource === 'INVESTOR';
   const fundingRequiresFinalCycle = fundingRequiresInvestor && selectedInvestor?.scheme === 'FIXED_MONTHLY';
@@ -194,9 +205,10 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (fundingIncomplete) return;
+    if (fundingIncomplete || nameError) return;
     const payload: UnitFormData = {
       ...form,
+      name: nameTrimmed,
       tanggalPajak: new Date(form.tanggalPajak).toISOString(),
       tanggalPembelian: new Date(form.tanggalPembelian).toISOString(),
       cashAccountId: form.cashAccountId || undefined,
@@ -218,17 +230,29 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       open={open}
       onClose={onClose}
       icon={<Car size={20} />}
-      title={unit ? 'Edit Unit' : 'Tambah Unit Baru'}
+      title={unit ? `Edit ${unitDisplayName(unit)}` : 'Tambah Unit Baru'}
       subtitle={unit ? unit.platNomor : 'Lengkapi data unit mobil'}
       size="xl"
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>
-          <Button type="submit" form="unit-form" disabled={isPending || fundingIncomplete}>{unit ? 'Simpan Perubahan' : 'Tambah Unit'}</Button>
+          <Button type="submit" form="unit-form" disabled={isPending || fundingIncomplete || !!nameError}>{unit ? 'Simpan Perubahan' : 'Tambah Unit'}</Button>
         </>
       }
     >
       <form id="unit-form" onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="sm:col-span-2">
+          <TextField
+            label="Nama Unit"
+            required
+            value={form.name}
+            onChange={(e) => set('name', e.target.value)}
+            placeholder="mis. Avanza G AT Putih 2023"
+          />
+          {nameError && form.name.length > 0 && (
+            <p className="mt-1 text-[11px] font-semibold text-semantic-error">{nameError}</p>
+          )}
+        </div>
         <SearchableSelect
           label="Merek"
           required

@@ -42,6 +42,8 @@ export interface UnitFundingInput {
 
 export interface Unit {
   id: string;
+  /** Nama bisnis/display name Unit yang ditentukan pengguna (mis. "Avanza G AT Putih 2023"). */
+  name: string;
   branchId: string;
   statusUnit: StatusUnit;
   isActive: boolean;
@@ -107,6 +109,8 @@ export interface Unit {
 }
 
 export interface UnitFormData {
+  /** Nama Unit (wajib pada create; opsional pada update tapi tetap divalidasi bila dikirim). */
+  name: string;
   merekId: string;
   tipeId: string;
   platNomor: string;

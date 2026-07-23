@@ -11,6 +11,7 @@ import { TextField, SelectField, NumericField } from '@/shared/components/ui/Fie
 import { DateField } from '@/shared/components/ui/DateField';
 import { CashAccountSelect } from '@/features/finance/components';
 import { useLeadOrderCashAccounts } from '@/features/finance/lookup';
+import { unitDisplayName } from '@/features/units/unit.display';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
 import { apiClient } from '@/core/api/client';
@@ -424,7 +425,7 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
             <InfoItem label="Tipe Bayar" value={o.paymentType} />
             <InfoItem label="Tanggal Order" value={o.tanggalOrder ? new Date(o.tanggalOrder).toLocaleDateString('id-ID') : '-'} />
             <InfoItem label="Lead" value={o.lead?.nama ?? '-'} />
-            <InfoItem label="Unit" value={[o.unit?.merek?.name, o.unit?.tipe?.name, o.unit?.platNomor].filter(Boolean).join(' ') || '-'} />
+            <InfoItem label="Unit" value={o.unit ? `${unitDisplayName(o.unit)} · ${o.unit.platNomor ?? ''}`.trim() : '-'} />
             <InfoItem label="Sales" value={o.sales?.name ?? '-'} />
             <InfoItem label="Harga Penawaran" value={idr(o.hargaPenawaran)} />
             <InfoItem label="Diskon" value={idr(o.diskonShowroom)} />

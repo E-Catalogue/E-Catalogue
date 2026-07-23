@@ -9,6 +9,7 @@ import { useUnitModals } from '@/features/units/useUnitModals';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useUnits } from '@/features/units/unit.hooks';
+import { unitDisplayName } from '@/features/units/unit.display';
 import { formatCurrency, formatNumber, formatDate } from '@/core/utils/format';
 import type { Unit } from '@/features/units/unit.types';
 
@@ -29,8 +30,15 @@ const PembelianPageInner = () => {
   const totalSpend = units.reduce((acc, u) => acc + (u.purchaseCost ?? 0), 0);
 
   const columns: Column<Unit>[] = [
-    { header: 'Plat Nomor', cell: (u) => <span className="font-bold text-ink">{u.platNomor}</span> },
-    { header: 'Unit', cell: (u) => `${u.merek?.name ?? '-'} ${u.tipe?.name ?? ''}` },
+    {
+      header: 'Nama Unit',
+      cell: (u) => (
+        <div className="min-w-0">
+          <p className="font-bold text-ink truncate" title={unitDisplayName(u)}>{unitDisplayName(u)}</p>
+          <p className="text-[11px] text-muted font-medium truncate">{[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || '—'} · {u.platNomor}</p>
+        </div>
+      ),
+    },
     { header: 'Tahun', cell: (u) => u.tahun, align: 'center' },
     { header: 'KM', cell: (u) => `${formatNumber(u.kilometer)} KM`, align: 'right' },
     { header: 'Harga Beli', cell: (u) => <span className="font-bold text-ink">{formatCurrency(u.purchaseCost)}</span>, align: 'right' },

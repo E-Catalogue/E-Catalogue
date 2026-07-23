@@ -124,7 +124,10 @@ export const KatalogDetailPage = () => {
 
   const d = unit as CatalogDetail;
   const gallery = d.images?.length ? d.images.map((i) => cmsImageUrl('unit', i.filename) ?? DEFAULT_CAR_IMAGE) : [DEFAULT_CAR_IMAGE];
-  const title = `${d.merek?.name ?? ''} ${d.tipe?.name ?? ''}`.trim();
+  const merekTipe = `${d.merek?.name ?? ''} ${d.tipe?.name ?? ''}`.trim();
+  // Judul/breadcrumb/heading/alt/pesan WA memakai nama Unit (PRD §8.6).
+  const title = d.name?.trim() || merekTipe || 'Unit';
+  const merekTipeSubtitle = title !== merekTipe ? merekTipe : '';
   const waBase = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
   const waText = encodeURIComponent(`Halo, saya tertarik dengan ${title} (${d.tahun}) seharga ${formatCurrency(d.harga)}. Apakah masih tersedia?`);
   const waUrl = `${waBase}?text=${waText}`;
@@ -182,7 +185,7 @@ export const KatalogDetailPage = () => {
           <div>
             <div className="flex items-center gap-1.5 text-[12px] font-bold text-primary mb-1.5"><BadgeCheck size={14} /> Unit Terverifikasi · 150+ Titik Inspeksi</div>
             <h1 className="text-2xl md:text-[28px] font-extrabold text-ink leading-tight">{title}</h1>
-            <p className="text-muted font-semibold mt-1">{d.variant ? `${d.variant} · ` : ''}{d.tahun}</p>
+            <p className="text-muted font-semibold mt-1">{merekTipeSubtitle ? `${merekTipeSubtitle} · ` : ''}{d.variant ? `${d.variant} · ` : ''}{d.tahun}</p>
           </div>
           <div className="p-4 rounded-2xl bg-primary-light/60 border border-primary/15">
             <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Harga</p>

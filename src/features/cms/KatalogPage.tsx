@@ -18,6 +18,7 @@ import { useCmsCatalog, useCmsCatalogMutations, useCatalogPage, useUpdateCatalog
 import { ImageUpload } from './ImageUpload';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import type { CmsCatalogRow, CatalogPage as CatalogPageType, PriceRange } from './cms.types';
+import { unitDisplayName } from '@/features/units/unit.display';
 
 type ViewFilter = 'all' | 'published' | 'hidden';
 
@@ -106,7 +107,7 @@ const GalleryModal = ({ row, onClose }: { row: CmsCatalogRow; onClose: () => voi
     onError: notifyApiError,
   });
   return (
-    <Modal open onClose={onClose} title="Kelola Foto Unit" subtitle={`${row.merek?.name ?? ''} ${row.tipe?.name ?? ''} · ${row.platNomor}`} icon={<Images size={18} />} size="lg"
+    <Modal open onClose={onClose} title="Kelola Foto Unit" subtitle={`${unitDisplayName(row)} · ${row.platNomor}`} icon={<Images size={18} />} size="lg"
       busy={m.uploadImage.isPending || m.reorderImages.isPending || m.deleteImage.isPending}
       footer={<><Button variant="secondary" onClick={onClose}>Tutup</Button>{orderDirty && <Button onClick={saveOrder} loading={m.reorderImages.isPending}>Simpan Urutan</Button>}</>}>
       <div className="space-y-4">
@@ -176,11 +177,11 @@ export const KatalogPage = () => {
     {
       header: 'Unit',
       cell: (u) => (
-        <div>
-          <p className="font-bold text-ink text-[13px]">
-            {u.merek?.name ?? '—'} {u.tipe?.name ?? ''} {u.variant ? <span className="text-muted font-medium">{u.variant}</span> : null}
+        <div className="min-w-0">
+          <p className="font-bold text-ink text-[13px] truncate" title={unitDisplayName(u)}>{unitDisplayName(u)}</p>
+          <p className="text-[11px] text-muted font-medium mt-0.5 truncate">
+            {[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || '—'}{u.variant ? ` ${u.variant}` : ''} · {u.platNomor}
           </p>
-          <p className="text-[11px] text-muted font-medium mt-0.5">{u.platNomor}</p>
         </div>
       ),
     },

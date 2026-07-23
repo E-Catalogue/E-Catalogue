@@ -20,6 +20,7 @@ import { useLeadOrders, useLeadOrderMutations, useLeadOrderFormLookup } from '@/
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { useAppSelector } from '@/app/store';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, type LeadOrder, type OrderStatus } from '@/features/crm/crm.types';
+import { unitDisplayName } from '@/features/units/unit.display';
 
 const idr = (n?: number | null) =>
   n == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -83,7 +84,13 @@ export const PenjualanPage = () => {
       header: 'Unit',
       cell: (r) => {
         const u = r.unit;
-        return <span className="text-[12px] font-medium text-ink-soft">{u ? [u.merek?.name, u.tipe?.name, u.platNomor].filter(Boolean).join(' ') : '-'}</span>;
+        if (!u) return <span className="text-[12px] font-medium text-ink-soft">-</span>;
+        return (
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-ink-soft truncate" title={unitDisplayName(u)}>{unitDisplayName(u)}</p>
+            <p className="text-[11px] text-muted truncate">{[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ')} · {u.platNomor}</p>
+          </div>
+        );
       },
     },
     {

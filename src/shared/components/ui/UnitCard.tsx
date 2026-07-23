@@ -38,6 +38,13 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
 
   const brandName = isMock ? (unit as MockUnit).brand : (unit as BackendUnit).merek?.name;
   const modelName = isMock ? `${(unit as MockUnit).model} ${(unit as MockUnit).variant}` : (unit as BackendUnit).tipe?.name;
+  // Judul kartu = Nama Unit (backend) dengan fallback; mock tetap brand+model.
+  const titleText = isMock
+    ? `${brandName} ${modelName}`
+    : (backendUnit.name?.trim() || [brandName, modelName].filter(Boolean).join(' ') || backendUnit.platNomor || '');
+  const subtitleText = isMock
+    ? ''
+    : [[brandName, modelName].filter(Boolean).join(' '), backendUnit.platNomor].filter(Boolean).join(' · ');
   const tahun = isMock ? (unit as MockUnit).year : (unit as BackendUnit).tahun;
   const transmisi = isMock ? (unit as MockUnit).transmission : ((unit as BackendUnit).transmisi === 'AUTOMATIC' ? 'AT' : 'MT');
   const km = isMock ? (unit as MockUnit).km : (unit as BackendUnit).kilometer;
@@ -53,7 +60,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
         <motion.img
           src={imageUrl}
-          alt={`${brandName} ${modelName}`}
+          alt={titleText}
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
           className="w-full h-full object-cover"
@@ -92,9 +99,12 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
       </div>
 
       <div className="p-4">
-        <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate">
-          {brandName} {modelName}
+        <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate" title={titleText}>
+          {titleText}
         </h3>
+        {subtitleText && (
+          <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitleText}</p>
+        )}
         <div className="flex items-center gap-3 mt-2 text-[11px] font-semibold text-muted">
           <span className="flex items-center gap-1"><Calendar size={12} /> {tahun}</span>
           <span className="flex items-center gap-1"><GitMerge size={12} /> {transmisi}</span>

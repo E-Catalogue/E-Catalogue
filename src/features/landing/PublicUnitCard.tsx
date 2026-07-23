@@ -7,7 +7,10 @@ import type { CatalogCard } from './public.types';
 
 export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (c: CatalogCard) => void }) => {
   const img = cmsImageUrl('unit', card.image?.filename) ?? DEFAULT_CAR_IMAGE;
-  const title = `${card.merek?.name ?? ''} ${card.tipe?.name ?? ''}`.trim();
+  const merekTipe = `${card.merek?.name ?? ''} ${card.tipe?.name ?? ''}`.trim();
+  // Judul kartu = nama Unit (PRD §8.6); merek/tipe jadi subtitle (hindari duplikasi teks).
+  const title = card.name?.trim() || merekTipe || '';
+  const subtitle = title !== merekTipe ? merekTipe : '';
 
   return (
     <motion.div
@@ -33,9 +36,10 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
       </div>
 
       <div className="p-4">
-        <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate">
-          {title} {card.variant && <span className="text-muted font-semibold">{card.variant}</span>}
+        <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate" title={title}>
+          {title}
         </h3>
+        {subtitle && <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitle}{card.variant ? ` · ${card.variant}` : ''}</p>}
         <div className="flex items-center gap-3 mt-2 text-[11px] font-semibold text-muted">
           <span className="flex items-center gap-1"><Calendar size={12} /> {card.tahun}</span>
           <span className="flex items-center gap-1"><GitMerge size={12} /> {card.transmisi}</span>

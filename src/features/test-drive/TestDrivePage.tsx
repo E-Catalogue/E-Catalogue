@@ -7,6 +7,7 @@ import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
+import { unitDisplayName } from '@/features/units/unit.display';
 import { Can, RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
@@ -55,7 +56,12 @@ const TestDrivePageInner = () => {
   const columns: Column<TestDrive>[] = [
     { header: 'Jadwal', cell: (t) => <span className="font-bold text-ink">{formatDate(t.scheduledAt)}</span> },
     { header: 'Customer', cell: (t) => <span className="font-bold text-ink">{t.lead?.nama ?? t.leadId}</span> },
-    { header: 'Unit', cell: (t) => [t.unit?.platNomor, t.unit?.merek?.name, t.unit?.tipe?.name].filter(Boolean).join(' ') || t.unitId },
+    { header: 'Unit', cell: (t) => t.unit ? (
+      <div className="min-w-0">
+        <p className="font-semibold text-ink truncate" title={unitDisplayName(t.unit)}>{unitDisplayName(t.unit)}</p>
+        <p className="text-[11px] text-muted truncate">{[t.unit.merek?.name, t.unit.tipe?.name].filter(Boolean).join(' ')} · {t.unit.platNomor}</p>
+      </div>
+    ) : t.unitId },
     { header: 'Sales', cell: (t) => t.sales?.name ?? '-' },
     { header: 'Status', align: 'center', cell: (t) => <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold ${STATUS_CLASS[t.status]}`}>{STATUS_LABEL[t.status]}</span> },
     { header: 'Foto KTP', align: 'center', cell: (t) => t.fotoKtpUrl ? <a href={mediaUrl(t.fotoKtpUrl)} target="_blank" rel="noreferrer" className="inline-flex justify-center text-primary"><FileImage size={16} /></a> : '-' },

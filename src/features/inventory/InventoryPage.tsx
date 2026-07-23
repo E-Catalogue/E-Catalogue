@@ -17,6 +17,7 @@ import { useCreateRekondisi, useRekondisiStatusCheck, useUnits, useUpdateUnitSta
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import type { Unit, StatusUnit } from '@/features/units/unit.types';
+import { unitDisplayName } from '@/features/units/unit.display';
 import { notifyApiError } from '@/core/api/notify';
 
 const TABS: { key: StatusUnit | 'all'; label: string }[] = [
@@ -304,9 +305,9 @@ const InventoryPageInner = () => {
     {
       header: 'Unit',
       cell: (u) => (
-        <div>
-          <p className="font-bold text-ink text-[13px]">{u.platNomor}</p>
-          <p className="text-[11px] text-muted font-medium mt-0.5">{u.merek?.name ?? '—'} {u.tipe?.name ?? ''}</p>
+        <div className="min-w-0">
+          <p className="font-bold text-ink text-[13px] truncate" title={unitDisplayName(u)}>{unitDisplayName(u)}</p>
+          <p className="text-[11px] text-muted font-medium mt-0.5 truncate">{[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || '—'} · {u.platNomor}</p>
         </div>
       ),
     },

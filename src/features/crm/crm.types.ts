@@ -99,6 +99,7 @@ export interface Lead {
 
 export interface UnitSummary {
   id: string;
+  name?: string | null;
   platNomor?: string | null;
   merek?: { name: string } | null;
   tipe?: { name: string } | null;

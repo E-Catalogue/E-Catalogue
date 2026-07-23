@@ -14,6 +14,8 @@ export type PublicCatalogStatus = 'ready' | 'booked';
 
 export interface CatalogCard {
   id: string;
+  /** Nama Unit (judul kartu/detail publik) — PRD frontend_unit_name_20260722. */
+  name: string;
   code: string;
   merek: { id: string; name: string } | null;
   tipe: { id: string; name: string } | null;

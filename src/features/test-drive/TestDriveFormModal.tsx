@@ -7,6 +7,7 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { DateField } from '@/shared/components/ui/DateField';
 import { notifyApiError } from '@/core/api/notify';
 import { useTestDriveMutations, useTestDriveLookups } from './testDrive.hooks';
+import { unitOptionLabel } from '@/features/units/unit.display';
 import type { TestDrive, TestDriveStatus } from './testDrive.types';
 
 interface Props {
@@ -101,7 +102,7 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
   };
 
   const leadOptions = (lookup?.leads ?? []).map((l) => ({ value: l.id, label: l.nama, sublabel: l.nik || undefined }));
-  const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: `${u.platNomor} · ${u.merek?.name ?? ''} ${u.tipe?.name ?? ''}`.trim(), sublabel: `${u.tahun} · ${u.warna}` }));
+  const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: unitOptionLabel(u), sublabel: `${[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ')} · ${u.tahun} · ${u.warna}` }));
   const salesOptions = (lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name, sublabel: s.username || undefined }));
 
   return (

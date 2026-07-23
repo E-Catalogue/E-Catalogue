@@ -6,6 +6,7 @@ import { TextField } from '@/shared/components/ui/Field';
 import { notifyApiError } from '@/core/api/notify';
 import { cmsImageUrl } from './cms.api';
 import { useSectionForm, useUploadHeroImage, useHomepageLookup } from './cms.hooks';
+import { unitOptionLabel } from '@/features/units/unit.display';
 import { ImageUpload } from './ImageUpload';
 import { SectionBar, SectionCardShell, TextArea, IconItemsEditor, AutoValueField, ModeSelect } from './CmsKit';
 import type {
@@ -179,7 +180,7 @@ const FeaturedEditor = () => {
       {form.mode === 'manual' && (
         <ManualPicker
           loading={lookupLoading}
-          options={(lookup?.units ?? []).map((u) => ({ id: u.id, label: `${u.platNomor} · ${u.merek?.name ?? ''} ${u.tipe?.name ?? ''}`.trim(), sublabel: u.isPublished ? 'Tayang' : 'Belum tayang' }))}
+          options={(lookup?.units ?? []).map((u) => ({ id: u.id, label: unitOptionLabel(u), sublabel: `${[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ')} · ${u.isPublished ? 'Tayang' : 'Belum tayang'}` }))}
           selected={form.unitIds ?? []}
           onChange={(next) => patch({ unitIds: next })}
           searchPlaceholder="Cari plat / merek / tipe..."

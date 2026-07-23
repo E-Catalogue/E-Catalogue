@@ -34,7 +34,7 @@ export const sectionApi = {
  */
 export interface HomepageLookup {
   brands: { id: string; name: string }[];
-  units: { id: string; branchId?: string; platNomor: string; isPublished?: boolean; merek?: { name: string } | null; tipe?: { name: string } | null }[];
+  units: { id: string; name?: string | null; branchId?: string; platNomor: string; isPublished?: boolean; merek?: { name: string } | null; tipe?: { name: string } | null }[];
 }
 export const homepageLookupApi = {
   get: () => apiClient.get<ApiResponse<HomepageLookup>>('/cms/homepage/lookups').then((r) => r.data.data),

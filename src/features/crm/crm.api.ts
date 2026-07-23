@@ -57,7 +57,7 @@ export const leadApi = {
 export interface LeadOrderFormLookup {
   leads: { id: string; branchId: string; nama: string; nik: string; status: string }[];
   sources: { id: string; name: string; code: string }[];
-  units: { id: string; branchId: string; platNomor: string; otrPrice: number; merek?: { name: string } | null; tipe?: { name: string } | null }[];
+  units: { id: string; name?: string | null; branchId: string; platNomor: string; otrPrice: number; merek?: { name: string } | null; tipe?: { name: string } | null }[];
   sales: { id: string; branchId: string; name: string; username: string }[];
   leasings: { id: string; name: string; code: string }[];
 }

@@ -2,6 +2,7 @@ export type TestDriveStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 
 export interface TestDriveUnitLookup {
   id: string;
+  name?: string | null;
   branchId: string;
   platNomor: string;
   tahun: number;
@@ -46,6 +47,7 @@ export interface TestDrive {
   lead?: { id: string; nama: string; nik?: string | null } | null;
   unit?: {
     id: string;
+    name?: string | null;
     platNomor: string;
     merek?: { name: string } | null;
     tipe?: { name: string } | null;

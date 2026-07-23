@@ -6,6 +6,7 @@ import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { usePermissions } from '@/features/auth/usePermissions';
 import type { Unit } from '@/features/units/unit.types';
+import { unitDisplayName } from '@/features/units/unit.display';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
@@ -147,9 +148,9 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
       </div>
 
       <div className="flex items-start justify-between gap-3 mt-4">
-        <div>
-          <h3 className="text-xl font-extrabold text-ink leading-tight">{current.merek?.name}</h3>
-          <p className="text-[13px] text-muted font-semibold">{current.tipe?.name}</p>
+        <div className="min-w-0">
+          <h3 className="text-xl font-extrabold text-ink leading-tight">{unitDisplayName(current)}</h3>
+          <p className="text-[13px] text-muted font-semibold">{[current.merek?.name, current.tipe?.name].filter(Boolean).join(' ') || '—'}</p>
         </div>
         <div className="grid grid-cols-2 gap-4 text-right shrink-0">
           <div>

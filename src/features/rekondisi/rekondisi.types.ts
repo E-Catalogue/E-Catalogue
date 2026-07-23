@@ -8,7 +8,7 @@ export interface Rekondisi {
   seq: number;
   vendorId: string | null;
   vendor?: { id: string; name: string; code?: string; isActive?: boolean } | null;
-  unit?: { id: string; platNomor: string; statusUnit: string };
+  unit?: { id: string; name?: string | null; platNomor: string; statusUnit: string; merek?: { name: string } | null; tipe?: { name: string } | null };
   keterangan: string | null;
   nominal: number;
   tax: number | null;

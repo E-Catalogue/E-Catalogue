@@ -4,6 +4,7 @@ import { UnitFormModal } from './UnitFormModal';
 import { UnitDetailModal } from './UnitDetailModal';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useDeleteUnit } from './unit.hooks';
+import { unitDisplayName } from './unit.display';
 
 export const useUnitModals = () => {
   const [detail, setDetail] = useState<Unit | null>(null);
@@ -34,7 +35,7 @@ export const useUnitModals = () => {
         onClose={() => setToDelete(null)}
         onConfirm={handleDelete}
         title="Hapus Unit"
-        message={toDelete ? `Hapus ${toDelete.merek?.name} ${toDelete.tipe?.name} (${toDelete.platNomor}) dari inventory?` : ''}
+        message={toDelete ? `Hapus ${unitDisplayName(toDelete)} (${toDelete.platNomor}) dari inventory?` : ''}
         loading={deleteUnit.isPending}
         closeOnConfirm={false}
       />

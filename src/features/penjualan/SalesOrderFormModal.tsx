@@ -6,6 +6,7 @@ import { SelectField, NumericField } from '@/shared/components/ui/Field';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { DateField } from '@/shared/components/ui/DateField';
 import { useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
+import { unitOptionLabel } from '@/features/units/unit.display';
 import type { LeadOrder, PaymentType, StatusApproval } from '@/features/crm/crm.types';
 
 type BranchHeaders = Record<string, string> | undefined;
@@ -83,7 +84,7 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUs
   const { data: lookup, isLoading: lookupLoading } = useLeadOrderFormLookup(branchKey, branchHeader, open);
 
   const leadOptions = (lookup?.leads ?? []).map((l) => ({ value: l.id, label: l.nama, sublabel: l.nik || undefined }));
-  const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: [u.merek?.name, u.tipe?.name, u.platNomor].filter(Boolean).join(' ') || u.id }));
+  const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: unitOptionLabel(u), sublabel: [u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || undefined }));
   const leasingOptions = (lookup?.leasings ?? []).map((l) => ({ value: l.id, label: l.name }));
   const salesOptions = (lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name, sublabel: s.username }));
 
