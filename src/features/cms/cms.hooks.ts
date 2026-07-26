@@ -162,7 +162,17 @@ export const useCmsCatalogMutations = () => {
   const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
   return {
     publish: useMutation({ mutationFn: (v: { id: string; body: CmsCatalogPublishBody }) => cmsCatalogApi.publish(v.id, v.body), onSuccess: () => { inval(); toastOk('Status publikasi katalog diperbarui'); } }),
-    patchFeatured: useMutation({ mutationFn: (v: { id: string; isFeatured: boolean }) => cmsCatalogApi.patchFeatured(v.id, v.isFeatured), onSuccess: (_d, v) => { inval(); toastOk(v.isFeatured ? 'Unit ditandai sebagai unggulan' : 'Unit dihapus dari unggulan'); } }),
+    patchFeatured: useMutation({
+      mutationFn: (v: { id: string; isFeatured: boolean }) => cmsCatalogApi.patchFeatured(v.id, v.isFeatured),
+      onSuccess: (_d, v) => {
+        inval();
+        qc.invalidateQueries({ queryKey: ['unit', v.id] });
+        qc.invalidateQueries({ queryKey: ['cms', 'homepage', 'featured'] });
+        qc.invalidateQueries({ queryKey: ['lookup', 'cms-homepage', 'featured'] });
+        qc.invalidateQueries({ queryKey: ['public', 'homepage'] });
+        toastOk(v.isFeatured ? 'Unit ditandai sebagai unggulan' : 'Unit dihapus dari unggulan');
+      },
+    }),
     uploadImage: useMutation({ mutationFn: (v: { id: string; file: File }) => cmsCatalogApi.uploadImage(v.id, v.file), onSuccess: () => { inval(); toastOk('Foto ditambahkan'); } }),
     deleteImage: useMutation({ mutationFn: (v: { id: string; imageId: string }) => cmsCatalogApi.deleteImage(v.id, v.imageId), onSuccess: () => { inval(); toastOk('Foto dihapus'); } }),
     reorderImages: useMutation({ mutationFn: (v: { id: string; orderedIds: string[] }) => cmsCatalogApi.reorderImages(v.id, v.orderedIds), onSuccess: () => { inval(); toastOk('Urutan foto diperbarui'); } }),

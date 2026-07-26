@@ -2,6 +2,7 @@ export type RekondisiStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'IN_PROGRESS' |
 
 export interface Rekondisi {
   id: string;
+  branchId: string;
   status: RekondisiStatus;
   unitId: string;
   tanggal: string;
@@ -57,6 +58,11 @@ export interface RekondisiDoneFormData {
 export interface RekondisiPayFormData {
   cashAccountId: string;
   paidDate: string;
+  investorFunding?: {
+    capitalAccountId: string;
+    amount: number;
+    description?: string;
+  };
 }
 
 export interface RekondisiListParams {

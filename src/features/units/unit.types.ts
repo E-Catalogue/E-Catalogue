@@ -6,6 +6,18 @@ export type FundingScheme = 'FIXED_MONTHLY' | 'PROFIT_SHARE';
 export type FinalCyclePolicy = 'FULL' | 'NONE' | 'PRORATA';
 export type FundingStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED';
 
+export const FINAL_CYCLE_POLICY_LABEL: Record<FinalCyclePolicy, string> = {
+  FULL: 'Full',
+  PRORATA: 'Prorate',
+  NONE: 'None',
+};
+
+export const FINAL_CYCLE_POLICY_DESCRIPTION: Record<FinalCyclePolicy, string> = {
+  FULL: 'Pembayaran bulan terakhir dihitung penuh.',
+  PRORATA: 'Pembayaran bulan terakhir dihitung proporsional sesuai periode berjalan.',
+  NONE: 'Tidak ada pembayaran untuk bulan terakhir.',
+};
+
 export interface FundingAgreement {
   id: string;
   unitId: string;

@@ -1,7 +1,7 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  Lead, LeadOrder, LeadPayment, LeadPaymentReverseResult, LeadStatus,
+  Lead, LeadOrder, LeadOrderCancellationRefund, LeadPayment, LeadPaymentReverseResult, LeadStatus,
   OrderStatus, SaleSettlement, UnitSummary,
 } from './crm.types';
 
@@ -78,8 +78,8 @@ export const leadOrderApi = {
   update: (id: string, body: Partial<LeadOrder>, headers?: BranchHeaders) =>
     apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}`, body, { headers }).then((r) => r.data.data),
   /** Hanya `DEAL` / `CANCELLED` yang valid dikirim — funnel lama ditolak backend 410 (README §24). */
-  updateStatus: (id: string, status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, headers?: BranchHeaders) =>
-    apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/status`, { status }, { headers }).then((r) => r.data.data),
+  updateStatus: (id: string, status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, headers?: BranchHeaders, refund?: LeadOrderCancellationRefund) =>
+    apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/status`, { status, ...(refund ? { refund } : {}) }, { headers }).then((r) => r.data.data),
 };
 
 // ---- Payment (nested under order — payment.route.js) ----

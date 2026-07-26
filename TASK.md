@@ -5,7 +5,9 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 26 Juli 2026 (rev 24 — **revamp CMS/Public terimplementasi end-to-end** berdasarkan `ecatalogue-be/.prd/backend_cms_public_revamp_20260723.md`: Menu Navigasi Publik memiliki CRUD, toggle, reorder dan endpoint header/footer; CMS Katalog memiliki status/filter/toggle Unit Unggulan; homepage mendukung mode `flagged` dengan default 5 unit; logo landing rounded; seluruh slug ikon submenu seeder dikenali sidebar. Audit penutup juga memperbaiki filter backend `isFeatured`, upsert lima menu default di seeder, mapping route `CMS_PUBLIC_NAV`, fallback menu kosong, dan adaptor respons FE/BE. Build frontend serta 88 test backend lulus; test frontend masih tertahan instalasi lokal `@adobe/css-tools` yang tidak lengkap.)
+> **Terakhir diperbarui:** 26 Juli 2026 (rev 25 — implementasi enam PRD frontend aktif dari commit backend hari ini: pendanaan investor Unit/Rekondisi + laporan, cancel order dengan refund DP atomik, homepage featured/fallback, ubah password, tipe pembayaran fixed-monthly, dan proteksi modul User. Seeder navigasi publik dipisahkan menjadi seeder khusus dengan lima menu hardcode lama dan test idempotensi. Build frontend hijau; QA E2E menunggu backend di laptop tujuan.)
+>
+> rev 24 — **revamp CMS/Public terimplementasi end-to-end**: CRUD/toggle/reorder menu publik, Unit Unggulan, logo rounded, dan ikon submenu selesai.
 >
 > rev 23 — **PRD backend + quick-win logo rounded**: spesifikasi awal revamp CMS/Public ditulis di `.prd/backend_cms_public_revamp_20260723.md`; implementasi lengkapnya ditutup pada rev 24.
 >
@@ -30,6 +32,19 @@
 3. ✅ **Unit Unggulan dari CMS Katalog** — badge, aksi toggle, filter khusus, dan kartu ringkasan tersedia. CMS Homepage memiliki mode `flagged`; backend mengambil maksimum 5 unit yang featured, tayang, aktif, dan ready stock.
 4. ✅ **Ikon submenu dari seeder** — backend mengisi `Menu.icon`; resolver frontend kini mengenali seluruh slug yang dipakai seeder, termasuk menu CMS baru.
 5. 🟡 **Operasional deployment** — kode dan kontrak selesai; migration + seed masih harus dijalankan pada database environment tujuan sebelum smoke test akun CMS.
+
+### ✅ PRD frontend aktif commit backend 26 Juli (rev 25)
+
+| PRD aktif (di luar `archive`) | Implementasi frontend | Status |
+|---|---|:--:|
+| `frontend_investor_funding_usage_rekondisi_20260726.md` | Ledger/alokasi pada Unit & Rekondisi, pendanaan langsung saat bayar, laporan `/master/investor-funding-usage` | ✅ kode · 🟡 E2E |
+| `frontend_lead_order_cancellation_refund_dp_20260726.md` | Dialog cancel BOOKING + refund DP atomik, eligibility payment, akun kas branch order | ✅ kode · 🟡 E2E |
+| `frontend_public_homepage_featured_20260726.md` | `featured.units`, invalidasi lengkap, fallback homepage 5xx | ✅ kode · 🟡 E2E |
+| `frontend_settings_change_password_20260726.md` | Form `/pengaturan`, validasi/error inline, logout seluruh sesi setelah sukses | ✅ kode · 🟡 E2E |
+| `frontend_unit_fixed_monthly_payment_type_20260726.md` | Pilihan Full/Prorate/None create/edit/detail hanya FIXED_MONTHLY | ✅ kode · 🟡 E2E |
+| `frontend_user_access_control_safety_20260726.md` | Cache identity-aware, role aman, proteksi self/OWNER delete | ✅ kode · 🟡 E2E |
+
+Seeder header/footer: `prisma/seeders/public-nav-menu.seeder.js` mengisi Beranda, Katalog, Simulasi Kredit, Tentang, dan Kontak secara idempotent. Seed tidak dijalankan dari laptop frontend; jalankan `npm run seed` pada laptop backend tujuan.
 
 ### 🏷️ Field Nama Unit (rev 22 — `.prd/frontend_unit_name_20260722.md`)
 Backend menambah field `name` (string wajib, display name bisnis, mis. "Avanza G AT Putih 2023" — BUKAN gabungan otomatis merek/tipe/tahun). Implementasi FE:

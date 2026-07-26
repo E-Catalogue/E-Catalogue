@@ -78,6 +78,11 @@ export const InvestorPage = () => {
                   <Button variant="secondary" icon={<HandCoins size={17} strokeWidth={2.5} />}>Kewajiban Investor</Button>
                 </Link>
               )}
+              {can('INVESTOR_CAPITAL_READ') && (
+                <Link to="/master/investor-funding-usage">
+                  <Button variant="secondary" icon={<Wallet size={17} strokeWidth={2.5} />}>Penggunaan Dana</Button>
+                </Link>
+              )}
               {can('INVESTOR_CREATE') && (
                 <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Investor</Button>
               )}

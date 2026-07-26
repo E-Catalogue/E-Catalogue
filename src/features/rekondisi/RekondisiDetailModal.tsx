@@ -6,7 +6,7 @@ import {
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
-import { TextField, NumericField } from '@/shared/components/ui/Field';
+import { TextField, NumericField, SelectField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
@@ -19,6 +19,8 @@ import { useRekondisis } from './rekondisi.hooks';
 import { useRekondisiCashAccounts } from '@/features/finance/lookup';
 import { useCreateRekondisi, useRekondisiStatusCheck } from '@/features/units/unit.hooks';
 import { notifyApiError } from '@/core/api/notify';
+import { InvestorFundingPanel } from '@/features/investor-funding/InvestorFundingPanel';
+import { useInvestorCapitalAccounts } from '@/features/investor-funding/investorFunding.hooks';
 import {
   REKONDISI_STATUS_LABEL, REKONDISI_STATUS_COLOR,
   type Rekondisi, type RekondisiDetail, type RekondisiDoneFormData,
@@ -176,12 +178,20 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
 };
 
 /* ── Step content: Pembayaran ── */
-const PayForm = ({ rekondisiId }: { rekondisiId: string }) => {
+const PayForm = ({ rekondisi }: { rekondisi: Rekondisi }) => {
   const [cashAccountId, setCashAccountId] = useState('');
   const [paidDate, setPaidDate] = useState(today());
+  const [source, setSource] = useState<'COMPANY' | 'INVESTOR'>('COMPANY');
+  const [capitalAccountId, setCapitalAccountId] = useState('');
+  const [investorAmount, setInvestorAmount] = useState(0);
+  const [description, setDescription] = useState('Dana investor untuk biaya rekondisi');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const m = useRekondisiMutations();
-  const { data: cashAccounts = [], isLoading: cashLoading } = useRekondisiCashAccounts('all');
+  const branchKey = rekondisi.branchId || 'resource';
+  const headers = rekondisi.branchId ? { 'X-Branch-Id': rekondisi.branchId } : undefined;
+  const { data: cashAccounts = [], isLoading: cashLoading } = useRekondisiCashAccounts(branchKey, { headers });
+  const { data: capitalAccounts = [], isLoading: capitalLoading } = useInvestorCapitalAccounts('REKONDISI', branchKey, headers, source === 'INVESTOR');
+  const investorInvalid = source === 'INVESTOR' && (!capitalAccountId || investorAmount <= 0 || investorAmount > rekondisi.total);
 
   return (
     <>
@@ -191,14 +201,25 @@ const PayForm = ({ rekondisiId }: { rekondisiId: string }) => {
           <CashAccountSelect label="Akun Kas" required value={cashAccountId} onChange={setCashAccountId} accounts={cashAccounts} loading={cashLoading} />
           <DateField label="Tanggal Bayar" required value={paidDate} onChange={setPaidDate} />
         </div>
-        <button type="submit" disabled={!cashAccountId || !paidDate} className="w-full h-10 rounded-xl bg-primary text-white text-[12px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-60">
+        <SelectField label="Sumber Pendanaan" value={source} onChange={(event) => { setSource(event.target.value as 'COMPANY' | 'INVESTOR'); setCapitalAccountId(''); setInvestorAmount(0); }} options={[{ value: 'COMPANY', label: 'Kas Perusahaan' }, { value: 'INVESTOR', label: 'Dana Investor' }]} />
+        {source === 'INVESTOR' && (
+          <div className="rounded-xl border border-primary/25 bg-primary-light/40 p-3 space-y-3">
+            <SearchableSelect label="Akun Modal Investor" required value={capitalAccountId} onChange={setCapitalAccountId} loading={capitalLoading}
+              options={capitalAccounts.map((account) => ({ value: account.id, label: `${account.investor.code} — ${account.investor.name}`, sublabel: `Tersedia ${idr(account.availableBalance)}` }))} placeholder="Pilih akun modal" />
+            <NumericField label="Nominal Dana Investor" required value={investorAmount} onChange={setInvestorAmount} prefix="Rp" min={0} max={rekondisi.total} />
+            <TextField label="Keterangan" value={description} onChange={(event) => setDescription(event.target.value)} />
+            <p className="text-[11px] font-semibold text-muted">Sisa {idr(Math.max(0, rekondisi.total - investorAmount))} tetap dicatat sebagai kontribusi/talangan perusahaan.</p>
+            {investorAmount > rekondisi.total && <p className="text-[11px] font-bold text-semantic-error">Nominal investor tidak boleh melebihi total rekondisi.</p>}
+          </div>
+        )}
+        <button type="submit" disabled={!cashAccountId || !paidDate || investorInvalid || m.pay.isPending} className="w-full h-10 rounded-xl bg-primary text-white text-[12px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-60">
           <Receipt size={14} /> Bayar Rekondisi
         </button>
       </form>
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        onConfirm={() => m.pay.mutate({ id: rekondisiId, data: { cashAccountId, paidDate } }, { onSuccess: () => setConfirmOpen(false), onError: (err) => notifyApiError(err) })}
+        onConfirm={() => m.pay.mutate({ id: rekondisi.id, headers, data: { cashAccountId, paidDate, ...(source === 'INVESTOR' ? { investorFunding: { capitalAccountId, amount: investorAmount, description: description.trim() || undefined } } : {}) } }, { onSuccess: () => setConfirmOpen(false), onError: (err) => notifyApiError(err) })}
         closeOnConfirm={false}
         loading={m.pay.isPending}
         tone="primary"
@@ -520,13 +541,23 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                 {step < 5 ? (
                   <Locked text="Menunggu rekondisi diselesaikan." />
                 ) : canPay ? (
-                  <PayForm rekondisiId={r.id} />
+                  <PayForm rekondisi={rekondisi} />
                 ) : rekondisi.paidAt ? (
                   <p className="text-[12px] font-semibold text-accent-green flex items-center gap-1.5"><Check size={14} /> Lunas — dibayar {new Date(rekondisi.paidAt).toLocaleDateString('id-ID')}</p>
                 ) : (
                   <Locked text="Menunggu pembayaran diproses petugas berwenang." />
                 )}
               </section>
+
+              {can('REKONDISI_PAY') && (
+                <InvestorFundingPanel
+                  resourceType="REKONDISI"
+                  resourceId={rekondisi.id}
+                  branchId={rekondisi.branchId}
+                  paid={!!rekondisi.paidAt && !!rekondisi.cashTransactionId}
+                  canAllocate={can('REKONDISI_PAY')}
+                />
+              )}
 
               {rekondisi.invoiceUrl && (
                 <a href={mediaUrl(rekondisi.invoiceUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline">

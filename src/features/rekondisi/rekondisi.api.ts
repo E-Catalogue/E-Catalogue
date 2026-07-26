@@ -61,8 +61,8 @@ export const rekondisiApi = {
     return res.data;
   },
 
-  pay: async (id: string, data: RekondisiPayFormData) => {
-    const res = await apiClient.post<ApiResponse<Rekondisi>>(`/rekondisis/${id}/pay`, data);
+  pay: async (id: string, data: RekondisiPayFormData, headers?: Record<string, string>) => {
+    const res = await apiClient.post<ApiResponse<Rekondisi>>(`/rekondisis/${id}/pay`, data, { headers });
     return res.data;
   },
 

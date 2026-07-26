@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
-import { ArrowDown, ArrowUp, BadgeCheck, Calendar, CheckCircle, Cog, Gauge, Hash, Image as ImageIcon, Pencil, Receipt, Star, Trash2, TrendingUp, Upload } from 'lucide-react';
+import { ArrowDown, ArrowUp, BadgeCheck, Calendar, CheckCircle, Cog, Gauge, Hash, Image as ImageIcon, Pencil, Receipt, Save, Star, Trash2, TrendingUp, Upload } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { usePermissions } from '@/features/auth/usePermissions';
-import type { Unit } from '@/features/units/unit.types';
+import { FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type Unit } from '@/features/units/unit.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
 import { notifyApiError } from '@/core/api/notify';
-import { useFinalizeInitialPricing, useUnit, useUnitImageMutations } from './unit.hooks';
+import { getApiErrorCode } from '@/core/api/apiError';
+import { useFinalizeInitialPricing, useUnit, useUnitImageMutations, useUpdateUnitFunding } from './unit.hooks';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
+import { SelectField } from '@/shared/components/ui/Field';
+import { InvestorFundingPanel } from '@/features/investor-funding/InvestorFundingPanel';
 
 interface UnitDetailModalProps {
   open: boolean;
@@ -34,10 +37,11 @@ const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: stri
 );
 
 export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModalProps) => {
-  const { data: detailRes } = useUnit(open ? unit?.id : undefined);
+  const { data: detailRes, refetch: refetchUnit } = useUnit(open ? unit?.id : undefined);
   const current = detailRes?.data ?? unit;
   const imageMutations = useUnitImageMutations(current?.id ?? '');
   const finalizePricing = useFinalizeInitialPricing();
+  const updateFunding = useUpdateUnitFunding();
   const confirmAction = useConfirmedAction();
   const { can } = usePermissions();
   const [imageError, setImageError] = useState('');
@@ -45,6 +49,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   const [confirmNoRekondisi, setConfirmNoRekondisi] = useState(false);
   const [draftImages, setDraftImages] = useState<NonNullable<Unit['unitImages']> | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [cyclePolicy, setCyclePolicy] = useState<FinalCyclePolicy | ''>('');
   const pendingImageUrl = useMemo(() => pendingImage ? URL.createObjectURL(pendingImage) : '', [pendingImage]);
 
   useEffect(() => {
@@ -62,6 +67,10 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   const marginBase = targetPrice ?? otrPrice;
   const margin = current.purchaseCost && marginBase && marginBase > current.purchaseCost ? marginBase - current.purchaseCost : null;
   const canFinalizePricing = !current.pricingFinalizedAt && can('UNIT_PRICING_FINALIZE');
+  const funding = current.fundingAgreement;
+  const isFixedMonthlyInvestor = funding?.fundingSource === 'INVESTOR' && funding.scheme === 'FIXED_MONTHLY';
+  const canEditCyclePolicy = isFixedMonthlyInvestor && funding.status === 'DRAFT' && can('UNIT_FUNDING_MANAGE');
+  const selectedCyclePolicy = cyclePolicy || funding?.finalCyclePolicy || '';
 
   const handleFinalizePricing = () => {
     finalizePricing.mutate(
@@ -198,7 +207,44 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
             </Button>
           )}
         </div>
+        {isFixedMonthlyInvestor && (
+          <div className="rounded-2xl border border-border bg-surface-soft p-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <SelectField
+                label="Tipe Pembayaran Investor"
+                value={selectedCyclePolicy}
+                disabled={!canEditCyclePolicy}
+                wrapClass="flex-1"
+                onChange={(event) => setCyclePolicy(event.target.value as FinalCyclePolicy)}
+                options={(['FULL', 'PRORATA', 'NONE'] as FinalCyclePolicy[]).map((value) => ({ value, label: FINAL_CYCLE_POLICY_LABEL[value] }))}
+              />
+              {canEditCyclePolicy && (
+                <Button
+                  size="sm"
+                  icon={<Save size={14} />}
+                  loading={updateFunding.isPending}
+                  disabled={!selectedCyclePolicy || selectedCyclePolicy === funding.finalCyclePolicy}
+                  onClick={() => updateFunding.mutate({ id: current.id, data: { finalCyclePolicy: selectedCyclePolicy as FinalCyclePolicy }, headers: current.branchId ? { 'X-Branch-Id': current.branchId } : undefined }, { onSuccess: () => setCyclePolicy(''), onError: (error) => { if (getApiErrorCode(error) === 'UNIT_FUNDING_NOT_EDITABLE') { setCyclePolicy(''); void refetchUnit(); } notifyApiError(error); } })}
+                >Simpan Tipe</Button>
+              )}
+            </div>
+            <p className="mt-2 text-[11px] font-semibold text-muted">
+              {selectedCyclePolicy ? FINAL_CYCLE_POLICY_DESCRIPTION[selectedCyclePolicy as FinalCyclePolicy] : 'Belum ditentukan.'}
+            </p>
+          </div>
+        )}
       </div>
+
+      {can('UNIT_FUNDING_READ') && (
+        <InvestorFundingPanel
+          resourceType="UNIT_PURCHASE"
+          resourceId={current.id}
+          branchId={current.branchId}
+          paid={!!current.purchaseCashTransactionId}
+          canAllocate={can('UNIT_FUNDING_MANAGE')}
+          fundingSource={current.fundingAgreement?.fundingSource}
+        />
+      )}
 
       <div className="mt-5 border-t border-divider pt-4">
         <div className="flex items-center justify-between gap-3 mb-3">

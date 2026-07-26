@@ -37,7 +37,7 @@ const today = () => new Date().toISOString().slice(0, 10);
  * dinormalisasi backend ke `PENCAIRAN_LEASING` (payment.service.js `normalizePayload`),
  * jadi tidak ditawarkan di form biar tidak ada 2 opsi berlabel sama. */
 const JENIS_OPTIONS = (Object.keys(JENIS_PEMBAYARAN_LABEL) as JenisPembayaran[])
-  .filter((k) => k !== 'LEASING')
+  .filter((k) => k !== 'LEASING' && k !== 'REFUND_DP')
   .map((k) => ({ value: k, label: JENIS_PEMBAYARAN_LABEL[k] }));
 
 /** Pesan banner inline per error code finansial (README §17: jangan hanya toast untuk error finansial). */
@@ -220,7 +220,7 @@ const PaymentRow = ({
   const m = useLeadPaymentMutations(branchKey, orderId);
   const qc = useQueryClient();
 
-  const isRefund = payment.jenisPembayaran === 'REFUND_LEASING';
+  const isRefund = payment.jenisPembayaran === 'REFUND_LEASING' || payment.jenisPembayaran === 'REFUND_DP';
   const reversible = payment.postingStatus === 'POSTED';
 
   return (
@@ -233,6 +233,7 @@ const PaymentRow = ({
             {payment.cashAccount?.name ? ` · ${payment.cashAccount.name}` : ''}
           </p>
           {payment.description && <p className="text-[11px] text-muted mt-0.5">{payment.description}</p>}
+          {payment.refundOfPaymentId && <p className="text-[10px] font-semibold text-muted mt-0.5">Refund dari payment: {payment.refundOfPaymentId}</p>}
           {payment.buktiUrl && <div className="mt-1"><ProofLink url={payment.buktiUrl} /></div>}
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">

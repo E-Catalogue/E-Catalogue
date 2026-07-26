@@ -7,7 +7,7 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
 import type {
-  Lead, LeadOrder, LeadPayment, LeadStatus, OrderStatus,
+  Lead, LeadOrder, LeadOrderCancellationRefund, LeadPayment, LeadStatus, OrderStatus,
 } from './crm.types';
 
 type BranchHeaders = Record<string, string> | undefined;
@@ -89,6 +89,11 @@ export const useLeadOrderMutations = (branchKey: string) => {
     if (order.unitId) qc.invalidateQueries({ queryKey: ['unit', order.unitId] });
     qc.invalidateQueries({ queryKey: ['lead-order-settlement', branchKey, order.id] });
     qc.invalidateQueries({ queryKey: ['dashboard-overview'] });
+    qc.invalidateQueries({ queryKey: ['lead-payments'] });
+    qc.invalidateQueries({ queryKey: ['cash-accounts'] });
+    qc.invalidateQueries({ queryKey: ['cash-transactions'] });
+    qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
+    qc.invalidateQueries({ queryKey: ['books'] });
   };
 
   return {
@@ -105,8 +110,8 @@ export const useLeadOrderMutations = (branchKey: string) => {
       onError: (e: unknown) => notifyApiError(e),
     }),
     updateStatus: useMutation({
-      mutationFn: (v: { id: string; status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>; headers: BranchHeaders }) =>
-        leadOrderApi.updateStatus(v.id, v.status, v.headers),
+      mutationFn: (v: { id: string; status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>; headers: BranchHeaders; refund?: LeadOrderCancellationRefund }) =>
+        leadOrderApi.updateStatus(v.id, v.status, v.headers, v.refund),
       onSuccess: (order, v) => {
         toast(v.status === 'DEAL' ? 'Order berhasil ditandai DEAL' : 'Order berhasil dibatalkan');
         invalAfterStatusChange(order);

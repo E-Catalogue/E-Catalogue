@@ -16,6 +16,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { RequirePermission } from '@/features/auth/permissions';
 import type { AccessUser } from './types';
+import { useAppSelector } from '@/app/store';
 
 const Badge = ({ active }: { active: boolean }) => (
   <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${active ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>
@@ -41,20 +42,21 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
   if (open && (item?.id ?? 'new') !== seedId) { setSeedId(item?.id ?? 'new'); setForm(seedFrom(item)); }
 
   const set = (k: keyof FormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
-  const submit = (e: FormEvent) => { e.preventDefault(); onSubmit(form); };
+  const submit = (e: FormEvent) => { e.preventDefault(); onSubmit({ ...form, roleId: roleIsCurrent ? form.roleId : '' }); };
 
   const roleOpts = (lookup?.roles ?? []).map((r) => ({ value: r.id, label: r.name }));
   const branchOpts = (lookup?.branches ?? []).map((b) => ({ value: b.id, label: b.nama }));
+  const roleIsCurrent = roleOpts.some((role) => role.value === form.roleId);
 
   return (
     <Modal open={open} onClose={onClose} icon={<UserCog size={20} />} title={item ? 'Edit User' : 'Tambah User'} size="lg"
-      footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="user-form" disabled={submitting}>{submitting ? 'Menyimpan...' : 'Simpan'}</Button></>}>
+      footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="user-form" loading={submitting} disabled={submitting || !roleIsCurrent}>Simpan</Button></>}>
       <form id="user-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TextField label="Nama" required value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Nama lengkap" />
         <TextField label="Username" required value={form.username} onChange={(e) => set('username', e.target.value)} placeholder="username" />
         <TextField label="Email" type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="email@contoh.com" />
         <TextField label={item ? 'Password (kosongkan jika tetap)' : 'Password'} type="password" required={!item} value={form.password} onChange={(e) => set('password', e.target.value)} placeholder="••••••••" />
-        <SearchableSelect label="Role" required value={form.roleId} onChange={(v) => set('roleId', v)} options={roleOpts} disabled={!!item && !canRoleUpdate} placeholder="Pilih role" searchPlaceholder="Cari role..." />
+        <SearchableSelect label="Role" required value={roleIsCurrent ? form.roleId : ''} onChange={(v) => set('roleId', v)} options={roleOpts} disabled={!!item && !canRoleUpdate} placeholder="Pilih role" searchPlaceholder="Cari role..." />
         <SearchableSelect label="Cabang" value={form.branchId} onChange={(v) => set('branchId', v)} options={branchOpts} disabled={!!item && !canBranchUpdate} clearable placeholder="Tanpa cabang" searchPlaceholder="Cari cabang..." />
         <label className="sm:col-span-2 flex items-center gap-2.5 cursor-pointer select-none">
           <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="w-4 h-4 accent-[color:var(--color-primary)]" />
@@ -72,11 +74,16 @@ const UserPageInner = () => {
   const { data, isLoading, isFetching, isError, refetch } = useUsers({ page, limit: 10, search: debounced });
   const m = useUserMutations();
   const { can } = usePermissions();
+  const currentUser = useAppSelector((s) => s.auth.user);
 
   const [form, setForm] = useState<{ item: AccessUser | null } | null>(null);
   const [toDelete, setToDelete] = useState<AccessUser | null>(null);
 
   const users = data?.data ?? [];
+  const protectedDeleteReason = (user: AccessUser) =>
+    user.id === currentUser?.id ? 'Akun sendiri tidak dapat dinonaktifkan.'
+    : user.role?.code === 'OWNER' ? 'Akun OWNER dilindungi dan tidak dapat dihapus.'
+    : null;
 
   const handleSubmit = async (v: FormState) => {
     try {
@@ -106,7 +113,7 @@ const UserPageInner = () => {
     { header: '', align: 'right', cell: (u) => (
       <RowActions
         onEdit={can('USER_UPDATE') ? () => setForm({ item: u }) : undefined}
-        onDelete={can('USER_DELETE') ? () => setToDelete(u) : undefined}
+        onDelete={can('USER_DELETE') && !protectedDeleteReason(u) ? () => setToDelete(u) : undefined}
       />
     ) },
   ];

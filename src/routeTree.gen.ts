@@ -46,6 +46,7 @@ import { Route as AdminMasterMetodePembayaranRouteImport } from './routes/_admin
 import { Route as AdminMasterLeasingRouteImport } from './routes/_admin/master.leasing'
 import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_admin/master.kategori-pengeluaran'
 import { Route as AdminMasterInvestorObligationRouteImport } from './routes/_admin/master.investor-obligation'
+import { Route as AdminMasterInvestorFundingUsageRouteImport } from './routes/_admin/master.investor-funding-usage'
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
 import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
@@ -246,6 +247,12 @@ const AdminMasterInvestorObligationRoute =
     path: '/master/investor-obligation',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminMasterInvestorFundingUsageRoute =
+  AdminMasterInvestorFundingUsageRouteImport.update({
+    id: '/master/investor-funding-usage',
+    path: '/master/investor-funding-usage',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminMasterInvestorRoute = AdminMasterInvestorRouteImport.update({
   id: '/master/investor',
   path: '/master/investor',
@@ -352,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
+  '/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
   '/master/investor-obligation': typeof AdminMasterInvestorObligationRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/master/leasing': typeof AdminMasterLeasingRoute
@@ -402,6 +410,7 @@ export interface FileRoutesByTo {
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
+  '/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
   '/master/investor-obligation': typeof AdminMasterInvestorObligationRoute
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/master/leasing': typeof AdminMasterLeasingRoute
@@ -455,6 +464,7 @@ export interface FileRoutesById {
   '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
+  '/_admin/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
   '/_admin/master/investor-obligation': typeof AdminMasterInvestorObligationRoute
   '/_admin/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/_admin/master/leasing': typeof AdminMasterLeasingRoute
@@ -507,6 +517,7 @@ export interface FileRouteTypes {
     | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
+    | '/master/investor-funding-usage'
     | '/master/investor-obligation'
     | '/master/kategori-pengeluaran'
     | '/master/leasing'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/cms/testimoni'
     | '/master/dokumen'
     | '/master/investor'
+    | '/master/investor-funding-usage'
     | '/master/investor-obligation'
     | '/master/kategori-pengeluaran'
     | '/master/leasing'
@@ -609,6 +621,7 @@ export interface FileRouteTypes {
     | '/_admin/cms/testimoni'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
+    | '/_admin/master/investor-funding-usage'
     | '/_admin/master/investor-obligation'
     | '/_admin/master/kategori-pengeluaran'
     | '/_admin/master/leasing'
@@ -887,6 +900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterInvestorObligationRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/master/investor-funding-usage': {
+      id: '/_admin/master/investor-funding-usage'
+      path: '/master/investor-funding-usage'
+      fullPath: '/master/investor-funding-usage'
+      preLoaderRoute: typeof AdminMasterInvestorFundingUsageRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/master/investor': {
       id: '/_admin/master/investor'
       path: '/master/investor'
@@ -1016,6 +1036,7 @@ interface AdminRouteChildren {
   AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
+  AdminMasterInvestorFundingUsageRoute: typeof AdminMasterInvestorFundingUsageRoute
   AdminMasterInvestorObligationRoute: typeof AdminMasterInvestorObligationRoute
   AdminMasterKategoriPengeluaranRoute: typeof AdminMasterKategoriPengeluaranRoute
   AdminMasterLeasingRoute: typeof AdminMasterLeasingRoute
@@ -1060,6 +1081,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,
+  AdminMasterInvestorFundingUsageRoute: AdminMasterInvestorFundingUsageRoute,
   AdminMasterInvestorObligationRoute: AdminMasterInvestorObligationRoute,
   AdminMasterKategoriPengeluaranRoute: AdminMasterKategoriPengeluaranRoute,
   AdminMasterLeasingRoute: AdminMasterLeasingRoute,

@@ -91,13 +91,18 @@ export function useRekondisiMutations() {
       onError: (e: unknown) => notifyApiError(e),
     }),
     pay: useMutation({
-      mutationFn: ({ id, data }: { id: string; data: RekondisiPayFormData }) => rekondisiApi.pay(id, data),
+      mutationFn: ({ id, data, headers }: { id: string; data: RekondisiPayFormData; headers?: Record<string, string> }) => rekondisiApi.pay(id, data, headers),
       onSuccess: (_, { id }) => {
         store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Rekondisi berhasil dibayar' }));
         inval(id);
         qc.invalidateQueries({ queryKey: ['cash-transactions'] });
         qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
         qc.invalidateQueries({ queryKey: ['finance-lookups', 'rekondisis-payable'] });
+        qc.invalidateQueries({ queryKey: ['investor-funding-usages', 'REKONDISI'] });
+        qc.invalidateQueries({ queryKey: ['investor-funding-capital-accounts', 'REKONDISI'] });
+        qc.invalidateQueries({ queryKey: ['investor-funding-report'] });
+        qc.invalidateQueries({ queryKey: ['capital-accounts'] });
+        qc.invalidateQueries({ queryKey: ['capital-transactions'] });
       },
       onError: (e: unknown) => notifyApiError(e),
     }),

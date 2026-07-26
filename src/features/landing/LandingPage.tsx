@@ -3,7 +3,7 @@ import { ArrowRight, Search, HandCoins, Star, Quote } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
-import { CustomerLoader, CustomerServerError, EmptyCmsState } from './CustomerStates';
+import { CustomerLoader, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
 import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
@@ -21,7 +21,27 @@ export const LandingPage = () => {
 
   // Tampilkan hanya setelah data siap — hindari render setengah jadi.
   if (isLoading) return <CustomerLoader />;
-  if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;
+  if (isError) return (
+    <section className="relative overflow-hidden min-h-[68vh] flex items-center">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary-light via-background to-surface" />
+      <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 grid lg:grid-cols-[1fr_.8fr] gap-10 items-center w-full">
+        <div>
+          <span className="inline-flex rounded-full bg-primary-light px-3 py-1.5 text-[12px] font-bold text-primary">Showroom mobil terpercaya</span>
+          <h1 className="mt-4 text-4xl md:text-5xl font-extrabold leading-tight text-ink">Temukan mobil yang siap menemani perjalanan Anda.</h1>
+          <p className="mt-4 max-w-xl text-[15px] font-medium leading-relaxed text-muted">Konten terbaru belum berhasil dimuat. Anda tetap dapat membuka katalog atau mencoba memuat ulang beranda.</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/katalog" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[14px] font-bold text-white shadow-glow"><Search size={17} /> Buka Katalog</Link>
+            <button onClick={() => refetch()} className="rounded-xl border border-border bg-surface px-5 py-3 text-[14px] font-bold text-ink-soft hover:border-primary hover:text-primary">Coba Lagi</button>
+          </div>
+        </div>
+        <div className="rounded-[2.5rem] border border-border bg-surface/80 p-8 shadow-card">
+          <p className="text-[12px] font-bold uppercase tracking-wide text-primary">Butuh bantuan?</p>
+          <p className="mt-2 text-xl font-extrabold text-ink">Tim showroom tetap dapat dihubungi.</p>
+          <a href={waUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-[14px] font-bold text-primary hover:underline">Hubungi via WhatsApp <ArrowRight size={16} /></a>
+        </div>
+      </div>
+    </section>
+  );
   // CMS belum di-setup (tenant baru) → jangan tampil kosong melompong.
   if (!hp || Object.keys(hp).length === 0 || (!hp.hero && !hp.whyUs && !hp.featured)) {
     return <EmptyCmsState />;

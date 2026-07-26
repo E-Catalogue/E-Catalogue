@@ -17,6 +17,7 @@ interface ConfirmDialogProps {
   tone?: Tone;
   icon?: LucideIcon;
   loading?: boolean;
+  confirmDisabled?: boolean;
   /** Tutup otomatis setelah confirm (default true). Set false untuk flow async yang menutup sendiri. */
   closeOnConfirm?: boolean;
   /** Konten tambahan di bawah pesan (mis. checkbox acknowledgement) sebelum tombol aksi. */
@@ -40,6 +41,7 @@ export const ConfirmDialog = ({
   tone = 'danger',
   icon: Icon = AlertTriangle,
   loading = false,
+  confirmDisabled = false,
   closeOnConfirm = true,
   children,
 }: ConfirmDialogProps) => {
@@ -55,7 +57,7 @@ export const ConfirmDialog = ({
         {children && <div className="text-left mt-3">{children}</div>}
         <div className="flex gap-2.5 mt-6">
           <Button variant="secondary" block onClick={onClose} disabled={loading}>{cancelLabel}</Button>
-          <Button variant={t.btn} block loading={loading} onClick={() => {
+          <Button variant={t.btn} block loading={loading} disabled={confirmDisabled || loading} onClick={() => {
             grantMutationConfirmationLease();
             onConfirm();
             if (closeOnConfirm && !loading) onClose();

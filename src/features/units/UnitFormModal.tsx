@@ -7,9 +7,10 @@ import { TextField, SelectField, NumericField } from '@/shared/components/ui/Fie
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { notifyApiError } from '@/core/api/notify';
+import { getApiErrorCode } from '@/core/api/apiError';
 import { useCreateUnit, useUnitLookups, useUpdateUnit } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
-import type { FinalCyclePolicy, FundingSource, MasterDokumen, MasterKelengkapan, Transmisi, Unit, UnitFormData } from './unit.types';
+import { FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type FundingSource, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
 
 interface UnitFormModalProps {
   open: boolean;
@@ -146,6 +147,7 @@ const ChecklistSection = ({ title, loading, items, selected, onToggle }: Checkli
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const [form, setForm] = useState<UnitFormState>(() => toForm(unit));
   const [seedId, setSeedId] = useState<string | null | undefined>('init');
+  const [cyclePolicyError, setCyclePolicyError] = useState('');
   const createUnit = useCreateUnit();
   const updateUnit = useUpdateUnit();
   // `.prd/update_module_owned_lookup_20260721.md` §4.8 — SELURUH pilihan form Unit (merek/tipe,
@@ -221,7 +223,13 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     if (unit) {
       updateUnit.mutate({ id: unit.id, data: payload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
     } else {
-      createUnit.mutate(payload, { onError: (err) => notifyApiError(err), onSuccess: onClose });
+      createUnit.mutate(payload, {
+        onError: (err) => {
+          if (getApiErrorCode(err) === 'FINAL_CYCLE_POLICY_REQUIRED') setCyclePolicyError('Tipe pembayaran investor wajib dipilih.');
+          notifyApiError(err);
+        },
+        onSuccess: onClose,
+      });
     }
   };
 
@@ -302,7 +310,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                 label="Sumber Dana"
                 required
                 value={form.fundingSource}
-                onChange={(e) => set('fundingSource', e.target.value as FundingSource)}
+                onChange={(e) => setForm((current) => ({ ...current, fundingSource: e.target.value as FundingSource, investorId: '', finalCyclePolicy: '' }))}
                 options={[
                   { value: 'COMPANY_OWNED', label: 'Milik Perusahaan' },
                   { value: 'INVESTOR', label: 'Investor' },
@@ -313,7 +321,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                   label="Investor"
                   required
                   value={form.investorId}
-                  onChange={(v) => set('investorId', v)}
+                  onChange={(v) => setForm((current) => ({ ...current, investorId: v, finalCyclePolicy: '' }))}
                   loading={lookupsLoading}
                   options={investors.map((i) => ({ value: i.id, label: i.name, sublabel: `${i.scheme === 'FIXED_MONTHLY' ? 'Fixed Monthly' : 'Profit Share'} ${i.defaultRate}%` }))}
                   placeholder="Pilih investor"
@@ -328,18 +336,27 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
               </p>
             )}
             {fundingRequiresFinalCycle && (
-              <SelectField
-                label="Aturan Siklus Terakhir"
-                required
-                value={form.finalCyclePolicy}
-                onChange={(e) => set('finalCyclePolicy', e.target.value as FinalCyclePolicy)}
-                options={[
-                  { value: '', label: 'Pilih aturan' },
-                  { value: 'FULL', label: 'Full' },
-                  { value: 'NONE', label: 'None' },
-                  { value: 'PRORATA', label: 'Prorata' },
-                ]}
-              />
+              <div className="space-y-2">
+                <SelectField
+                  label="Tipe Pembayaran Investor"
+                  required
+                  value={form.finalCyclePolicy}
+                  onChange={(e) => { set('finalCyclePolicy', e.target.value as FinalCyclePolicy); setCyclePolicyError(''); }}
+                  options={[
+                    { value: '', label: 'Pilih tipe pembayaran' },
+                    ...(['FULL', 'PRORATA', 'NONE'] as FinalCyclePolicy[]).map((value) => ({ value, label: FINAL_CYCLE_POLICY_LABEL[value] })),
+                  ]}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {(['FULL', 'PRORATA', 'NONE'] as FinalCyclePolicy[]).map((value) => (
+                    <button type="button" key={value} onClick={() => { set('finalCyclePolicy', value); setCyclePolicyError(''); }} className={`rounded-xl border p-3 text-left transition-colors ${form.finalCyclePolicy === value ? 'border-primary bg-primary-light' : 'border-border bg-surface hover:border-primary/50'}`}>
+                      <p className="text-[11px] font-extrabold text-ink">{FINAL_CYCLE_POLICY_LABEL[value]}</p>
+                      <p className="mt-1 text-[10px] font-medium leading-relaxed text-muted">{FINAL_CYCLE_POLICY_DESCRIPTION[value]}</p>
+                    </button>
+                  ))}
+                </div>
+                {cyclePolicyError && <p className="text-[11px] font-semibold text-semantic-error">{cyclePolicyError}</p>}
+              </div>
             )}
           </div>
         )}

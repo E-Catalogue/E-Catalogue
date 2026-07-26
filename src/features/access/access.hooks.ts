@@ -3,6 +3,8 @@ import { roleApi, userApi, menuApi } from './access.api';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import type { ListParams } from './types';
+import { useAppSelector } from '@/app/store';
+import { getApiErrorCode } from '@/core/api/apiError';
 
 const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil', message, variant: 'success' }));
 
@@ -11,8 +13,16 @@ export const useRoles = (params: ListParams) =>
   useQuery({ queryKey: ['roles', params], queryFn: () => roleApi.list(params) });
 
 // ---------- Module-owned lookups (PRD update_module_owned_lookup) ----------
-export const useUserFormLookup = (enabled = true) =>
-  useQuery({ queryKey: ['lookup', 'user', 'form'], queryFn: () => userApi.lookups(), enabled });
+export const useUserFormLookup = (enabled = true) => {
+  const identity = useAppSelector((s) => `${s.auth.user?.id ?? 'anonymous'}:${s.auth.user?.role?.code ?? 'none'}`);
+  const isAdmin = useAppSelector((s) => s.auth.user?.role?.code === 'ADMIN');
+  return useQuery({
+    queryKey: ['lookup', 'user', 'form', identity],
+    queryFn: () => userApi.lookups(),
+    enabled,
+    select: (lookup) => isAdmin ? lookup : { ...lookup, roles: lookup.roles.filter((role) => role.code !== 'ADMIN' && role.code !== 'OWNER') },
+  });
+};
 
 export const useRolePermissionLookup = (enabled = true) =>
   useQuery({ queryKey: ['lookup', 'role', 'permissions'], queryFn: () => roleApi.lookupPermissions(), enabled });
@@ -29,18 +39,32 @@ export const useRoleMutations = () => {
 };
 
 // ---------- Users ----------
-export const useUsers = (params: ListParams) =>
-  useQuery({ queryKey: ['users', params], queryFn: () => userApi.list(params) });
+export const useUsers = (params: ListParams) => {
+  const identity = useAppSelector((s) => `${s.auth.user?.id ?? 'anonymous'}:${s.auth.user?.role?.code ?? 'none'}`);
+  const isAdmin = useAppSelector((s) => s.auth.user?.role?.code === 'ADMIN');
+  return useQuery({
+    queryKey: ['users', identity, params],
+    queryFn: () => userApi.list(params),
+    select: (result) => isAdmin ? result : { ...result, data: result.data.filter((user) => user.role?.code !== 'ADMIN') },
+  });
+};
 
 export const useUserMutations = () => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['users'] });
+  const inval = (id?: string) => {
+    qc.invalidateQueries({ queryKey: ['users'] });
+    qc.invalidateQueries({ queryKey: ['lookup', 'user'] });
+    if (id) qc.invalidateQueries({ queryKey: ['user', id] });
+  };
+  const refreshForbiddenRole = (error: unknown) => {
+    if (getApiErrorCode(error) === 'PRIVILEGED_ROLE_ASSIGNMENT_FORBIDDEN') qc.invalidateQueries({ queryKey: ['lookup', 'user'] });
+  };
   return {
-    create: useMutation({ mutationFn: userApi.create, onSuccess: () => { toast('User ditambahkan'); inval(); } }),
-    update: useMutation({ mutationFn: (v: { id: string; body: Record<string, unknown> }) => userApi.update(v.id, v.body), onSuccess: () => { toast('User diperbarui'); inval(); } }),
-    remove: useMutation({ mutationFn: userApi.remove, onSuccess: () => { toast('User dihapus'); inval(); } }),
-    setRole: useMutation({ mutationFn: (v: { id: string; roleId: string }) => userApi.setRole(v.id, v.roleId), onSuccess: () => { toast('Role user diperbarui'); inval(); } }),
-    setBranch: useMutation({ mutationFn: (v: { id: string; branchId: string }) => userApi.setBranch(v.id, v.branchId), onSuccess: () => { toast('Cabang user diperbarui'); inval(); } }),
+    create: useMutation({ mutationFn: userApi.create, onSuccess: () => { toast('User ditambahkan'); inval(); }, onError: refreshForbiddenRole }),
+    update: useMutation({ mutationFn: (v: { id: string; body: Record<string, unknown> }) => userApi.update(v.id, v.body), onSuccess: (_, v) => { toast('User diperbarui'); inval(v.id); } }),
+    remove: useMutation({ mutationFn: userApi.remove, onSuccess: (_, id) => { toast('User dihapus'); inval(id); } }),
+    setRole: useMutation({ mutationFn: (v: { id: string; roleId: string }) => userApi.setRole(v.id, v.roleId), onSuccess: (_, v) => { toast('Role user diperbarui'); inval(v.id); }, onError: refreshForbiddenRole }),
+    setBranch: useMutation({ mutationFn: (v: { id: string; branchId: string }) => userApi.setBranch(v.id, v.branchId), onSuccess: (_, v) => { toast('Cabang user diperbarui'); inval(v.id); } }),
   };
 };
 

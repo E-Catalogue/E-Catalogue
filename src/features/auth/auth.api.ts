@@ -20,4 +20,8 @@ export const authApi = {
   logoutAll: async (): Promise<void> => {
     await apiClient.post('/auth/logout-all');
   },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    await apiClient.patch('/auth/password', { currentPassword, newPassword });
+  },
 };

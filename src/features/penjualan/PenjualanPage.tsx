@@ -239,10 +239,10 @@ export const PenjualanPage = () => {
           onClose={() => setStatusModal(null)}
           order={statusModal}
           submitting={m.updateStatus.isPending}
-          onSubmit={(status) =>
+          onSubmit={(status, refund) =>
             statusModal &&
             m.updateStatus.mutate(
-              { id: statusModal.id, status, headers: branchHeader },
+              { id: statusModal.id, status, refund, headers: statusModal.branchId ? { 'X-Branch-Id': statusModal.branchId } : branchHeader },
               { onSuccess: () => setStatusModal(null) },
             )
           }

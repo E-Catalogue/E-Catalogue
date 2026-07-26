@@ -13,7 +13,7 @@ export type StatusSlik = 'LOLOS' | 'REJECT' | 'BI_CHECKING';
 
 export type JenisPembayaran =
   | 'BOOKING_FEE' | 'DP' | 'TAMBAHAN_DP' | 'PELUNASAN'
-  | 'LEASING' | 'PENCAIRAN_LEASING' | 'REFUND_LEASING';
+  | 'LEASING' | 'PENCAIRAN_LEASING' | 'REFUND_LEASING' | 'REFUND_DP';
 
 /** `LeadPayment.postingStatus` — payment POSTED tidak boleh dihapus, hanya di-reverse. */
 export type PaymentPostingStatus = 'POSTED' | 'REVERSED';
@@ -41,6 +41,7 @@ export const JENIS_PEMBAYARAN_LABEL: Record<JenisPembayaran, string> = {
   LEASING: 'Pencairan Leasing',
   PENCAIRAN_LEASING: 'Pencairan Leasing',
   REFUND_LEASING: 'Refund Leasing',
+  REFUND_DP: 'Refund DP',
 };
 
 export const SETTLEMENT_STATUS_LABEL: Record<SettlementStatus, string> = {
@@ -158,8 +159,16 @@ export interface LeadPayment {
   cashTransactionId?: string | null;
   postingStatus: PaymentPostingStatus;
   idempotencyKey?: string | null;
+  refundOfPaymentId?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface LeadOrderCancellationRefund {
+  paymentIds: string[];
+  cashAccountId: string;
+  transactionDate: string;
+  description?: string;
 }
 
 /** Response `POST /lead-orders/:orderId/payments/:id/reverse` — payment sudah ter-update + entri kas kompensasi. */

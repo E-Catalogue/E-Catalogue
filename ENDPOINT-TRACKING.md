@@ -51,6 +51,9 @@
 | Buat rekondisi dari unit | `POST /units/:id/rekondisi` | 🏢 | ✅ |
 | Lihat pendanaan | `GET /units/:id/funding` | 🏢 | ✅ |
 | Ubah pendanaan | `PATCH /units/:id/funding` | 🏢 | ✅ |
+| Lookup akun modal untuk alokasi | `GET /units/lookups/investor-capital-accounts` | 🏢 | ✅ |
+| Riwayat/alokasi dana investor | `GET,POST /units/:id/investor-funding-usages` | 🏢 | ✅ |
+| Setor lalu alokasikan 🔑 | `POST /units/:id/investor-funding-usages/deposit` | 🏢 | ✅ |
 | Finalisasi harga awal | `POST /units/:id/finalize-initial-pricing` | 🏢 | ✅ |
 | Lihat kebijakan harga | `GET /units/pricing-policy` | 🏢 | ✅ |
 | Ubah kebijakan harga | `PUT /units/pricing-policy` | 🏢 | ✅ |
@@ -68,6 +71,9 @@
 | Progress / Submit / Approve / Reject | `PATCH /rekondisis/:id/{progress,submit,approve,reject}` | 🏢 | ✅ |
 | Selesaikan (done) | `POST /rekondisis/:id/done` | 🏢 | ✅ |
 | Bayar | `POST /rekondisis/:id/pay` | 🏢 | ✅ |
+| Lookup akun modal untuk alokasi | `GET /rekondisis/lookups/investor-capital-accounts` | 🏢 | ✅ |
+| Riwayat/alokasi dana investor | `GET,POST /rekondisis/:id/investor-funding-usages` | 🏢 | ✅ |
+| Setor lalu alokasikan 🔑 | `POST /rekondisis/:id/investor-funding-usages/deposit` | 🏢 | ✅ |
 | List item pekerjaan | `GET /rekondisis/:id/detail` | 🏢 | ✅ |
 | Detail item | `GET /rekondisis/:id/detail/:itemId` | 🏢 | ✅ |
 | Tambah item | `POST /rekondisis/:id/detail` | 🏢 | ✅ |
@@ -103,7 +109,7 @@
 | Detail order | `GET /lead-orders/:id` | 🏢 | ✅ |
 | Buat order | `POST /lead-orders` | 🏢 | ✅ |
 | Edit order | `PATCH /lead-orders/:id` | 🏢 | ✅ |
-| Ubah status order (DEAL/CANCELLED) | `PATCH /lead-orders/:id/status` | 🏢 | ✅ |
+| Ubah status order / cancel + refund DP atomik | `PATCH /lead-orders/:id/status` | 🏢 | ✅ |
 | Detail settlement | `GET /lead-orders/:id/settlement` | 🏢 | ✅ |
 | Set insentif sales | `PUT /lead-orders/:id/sales-incentive` | 🏢 | ✅ |
 | Finalisasi settlement | `POST /lead-orders/:id/settlement/finalize` | 🏢 | ✅ |
@@ -204,6 +210,7 @@
 | Histori transaksi modal | `GET /investors/:id/capital-transactions` | 🏢 | ✅ |
 | Setor modal 🔑 | `POST /investors/:id/capital/deposits` | 🏢 | ✅ |
 | Tarik modal 🔑 | `POST /investors/:id/capital/withdrawals` | 🏢 | ✅ |
+| Laporan penggunaan dana | `GET /investors/funding-usages` · `GET /investors/:id/funding-usages` | 🏢 | ✅ |
 
 ### 🤝 Kewajiban Investor — `/investor-obligations`
 | Aksi UI | Method + Endpoint | Cabang | ✔ |
@@ -279,6 +286,7 @@
 | Aksi UI | Method + Endpoint | Cabang | ✔ |
 |---|---|:--:|:--:|
 | Info user login (read-only) | `GET /auth/me` | — | ✅ |
+| Ubah password akun login | `PATCH /auth/password` | — | ✅ |
 
 ---
 
