@@ -3,10 +3,10 @@ import type {
   SiteSettings, HomepageHero, HomepageBrands, HomepageWhyUs, HomepageHowItWorks,
   HomepageFeatured, HomepageTestimonialsHeader, HomepageCta,
   AboutHero, AboutStats, AboutVisiMisi, AboutValues, AboutCta,
-  CreditSimConfig,
+  CreditSimConfig, PublicNavMenuItem,
 } from '@/features/cms/cms.types';
 
-export type { SiteSettings, CreditSimConfig };
+export type { SiteSettings, CreditSimConfig, PublicNavMenuItem };
 
 export type PublicTransmisi = 'AT' | 'MT' | 'CVT';
 export interface CatalogMainImage { filename: string }

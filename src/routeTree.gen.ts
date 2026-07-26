@@ -51,6 +51,7 @@ import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.d
 import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
 import { Route as AdminCmsSiteSettingsRouteImport } from './routes/_admin/cms.site-settings'
 import { Route as AdminCmsSimulasiRouteImport } from './routes/_admin/cms.simulasi'
+import { Route as AdminCmsMenuNavigasiRouteImport } from './routes/_admin/cms.menu-navigasi'
 import { Route as AdminCmsKontakRouteImport } from './routes/_admin/cms.kontak'
 import { Route as AdminCmsKatalogRouteImport } from './routes/_admin/cms.katalog'
 import { Route as AdminCmsHomepageRouteImport } from './routes/_admin/cms.homepage'
@@ -270,6 +271,11 @@ const AdminCmsSimulasiRoute = AdminCmsSimulasiRouteImport.update({
   path: '/cms/simulasi',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCmsMenuNavigasiRoute = AdminCmsMenuNavigasiRouteImport.update({
+  id: '/cms/menu-navigasi',
+  path: '/cms/menu-navigasi',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCmsKontakRoute = AdminCmsKontakRouteImport.update({
   id: '/cms/kontak',
   path: '/cms/kontak',
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/cms/homepage': typeof AdminCmsHomepageRoute
   '/cms/katalog': typeof AdminCmsKatalogRoute
   '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/menu-navigasi': typeof AdminCmsMenuNavigasiRoute
   '/cms/simulasi': typeof AdminCmsSimulasiRoute
   '/cms/site-settings': typeof AdminCmsSiteSettingsRoute
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/cms/homepage': typeof AdminCmsHomepageRoute
   '/cms/katalog': typeof AdminCmsKatalogRoute
   '/cms/kontak': typeof AdminCmsKontakRoute
+  '/cms/menu-navigasi': typeof AdminCmsMenuNavigasiRoute
   '/cms/simulasi': typeof AdminCmsSimulasiRoute
   '/cms/site-settings': typeof AdminCmsSiteSettingsRoute
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/_admin/cms/homepage': typeof AdminCmsHomepageRoute
   '/_admin/cms/katalog': typeof AdminCmsKatalogRoute
   '/_admin/cms/kontak': typeof AdminCmsKontakRoute
+  '/_admin/cms/menu-navigasi': typeof AdminCmsMenuNavigasiRoute
   '/_admin/cms/simulasi': typeof AdminCmsSimulasiRoute
   '/_admin/cms/site-settings': typeof AdminCmsSiteSettingsRoute
   '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/cms/homepage'
     | '/cms/katalog'
     | '/cms/kontak'
+    | '/cms/menu-navigasi'
     | '/cms/simulasi'
     | '/cms/site-settings'
     | '/cms/testimoni'
@@ -541,6 +551,7 @@ export interface FileRouteTypes {
     | '/cms/homepage'
     | '/cms/katalog'
     | '/cms/kontak'
+    | '/cms/menu-navigasi'
     | '/cms/simulasi'
     | '/cms/site-settings'
     | '/cms/testimoni'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/_admin/cms/homepage'
     | '/_admin/cms/katalog'
     | '/_admin/cms/kontak'
+    | '/_admin/cms/menu-navigasi'
     | '/_admin/cms/simulasi'
     | '/_admin/cms/site-settings'
     | '/_admin/cms/testimoni'
@@ -910,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCmsSimulasiRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/cms/menu-navigasi': {
+      id: '/_admin/cms/menu-navigasi'
+      path: '/cms/menu-navigasi'
+      fullPath: '/cms/menu-navigasi'
+      preLoaderRoute: typeof AdminCmsMenuNavigasiRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/cms/kontak': {
       id: '/_admin/cms/kontak'
       path: '/cms/kontak'
@@ -991,6 +1010,7 @@ interface AdminRouteChildren {
   AdminCmsHomepageRoute: typeof AdminCmsHomepageRoute
   AdminCmsKatalogRoute: typeof AdminCmsKatalogRoute
   AdminCmsKontakRoute: typeof AdminCmsKontakRoute
+  AdminCmsMenuNavigasiRoute: typeof AdminCmsMenuNavigasiRoute
   AdminCmsSimulasiRoute: typeof AdminCmsSimulasiRoute
   AdminCmsSiteSettingsRoute: typeof AdminCmsSiteSettingsRoute
   AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
@@ -1034,6 +1054,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCmsHomepageRoute: AdminCmsHomepageRoute,
   AdminCmsKatalogRoute: AdminCmsKatalogRoute,
   AdminCmsKontakRoute: AdminCmsKontakRoute,
+  AdminCmsMenuNavigasiRoute: AdminCmsMenuNavigasiRoute,
   AdminCmsSimulasiRoute: AdminCmsSimulasiRoute,
   AdminCmsSiteSettingsRoute: AdminCmsSiteSettingsRoute,
   AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,

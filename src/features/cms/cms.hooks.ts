@@ -8,11 +8,13 @@ import {
   sectionApi, uploadCmsImage, homepageLookupApi,
   siteSettingsApi, contactPageApi, catalogPageApi,
   testimonialApi, contactMessageApi, creditSimApi, cmsCatalogApi,
+  publicNavMenuApi,
 } from './cms.api';
 import type {
   SiteSettingsUpdate, ContactPage, CatalogPage,
   TestimonialForm, ContactStatus, CreditSimConfig,
   CmsCatalogPublishBody, CmsListParams, CmsUploadFolder,
+  PublicNavMenuForm,
 } from './cms.types';
 
 const toastOk = (message: string) => store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message }));
@@ -90,6 +92,19 @@ export const useSiteSettingsMutations = () => {
   };
 };
 
+/* ── Menu Navigasi Publik ── */
+export const usePublicNavMenus = () => useQuery({ queryKey: ['cms', 'public-nav-menus'], queryFn: publicNavMenuApi.list });
+export const usePublicNavMenuMutations = () => {
+  const qc = useQueryClient();
+  const inval = () => { qc.invalidateQueries({ queryKey: ['cms', 'public-nav-menus'] }); qc.invalidateQueries({ queryKey: ['public', 'nav-menus'] }); };
+  return {
+    create: useMutation({ mutationFn: (body: PublicNavMenuForm) => publicNavMenuApi.create(body), onSuccess: () => { inval(); toastOk('Menu ditambahkan'); } }),
+    update: useMutation({ mutationFn: (v: { id: string; body: Partial<PublicNavMenuForm> }) => publicNavMenuApi.update(v.id, v.body), onSuccess: () => { inval(); toastOk('Menu diperbarui'); } }),
+    remove: useMutation({ mutationFn: (id: string) => publicNavMenuApi.remove(id), onSuccess: () => { inval(); toastOk('Menu dihapus'); } }),
+    reorder: useMutation({ mutationFn: (orderedIds: string[]) => publicNavMenuApi.reorder(orderedIds), onSuccess: () => { inval(); toastOk('Urutan menu disimpan'); } }),
+  };
+};
+
 /* ── Header halaman ── */
 export const useContactPage = () => useQuery({ queryKey: ['cms', 'contact-page'], queryFn: contactPageApi.get });
 export const useUpdateContactPage = () => {
@@ -147,6 +162,7 @@ export const useCmsCatalogMutations = () => {
   const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
   return {
     publish: useMutation({ mutationFn: (v: { id: string; body: CmsCatalogPublishBody }) => cmsCatalogApi.publish(v.id, v.body), onSuccess: () => { inval(); toastOk('Status publikasi katalog diperbarui'); } }),
+    patchFeatured: useMutation({ mutationFn: (v: { id: string; isFeatured: boolean }) => cmsCatalogApi.patchFeatured(v.id, v.isFeatured), onSuccess: (_d, v) => { inval(); toastOk(v.isFeatured ? 'Unit ditandai sebagai unggulan' : 'Unit dihapus dari unggulan'); } }),
     uploadImage: useMutation({ mutationFn: (v: { id: string; file: File }) => cmsCatalogApi.uploadImage(v.id, v.file), onSuccess: () => { inval(); toastOk('Foto ditambahkan'); } }),
     deleteImage: useMutation({ mutationFn: (v: { id: string; imageId: string }) => cmsCatalogApi.deleteImage(v.id, v.imageId), onSuccess: () => { inval(); toastOk('Foto dihapus'); } }),
     reorderImages: useMutation({ mutationFn: (v: { id: string; orderedIds: string[] }) => cmsCatalogApi.reorderImages(v.id, v.orderedIds), onSuccess: () => { inval(); toastOk('Urutan foto diperbarui'); } }),

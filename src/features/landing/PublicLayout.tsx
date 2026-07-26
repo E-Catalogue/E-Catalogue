@@ -2,16 +2,18 @@ import { useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Car, Phone, Menu, X, MapPin, Mail, MessageCircle, Globe } from 'lucide-react';
 import { PUBLIC_NAV, WHATSAPP_URL as DEFAULT_WA } from './publicNav';
-import { usePublicSiteSettings } from './landing.hooks';
+import { usePublicSiteSettings, usePublicNavMenus } from './landing.hooks';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 
 
 const NavLogo = ({ logoUrl, companyName, tagline }: { logoUrl?: string | null; companyName: string; tagline: string }) => (
   <Link to="/" className="flex items-center gap-3">
     {logoUrl ? (
-      <img src={logoUrl} alt={companyName} className="h-10 max-w-[160px] object-contain" />
+      <div className="w-11 h-11 rounded-2xl overflow-hidden bg-surface border border-border shrink-0">
+        <img src={logoUrl} alt={companyName} className="w-full h-full object-cover" />
+      </div>
     ) : (
-      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-glow">
+      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-glow shrink-0">
         <Car size={22} className="text-white" strokeWidth={2.4} />
       </div>
     )}
@@ -25,15 +27,19 @@ const NavLogo = ({ logoUrl, companyName, tagline }: { logoUrl?: string | null; c
 export const PublicLayout = ({ children }: { children: ReactNode }) => {
   const [navOpen, setNavOpen] = useState(false);
   const { data: s } = usePublicSiteSettings();
+  const { data: menus, isError: navMenusError } = usePublicNavMenus();
 
   const companyName = s?.companyName || 'GM MOBILINDO';
   const tagline = s?.tagline || 'Used Car Specialist';
   const logoUrl = cmsImageUrl('site', s?.logoFilename);
   const waUrl = s?.whatsappNumber ? `https://wa.me/${s.whatsappNumber}` : DEFAULT_WA;
   const contactLabel = s?.navContactLabel || 'Hubungi Kami';
-  const navLinks = (s?.navLinks && s.navLinks.length > 0)
-    ? s.navLinks.map((l) => ({ to: l.path, label: l.label }))
-    : PUBLIC_NAV.map((l) => ({ to: l.to, label: l.label }));
+
+  // Array kosong adalah kondisi valid saat semua menu dinonaktifkan oleh CMS.
+  // Fallback statis hanya dipakai selama loading/ketika endpoint gagal, bukan saat hasilnya kosong.
+  const navLinks = navMenusError || menus === undefined
+    ? PUBLIC_NAV.map((l) => ({ to: l.to, label: l.label }))
+    : menus.map((l) => ({ to: l.path, label: l.label }));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Tag, Images, Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
+  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -20,7 +20,7 @@ import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvid
 import type { CmsCatalogRow, CatalogPage as CatalogPageType, PriceRange } from './cms.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 
-type ViewFilter = 'all' | 'published' | 'hidden';
+type ViewFilter = 'all' | 'published' | 'hidden' | 'featured';
 
 const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { compact: true }));
 
@@ -153,7 +153,8 @@ export const KatalogPage = () => {
   const params = {
     page: 1, limit: 100,
     search: debounced || undefined,
-    isPublished: viewFilter === 'all' ? undefined : viewFilter === 'published',
+    isPublished: viewFilter === 'published' ? true : viewFilter === 'hidden' ? false : undefined,
+    isFeatured: viewFilter === 'featured' ? true : undefined,
   };
   const { data, isLoading, isError } = useCmsCatalog(params);
   const rows = data?.data ?? [];
@@ -163,6 +164,7 @@ export const KatalogPage = () => {
   const galleryRow = rows.find((r) => r.id === galleryId) ?? null;
 
   const publishedCount = rows.filter((u) => u.isPublished).length;
+  const featuredCount = rows.filter((u) => u.isFeatured).length;
 
   const patch = (id: string, body: Parameters<typeof m.publish.mutate>[0]['body']) =>
     m.publish.mutate({ id, body }, { onError: (err) => notifyApiError(err) });
@@ -171,6 +173,7 @@ export const KatalogPage = () => {
     { key: 'all',       label: 'Semua',        icon: <Filter size={13} /> },
     { key: 'published', label: 'Ditampilkan',  icon: <Eye size={13} /> },
     { key: 'hidden',    label: 'Disembunyikan', icon: <EyeOff size={13} /> },
+    { key: 'featured',  label: 'Unggulan',      icon: <Star size={13} /> },
   ];
 
   const columns: Column<CmsCatalogRow>[] = [
@@ -231,9 +234,16 @@ export const KatalogPage = () => {
       header: 'Tayang',
       align: 'center',
       cell: (u) => (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${u.isPublished ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>
-          {u.isPublished ? <Eye size={12} /> : <EyeOff size={12} />}{u.isPublished ? 'Tayang' : 'Hidden'}
-        </span>
+        <div className="flex flex-col gap-1.5">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold w-fit ${u.isPublished ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>
+            {u.isPublished ? <Eye size={12} /> : <EyeOff size={12} />}{u.isPublished ? 'Tayang' : 'Hidden'}
+          </span>
+          {u.isFeatured && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold w-fit bg-accent-amber/10 text-accent-amber">
+              <Star size={12} className="fill-current" /> Unggulan
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -246,7 +256,14 @@ export const KatalogPage = () => {
             label: u.isPublished ? 'Sembunyikan dari Katalog' : 'Tampilkan di Katalog',
             onClick: () => patch(u.id, { isPublished: !u.isPublished }),
             variant: u.isPublished ? 'danger' : 'primary',
-            dividerAfter: true,
+          },
+          {
+            icon: <Star size={13} className={u.isFeatured ? "text-accent-amber fill-accent-amber" : ""} />,
+            label: u.isFeatured ? 'Hapus dari Unggulan' : 'Jadikan Unit Unggulan',
+            onClick: () => m.patchFeatured.mutate(
+              { id: u.id, isFeatured: !u.isFeatured },
+              { onError: (error) => notifyApiError(error) },
+            ),
           },
           {
             icon: <Sparkles size={13} />,
@@ -284,11 +301,12 @@ export const KatalogPage = () => {
       <CatalogHeaderEditor />
 
       {/* Summary stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {[
           { icon: <Car size={18} className="text-primary" />, bg: 'bg-primary/10', label: 'Total Unit', value: total },
           { icon: <Globe size={18} className="text-accent-green" />, bg: 'bg-accent-green/10', label: 'Tayang di Katalog', value: publishedCount, color: 'text-accent-green' },
           { icon: <EyeOff size={18} className="text-muted" />, bg: 'bg-muted/10', label: 'Disembunyikan', value: rows.length - publishedCount, color: 'text-muted' },
+          { icon: <Star size={18} className="text-accent-amber fill-accent-amber" />, bg: 'bg-accent-amber/10', label: 'Unit Unggulan', value: featuredCount, color: 'text-accent-amber' },
         ].map((s) => (
           <div key={s.label} className="bg-surface rounded-2xl border border-border p-4 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>{s.icon}</div>

@@ -5,7 +5,13 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 22 Juli 2026 (rev 21 — **fix bug simpan BRANCH_CONTEXT_REQUIRED + konsolidasi pemilihan cabang ke header**: (1) BUG — modul Unit, Lead, Rekondisi, Test Drive TIDAK pernah mengirim `X-Branch-Id` di mutation-nya padahal backend `router.use(resolveBranchScope)` mewajibkannya untuk OWNER/ADMIN → semua "Simpan" gagal 422. Diperbaiki di AKAR: **axios request interceptor** kini melampirkan `X-Branch-Id` OTOMATIS dari state global (`branchSlice`/`auth`) ke SEMUA request bila belum di-set eksplisit — sekali fix menutup seluruh modul & mencegah celah "lupa kirim header" di masa depan. (2) **Pemilihan cabang dikonsolidasi ke satu tempat: BranchSwitcher di header.** Selector cabang per-halaman (Dashboard, Cashflow, Book, Target, Investor Obligation, Penjualan, Pembayaran, modal Investor Capital) DIHAPUS; banner "pilih cabang" kini mengarahkan ke header. (3) Notifikasi (lonceng) & kalender di header DIHAPUS. (4) Ikon kaca pembesar di search `SearchableSelect` dirapikan (kelas `left-4.5` tak valid → distruktur ulang). (5) Pesan error branch-context dibuat ramah ("Pilih cabang aktif di header..."). `tsc`/`eslint`/`build` bersih.)
+> **Terakhir diperbarui:** 26 Juli 2026 (rev 24 — **revamp CMS/Public terimplementasi end-to-end** berdasarkan `ecatalogue-be/.prd/backend_cms_public_revamp_20260723.md`: Menu Navigasi Publik memiliki CRUD, toggle, reorder dan endpoint header/footer; CMS Katalog memiliki status/filter/toggle Unit Unggulan; homepage mendukung mode `flagged` dengan default 5 unit; logo landing rounded; seluruh slug ikon submenu seeder dikenali sidebar. Audit penutup juga memperbaiki filter backend `isFeatured`, upsert lima menu default di seeder, mapping route `CMS_PUBLIC_NAV`, fallback menu kosong, dan adaptor respons FE/BE. Build frontend serta 88 test backend lulus; test frontend masih tertahan instalasi lokal `@adobe/css-tools` yang tidak lengkap.)
+>
+> rev 23 — **PRD backend + quick-win logo rounded**: spesifikasi awal revamp CMS/Public ditulis di `.prd/backend_cms_public_revamp_20260723.md`; implementasi lengkapnya ditutup pada rev 24.
+>
+> rev 22 — **implementasi field Nama Unit** (`.prd/frontend_unit_name_20260722.md`): model `Unit` backend dapat field baru `name` (string wajib, 2–191 karakter, bukan gabungan otomatis merek/tipe). FE: tambah `name` ke tipe `Unit`/`UnitFormData`/`CatalogCard`/`CmsCatalogRow` + tipe lookup Unit (test-drive, rekondisi, lead-order, CMS homepage). Field "Nama Unit" (wajib, validasi inline) di paling atas form Tambah/Edit Unit. Helper baru `unit.display.ts` (`unitDisplayName`/`unitSubtitle`/`unitOptionLabel`) dengan fallback aman untuk data lama. Nama jadi label utama di Inventory/Pembelian/Ready Stock/Detail Unit/CMS Katalog + judul kartu & detail katalog publik (breadcrumb/heading/alt/pesan WA) + label dropdown Unit di Penjualan/Test Drive/Rekondisi/CMS featured (nama · plat, karena nama tidak unique). Plat tetap tampil sebagai identitas pendukung. `tsc`/`eslint`/`build` bersih.)
+>
+> rev 21 — **fix bug simpan BRANCH_CONTEXT_REQUIRED + konsolidasi pemilihan cabang ke header**: (1) BUG — modul Unit, Lead, Rekondisi, Test Drive TIDAK pernah mengirim `X-Branch-Id` di mutation-nya padahal backend `router.use(resolveBranchScope)` mewajibkannya untuk OWNER/ADMIN → semua "Simpan" gagal 422. Diperbaiki di AKAR: **axios request interceptor** kini melampirkan `X-Branch-Id` OTOMATIS dari state global (`branchSlice`/`auth`) ke SEMUA request bila belum di-set eksplisit — sekali fix menutup seluruh modul & mencegah celah "lupa kirim header" di masa depan. (2) **Pemilihan cabang dikonsolidasi ke satu tempat: BranchSwitcher di header.** Selector cabang per-halaman (Dashboard, Cashflow, Book, Target, Investor Obligation, Penjualan, Pembayaran, modal Investor Capital) DIHAPUS; banner "pilih cabang" kini mengarahkan ke header. (3) Notifikasi (lonceng) & kalender di header DIHAPUS. (4) Ikon kaca pembesar di search `SearchableSelect` dirapikan (kelas `left-4.5` tak valid → distruktur ulang). (5) Pesan error branch-context dibuat ramah ("Pilih cabang aktif di header..."). `tsc`/`eslint`/`build` bersih.)
 >
 > rev 20 — **audit tuntas dropdown & datepicker**: seluruh `<select>` native tersisa (9 file: Dashboard, Inventory, Investor Capital, Rekondisi Detail, Test Drive, CMS, Katalog publik, Simulasi Kredit publik) diganti `SearchableSelect`/`SelectField` bertema; `SelectField` (`Field.tsx`) DITULIS ULANG jadi wrapper tipis di atas `SearchableSelect` (1 perbaikan komponen bersama menuntaskan 33 titik pemakaian sekaligus, pola sama dgn `CurrencyField`/`useSectionForm`). Ditambah **`MonthField`** (kalender bulan+tahun kustom) menggantikan 6 `<input type="month">` polos (Target, Dashboard, Pengeluaran, Payroll ×2, Book) — melengkapi `DateField` yang sebelumnya cuma menutup granularitas harian. Hasil: nol `<select>`, nol `type="date"`, nol `type="month"` polos tersisa di seluruh app (app admin + situs publik). `tsc`/`eslint`/`build` bersih.)
 >
@@ -15,7 +21,25 @@
 
 ---
 
-## ⚠️ Status eksekusi saat ini (22 Juli 2026)
+## ⚠️ Status eksekusi saat ini (26 Juli 2026)
+
+### ✅ Revamp CMS Dashboard & Public Site (rev 24 — `.prd/backend_cms_public_revamp_20260723.md`)
+
+1. ✅ **Menu Navigasi Publik** — halaman `/cms/menu-navigasi` mendukung tambah/edit/hapus, toggle aktif, reorder naik/turun, pencarian dan preview ikon. Header/footer memakai `/public/nav-menus`; array kosong tidak lagi memunculkan fallback statis sehingga semua menu bisa dinonaktifkan.
+2. ✅ **Logo landing rounded** — logo header/footer memakai wrapper `rounded-2xl` konsisten dengan dashboard.
+3. ✅ **Unit Unggulan dari CMS Katalog** — badge, aksi toggle, filter khusus, dan kartu ringkasan tersedia. CMS Homepage memiliki mode `flagged`; backend mengambil maksimum 5 unit yang featured, tayang, aktif, dan ready stock.
+4. ✅ **Ikon submenu dari seeder** — backend mengisi `Menu.icon`; resolver frontend kini mengenali seluruh slug yang dipakai seeder, termasuk menu CMS baru.
+5. 🟡 **Operasional deployment** — kode dan kontrak selesai; migration + seed masih harus dijalankan pada database environment tujuan sebelum smoke test akun CMS.
+
+### 🏷️ Field Nama Unit (rev 22 — `.prd/frontend_unit_name_20260722.md`)
+Backend menambah field `name` (string wajib, display name bisnis, mis. "Avanza G AT Putih 2023" — BUKAN gabungan otomatis merek/tipe/tahun). Implementasi FE:
+- **Tipe**: `name` ditambah ke `Unit`, `UnitFormData`, `CatalogCard` (publik), `CmsCatalogRow`, dan tipe lookup Unit terpisah (`TestDriveUnitLookup` + `TestDrive.unit`, `Rekondisi.unit`, `UnitSummary`, lead-order form lookup unit, CMS `HomepageLookup.units`). Tipe lookup pakai `name?: string | null` untuk compatibility window; tipe utama pakai `name: string`.
+- **Helper baru** `src/features/units/unit.display.ts`: `unitDisplayName()` (fallback aman `name` → merek+tipe → plat → id untuk data lama), `unitSubtitle()`, `unitOptionLabel()` (nama · plat untuk dropdown).
+- **Form Tambah/Edit Unit** (`UnitFormModal`): `TextField` "Nama Unit" (wajib, `sm:col-span-2`) di paling atas sebelum Merek. Validasi inline 2–191 karakter, trim saat submit, tombol simpan disabled bila invalid. Edit mengisi dari `unit.name`, judul modal edit pakai nama Unit.
+- **Tampilan internal** (nama jadi label utama, plat tetap identitas pendukung baris kedua): Inventory, Pembelian (kolom jadi "Nama Unit"), Ready Stock (`UnitCard`), Detail Unit (heading), konfirmasi hapus.
+- **CMS & publik**: CMS Katalog (kolom + subtitle modal foto), kartu katalog publik (`PublicUnitCard`), detail publik (`KatalogDetailPage`: breadcrumb, heading, alt gambar, pesan WhatsApp) — semua pakai nama, merek/tipe jadi subtitle tanpa duplikasi.
+- **Dropdown Unit** (label `nama · plat`, sublabel merek/tipe — nama tidak unique): Penjualan (`SalesOrderFormModal`), Test Drive (`TestDriveFormModal`), Rekondisi (2 picker), CMS homepage featured unit.
+- Pencarian tetap pakai param `search` (backend sudah mencakup `name`), tidak ada perubahan query key. `tsc`/`eslint`/`build` bersih.
 
 ### 🩹 Fix bug simpan (BRANCH_CONTEXT_REQUIRED) + konsolidasi cabang (rev 21)
 **Bug**: OWNER/ADMIN menyimpan data di Inventory (dan modul lain) gagal 422 `BRANCH_CONTEXT_REQUIRED`. Akar masalah: backend memasang `router.use(resolveBranchScope)` di 16 modul (unit, lead, lead-order, test-drive, rekondisi, cash-account, cash-transaction, cash-flow, operational-expense, recurring-expense, payroll, book, investor-capital, investor-obligation, dashboard, private-media) yang mewajibkan header `X-Branch-Id` untuk semua mutation role global — tapi FE modul **Unit, Lead, Rekondisi, Test Drive** tak pernah mengirimnya (hanya finance/target/book/investor yang sudah, via passing manual).
@@ -158,6 +182,7 @@ Ditemukan infrastruktur yang **sudah dibangun matang** untuk pola ini (kemungkin
 | PRD file | FE | Status |
 |---|---|:--:|
 | `create_cms_site_setting`, `create_cms_homepage`, `create_cms_about`, `create_cms_testimonial`, `create_cms_catalog`, `create_cms_contact`, `create_cms_credit_simulation` | `cms/cms.api.ts` | ✅ sesuai — seluruh 7 modul CMS dicek field-by-field, endpoint & body cocok kontrak persis. |
+| `backend_cms_public_revamp_20260723.md` | `cms/PublicNavMenuPage.tsx`, `cms/KatalogPage.tsx`, `landing/PublicLayout.tsx` | ✅ selesai rev 24 — CRUD/toggle/reorder nav, Unit Unggulan, logo rounded, dan ikon submenu terintegrasi. |
 
 > **Situs publik** (`src/features/landing/`) — dicek terpisah, **tidak ada drift**: seluruh endpoint `/public/*` (site-settings, homepage, about, contact-page, catalog+brands+detail+related, credit-simulation config+calculate, contact-messages) cocok `public.route.js` persis, termasuk penanganan field legacy vs field asli di `mapCatalogUnit()`.
 
@@ -167,8 +192,10 @@ Ditemukan infrastruktur yang **sudah dibangun matang** untuk pola ini (kemungkin
 - ⬜ **Belum ada FE sama sekali: 0**
 
 ### 🎯 Sisa pekerjaan
-Tidak ada item 🔴/🟠 tersisa dari daftar PRD. ~~Angkat `useBranchScope()` jadi context provider global~~ sudah tuntas di rev 19 (`branchSlice` + `BranchSwitcher`). Yang tersisa murni peningkatan non-blocking:
-1. 🟢 **Code-split bundle** — `npm run build` memperingatkan chunk utama >500kB gzip; pertimbangkan dynamic `import()` per rute kalau ukuran bundle mulai jadi masalah nyata.
+Tidak ada item implementasi 🔴/🟠 tersisa dari revamp CMS/Public. Sisa tindak lanjut:
+1. 🟠 **Deployment database** — jalankan migration dan seed backend pada environment tujuan, lalu smoke test permission CMS.
+2. 🟢 **Pulihkan test frontend** — reinstall dependency karena `node_modules/@adobe/css-tools` kehilangan file ESM; test berhenti saat import, bukan karena assertion fitur CMS.
+3. 🟢 **Code-split bundle** — `npm run build` memperingatkan chunk utama >500kB gzip; pertimbangkan dynamic `import()` per rute kalau ukuran bundle mulai jadi masalah nyata.
 
 ---
 
@@ -226,7 +253,7 @@ Tidak ada item 🔴/🟠 tersisa dari daftar PRD. ~~Angkat `useBranchScope()` ja
 - [x] `PembayaranPage.tsx` — view order dengan kolom totalTerbayar/sisa/isPaid, filter belum/lunas, summary card, klik Detail buka OrderDetailModal
 
 ### CMS (API nyata) — *rev 6: v2 per-section* (acuan docs/frontend/cms_frontend_integration.md)
-- [x] `cms.types.ts` — v2 per-section (SiteSettings + navLinks, Homepage sections hero/brands/whyUs/howItWorks/featured/testimonials/cta, About sections, ContactPage, CatalogPage, Testimonial, ContactMessage, CreditSimConfig, CmsCatalogRow)
+- [x] `cms.types.ts` — v2 per-section (SiteSettings + PublicNavMenu terpisah, Homepage sections hero/brands/whyUs/howItWorks/featured/testimonials/cta, About sections, ContactPage, CatalogPage, Testimonial, ContactMessage, CreditSimConfig, CmsCatalogRow)
 - [x] `cms.api.ts` — `sectionApi.get/update(page,section)` generik + `/cms/{page}/hero-image` + `uploadCmsImage(folder)` + site-settings/contact-page/catalog-page/testimonials/contact-messages/credit-sim/catalog. **Modul Banner dihapus (v2).**
 - [x] `cms.hooks.ts` — `useCmsSection`/`useUpdateCmsSection` generik, `usePublicSiteSettings`, dll (toast `variant:'success'`)
 - [x] **ImageUpload** — komponen upload dengan **preview gambar** (drag/drop, validasi 5MB JPG/PNG, preview instan)
@@ -240,7 +267,7 @@ Tidak ada item 🔴/🟠 tersisa dari daftar PRD. ~~Angkat `useBranchScope()` ja
 - [x] `public.types.ts` — CatalogCard, CatalogDetail, PublicHomepage/About (agregat), CreditCalcResult, CatalogQuery, dll
 - [x] `landing.api.ts` + `landing.hooks.ts` — semua endpoint `/public/*` (site-settings, homepage, about, catalog + brands + detail + related, catalog-page, contact-page, credit config + **calculate**, submit contact)
 - [x] `Ic.tsx` — resolver string ikon lucide (dari CMS) → komponen · `PublicUnitCard` — kartu unit dari `CatalogCard` (harga/km/transmisi API)
-- [x] **PublicLayout** — nama/logo/tagline/navLinks/footer/sosial/WA/copyright dinamis dari `site-settings`
+- [x] **PublicLayout** — nama/logo/tagline/footer/sosial/WA/copyright dari `site-settings`; menu header aktif dari `GET /public/nav-menus`
 - [x] **LandingPage** → `GET /public/homepage` (7 section, hormati `isVisible`, ikon & unit unggulan dari API, reveal animasi)
 - [x] **KatalogPage (publik)** → `GET /public/catalog` (filter server-side: search/merek/transmisi/BBM/harga/sort + paginasi) + brands + catalog-page header
 - [x] **KatalogDetailPage** → `GET /public/catalog/:id` + related + config (galeri, spesifikasi, kelengkapan/dokumen, WA prefilled, cicilan pakai `installmentFromFactor`)
@@ -341,7 +368,8 @@ Tidak ada item 🔴/🟠 tersisa dari daftar PRD. ~~Angkat `useBranchScope()` ja
 | Rekondisi (list/progress/done + detail items) | `rekondisiApi` | ✅ |
 | Pengeluaran | — | ⬜ |
 | Laporan | — | ⬜ |
-| **CMS — Pengaturan Situs** (`SiteSettingsPage`) | `siteSettingsApi` (+logo/favicon/navLinks) | ✅ |
+| **CMS — Pengaturan Situs** (`SiteSettingsPage`) | `siteSettingsApi` (+logo/favicon) | ✅ |
+| **CMS — Menu Navigasi** (`PublicNavMenuPage`) | `publicNavMenuApi` (CRUD/toggle/reorder) | ✅ |
 | **CMS — Beranda 7 section** (`HomepagePage`) | `sectionApi('homepage')` + hero-image | ✅ |
 | **CMS — Tentang 5 section** (`AboutPage`) | `sectionApi('about')` + hero-image | ✅ |
 | **CMS — Testimoni** (`TestimoniPage`) | `testimonialApi` | ✅ |
@@ -407,7 +435,8 @@ Tidak ada item 🔴/🟠 tersisa dari daftar PRD. ~~Angkat `useBranchScope()` ja
 
 | # | Modul | Halaman FE | Endpoint | Status |
 |---|-------|-----------|----------|:--:|
-| 1 | Pengaturan Situs | `SiteSettingsPage` (`/cms/site-settings`) | `GET/PUT /cms/site-settings` + logo/favicon + navLinks | ✅ |
+| 1 | Pengaturan Situs | `SiteSettingsPage` (`/cms/site-settings`) | `GET/PUT /cms/site-settings` + logo/favicon | ✅ |
+| 1a | Menu Navigasi | `PublicNavMenuPage` (`/cms/menu-navigasi`) | CRUD/toggle/reorder `/cms/public-nav-menus*` | ✅ |
 | 2 | Beranda (7 section) | `HomepagePage` (`/cms/homepage`) | `/cms/homepage/{hero,brands,why-us,how-it-works,featured,testimonials,cta}` + hero-image | ✅ |
 | 3 | Tentang (5 section) | `AboutPage` (`/cms/about`) | `/cms/about/{hero,stats,visi-misi,values,cta}` + hero-image | ✅ |
 | 4 | Testimoni | `TestimoniPage` (`/cms/testimoni`) | CRUD `/cms/testimonials*` + publish + avatar | ✅ |
@@ -421,7 +450,7 @@ Pendukung: `ImageUpload` (preview + validasi), `useSectionForm`/`useCmsSection` 
 
 | Halaman publik | Endpoint yang dipakai | Status |
 |----------------|-----------------------------|:--:|
-| Layout (`PublicLayout`) header/footer | `GET /public/site-settings` (`navLinks`, logo, sosial) | ✅ `usePublicSiteSettings` |
+| Layout (`PublicLayout`) header/footer | `GET /public/site-settings` (logo, sosial) + `GET /public/nav-menus` (menu aktif) | ✅ `usePublicSiteSettings` + `usePublicNavMenus` |
 | Beranda (`LandingPage`) | `GET /public/homepage` (agregat 7 section) | ✅ |
 | Katalog (`KatalogPage` publik) | `GET /public/catalog`, `/catalog/brands`, `/catalog-page` | ✅ `usePublicCatalog`/`usePublicCatalogBrands`/`usePublicCatalogPage` |
 | Detail (`KatalogDetailPage`) | `GET /public/catalog/:id`, `/related`, config | ✅ |

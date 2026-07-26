@@ -175,8 +175,16 @@ const FeaturedEditor = () => {
         <TextField label="Jumlah Unit Ditampilkan" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} />
       </div>
       <ModeSelect value={form.mode} onChange={(v) => patch({ mode: v })}
-        autoLabel="Otomatis (terbaru)" manualLabel="Pilih Sendiri"
-        hint={form.mode === 'auto' ? 'Menampilkan unit tayang terbaru secara otomatis.' : 'Pilih unit tertentu untuk ditonjolkan di beranda.'} />
+        options={[
+          { value: 'auto', label: 'Otomatis (terbaru)' },
+          { value: 'manual', label: 'Pilih Sendiri' },
+          { value: 'flagged', label: 'Unit Unggulan' },
+        ]}
+        hint={
+          form.mode === 'auto' ? 'Menampilkan unit tayang terbaru secara otomatis.' :
+          form.mode === 'flagged' ? 'Menampilkan unit yang ditandai sebagai unggulan secara otomatis.' :
+          'Pilih unit tertentu untuk ditonjolkan di beranda.'
+        } />
       {form.mode === 'manual' && (
         <ManualPicker
           loading={lookupLoading}

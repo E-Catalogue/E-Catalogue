@@ -101,6 +101,7 @@ export const PATH_BY_CODE: Record<string, string> = {
   LEAD_PAYMENT: '/pembayaran',
   // CMS v2 (per-section) — kode menu backend → route FE
   CMS_SITE_SETTING: '/cms/site-settings',
+  CMS_PUBLIC_NAV: '/cms/menu-navigasi',
   CMS_HOMEPAGE: '/cms/homepage',
   CMS_ABOUT: '/cms/about',
   CMS_KATALOG: '/cms/katalog',

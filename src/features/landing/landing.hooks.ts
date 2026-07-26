@@ -7,6 +7,9 @@ const FIVE_MIN = 5 * 60_000;
 export const usePublicSiteSettings = () =>
   useQuery({ queryKey: ['public', 'site-settings'], queryFn: landingApi.getSiteSettings, staleTime: FIVE_MIN });
 
+export const usePublicNavMenus = () =>
+  useQuery({ queryKey: ['public', 'nav-menus'], queryFn: landingApi.getNavMenus, staleTime: FIVE_MIN });
+
 export const usePublicHomepage = () =>
   useQuery({ queryKey: ['public', 'homepage'], queryFn: landingApi.getHomepage, staleTime: FIVE_MIN });
 

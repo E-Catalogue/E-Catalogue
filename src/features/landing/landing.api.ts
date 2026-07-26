@@ -4,6 +4,7 @@ import type {
   SiteSettings, PublicHomepage, PublicAbout, ContactPageData,
   CatalogCard, CatalogDetail, CatalogBrand, CatalogQuery,
   CreditSimConfig, CreditCalcInput, CreditCalcResult,
+  PublicNavMenuItem,
 } from './public.types';
 
 /** Header + rentang harga halaman katalog publik. */
@@ -57,6 +58,7 @@ const mapCatalogUnit = <T extends LegacyCatalogShape>(u: T): T => {
 
 export const landingApi = {
   getSiteSettings: () => apiClient.get<ApiResponse<SiteSettings>>('/public/site-settings').then((r) => r.data.data),
+  getNavMenus: () => apiClient.get<ApiResponse<PublicNavMenuItem[]>>('/public/nav-menus').then((r) => r.data.data),
   getHomepage: () => apiClient.get<ApiResponse<PublicHomepage>>('/public/homepage').then((r) => r.data.data),
   getAbout: () => apiClient.get<ApiResponse<PublicAbout>>('/public/about').then((r) => r.data.data),
   getContactPage: () => apiClient.get<ApiResponse<ContactPageData>>('/public/contact-page').then((r) => r.data.data),

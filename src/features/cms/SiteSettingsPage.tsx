@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Save, Building2, Phone, Share2, Link2, Plus, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import { Settings, Save, Building2, Phone, Share2, Loader2, ExternalLink } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { Button } from '@/shared/components/ui/Button';
@@ -10,11 +10,11 @@ import { cmsImageUrl } from './cms.api';
 import { useSiteSettings, useSiteSettingsMutations } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
 import { TextArea } from './CmsKit';
-import type { SiteSettingsRaw, SiteSettingsUpdate, NavLink } from './cms.types';
+import type { SiteSettingsRaw, SiteSettingsUpdate } from './cms.types';
 
 const empty: SiteSettingsRaw = {
   companyName: '', tagline: '', logoFilename: null, faviconFilename: null, footerDescription: '',
-  navContactLabel: 'Hubungi Kami', navLinks: [], whatsappNumber: '', phone: '', email: '', address: '',
+  navContactLabel: 'Hubungi Kami', whatsappNumber: '', phone: '', email: '', address: '',
   businessHours: '', mapEmbedUrl: '', mapLat: null, mapLng: null,
   socialInstagram: '', socialFacebook: '', socialTiktok: '', socialWebsite: '', copyrightText: '',
 };
@@ -24,11 +24,10 @@ export const SiteSettingsPage = () => {
   const { update, uploadLogo, uploadFavicon } = useSiteSettingsMutations();
   const confirmAction = useConfirmedAction();
   const [draft, setDraft] = useState<SiteSettingsRaw | null>(null);
-  const f = draft ?? (data ? { ...empty, ...data, navLinks: data.navLinks ?? [] } : empty);
+  const f = draft ?? (data ? { ...empty, ...data } : empty);
   const setF = setDraft;
 
   const set = <K extends keyof SiteSettingsRaw>(k: K, v: SiteSettingsRaw[K]) => setF((p) => ({ ...(p ?? f), [k]: v }));
-  const setLink = (i: number, patch: Partial<NavLink>) => set('navLinks', (f.navLinks ?? []).map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
   if (isLoading) return <div className="flex items-center justify-center py-24 text-muted"><Loader2 size={24} className="animate-spin" /></div>;
   if (isError) return <div className="text-center py-24 text-muted font-semibold text-sm">Gagal memuat pengaturan situs.</div>;
@@ -36,7 +35,7 @@ export const SiteSettingsPage = () => {
   const save = () => {
     const body: SiteSettingsUpdate = {
       companyName: f.companyName ?? '', tagline: f.tagline ?? '', footerDescription: f.footerDescription ?? '',
-      navContactLabel: f.navContactLabel ?? '', navLinks: f.navLinks ?? [],
+      navContactLabel: f.navContactLabel ?? '',
       whatsappNumber: f.whatsappNumber ?? '', phone: f.phone ?? '', email: f.email ?? '', address: f.address ?? '',
       businessHours: f.businessHours ?? '', mapEmbedUrl: f.mapEmbedUrl || null,
       socialInstagram: f.socialInstagram || null, socialFacebook: f.socialFacebook || null,
@@ -58,7 +57,7 @@ export const SiteSettingsPage = () => {
     <div className="max-w-[1100px] mx-auto animate-float-up space-y-5">
       <PageHeader
         title="Pengaturan Situs"
-        description="Identitas, kontak, menu navigasi, dan media sosial yang dipakai di seluruh website."
+        description="Kelola identitas, kontak, dan media sosial yang dipakai di seluruh website."
         action={
           <div className="flex gap-2">
             <a href="/" target="_blank" rel="noopener noreferrer"><Button variant="secondary" icon={<ExternalLink size={16} />}>Preview</Button></a>
@@ -96,19 +95,7 @@ export const SiteSettingsPage = () => {
         <TextField label="URL Embed Peta" value={f.mapEmbedUrl ?? ''} onChange={(e) => set('mapEmbedUrl', e.target.value)} placeholder="https://..." />
       </SectionCard>
 
-      {/* Menu navigasi */}
-      <SectionCard title="Menu Navigasi (Header/Footer)" icon={<Link2 size={16} />}>
-        <div className="space-y-2.5">
-          {(f.navLinks ?? []).map((l, i) => (
-            <div key={i} className="flex items-end gap-2 rounded-xl border border-border bg-surface-soft p-2.5">
-              <TextField label="Label" wrapClass="flex-1" value={l.label} onChange={(e) => setLink(i, { label: e.target.value })} placeholder="Beranda" />
-              <TextField label="Path" wrapClass="flex-1" value={l.path} onChange={(e) => setLink(i, { path: e.target.value })} placeholder="/katalog" />
-              <button onClick={() => set('navLinks', (f.navLinks ?? []).filter((_, idx) => idx !== i))} className="p-2 mb-0.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>
-            </div>
-          ))}
-          <button onClick={() => set('navLinks', [...(f.navLinks ?? []), { label: '', path: '/' }])} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline"><Plus size={14} /> Tambah Menu</button>
-        </div>
-      </SectionCard>
+
 
       {/* Sosial */}
       <SectionCard title="Media Sosial" icon={<Share2 size={16} />}>

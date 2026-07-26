@@ -297,7 +297,7 @@
 |---|---|:--:|
 | Opsi cabang untuk switcher | `GET /branch-context/options` | ✅ |
 
-### 🎨 CMS Admin — `/cms` (menu: Site Settings, Homepage, About, Katalog, Testimoni, Kontak, Simulasi Kredit)
+### 🎨 CMS Admin — `/cms` (menu: Site Settings, Menu Navigasi, Homepage, About, Katalog, Testimoni, Kontak, Simulasi Kredit)
 | Aksi UI | Method + Endpoint | ✔ |
 |---|---|:--:|
 | Section homepage/about: baca/simpan | `GET,PUT /cms/:page/:section` | ✅ |
@@ -306,17 +306,19 @@
 | Upload generik | `POST /cms/uploads/:folder` | ✅ |
 | Site settings: baca/simpan | `GET,PUT /cms/site-settings` | ✅ |
 | Upload logo/favicon | `POST /cms/site-settings/{logo,favicon}` | ✅ |
+| Menu navigasi: list/tambah/edit/hapus/reorder | `GET,POST /cms/public-nav-menus` · `PATCH,DELETE /cms/public-nav-menus/:id` · `PATCH /cms/public-nav-menus/reorder` | ✅ |
 | Contact page: baca/simpan | `GET,PUT /cms/contact-page` | ✅ |
 | Catalog page: baca/simpan | `GET,PUT /cms/catalog-page` | ✅ |
 | Testimoni: list/tambah/edit/publish/avatar/hapus | `GET,POST /cms/testimonials` · `PUT,PATCH .../publish,POST .../avatar,DELETE /:id` | ✅ |
 | Pesan kontak: list/count/status/hapus | `GET /cms/contact-messages` · `.../count-new` · `PATCH /:id/status` · `DELETE /:id` | ✅ |
 | Simulasi kredit config: baca/simpan | `GET,PUT /cms/credit-simulation/config` | ✅ |
-| Katalog unit CMS: list/publish/foto | `GET /cms/catalog` · `PATCH /:id/publish` · `POST /:id/images` · `PATCH /:id/images/reorder` · `DELETE /:id/images/:imageId` | ✅ |
+| Katalog unit CMS: list/publish/unggulan/foto | `GET /cms/catalog` · `PATCH /:id/publish` · `PATCH /:id/featured` · `POST /:id/images` · `PATCH /:id/images/reorder` · `DELETE /:id/images/:imageId` | ✅ |
 
 ### 🌐 Situs Publik — `/public` (landing, katalog, simulasi, kontak)
 | Aksi UI | Method + Endpoint | ✔ |
 |---|---|:--:|
 | Site settings publik | `GET /public/site-settings` | ✅ |
+| Menu header aktif | `GET /public/nav-menus` | ✅ |
 | Homepage / About / Contact / Catalog page | `GET /public/{homepage,about,contact-page,catalog-page}` | ✅ |
 | Katalog: list/brands/detail/related | `GET /public/catalog` · `.../brands` · `/:id` · `/:id/related` | ✅ |
 | Simulasi kredit: config/hitung | `GET /public/credit-simulation/config` · `POST .../calculate` | ✅ |

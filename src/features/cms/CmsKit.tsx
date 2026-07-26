@@ -95,29 +95,36 @@ export const AutoValueField = ({ label = 'Nilai', value, onChange, autoHint = 'D
   );
 };
 
-/** Dropdown mode Otomatis/Manual dengan penjelasan (brands, featured). */
-export const ModeSelect = ({ value, onChange, autoLabel, manualLabel, hint }: {
-  value: 'auto' | 'manual'; onChange: (v: 'auto' | 'manual') => void;
-  autoLabel: string; manualLabel: string; hint?: string;
-}) => (
-  <div>
-    <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Sumber Data</label>
-    <div className="grid grid-cols-2 gap-2">
-      {([['auto', autoLabel], ['manual', manualLabel]] as const).map(([v, lbl]) => (
-        <button key={v} type="button" onClick={() => onChange(v)}
-          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-left border transition-colors ${
-            value === v ? 'bg-primary/8 border-primary' : 'bg-surface-soft border-border hover:border-primary/40'
-          }`}>
-          <span className={`w-4 h-4 rounded-full border-2 shrink-0 grid place-items-center ${value === v ? 'border-primary' : 'border-muted/40'}`}>
-            {value === v && <span className="w-2 h-2 rounded-full bg-primary" />}
-          </span>
-          <span className={`text-[12px] font-bold ${value === v ? 'text-primary' : 'text-ink-soft'}`}>{lbl}</span>
-        </button>
-      ))}
+export const ModeSelect = <T extends string,>({ value, onChange, autoLabel, manualLabel, hint, options }: {
+  value: T; onChange: (v: T) => void;
+  autoLabel?: string; manualLabel?: string; hint?: string;
+  options?: { value: T; label: string }[];
+}) => {
+  const opts = options ?? ([
+    { value: 'auto', label: autoLabel ?? 'Otomatis' },
+    { value: 'manual', label: manualLabel ?? 'Pilih Sendiri' },
+  ] as { value: T; label: string }[]);
+  const gridClass = opts.length >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2';
+  return (
+    <div>
+      <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Sumber Data</label>
+      <div className={`grid grid-cols-1 gap-2 ${gridClass}`}>
+        {opts.map((o) => (
+          <button key={o.value} type="button" onClick={() => onChange(o.value)}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-left border transition-colors ${
+              value === o.value ? 'bg-primary/8 border-primary' : 'bg-surface-soft border-border hover:border-primary/40'
+            }`}>
+            <span className={`w-4 h-4 rounded-full border-2 shrink-0 grid place-items-center ${value === o.value ? 'border-primary' : 'border-muted/40'}`}>
+              {value === o.value && <span className="w-2 h-2 rounded-full bg-primary" />}
+            </span>
+            <span className={`text-[12px] font-bold ${value === o.value ? 'text-primary' : 'text-ink-soft'}`}>{o.label}</span>
+          </button>
+        ))}
+      </div>
+      {hint && <p className="text-[11px] text-muted font-medium mt-1.5">{hint}</p>}
     </div>
-    {hint && <p className="text-[11px] text-muted font-medium mt-1.5">{hint}</p>}
-  </div>
-);
+  );
+};
 
 /** Editor daftar statistik {value,label,icon?}. */
 export const StatsEditor = ({ items, onChange, withIcon }: {

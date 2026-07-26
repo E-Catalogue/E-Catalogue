@@ -17,7 +17,19 @@ export interface SectionMeta {
 }
 
 /* ── Site Settings (singleton) ── */
-export interface NavLink { label: string; path: string; }
+export interface PublicNavMenu {
+  id: string;
+  label: string;
+  path: string;
+  icon: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PublicNavMenuForm = Omit<PublicNavMenu, 'id' | 'createdAt' | 'updatedAt'>;
+export type PublicNavMenuItem = Pick<PublicNavMenu, 'id' | 'label' | 'path' | 'icon'>;
 
 /** Bentuk PUBLIK — sosial dibungkus objek `social`. */
 export interface SiteSettings {
@@ -27,7 +39,6 @@ export interface SiteSettings {
   faviconFilename: string | null;
   footerDescription: string | null;
   navContactLabel: string;
-  navLinks: NavLink[];
   whatsappNumber: string | null;
   phone: string | null;
   email: string | null;
@@ -48,7 +59,6 @@ export interface SiteSettingsRaw {
   faviconFilename: string | null;
   footerDescription: string | null;
   navContactLabel: string | null;
-  navLinks: NavLink[] | null;
   whatsappNumber: string | null;
   phone: string | null;
   email: string | null;
@@ -69,7 +79,6 @@ export interface SiteSettingsUpdate {
   tagline?: string;
   footerDescription?: string;
   navContactLabel?: string;
-  navLinks?: NavLink[];
   whatsappNumber?: string;
   phone?: string;
   email?: string;
@@ -115,7 +124,7 @@ export interface HomepageHowItWorks extends SectionMeta {
 export interface HomepageFeatured extends SectionMeta {
   eyebrow: string; title: string;
   seeAllLabel: string; seeAllLink: string;
-  mode: 'auto' | 'manual';
+  mode: 'auto' | 'manual' | 'flagged';
   unitIds: string[];
   limit: number;
 }
@@ -211,6 +220,7 @@ export interface CmsCatalogRow {
   statusKatalog: StatusKatalog;
   isPublished: boolean;
   isNew: boolean;
+  isFeatured: boolean;
   deskripsi: string | null;
   imageCount: number;
   images: CmsCatalogImage[];

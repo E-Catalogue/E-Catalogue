@@ -8,6 +8,7 @@ import type {
   CreditSimConfig,
   CmsCatalogRow, CmsCatalogPublishBody, CmsCatalogImage,
   CmsListParams, CmsUploadFolder,
+  PublicNavMenu, PublicNavMenuForm,
 } from './cms.types';
 
 /** URL gambar CMS: dilayani di root origin. Folder: site|page|unit|testimoni. */
@@ -48,9 +49,18 @@ export const uploadCmsImage = (folder: CmsUploadFolder, file: File) =>
 export const siteSettingsApi = {
   get: () => apiClient.get<ApiResponse<SiteSettingsRaw>>('/cms/site-settings').then((r) => r.data.data),
   getPublic: () => apiClient.get<ApiResponse<SiteSettings>>('/public/site-settings').then((r) => r.data.data),
-  update: (body: SiteSettingsUpdate) => apiClient.put<ApiResponse<SiteSettings>>('/cms/site-settings', body).then((r) => r.data.data),
+  update: (body: SiteSettingsUpdate) => apiClient.put<ApiResponse<SiteSettingsRaw>>('/cms/site-settings', body).then((r) => r.data.data),
   uploadLogo: (file: File) => apiClient.post<ApiResponse<{ filename: string }>>('/cms/site-settings/logo', fileForm(file), uploadCfg).then((r) => r.data.data),
   uploadFavicon: (file: File) => apiClient.post<ApiResponse<{ filename: string }>>('/cms/site-settings/favicon', fileForm(file), uploadCfg).then((r) => r.data.data),
+};
+
+/* ── Menu Navigasi Publik ── */
+export const publicNavMenuApi = {
+  list: () => apiClient.get<ApiResponse<PublicNavMenu[]>>('/cms/public-nav-menus').then((r) => r.data.data),
+  create: (body: PublicNavMenuForm) => apiClient.post<ApiResponse<PublicNavMenu>>('/cms/public-nav-menus', body).then((r) => r.data.data),
+  update: (id: string, body: Partial<PublicNavMenuForm>) => apiClient.patch<ApiResponse<PublicNavMenu>>(`/cms/public-nav-menus/${id}`, body).then((r) => r.data.data),
+  remove: (id: string) => apiClient.delete(`/cms/public-nav-menus/${id}`).then((r) => r.data),
+  reorder: (orderedIds: string[]) => apiClient.patch<ApiResponse<PublicNavMenu[]>>('/cms/public-nav-menus/reorder', { orderedIds }).then((r) => r.data.data),
 };
 
 /* ── Header halaman ── */
@@ -91,7 +101,15 @@ export const creditSimApi = {
 export const cmsCatalogApi = {
   list: (params: CmsListParams) => apiClient.get<ApiResponse<CmsCatalogRow[]>>('/cms/catalog', { params }).then((r) => r.data),
   publish: (id: string, body: CmsCatalogPublishBody) => apiClient.patch<ApiResponse<CmsCatalogRow>>(`/cms/catalog/${id}/publish`, body).then((r) => r.data.data),
-  uploadImage: (id: string, file: File) => apiClient.post<ApiResponse<CmsCatalogImage>>(`/cms/catalog/${id}/images`, fileForm(file), uploadCfg).then((r) => r.data.data),
+  patchFeatured: (id: string, isFeatured: boolean) => apiClient.patch<ApiResponse<CmsCatalogRow>>(`/cms/catalog/${id}/featured`, { isFeatured }).then((r) => r.data.data),
+  uploadImage: (id: string, file: File) =>
+    apiClient
+      .post<ApiResponse<{ id: string; filename: string; sequence: number }>>(`/cms/catalog/${id}/images`, fileForm(file), uploadCfg)
+      .then((r): CmsCatalogImage => ({
+        id: r.data.data.id,
+        filename: r.data.data.filename,
+        sortOrder: r.data.data.sequence,
+      })),
   reorderImages: (id: string, orderedIds: string[]) => apiClient.patch<ApiResponse<CmsCatalogRow>>(`/cms/catalog/${id}/images/reorder`, { orderedIds }).then((r) => r.data.data),
   deleteImage: (id: string, imageId: string) => apiClient.delete(`/cms/catalog/${id}/images/${imageId}`).then((r) => r.data),
 };
