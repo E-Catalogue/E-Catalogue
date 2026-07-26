@@ -217,7 +217,11 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       funding: unit
         ? undefined
         : form.fundingSource === 'INVESTOR'
-          ? { fundingSource: 'INVESTOR', investorId: form.investorId, finalCyclePolicy: form.finalCyclePolicy || undefined }
+          ? {
+              fundingSource: 'INVESTOR',
+              investorId: form.investorId,
+              finalCyclePolicy: fundingRequiresFinalCycle ? form.finalCyclePolicy || undefined : undefined,
+            }
           : { fundingSource: 'COMPANY_OWNED' },
     };
     if (unit) {
@@ -310,7 +314,15 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                 label="Sumber Dana"
                 required
                 value={form.fundingSource}
-                onChange={(e) => setForm((current) => ({ ...current, fundingSource: e.target.value as FundingSource, investorId: '', finalCyclePolicy: '' }))}
+                onChange={(e) => {
+                  const fundingSource = e.target.value as FundingSource;
+                  setForm((current) => ({
+                    ...current,
+                    fundingSource,
+                    investorId: '',
+                    finalCyclePolicy: fundingSource === 'INVESTOR' ? 'FULL' : '',
+                  }));
+                }}
                 options={[
                   { value: 'COMPANY_OWNED', label: 'Milik Perusahaan' },
                   { value: 'INVESTOR', label: 'Investor' },
@@ -321,7 +333,16 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                   label="Investor"
                   required
                   value={form.investorId}
-                  onChange={(v) => setForm((current) => ({ ...current, investorId: v, finalCyclePolicy: '' }))}
+                  onChange={(v) => {
+                    const investor = investors.find((item) => item.id === v);
+                    setForm((current) => ({
+                      ...current,
+                      investorId: v,
+                      finalCyclePolicy: investor?.scheme === 'FIXED_MONTHLY'
+                        ? (current.finalCyclePolicy || 'FULL')
+                        : '',
+                    }));
+                  }}
                   loading={lookupsLoading}
                   options={investors.map((i) => ({ value: i.id, label: i.name, sublabel: `${i.scheme === 'FIXED_MONTHLY' ? 'Fixed Monthly' : 'Profit Share'} ${i.defaultRate}%` }))}
                   placeholder="Pilih investor"

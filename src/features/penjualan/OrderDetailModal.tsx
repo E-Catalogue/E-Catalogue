@@ -317,6 +317,7 @@ const SettlementPanel = ({
         {row('Cost Basis Pricing', settlement.pricingCostBasis)}
         {row('Profit Basis', settlement.profitBasis)}
         {row('Profit Investor', settlement.investorProfit)}
+        {settlement.fundingAgreement?.scheme === 'FIXED_MONTHLY' && row('Return Tetap Investor', settlement.fixedReturnAccrued)}
         {row('Rekondisi Tambahan', settlement.additionalReconditioningCost)}
         {row('Insentif Sales', settlement.salesIncentiveAmount)}
         <div className="border-t border-border my-1.5" />
