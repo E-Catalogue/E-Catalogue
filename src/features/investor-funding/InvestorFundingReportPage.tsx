@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { HandCoins, Landmark } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft, HandCoins, Landmark } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -46,7 +48,15 @@ const FundingReportInner = () => {
 
   return (
     <div className="max-w-[1500px] mx-auto space-y-5">
-      <PageHeader title="Penggunaan Dana Investor" description="Jejak alokasi modal ke pembelian unit dan biaya rekondisi" />
+      <PageHeader
+        title="Penggunaan Dana Investor"
+        description="Jejak alokasi modal ke pembelian unit dan biaya rekondisi"
+        action={(
+          <Link to="/master/investor">
+            <Button variant="secondary" icon={<ArrowLeft size={15} />}>Kembali</Button>
+          </Link>
+        )}
+      />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Summary label="Total Alokasi" value={summary?.allocatedAmount ?? 0} accent />
         <Summary label="Saldo Modal Tersedia" value={summary?.availableBalance ?? 0} />

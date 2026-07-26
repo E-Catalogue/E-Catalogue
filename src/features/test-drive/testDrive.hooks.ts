@@ -15,7 +15,13 @@ export const useTestDriveLookups = (enabled = true) =>
 
 export const useTestDriveMutations = () => {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['test-drives'] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['test-drives'] });
+    qc.invalidateQueries({ queryKey: ['leads'] });
+    qc.invalidateQueries({ queryKey: ['lead'] });
+    qc.invalidateQueries({ queryKey: ['lead-opportunities'] });
+    qc.invalidateQueries({ queryKey: ['lead-orders'] });
+  };
   return {
     create: useMutation({ mutationFn: (body: FormData) => testDriveApi.create(body), onSuccess: () => { toast('Jadwal test drive ditambahkan'); invalidate(); } }),
     update: useMutation({ mutationFn: (v: { id: string; body: FormData }) => testDriveApi.update(v.id, v.body), onSuccess: () => { toast('Jadwal test drive diperbarui'); invalidate(); } }),

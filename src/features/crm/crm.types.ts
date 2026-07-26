@@ -59,7 +59,7 @@ export const SETTLEMENT_STATUS_COLOR: Record<SettlementStatus, string> = {
 };
 
 /** `Lead.status` — sesuai `updateLeadStatusSchema` (lead.validation.js). */
-export type LeadStatus = 'NEW' | 'INTERESTED' | 'FOLLOW_UP' | 'TEST_DRIVE' | 'QUALIFIED' | 'WON' | 'LOST';
+export type LeadStatus = 'NEW' | 'INTERESTED' | 'FOLLOW_UP' | 'TEST_DRIVE' | 'QUALIFIED' | 'BOOKING' | 'WON' | 'LOST';
 
 export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   NEW: 'Baru',
@@ -67,6 +67,7 @@ export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   FOLLOW_UP: 'Follow Up',
   TEST_DRIVE: 'Test Drive',
   QUALIFIED: 'Qualified',
+  BOOKING: 'Booking',
   WON: 'Deal',
   LOST: 'Hilang',
 };
@@ -77,6 +78,7 @@ export const LEAD_STATUS_COLOR: Record<LeadStatus, string> = {
   FOLLOW_UP: 'bg-amber-100 text-amber-700',
   TEST_DRIVE: 'bg-purple-100 text-purple-700',
   QUALIFIED: 'bg-teal-100 text-teal-700',
+  BOOKING: 'bg-orange-100 text-orange-700',
   WON: 'bg-green-100 text-green-700',
   LOST: 'bg-rose-100 text-rose-600',
 };
@@ -90,12 +92,46 @@ export interface Lead {
   alamat?: string | null;
   pekerjaan?: string | null;
   status: LeadStatus;
+  activeOpportunity?: LeadOpportunity | null;
   sumberLeadId?: string | null;
   sumberLead?: { id: string; name: string } | null;
   /** Media private KTP (`ktpUrl` backend, akses via authenticated endpoint private media). */
   ktpUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface LeadOpportunity {
+  id: string;
+  branchId?: string;
+  leadId?: string;
+  salesId?: string | null;
+  status: LeadStatus;
+  openedAt: string;
+  closedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  sales?: { id: string; name: string; username?: string | null } | null;
+}
+
+export interface LeadOpportunityHistory extends LeadOpportunity {
+  _count: { testDrives: number; leadOrders: number };
+  testDrives: Array<{
+    id: string;
+    scheduledAt: string;
+    status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+    unit?: { id: string; name?: string | null; platNomor?: string | null } | null;
+  }>;
+  leadOrders: Array<{
+    id: string;
+    nomorOrder: string;
+    status: OrderStatus;
+    hargaFinal?: number | null;
+    tanggalOrder?: string | null;
+    dealAt?: string | null;
+    cancelledAt?: string | null;
+    unit?: { id: string; name?: string | null; platNomor?: string | null } | null;
+  }>;
 }
 
 export interface UnitSummary {
@@ -120,6 +156,8 @@ export interface LeadOrder {
   nomorOrder: string;
   branchId?: string;
   leadId: string;
+  opportunityId?: string | null;
+  opportunity?: LeadOpportunity | null;
   lead?: Lead | null;
   unitId: string;
   unit?: UnitSummary | null;

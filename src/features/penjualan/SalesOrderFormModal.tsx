@@ -83,7 +83,13 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUs
   // di dalam SearchableSelect, jadi tidak perlu query terpisah per keystroke lagi.
   const { data: lookup, isLoading: lookupLoading } = useLeadOrderFormLookup(branchKey, branchHeader, open);
 
-  const leadOptions = (lookup?.leads ?? []).map((l) => ({ value: l.id, label: l.nama, sublabel: l.nik || undefined }));
+  const leadOptions = (lookup?.leads ?? []).map((l) => ({
+    value: l.id,
+    label: l.nama,
+    sublabel: l.opportunities?.[0]
+      ? `${l.nik || '-'} · Siklus ${l.opportunities[0].status}`
+      : `${l.nik || '-'} · Pembelian ulang`,
+  }));
   const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: unitOptionLabel(u), sublabel: [u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || undefined }));
   const leasingOptions = (lookup?.leasings ?? []).map((l) => ({ value: l.id, label: l.name }));
   const salesOptions = (lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name, sublabel: s.username }));
@@ -115,7 +121,7 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUs
       footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="order-form" disabled={submitting}>{submitting ? 'Menyimpan...' : 'Simpan'}</Button></>}
     >
       <form id="order-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SearchableSelect label="Lead / Customer" required wrapClass="sm:col-span-2" value={form.leadId} onChange={(v) => set('leadId', v)} options={leadOptions} loading={lookupLoading} placeholder="Pilih lead" searchPlaceholder="Cari nama / NIK lead..." emptyMessage="Tidak ada lead aktif." />
+        <SearchableSelect label="Lead / Customer" required wrapClass="sm:col-span-2" value={form.leadId} onChange={(v) => set('leadId', v)} options={leadOptions} loading={lookupLoading} placeholder="Pilih lead" searchPlaceholder="Cari nama / NIK lead..." emptyMessage="Tidak ada lead." />
         <SearchableSelect label="Unit (Ready Stock)" required wrapClass="sm:col-span-2" value={form.unitId} onChange={(v) => set('unitId', v)} options={unitOptions} loading={lookupLoading} placeholder="Pilih unit" searchPlaceholder="Cari merek/tipe/plat..." emptyMessage="Tidak ada unit ready stock." />
 
         <SearchableSelect label="Sales" required value={form.salesId} onChange={(v) => set('salesId', v)} options={salesOptions} loading={lookupLoading} placeholder="Pilih sales" searchPlaceholder="Cari sales..." />

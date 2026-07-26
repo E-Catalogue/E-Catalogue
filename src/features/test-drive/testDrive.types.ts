@@ -25,6 +25,7 @@ export interface TestDriveLeadLookup {
   nama: string;
   nik?: string | null;
   status?: string;
+  opportunities?: Array<{ id: string; status: string }>;
 }
 
 /** `.prd/update_module_owned_lookup_20260721.md` §4.10 — agregat lead/unit/sales. */
@@ -37,6 +38,8 @@ export interface TestDriveFormLookup {
 export interface TestDrive {
   id: string;
   leadId: string;
+  opportunityId?: string | null;
+  opportunity?: { id: string; status: string; openedAt?: string; closedAt?: string | null } | null;
   unitId: string;
   salesId?: string | null;
   scheduledAt: string;

@@ -101,7 +101,13 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     else mutations.create.mutate(body, opts);
   };
 
-  const leadOptions = (lookup?.leads ?? []).map((l) => ({ value: l.id, label: l.nama, sublabel: l.nik || undefined }));
+  const leadOptions = (lookup?.leads ?? []).map((l) => ({
+    value: l.id,
+    label: l.nama,
+    sublabel: l.opportunities?.[0]
+      ? `${l.nik || '-'} · Siklus ${l.opportunities[0].status}`
+      : `${l.nik || '-'} · Pembelian ulang`,
+  }));
   const unitOptions = (lookup?.units ?? []).map((u) => ({ value: u.id, label: unitOptionLabel(u), sublabel: `${[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ')} · ${u.tahun} · ${u.warna}` }));
   const salesOptions = (lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name, sublabel: s.username || undefined }));
 
@@ -115,7 +121,7 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
       footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="td-form" disabled={pending}>{item ? 'Simpan' : 'Jadwalkan'}</Button></>}
     >
       <form id="td-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SearchableSelect label="Lead / Customer" required wrapClass="sm:col-span-2" value={form.leadId} onChange={(v) => set('leadId', v)} options={leadOptions} loading={lookupLoading} placeholder="Pilih lead" searchPlaceholder="Cari customer / NIK..." emptyMessage="Tidak ada lead aktif." />
+        <SearchableSelect label="Lead / Customer" required wrapClass="sm:col-span-2" value={form.leadId} onChange={(v) => set('leadId', v)} options={leadOptions} loading={lookupLoading} placeholder="Pilih lead" searchPlaceholder="Cari customer / NIK..." emptyMessage="Tidak ada lead." />
         <SearchableSelect label="Unit Ready Stock" required wrapClass="sm:col-span-2" value={form.unitId} onChange={(v) => set('unitId', v)} options={unitOptions} loading={lookupLoading} placeholder="Pilih unit" searchPlaceholder="Cari plat / merek / tipe..." emptyMessage="Tidak ada unit ready stock." />
         <SearchableSelect label="Sales (opsional)" value={form.salesId} onChange={(v) => set('salesId', v)} options={salesOptions} loading={lookupLoading} clearable placeholder="Pilih sales" searchPlaceholder="Cari sales..." />
         <SelectField label="Status" value={form.status} onChange={(e) => set('status', e.target.value as TestDriveStatus)} options={[{ value: 'SCHEDULED', label: 'Dijadwalkan' }, { value: 'COMPLETED', label: 'Selesai' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />

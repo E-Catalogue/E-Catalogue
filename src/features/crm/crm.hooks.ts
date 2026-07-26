@@ -21,6 +21,13 @@ export const useLeads = (params: LeadListParams) =>
 export const useLead = (id: string | null) =>
   useQuery({ queryKey: ['lead', id], queryFn: () => leadApi.get(id as string), enabled: !!id });
 
+export const useLeadOpportunities = (id: string | null, page = 1, limit = 10) =>
+  useQuery({
+    queryKey: ['lead-opportunities', id, page, limit],
+    queryFn: () => leadApi.opportunities(id as string, { page, limit }),
+    enabled: !!id,
+  });
+
 export const useLeadMutations = () => {
   const qc = useQueryClient();
   const inval = () => qc.invalidateQueries({ queryKey: ['leads'] });
@@ -33,6 +40,9 @@ export const useLeadMutations = () => {
         toast('Status lead diperbarui');
         inval();
         qc.invalidateQueries({ queryKey: ['lead', v.id] });
+        qc.invalidateQueries({ queryKey: ['lead-opportunities', v.id] });
+        qc.invalidateQueries({ queryKey: ['test-drives'] });
+        qc.invalidateQueries({ queryKey: ['lead-orders'] });
       },
       onError: (e: unknown) => notifyApiError(e),
     }),
@@ -85,6 +95,8 @@ export const useLeadOrderMutations = (branchKey: string) => {
     invalOne(order.id);
     qc.invalidateQueries({ queryKey: ['leads'] });
     if (order.leadId) qc.invalidateQueries({ queryKey: ['lead', order.leadId] });
+    if (order.leadId) qc.invalidateQueries({ queryKey: ['lead-opportunities', order.leadId] });
+    qc.invalidateQueries({ queryKey: ['test-drives'] });
     qc.invalidateQueries({ queryKey: ['units'] });
     if (order.unitId) qc.invalidateQueries({ queryKey: ['unit', order.unitId] });
     qc.invalidateQueries({ queryKey: ['lead-order-settlement', branchKey, order.id] });
@@ -100,7 +112,14 @@ export const useLeadOrderMutations = (branchKey: string) => {
     create: useMutation({
       mutationFn: (v: { body: Partial<LeadOrder> & { lead?: Partial<Lead> }; headers: BranchHeaders }) =>
         leadOrderApi.create(v.body, v.headers),
-      onSuccess: () => { toast('Sales order ditambahkan'); invalList(); },
+      onSuccess: (order) => {
+        toast('Sales order ditambahkan');
+        invalList();
+        qc.invalidateQueries({ queryKey: ['leads'] });
+        qc.invalidateQueries({ queryKey: ['lead', order.leadId] });
+        qc.invalidateQueries({ queryKey: ['lead-opportunities', order.leadId] });
+        qc.invalidateQueries({ queryKey: ['test-drives'] });
+      },
       onError: (e: unknown) => notifyApiError(e),
     }),
     update: useMutation({

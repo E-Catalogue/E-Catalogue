@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { PiggyBank, Search, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { PiggyBank, Search, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -180,14 +181,21 @@ export const InvestorObligationPage = () => {
         <PageHeader
           title="Kewajiban Investor"
           description="Daftar & aging kewajiban fixed return, principal, dan bagi hasil investor"
-          action={can('INVESTOR_OBLIGATION_GENERATE') && (
-            <GenerateAction
-              branchKey={branchKey}
-              headers={branchHeader}
-              disabled={mutationBlocked}
-              disabledReason="Pilih cabang terlebih dahulu untuk generate kewajiban"
-            />
-          )}
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <Link to="/master/investor">
+                <Button variant="secondary" icon={<ArrowLeft size={15} />}>Kembali</Button>
+              </Link>
+              {can('INVESTOR_OBLIGATION_GENERATE') && (
+                <GenerateAction
+                  branchKey={branchKey}
+                  headers={branchHeader}
+                  disabled={mutationBlocked}
+                  disabledReason="Pilih cabang terlebih dahulu untuk generate kewajiban"
+                />
+              )}
+            </div>
+          }
         />
 
         {mutationBlocked && (

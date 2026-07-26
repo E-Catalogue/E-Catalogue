@@ -65,7 +65,8 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   const otrPrice = current.otrPrice ?? null;
   const targetPrice = current.targetPrice ?? null;
   const marginBase = targetPrice ?? otrPrice;
-  const margin = current.purchaseCost && marginBase && marginBase > current.purchaseCost ? marginBase - current.purchaseCost : null;
+  const hpp = current.pricingCostBasis ?? null;
+  const margin = hpp && marginBase && marginBase > hpp ? marginBase - hpp : null;
   const canFinalizePricing = !current.pricingFinalizedAt && can('UNIT_PRICING_FINALIZE');
   const funding = current.fundingAgreement;
   const isFixedMonthlyInvestor = funding?.fundingSource === 'INVESTOR' && funding.scheme === 'FIXED_MONTHLY';
@@ -182,10 +183,10 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />
       </div>
 
-      {(margin !== null || current.purchaseCost) && (
+      {(margin !== null || hpp) && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-2.5">
           {current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost)} /> : null}
-          {current.pricingCostBasis ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(current.pricingCostBasis)} /> : null}
+          {hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(hpp)} /> : null}
           {margin !== null ? <Spec icon={TrendingUp} label="Estimasi Margin" value={formatCurrency(margin)} /> : null}
         </div>
       )}

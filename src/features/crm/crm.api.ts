@@ -1,7 +1,7 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  Lead, LeadOrder, LeadOrderCancellationRefund, LeadPayment, LeadPaymentReverseResult, LeadStatus,
+  Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellationRefund, LeadPayment, LeadPaymentReverseResult, LeadStatus,
   OrderStatus, SaleSettlement, UnitSummary,
 } from './crm.types';
 
@@ -33,6 +33,8 @@ export const leadApi = {
     apiClient.get<ApiResponse<Lead[]>>('/leads', { params }).then((r) => r.data),
   get: (id: string) =>
     apiClient.get<ApiResponse<Lead>>(`/leads/${id}`).then((r) => r.data.data),
+  opportunities: (id: string, params: { page?: number; limit?: number }) =>
+    apiClient.get<ApiResponse<LeadOpportunityHistory[]>>(`/leads/${id}/opportunities`, { params }).then((r) => r.data),
   create: (body: FormData | Partial<Lead>) =>
     apiClient.post<ApiResponse<Lead>>('/leads', body, {
       headers: body instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
@@ -55,7 +57,7 @@ export const leadApi = {
  * Leasing/Sumber Lead yang lama). Akun kas pembayaran dipisah lagi via `useLeadOrderCashAccounts`.
  */
 export interface LeadOrderFormLookup {
-  leads: { id: string; branchId: string; nama: string; nik: string; status: string }[];
+  leads: { id: string; branchId: string; nama: string; nik: string; status: LeadStatus; opportunities?: Array<{ id: string; status: LeadStatus }> }[];
   sources: { id: string; name: string; code: string }[];
   units: { id: string; name?: string | null; branchId: string; platNomor: string; otrPrice: number; merek?: { name: string } | null; tipe?: { name: string } | null }[];
   sales: { id: string; branchId: string; name: string; username: string }[];

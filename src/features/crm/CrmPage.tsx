@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SelectField } from '@/shared/components/ui/Field';
 import { LeadFormModal } from './LeadFormModal';
+import { LeadDetailModal } from './LeadDetailModal';
 import { useLeads, useLeadMutations } from './crm.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
@@ -38,6 +39,7 @@ const CrmPageInner = () => {
   const m = useLeadMutations();
 
   const [form, setForm] = useState<{ item: Lead | null } | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [statusTarget, setStatusTarget] = useState<Lead | null>(null);
   const [statusValue, setStatusValue] = useState<LeadStatus>('NEW');
   const [confirmStatus, setConfirmStatus] = useState(false);
@@ -88,12 +90,13 @@ const CrmPageInner = () => {
       align: 'right',
       cell: (r) => (
         <RowActions
+          onView={() => setDetailId(r.id)}
           onEdit={can('LEAD_UPDATE') ? () => setForm({ item: r }) : undefined}
           extra={can('LEAD_UPDATE') ? [{
             label: 'Ubah Status',
             icon: <RefreshCw size={13} />,
             onClick: () => openStatusChange(r),
-            disabled: r.status === 'WON',
+            disabled: r.status === 'WON' || r.status === 'BOOKING',
           }] : []}
         />
       ),
@@ -140,6 +143,8 @@ const CrmPageInner = () => {
         submitting={m.create.isPending || m.update.isPending}
         onSubmit={handleSubmit}
       />
+
+      <LeadDetailModal id={detailId} onClose={() => setDetailId(null)} />
 
       {statusTarget && (
         <Modal
