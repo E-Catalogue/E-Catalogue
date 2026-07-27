@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), p
 
 vi.mock('@/core/api/client', () => ({ apiClient: mocks }));
 
-import { payrollApi } from './finance.api';
+import { cashFlowReportApi, payrollApi } from './finance.api';
 
 describe('payrollApi incentives', () => {
   beforeEach(() => {
@@ -22,5 +22,17 @@ describe('payrollApi incentives', () => {
       { amount: 5_000_000 },
       { headers },
     );
+  });
+});
+
+describe('cashFlowReportApi', () => {
+  it('mengambil laporan arus kas dengan filter periode dan branch context', async () => {
+    const headers = { 'X-Branch-Id': 'branch-1' };
+    const params = { dateFrom: '2026-07-01', dateTo: '2026-07-31' };
+    mocks.get.mockResolvedValue({ data: { success: true, data: { summary: {} } } });
+
+    await cashFlowReportApi.get(params, headers);
+
+    expect(mocks.get).toHaveBeenCalledWith('/cash-flow/report', { params, headers });
   });
 });

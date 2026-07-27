@@ -3,6 +3,7 @@ import type { ApiResponse } from '@/core/api/types';
 import type {
   CashAccount,
   CashDashboard,
+  CashFlowReport,
   CashTransaction,
   CashTransactionType,
   OperationalExpense,
@@ -78,6 +79,11 @@ export const cashTransactionApi = {
    */
   reverse: (id: string, body: { transactionDate: string; description?: string | null }, headers?: BranchHeaders) =>
     apiClient.post<ApiResponse<CashTransaction>>(`/cash-transactions/${id}/reverse`, body, { headers }).then((r) => r.data),
+};
+
+export const cashFlowReportApi = {
+  get: (params: { dateFrom?: string; dateTo?: string }, headers?: BranchHeaders) =>
+    apiClient.get<ApiResponse<CashFlowReport>>('/cash-flow/report', { params, headers }).then((response) => response.data.data),
 };
 
 /**

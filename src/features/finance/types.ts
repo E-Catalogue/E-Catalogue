@@ -13,6 +13,10 @@ export type CashSourceType =
   | 'OPERATIONAL'
   | 'PAYROLL'
   | 'INVESTOR_MODAL'
+  | 'INVESTOR_CAPITAL_DEPOSIT'
+  | 'INVESTOR_CAPITAL_WITHDRAWAL'
+  | 'INVESTOR_OBLIGATION_PAYMENT'
+  | 'TAX_RESERVE_TRANSFER'
   | 'MANUAL_ADJUSTMENT'
   | 'TRANSFER'
   | 'INTER_BRANCH_TRANSFER'
@@ -92,6 +96,40 @@ export type CashDashboard = CashDashboardSingle | CashDashboardConsolidated;
 
 export const isConsolidatedCashDashboard = (d: CashDashboard): d is CashDashboardConsolidated =>
   (d as CashDashboardConsolidated).consolidated !== undefined;
+
+export type CashFlowActivityKey = 'OPERATING' | 'INVESTING' | 'FINANCING' | 'ADJUSTMENT';
+
+export interface CashFlowReportRow {
+  sourceType: CashSourceType;
+  label: string;
+  cashIn: number;
+  cashOut: number;
+  netCash: number;
+}
+
+export interface CashFlowReportActivity {
+  key: CashFlowActivityKey;
+  label: string;
+  rows: CashFlowReportRow[];
+  cashIn: number;
+  cashOut: number;
+  netCash: number;
+}
+
+export interface CashFlowReport {
+  period: { dateFrom: string | null; dateTo: string | null };
+  summary: {
+    openingBalance: number;
+    totalIn: number;
+    totalOut: number;
+    netCash: number;
+    internalTransferNet: number;
+    endingBalance: number;
+  };
+  activities: CashFlowReportActivity[];
+  transfers: CashFlowReportRow[];
+  accounts: CashDashboardAccount[];
+}
 
 export type OperationalExpenseType = 'NORMAL' | 'BACKDATE';
 export type FinanceStatus = 'DRAFT' | 'PAID' | 'CANCELLED';

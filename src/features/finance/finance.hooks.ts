@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { cashAccountApi, cashTransactionApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
+import { cashAccountApi, cashFlowReportApi, cashTransactionApi, operationalExpenseApi, payrollApi, recurringExpenseApi } from './finance.api';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
@@ -42,6 +42,9 @@ export const useCashAccountMutations = () => {
 
 export const useCashDashboard = (branchKey: string, params: { dateFrom?: string; dateTo?: string }, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['cash-flow-dashboard', branchKey, params], queryFn: () => cashTransactionApi.dashboard(params, headers) });
+
+export const useCashFlowReport = (branchKey: string, params: { dateFrom?: string; dateTo?: string }, headers?: BranchHeaders) =>
+  useQuery({ queryKey: ['cash-flow-report', branchKey, params], queryFn: () => cashFlowReportApi.get(params, headers) });
 
 export const useCashTransactions = (branchKey: string, params: ListParams & { type?: string; sourceType?: string; cashAccountId?: string; dateFrom?: string; dateTo?: string }, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['cash-transactions', branchKey, params], queryFn: () => cashTransactionApi.list(params, headers) });
