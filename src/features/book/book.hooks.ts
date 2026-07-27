@@ -14,6 +14,9 @@ export const useBookPeriods = (branchKey: string, params: { period?: string } = 
 export const useBookPeriod = (branchKey: string, period: string | null, headers?: BranchHeaders, enabled = true) =>
   useQuery({ queryKey: ['book-period', branchKey, period], queryFn: () => bookApi.period(period as string, headers), enabled: !!period && enabled });
 
+export const useBookClosePreview = (branchKey: string, period: string | null, headers?: BranchHeaders, enabled = true) =>
+  useQuery({ queryKey: ['book-close-preview', branchKey, period], queryFn: () => bookApi.closePreview(period as string, headers), enabled: !!period && enabled });
+
 export const useBookLedger = (branchKey: string, params: { period?: string; page?: number; limit?: number; cashAccountId?: string }, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['book-ledger', branchKey, params], queryFn: () => bookApi.ledger(params, headers) });
 
@@ -52,6 +55,7 @@ export const useBookMutations = () => {
         toast('Periode pembukuan ditutup');
         qc.invalidateQueries({ queryKey: ['book-periods'] });
         qc.invalidateQueries({ queryKey: ['book-period'] });
+        qc.invalidateQueries({ queryKey: ['book-close-preview'] });
         invalSummaries();
       },
     }),

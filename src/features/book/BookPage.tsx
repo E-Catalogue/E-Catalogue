@@ -19,7 +19,7 @@ import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, FinanceErrorBanner } from '@/features/finance/components';
 import { useBookCashAccounts } from '@/features/finance/lookup';
 import {
-  useBookCashSummary, useBookLedger, useBookMutations, useBookPeriod,
+  useBookCashSummary, useBookClosePreview, useBookLedger, useBookMutations, useBookPeriod,
   useBookPeriods, useBookProfitSummary, useTaxSettings,
 } from './book.hooks';
 import {
@@ -30,7 +30,7 @@ import {
 } from './book.types';
 import { findBookSnapshot } from './book.summary';
 
-type Tab = 'ringkasan' | 'ledger' | 'pajak';
+type Tab = 'ringkasan' | 'laporan-tutup-buku' | 'ledger' | 'pajak';
 type ExecutiveSummary = CashSummaryFields & Omit<ProfitSummaryFields, 'unitSold'> & { unitSold: number | null };
 
 const currentPeriod = () => new Date().toISOString().slice(0, 7);
@@ -67,10 +67,10 @@ const MetricCard = ({ label, value, note, tone = 'neutral' }: { label: string; v
 };
 
 const RingkasanTab = ({
-  branchKey, branchHeader, period, isOwner, selectedBranchId, canClose,
+  branchKey, branchHeader, period, isOwner, selectedBranchId, canClose, onClosed, onViewClosedReport,
 }: {
   branchKey: string; branchHeader: Record<string, string> | undefined; period: string;
-  isOwner: boolean; selectedBranchId: string | null; canClose: boolean;
+  isOwner: boolean; selectedBranchId: string | null; canClose: boolean; onClosed: () => void; onViewClosedReport: () => void;
 }) => {
   const periods = useBookPeriods(branchKey, { period }, branchHeader);
   const existingSnapshot: BookPeriod | undefined = findBookSnapshot(periods.data, period, isOwner, selectedBranchId);
@@ -81,6 +81,8 @@ const RingkasanTab = ({
   const profit = useBookProfitSummary(branchKey, { period }, branchHeader, liveEnabled);
   const m = useBookMutations();
   const [confirmClose, setConfirmClose] = useState(false);
+  const [reviewedTransactions, setReviewedTransactions] = useState(false);
+  const [understandPermanent, setUnderstandPermanent] = useState(false);
   const [closeError, setCloseError] = useState<{ code?: string; message: string } | null>(null);
 
   const cashData = cash.data;
@@ -94,6 +96,8 @@ const RingkasanTab = ({
   const loading = periods.isLoading || (useSnapshot ? snapshot.isLoading : cash.isLoading || profit.isLoading);
   const isPastPeriod = period < currentPeriod();
   const closeBlocked = isOwner && !selectedBranchId;
+  const preview = useBookClosePreview(branchKey, confirmClose && !closeBlocked && !existingSnapshot ? period : null, branchHeader);
+  const previewReady = Boolean(preview.data?.canClose && reviewedTransactions && understandPermanent);
   const closedAt = useSnapshot ? snapshotData?.closedAt : existingSnapshot?.closedAt;
   const scopeLabel = useSnapshot ? snapshotData?.branch?.nama : isOwner && !selectedBranchId ? 'Seluruh cabang' : cashData && !isConsolidatedSummary(cashData) ? cashData.branch.nama : 'Cabang terpilih';
   const unitSold = summary?.unitSold;
@@ -186,10 +190,11 @@ const RingkasanTab = ({
                   {BOOK_PERIOD_STATUS_LABEL[existingSnapshot.status]}{existingSnapshot.closedAt ? ` · ${formatDate(existingSnapshot.closedAt)}` : ''}
                 </span>
               ) : <span className="text-[12px] font-semibold text-muted">Belum ada snapshot tersimpan untuk periode {period}.</span>}
+              {existingSnapshot && <Button variant="secondary" size="sm" icon={<BookOpen size={14} />} onClick={onViewClosedReport}>Lihat Laporan Tutup Buku</Button>}
               {canClose && !existingSnapshot && (
                 closeBlocked ? <Tooltip label="Pilih cabang terlebih dahulu" side="top"><Button variant="danger" size="sm" icon={<Lock size={14} />} disabled>Tutup Periode</Button></Tooltip>
                   : !isPastPeriod ? <Tooltip label="Hanya periode yang sudah lewat yang bisa ditutup" side="top"><Button variant="danger" size="sm" icon={<Lock size={14} />} disabled>Tutup Periode</Button></Tooltip>
-                    : <Button variant="danger" size="sm" icon={<Lock size={14} />} onClick={() => setConfirmClose(true)}>Tutup Periode</Button>
+                    : <Button variant="danger" size="sm" icon={<Lock size={14} />} onClick={() => { setReviewedTransactions(false); setUnderstandPermanent(false); setConfirmClose(true); }}>Tinjau sebelum menutup</Button>
               )}
             </div>
           </SectionCard>
@@ -198,21 +203,68 @@ const RingkasanTab = ({
 
       <ConfirmDialog
         open={confirmClose}
-        onClose={() => setConfirmClose(false)}
+        onClose={() => { setConfirmClose(false); setCloseError(null); }}
         onConfirm={() => {
           setCloseError(null);
           m.closePeriod.mutate({ period, headers: branchHeader }, {
-            onSuccess: () => setConfirmClose(false),
+            onSuccess: () => { setConfirmClose(false); onClosed(); },
             onError: (err: unknown) => setCloseError({ code: getApiErrorCode(err), message: getApiErrorMessage(err) }),
           });
         }}
-        title="Tutup Periode Pembukuan"
-        message={`Snapshot akhir untuk periode ${period} akan disimpan permanen dan TIDAK DAPAT dibuka kembali. Pastikan seluruh transaksi periode ini sudah benar.`}
-        confirmLabel="Ya, Tutup Periode"
+        title="Tinjau Penutupan Periode"
+        message={`Tinjau snapshot untuk ${period} sebelum menyimpannya sebagai laporan final. Angka dapat berubah bila ada transaksi baru sebelum tombol akhir ditekan.`}
+        confirmLabel="Tutup Periode Permanen"
         tone="danger"
         loading={m.closePeriod.isPending}
+        confirmDisabled={!previewReady || preview.isLoading || preview.isError}
         closeOnConfirm={false}
-      />
+      >
+        {preview.isLoading ? <div className="py-5 flex justify-center"><Loader2 size={20} className="animate-spin text-muted" /></div>
+          : preview.isError ? <FinanceErrorBanner code={getApiErrorCode(preview.error)} message={getApiErrorMessage(preview.error)} onDismiss={() => setConfirmClose(false)} />
+            : preview.data && <div className="space-y-4">
+              <div className="rounded-xl bg-surface-soft border border-border p-3 text-[12px] font-semibold text-muted text-left"><strong className="text-ink">{preview.data.branch.nama}</strong> · Periode {preview.data.period}</div>
+              <div className="grid grid-cols-2 gap-2 text-left">
+                <MetricCard label="Saldo Akhir" value={idr(preview.data.summary.endingCash)} tone="neutral" />
+                <MetricCard label="Penjualan" value={idr(preview.data.summary.salesRevenue)} tone="positive" />
+                <MetricCard label="Unit Terjual" value={String(preview.data.summary.unitSold)} tone="neutral" />
+                <MetricCard label="Laba Bersih Operasional" value={idr(preview.data.summary.operationalNetProfit)} tone="positive" />
+              </div>
+              <div className="space-y-2 text-left">{preview.data.checks.map((check) => <p key={check.code} className={`text-[12px] font-semibold ${check.status === 'READY' ? 'text-semantic-success' : check.status === 'WARNING' ? 'text-accent-amber' : 'text-semantic-error'}`}>• {check.message}</p>)}</div>
+              <label className="flex gap-2.5 items-start text-left cursor-pointer"><input type="checkbox" checked={reviewedTransactions} onChange={(event) => setReviewedTransactions(event.target.checked)} className="mt-0.5 accent-primary" /><span className="text-[12px] font-semibold text-ink-soft">Saya telah meninjau transaksi dan angka ringkasan periode ini.</span></label>
+              <label className="flex gap-2.5 items-start text-left cursor-pointer"><input type="checkbox" checked={understandPermanent} onChange={(event) => setUnderstandPermanent(event.target.checked)} className="mt-0.5 accent-primary" /><span className="text-[12px] font-semibold text-ink-soft">Saya memahami periode yang ditutup tidak dapat dibuka kembali.</span></label>
+              {closeError && <FinanceErrorBanner code={closeError.code} message={closeError.message} onDismiss={() => setCloseError(null)} />}
+            </div>}
+      </ConfirmDialog>
+    </div>
+  );
+};
+
+const LaporanTutupBukuTab = ({
+  branchKey, branchHeader, period, isOwner, selectedBranchId, onOpenSummary,
+}: {
+  branchKey: string; branchHeader: Record<string, string> | undefined; period: string;
+  isOwner: boolean; selectedBranchId: string | null; onOpenSummary: () => void;
+}) => {
+  const hasConcreteBranch = !isOwner || !!selectedBranchId;
+  const snapshotQuery = useBookPeriod(branchKey, hasConcreteBranch ? period : null, branchHeader, hasConcreteBranch);
+  const snapshot = snapshotQuery.data && !isBookPeriodConsolidated(snapshotQuery.data) ? snapshotQuery.data : null;
+  const unitSold = snapshot?.unitSold;
+
+  if (!hasConcreteBranch) return <SectionCard title="Laporan Tutup Buku" icon={<Lock size={16} />} subtitle="Laporan final selalu dibuat per cabang."><p className="text-[13px] font-semibold text-accent-amber">Pilih satu cabang untuk membuka snapshot final periode ini. Konsolidasi tidak digunakan agar snapshot cabang yang sudah dan belum ditutup tidak tercampur.</p></SectionCard>;
+  if (snapshotQuery.isLoading) return <div className="flex items-center justify-center py-20"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  if (snapshotQuery.isError || !snapshot) return <SectionCard title="Laporan Tutup Buku" icon={<Lock size={16} />} subtitle="Belum ada snapshot final untuk periode dan cabang ini."><div className="flex flex-wrap items-center gap-3"><p className="text-[13px] font-semibold text-muted">Tutup periode dari tab Ringkasan setelah seluruh angka ditinjau.</p><Button variant="secondary" size="sm" onClick={onOpenSummary}>Buka Ringkasan</Button></div></SectionCard>;
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-semantic-success/25 bg-semantic-success/5 p-4 md:p-5">
+        <div className="flex flex-wrap justify-between items-start gap-3"><div><p className="text-[11px] uppercase tracking-wide font-extrabold text-semantic-success">Snapshot final</p><h3 className="mt-1 text-lg font-extrabold text-ink">Laporan Tutup Buku · {snapshot.period}</h3><p className="mt-1 text-[12px] font-semibold text-muted">{snapshot.branch?.nama ?? 'Cabang'}{snapshot.closedAt ? ` · Ditutup ${formatDate(snapshot.closedAt)}` : ''}{snapshot.closedBy?.name ? ` oleh ${snapshot.closedBy.name}` : ''}</p></div><span className={`inline-flex px-3 py-1.5 rounded-xl text-[11px] font-extrabold ${BOOK_PERIOD_STATUS_COLOR[snapshot.status]}`}>{BOOK_PERIOD_STATUS_LABEL[snapshot.status]}</span></div>
+        <p className="mt-3 text-[12px] font-semibold text-muted">Angka ini disimpan saat penutupan. Transaksi yang berubah setelahnya tidak memengaruhi laporan.</p>
+      </div>
+
+      <section><h3 className="text-[13px] font-extrabold uppercase tracking-wide text-muted mb-3">Kas</h3><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"><MetricCard label="Saldo Awal" value={idr(snapshot.openingCash)} /><MetricCard label="Kas Masuk" value={idr(snapshot.cashIn)} tone="positive" /><MetricCard label="Kas Keluar" value={idr(snapshot.cashOut)} tone="negative" /><MetricCard label="Saldo Akhir" value={idr(snapshot.endingCash)} tone="positive" /></div></section>
+      <SectionCard title="Penjualan & Margin" icon={<TrendingUp size={16} />} subtitle="Angka penjualan dan margin yang disimpan saat penutupan."><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"><MetricCard label="Pendapatan Penjualan" value={idr(snapshot.salesRevenue)} tone="positive" /><MetricCard label="Unit Terjual" value={unitSold === null ? '—' : String(unitSold)} note={unitSold === null ? 'Tidak tersedia pada snapshot lama' : undefined} /><MetricCard label="HPP Unit" value={idr(snapshot.unitHpp)} tone="negative" /><MetricCard label="Laba Kotor" value={idr(snapshot.grossProfit)} note="Penjualan − HPP" tone="positive" /></div></SectionCard>
+      <SectionCard title="Beban & Pembagian" icon={<ArrowUpRight size={16} />} subtitle="Komponen pengurang dan pembagian yang tercatat di snapshot."><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"><MetricCard label="Beban Operasional" value={idr(snapshot.operationalExpense)} tone="negative" /><MetricCard label="Beban Payroll" value={idr(snapshot.payrollExpense)} tone="negative" /><MetricCard label="Laba Investor" value={idr(snapshot.investorProfit)} tone="negative" /><MetricCard label="Fixed Return Investor" value={idr(snapshot.fixedReturnExpense)} tone="negative" /><MetricCard label="Rekondisi Tambahan" value={idr(snapshot.additionalReconditioningCost)} tone="negative" /><MetricCard label="Insentif Sales" value={idr(snapshot.salesIncentiveAccrued)} tone="negative" /></div></SectionCard>
+      <SectionCard title="Hasil Akhir" icon={<Landmark size={16} />} subtitle="Hasil akhir snapshot setelah komponen settlement dan biaya terkait."><div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><MetricCard label="Provisi Pajak" value={idr(snapshot.taxProvision)} tone="negative" /><MetricCard label="Laba Bersih Perusahaan" value={idr(snapshot.companyNetProfit)} tone="positive" /><MetricCard label="Laba Bersih Operasional" value={idr(snapshot.operationalNetProfit)} note="Setelah beban operasional dan payroll" tone="positive" /></div></SectionCard>
     </div>
   );
 };
@@ -335,13 +387,14 @@ const BookPageInner = () => {
   const [tab, setTab] = useState<Tab>('ringkasan');
   const [periodInput, setPeriodInput] = useState(currentPeriod());
   const period = /^\d{4}-(0[1-9]|1[0-2])$/.test(periodInput) ? periodInput : currentPeriod();
-  const tabs: { id: Tab; label: string }[] = [{ id: 'ringkasan', label: 'Ringkasan' }, { id: 'ledger', label: 'Ledger' }, { id: 'pajak', label: 'Pengaturan Pajak' }];
+  const tabs: { id: Tab; label: string }[] = [{ id: 'ringkasan', label: 'Ringkasan' }, { id: 'laporan-tutup-buku', label: 'Laporan Tutup Buku' }, { id: 'ledger', label: 'Ledger' }, { id: 'pajak', label: 'Pengaturan Pajak' }];
   return (
     <div className="max-w-[1600px] mx-auto space-y-5">
       <PageHeader title="Pembukuan Cabang" description="Ringkasan kas dan laba yang membedakan data berjalan dari snapshot periode final." />
       <div className="grid grid-cols-1 sm:grid-cols-[220px] gap-3"><MonthField value={periodInput} onChange={setPeriodInput} /></div>
       <div className="flex items-center gap-2 flex-wrap">{tabs.map((item) => <button key={item.id} onClick={() => setTab(item.id)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border transition-colors ${tab === item.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border hover:border-primary'}`}>{item.label}</button>)}</div>
-      {tab === 'ringkasan' && <RingkasanTab branchKey={branchKey} branchHeader={branchHeader} period={period} isOwner={isOwner} selectedBranchId={selectedBranchId} canClose={can('BOOK_CLOSE')} />}
+      {tab === 'ringkasan' && <RingkasanTab branchKey={branchKey} branchHeader={branchHeader} period={period} isOwner={isOwner} selectedBranchId={selectedBranchId} canClose={can('BOOK_CLOSE')} onClosed={() => setTab('laporan-tutup-buku')} onViewClosedReport={() => setTab('laporan-tutup-buku')} />}
+      {tab === 'laporan-tutup-buku' && <LaporanTutupBukuTab branchKey={branchKey} branchHeader={branchHeader} period={period} isOwner={isOwner} selectedBranchId={selectedBranchId} onOpenSummary={() => setTab('ringkasan')} />}
       {tab === 'ledger' && <LedgerTab branchKey={branchKey} branchHeader={branchHeader} period={period} />}
       {tab === 'pajak' && <TaxSettingsTab branchKey={branchKey} branchHeader={branchHeader} isOwner={isOwner} selectedBranchId={selectedBranchId} canUpdate={can('TAX_SETTING_UPDATE')} canRetry={can('TAX_RESERVE_RETRY')} />}
     </div>

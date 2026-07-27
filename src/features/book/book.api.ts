@@ -2,6 +2,7 @@ import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
   BookLedgerRow,
+  BookClosePreview,
   BookPeriod,
   BookPeriodConsolidated,
   CashSummary,
@@ -24,6 +25,8 @@ export const bookApi = {
    */
   period: (period: string, headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<BookPeriod | BookPeriodConsolidated>>(`/books/periods/${period}`, { headers }).then((r) => r.data.data),
+  closePreview: (period: string, headers?: BranchHeaders) =>
+    apiClient.get<ApiResponse<BookClosePreview>>(`/books/periods/${period}/close-preview`, { headers }).then((r) => r.data.data),
   /** `GET /books/ledger` — `period` default bulan berjalan bila kosong. Meta paginasi HANYA `{page,limit,total,totalPages}`. */
   ledger: (params: { period?: string; page?: number; limit?: number; cashAccountId?: string } = {}, headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<BookLedgerRow[]>>('/books/ledger', { params, headers }).then((r) => r.data),

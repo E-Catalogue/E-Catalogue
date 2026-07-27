@@ -33,6 +33,15 @@ export interface BookPeriod {
   closedBy?: { id: string; name?: string | null; username?: string | null } | null;
 }
 
+export type BookCloseCheckStatus = 'READY' | 'WARNING' | 'BLOCKED';
+export interface BookClosePreview {
+  branch: { id: string; nama: string; code: string };
+  period: string;
+  canClose: boolean;
+  summary: Omit<BookPeriod, 'id' | 'branchId' | 'status' | 'closedAt' | 'closedById' | 'createdAt' | 'updatedAt' | 'closedBy'> & { unitSold: number };
+  checks: Array<{ code: 'PERIOD_FINISHED' | 'PERIOD_OPEN' | 'TAX_SETTING'; status: BookCloseCheckStatus; message: string }>;
+}
+
 /** `GET /books/periods/:period` mode Owner "semua cabang" — TIDAK PERNAH 404, breakdown/consolidated bisa kosong/nol. */
 export interface BookPeriodConsolidated {
   consolidated: Record<string, number> & { unitSold: number };
