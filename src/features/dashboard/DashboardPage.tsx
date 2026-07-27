@@ -293,8 +293,9 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
           {[
             { label: 'Profit Investor', value: summary.investorProfit, icon: Users },
             { label: 'Fixed Return Accrued', value: summary.fixedReturnExpense, icon: Wallet },
-            { label: 'Provisi Pajak', value: summary.taxProvision, icon: CreditCard },
-            { label: 'Insentif Sales Accrued', value: summary.salesIncentiveAccrued, icon: Trophy },
+              { label: 'Provisi Pajak', value: summary.taxProvision, icon: CreditCard },
+              { label: 'Bonus Leasing', value: summary.leasingBonusIncome, icon: DollarSign },
+              { label: 'Insentif Sales Accrued', value: summary.salesIncentiveAccrued, icon: Trophy },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-border bg-surface-soft p-3">
               <div className="flex items-center gap-2 text-muted">

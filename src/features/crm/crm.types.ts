@@ -40,7 +40,7 @@ export const JENIS_PEMBAYARAN_LABEL: Record<JenisPembayaran, string> = {
   PELUNASAN: 'Pelunasan',
   LEASING: 'Pencairan Leasing',
   PENCAIRAN_LEASING: 'Pencairan Leasing',
-  REFUND_LEASING: 'Refund Leasing',
+  REFUND_LEASING: 'Bonus Leasing',
   REFUND_DP: 'Refund DP',
 };
 
@@ -197,6 +197,9 @@ export interface LeadPayment {
   cashTransactionId?: string | null;
   postingStatus: PaymentPostingStatus;
   idempotencyKey?: string | null;
+  leasingSettlementAppliedAmount?: number;
+  isLegacyLeasingRefund?: boolean;
+  leasingBonusAdjustment?: { id: string; amount: number; taxProvision: number; companyNetIncome: number; taxReserveStatus: TaxReserveStatus; receivedAt: string; postingStatus: PaymentPostingStatus } | null;
   refundOfPaymentId?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -238,6 +241,7 @@ export interface SaleSettlement {
   companyNetProfit: number | null;
   taxReserveStatus: TaxReserveStatus;
   taxTransferGroupId?: string | null;
+  leasingBonusAdjustments?: Array<{ id: string; paymentId: string; receivedAt: string; amount: number; taxRateSnapshot: number; taxProvision: number; companyNetIncome: number; taxReserveStatus: TaxReserveStatus; taxTransferGroupId?: string | null }>;
   finalizedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;

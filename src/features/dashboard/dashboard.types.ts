@@ -26,6 +26,7 @@ export interface DashboardSummary {
   fixedReturnExpense: number;
   taxProvision: number;
   salesIncentiveAccrued: number;
+  leasingBonusIncome: number;
   cashIn: number;
   cashOut: number;
   netCashFlow: number;

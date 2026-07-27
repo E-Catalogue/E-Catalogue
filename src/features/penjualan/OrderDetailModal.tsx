@@ -111,13 +111,14 @@ interface PayFormProps {
   orderId: string;
   branchKey: string;
   headers: BranchHeaders;
+  order?: Pick<LeadOrder, 'status' | 'paymentType' | 'leasingId' | 'remainingPayment'>;
   disabled?: boolean;
   disabledReason?: string;
 }
 
 /** Diekspor supaya bisa dipakai ulang di luar `OrderDetailModal` (mis. quick-input "Catat
  * Pembayaran") tanpa menduplikasi logic idempotency-key/error-banner/posting kas di atas. */
-export const PayForm = ({ orderId, branchKey, headers, disabled, disabledReason }: PayFormProps) => {
+export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabledReason }: PayFormProps) => {
   const [form, setForm] = useState<PaymentFormState>(emptyPayment());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<{ code?: string; message: string } | null>(null);
@@ -133,6 +134,10 @@ export const PayForm = ({ orderId, branchKey, headers, disabled, disabledReason 
   };
 
   const valid = form.amount > 0 && !!form.paymentDate && !!form.jenisPembayaran && !!form.cashAccountId;
+  const leasingBonusEnabled = order?.status === 'DEAL' && order.paymentType === 'KREDIT' && !!order.leasingId;
+  const paymentOptions = JENIS_OPTIONS.filter((option) => option.value !== 'REFUND_LEASING' || leasingBonusEnabled);
+  const leasingApplied = form.jenisPembayaran === 'REFUND_LEASING' ? Math.min(form.amount, order?.remainingPayment ?? 0) : 0;
+  const leasingBonus = form.jenisPembayaran === 'REFUND_LEASING' ? Math.max(form.amount - leasingApplied, 0) : 0;
 
   const submit = () => {
     const body: FormData | Partial<LeadPayment> = form.bukti
@@ -185,8 +190,9 @@ export const PayForm = ({ orderId, branchKey, headers, disabled, disabledReason 
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); if (valid) setConfirmOpen(true); }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <NumericField label="Jumlah (Rp)" required value={form.amount} onChange={(v) => set('amount', v)} prefix="Rp" />
         <DateField label="Tanggal Bayar" required value={form.paymentDate} onChange={(v) => set('paymentDate', v)} />
-        <SelectField label="Jenis Pembayaran" required value={form.jenisPembayaran} onChange={(e) => set('jenisPembayaran', e.target.value as JenisPembayaran)} options={JENIS_OPTIONS} />
+        <SelectField label="Jenis Pembayaran" required value={form.jenisPembayaran} onChange={(e) => set('jenisPembayaran', e.target.value as JenisPembayaran)} options={paymentOptions} />
         <CashAccountSelect required value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={cashLoading} />
+        {form.jenisPembayaran === 'REFUND_LEASING' && <div className="sm:col-span-2 rounded-xl border border-primary/20 bg-primary-light px-3 py-2.5 text-[12px] font-semibold text-ink-soft"><p className="font-extrabold text-ink">Bonus Leasing adalah kas masuk dari leasing.</p><p className="mt-1">Menutup sisa pelunasan: <strong>{idr(leasingApplied)}</strong> · Bonus perusahaan: <strong>{idr(leasingBonus)}</strong>. Perhitungan final ditentukan server saat disimpan.</p></div>}
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={form.description} onChange={(e) => set('description', e.target.value, false)} />
         <div className="sm:col-span-2">
           <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Bukti Pembayaran (opsional)</label>
@@ -203,7 +209,7 @@ export const PayForm = ({ orderId, branchKey, headers, disabled, disabledReason 
         tone="primary"
         icon={Wallet}
         title="Konfirmasi Pembayaran"
-        message={`${form.jenisPembayaran === 'REFUND_LEASING' ? 'Refund' : 'Pembayaran'} ${idr(form.amount)} akan langsung terposting ke akun kas terpilih. Lanjutkan?`}
+        message={`${form.jenisPembayaran === 'REFUND_LEASING' ? 'Bonus Leasing' : 'Pembayaran'} ${idr(form.amount)} akan langsung terposting ke akun kas terpilih. Lanjutkan?`}
         confirmLabel="Ya, Simpan"
       />
     </div>
@@ -220,20 +226,23 @@ const PaymentRow = ({
   const m = useLeadPaymentMutations(branchKey, orderId);
   const qc = useQueryClient();
 
-  const isRefund = payment.jenisPembayaran === 'REFUND_LEASING' || payment.jenisPembayaran === 'REFUND_DP';
+  const isLegacyLeasingRefund = payment.jenisPembayaran === 'REFUND_LEASING' && payment.isLegacyLeasingRefund;
+  const isOutflow = payment.jenisPembayaran === 'REFUND_DP' || isLegacyLeasingRefund;
+  const label = isLegacyLeasingRefund ? 'Refund Leasing (legacy)' : JENIS_PEMBAYARAN_LABEL[payment.jenisPembayaran];
   const reversible = payment.postingStatus === 'POSTED';
 
   return (
     <div className="px-4 py-3 hover:bg-surface-soft">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className={`font-bold text-[13px] ${isRefund ? 'text-semantic-error' : 'text-ink'}`}>{isRefund ? '−' : '+'}{idr(payment.amount)}</p>
+          <p className={`font-bold text-[13px] ${isOutflow ? 'text-semantic-error' : payment.jenisPembayaran === 'REFUND_LEASING' ? 'text-semantic-success' : 'text-ink'}`}>{isOutflow ? '−' : '+'}{idr(payment.amount)}</p>
           <p className="text-[11px] text-muted font-medium">
-            {JENIS_PEMBAYARAN_LABEL[payment.jenisPembayaran]} · {new Date(payment.paymentDate).toLocaleDateString('id-ID')}
+            {label} · {new Date(payment.paymentDate).toLocaleDateString('id-ID')}
             {payment.cashAccount?.name ? ` · ${payment.cashAccount.name}` : ''}
           </p>
           {payment.description && <p className="text-[11px] text-muted mt-0.5">{payment.description}</p>}
           {payment.refundOfPaymentId && <p className="text-[10px] font-semibold text-muted mt-0.5">Refund dari payment: {payment.refundOfPaymentId}</p>}
+          {payment.jenisPembayaran === 'REFUND_LEASING' && !payment.isLegacyLeasingRefund && <p className="text-[10px] font-semibold text-semantic-success mt-0.5">Pelunasan: {idr(payment.leasingSettlementAppliedAmount ?? 0)} · Bonus perusahaan: {idr(payment.leasingBonusAdjustment?.amount ?? 0)}</p>}
           {payment.buktiUrl && <div className="mt-1"><ProofLink url={payment.buktiUrl} /></div>}
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -301,6 +310,9 @@ const SettlementPanel = ({
       <span>{label}</span><span>{value == null ? '-' : idr(value)}</span>
     </div>
   );
+  const leasingBonus = (settlement.leasingBonusAdjustments ?? []).reduce((total, adjustment) => total + adjustment.amount, 0);
+  const leasingBonusTax = (settlement.leasingBonusAdjustments ?? []).reduce((total, adjustment) => total + adjustment.taxProvision, 0);
+  const leasingBonusNet = (settlement.leasingBonusAdjustments ?? []).reduce((total, adjustment) => total + adjustment.companyNetIncome, 0);
 
   return (
     <div className="space-y-4">
@@ -320,10 +332,12 @@ const SettlementPanel = ({
         {settlement.fundingAgreement?.scheme === 'FIXED_MONTHLY' && row('Return Tetap Investor', settlement.fixedReturnAccrued)}
         {row('Rekondisi Tambahan', settlement.additionalReconditioningCost)}
         {row('Insentif Sales', settlement.salesIncentiveAmount)}
+        {row('Bonus Leasing Perusahaan', leasingBonus)}
         <div className="border-t border-border my-1.5" />
         {row('Profit Perusahaan (sblm Pajak)', settlement.companyProfitBeforeTax)}
         {row('Provisi Pajak', settlement.taxProvision)}
         {row('Profit Bersih Perusahaan', settlement.companyNetProfit, true)}
+        {leasingBonus > 0 && <><div className="border-t border-border my-1.5" />{row('Laba Bersih termasuk Bonus Leasing', (settlement.companyNetProfit ?? 0) + leasingBonusNet, true)}{row('Pajak Bonus Leasing', leasingBonusTax)}</>}
       </div>
 
       <div className="flex items-center gap-2 text-[11px] font-medium text-muted">
@@ -477,6 +491,7 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
                 orderId={o.id}
                 branchKey={branchKey}
                 headers={branchHeader}
+                order={o}
                 disabled={mutationBlocked}
                 disabledReason={mutationBlocked ? 'Pilih cabang konkret terlebih dahulu untuk mencatat pembayaran.' : undefined}
               />

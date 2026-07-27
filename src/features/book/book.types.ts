@@ -11,6 +11,9 @@ export interface BookPeriod {
   cashOut: number;
   endingCash: number;
   salesRevenue: number;
+  /** `null` berarti snapshot dibuat sebelum bonus leasing dicatat terpisah. */
+  leasingBonusIncome: number | null;
+  leasingBonusTaxProvision: number | null;
   /** `null` means this historical snapshot was created before unit counts were recorded. */
   unitSold: number | null;
   unitHpp: number;
@@ -81,11 +84,13 @@ export interface CashSummaryFields {
 
 export const PROFIT_SUMMARY_FIELDS = [
   'salesRevenue', 'unitSold', 'unitHpp', 'grossProfit', 'investorProfit',
-  'fixedReturnExpense', 'additionalReconditioningCost', 'salesIncentiveAccrued',
+  'leasingBonusIncome', 'leasingBonusTaxProvision', 'fixedReturnExpense', 'additionalReconditioningCost', 'salesIncentiveAccrued',
   'taxProvision', 'companyNetProfit', 'operationalExpense', 'payrollExpense', 'operationalNetProfit',
 ] as const;
 export interface ProfitSummaryFields {
   salesRevenue: number;
+  leasingBonusIncome: number;
+  leasingBonusTaxProvision: number;
   unitSold: number;
   unitHpp: number;
   grossProfit: number;
