@@ -17,7 +17,7 @@ import { formatCurrency, formatDate } from '@/core/utils/format';
 import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect } from '@/features/finance/components';
 import { usePayrollCashAccounts, usePayrollDealOrderLookup, usePayrollUserLookup } from '@/features/finance/lookup';
 import { useBranchScope } from '@/features/auth/useBranchScope';
-import { usePayrollBaseSalaries, usePayrollBaseSalaryMutations, usePayrollRun, usePayrollRunMutations, usePayrollRuns, useSalesIncentiveMutations, useSalesIncentives } from '@/features/finance/finance.hooks';
+import { usePayrollBaseSalaries, usePayrollBaseSalaryMutations, usePayrollRun, usePayrollRunMutations, usePayrollRunPendingIncentives, usePayrollRuns, useSalesIncentiveMutations, useSalesIncentives } from '@/features/finance/finance.hooks';
 import { fromIsoDate, showName, toIsoDate } from '@/features/finance/finance.utils';
 import type { PayrollBaseSalary, PayrollItem, PayrollRun, SalesIncentive } from '@/features/finance/types';
 
@@ -131,9 +131,35 @@ const PayPayrollForm = ({ item, onClose }: { item: PayrollRun; onClose: () => vo
   );
 };
 
+const PayIncentiveForm = ({ item, onClose }: { item: SalesIncentive; onClose: () => void }) => {
+  const { branchHeader, branchKey } = useBranchScope();
+  const mutations = useSalesIncentiveMutations(branchKey);
+  const { data: cashAccounts = [], isLoading: cashLoading } = usePayrollCashAccounts(branchKey, { headers: branchHeader });
+  const [form, setForm] = useState({ cashAccountId: '', paidDate: today(), description: `Pembayaran insentif ${item.leadOrder?.nomorOrder ?? item.leadOrderId}` });
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    mutations.pay.mutate({ id: item.id, body: { ...form, paidDate: toIsoDate(form.paidDate) }, headers: branchHeader }, { onSuccess: () => onClose() });
+  };
+  return (
+    <Modal open onClose={onClose} title="Bayar Insentif Sales" icon={<Banknote size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="pay-incentive-form" disabled={!form.cashAccountId || mutations.pay.isPending}>Bayar Insentif</Button></>}>
+      <form id="pay-incentive-form" onSubmit={submit} className="space-y-4">
+        <div className="rounded-xl bg-surface-soft border border-border p-4">
+          <p className="text-[11px] font-bold uppercase text-muted">Insentif yang dibayar langsung</p>
+          <p className="text-lg font-extrabold text-semantic-error mt-1">{formatCurrency(item.amount)}</p>
+          <p className="text-[12px] text-muted mt-1">Order {item.leadOrder?.nomorOrder ?? item.leadOrderId}. Pembayaran ini dicatat sebagai kas keluar.</p>
+        </div>
+        <CashAccountSelect required value={form.cashAccountId} onChange={(v) => setForm((f) => ({ ...f, cashAccountId: v }))} accounts={cashAccounts} loading={cashLoading} />
+        <DateField label="Tanggal Bayar" required value={form.paidDate} onChange={(v) => setForm((f) => ({ ...f, paidDate: v }))} />
+        <TextField label="Keterangan (opsional)" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+      </form>
+    </Modal>
+  );
+};
+
 const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => {
   const { branchKey, branchHeader } = useBranchScope();
   const { data } = usePayrollRun(branchKey, id, branchHeader);
+  const pending = usePayrollRunPendingIncentives(branchKey, id, branchHeader, data?.status === 'DRAFT');
   const mutations = usePayrollRunMutations();
   const [pay, setPay] = useState<PayrollRun | null>(null);
   const updateItem = (item: PayrollItem, key: 'allowance' | 'deduction', rawValue: string) => {
@@ -142,7 +168,7 @@ const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => 
   };
   const run = data;
   return (
-    <Modal open onClose={onClose} title={`Payroll ${run?.period ?? ''}`} icon={<Banknote size={20} />} size="xl" footer={<><Button variant="secondary" onClick={onClose}>Tutup</Button>{run?.status === 'DRAFT' && <Can code="PAYROLL_PAY"><Button onClick={() => setPay(run)}>Bayar Payroll</Button></Can>}</>}>
+    <Modal open onClose={onClose} title={`Payroll ${run?.period ?? ''}`} icon={<Banknote size={20} />} size="xl" footer={<><Button variant="secondary" onClick={onClose}>Tutup</Button>{run?.status === 'DRAFT' && <Can code="PAYROLL_UPDATE"><Button variant="secondary" onClick={() => mutations.refreshIncentives.mutate({ id, headers: branchHeader })} disabled={mutations.refreshIncentives.isPending || !pending.data?.count}>Perbarui Insentif</Button></Can>}{run?.status === 'DRAFT' && <Can code="PAYROLL_PAY"><Button onClick={() => setPay(run)}>Bayar Payroll</Button></Can>}</>}>
       {run && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -152,8 +178,12 @@ const PayrollDetail = ({ id, onClose }: { id: string; onClose: () => void }) => 
               ['Tunjangan', run.totalAllowance],
               ['Potongan', run.totalDeduction],
               ['Total', run.totalPaid],
-            ].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-surface-soft border border-border p-3"><p className="text-[10px] font-bold uppercase text-muted">{label}</p><p className="font-extrabold text-ink mt-1">{formatCurrency(Number(value), { compact: true })}</p></div>)}
+          ].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-surface-soft border border-border p-3"><p className="text-[10px] font-bold uppercase text-muted">{label}</p><p className="font-extrabold text-ink mt-1">{formatCurrency(Number(value), { compact: true })}</p></div>)}
           </div>
+          {run.status === 'DRAFT' && <div className="rounded-xl border border-primary/20 bg-primary-light px-4 py-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-[13px] font-bold text-ink">Insentif baru yang belum masuk payroll</p><p className="text-[12px] text-muted">{pending.isLoading ? 'Memeriksa insentif baru...' : pending.data?.count ? `${pending.data.count} insentif senilai ${formatCurrency(pending.data.totalAmount)} siap dimasukkan.` : 'Tidak ada insentif EARNED baru untuk periode ini.'}</p></div>
+            {pending.data?.count ? <span className="text-[12px] font-extrabold text-primary">Perbarui sebelum bayar</span> : null}
+          </div>}
           <DataTable columns={[
             { header: 'User', cell: (i: PayrollItem) => <span className="font-bold text-ink">{showName(i.user)}</span> },
             { header: 'Gapok', align: 'right' as const, cell: (i: PayrollItem) => formatCurrency(i.baseSalary) },
@@ -174,6 +204,7 @@ const PayrollPageInner = () => {
   const [baseForm, setBaseForm] = useState<PayrollBaseSalary | null | undefined>();
   const [baseDelete, setBaseDelete] = useState<PayrollBaseSalary | null>(null);
   const [incentiveForm, setIncentiveForm] = useState<SalesIncentive | null | undefined>();
+  const [incentivePayment, setIncentivePayment] = useState<SalesIncentive | null>(null);
   const [generate, setGenerate] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const { branchKey, branchHeader } = useBranchScope();
@@ -194,9 +225,9 @@ const PayrollPageInner = () => {
     { header: 'Sales', cell: (x) => <span className="font-bold text-ink">{showName(x.sales) || x.salesId}</span> },
     { header: 'Order', cell: (x) => x.leadOrder?.nomorOrder ?? x.leadOrderId },
     { header: 'Periode', cell: (x) => x.period },
-    { header: 'Status', cell: (x) => <FinanceStatusBadge status={x.status} /> },
+    { header: 'Status', cell: (x) => <div className="space-y-1"><FinanceStatusBadge status={x.status} /><p className="text-[11px] font-medium text-muted">{x.status === 'EARNED' ? 'Siap dibayar langsung atau dimasukkan ke payroll.' : x.status === 'INCLUDED' ? `Sudah masuk Payroll ${x.payrollRunItem?.payrollRun?.period ?? 'terkait'}; bayar melalui payroll.` : x.status === 'PAID' ? 'Sudah dibayar; tidak dapat diubah.' : 'Menunggu proses settlement.'}</p></div> },
     { header: 'Nominal', align: 'right', cell: (x) => formatCurrency(x.amount) },
-    { header: '', align: 'right', cell: (x) => <RowActions onEdit={can('SALE_SETTLEMENT_FINALIZE') && ['DRAFT', 'EARNED'].includes(x.status) ? () => setIncentiveForm(x) : undefined} /> },
+    { header: '', align: 'right', cell: (x) => <RowActions onEdit={can('SALE_SETTLEMENT_FINALIZE') && ['DRAFT', 'EARNED'].includes(x.status) ? () => setIncentiveForm(x) : undefined} extra={can('PAYROLL_PAY') && x.status === 'EARNED' && !x.payrollRunItemId ? [{ label: 'Bayar Langsung', icon: <Banknote size={13} />, onClick: () => setIncentivePayment(x), variant: 'primary' }] : undefined} /> },
   ];
   const runColumns: Column<PayrollRun>[] = [
     { header: 'Periode', cell: (x) => <span className="font-bold text-ink">{x.period}</span> },
@@ -215,6 +246,7 @@ const PayrollPageInner = () => {
       {tab === 'runs' && <SectionCard title="Pembayaran Payroll" icon={<Banknote size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={runColumns} data={runs.data?.data ?? []} rowKey={(x) => x.id} loading={runs.isLoading} refreshing={runs.isFetching && !runs.isLoading} error={runs.isError} onRetry={() => runs.refetch()} emptyState={{ title: 'Belum ada payroll', description: 'Generate payroll untuk periode yang ingin diproses.' }} /></SectionCard>}
       {baseForm !== undefined && <BaseSalaryForm item={baseForm} onClose={() => setBaseForm(undefined)} />}
       {incentiveForm !== undefined && <IncentiveForm item={incentiveForm} onClose={() => setIncentiveForm(undefined)} />}
+      {incentivePayment && <PayIncentiveForm item={incentivePayment} onClose={() => setIncentivePayment(null)} />}
       {generate && <GeneratePayrollForm onClose={() => setGenerate(false)} />}
       {detailId && <PayrollDetail id={detailId} onClose={() => setDetailId(null)} />}
       <ConfirmDialog open={!!baseDelete} onClose={() => setBaseDelete(null)} onConfirm={() => baseDelete && baseMutations.remove.mutate({ id: baseDelete.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setBaseDelete(null) })} loading={baseMutations.remove.isPending} closeOnConfirm={false} title="Nonaktifkan Gapok" message={baseDelete ? `Nonaktifkan gapok ${showName(baseDelete.user)}?` : ''} />

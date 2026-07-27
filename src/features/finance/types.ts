@@ -185,6 +185,19 @@ export interface SalesIncentive {
   description?: string | null;
   sales?: { id: string; name?: string | null; username?: string | null };
   leadOrder?: { id: string; nomorOrder?: string | null; status?: string; salesId?: string; hargaFinal?: number };
+  payrollRunItemId?: string | null;
+  payrollRunItem?: { id: string; payrollRun?: { id: string; period: string; status: FinanceStatus } | null } | null;
+}
+
+export interface PayrollPendingIncentives {
+  count: number;
+  totalAmount: number;
+}
+
+export interface PayrollRefreshIncentivesResult {
+  run: PayrollRun;
+  addedCount: number;
+  addedAmount: number;
 }
 
 export interface PayrollItem {

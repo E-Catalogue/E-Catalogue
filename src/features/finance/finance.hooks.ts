@@ -209,11 +209,19 @@ export const useSalesIncentiveMutations = (branchKey: string) => {
     qc.invalidateQueries({ queryKey: ['book-period'] });
     qc.invalidateQueries({ queryKey: ['book-ledger'] });
     qc.invalidateQueries({ queryKey: ['book-profit-summary'] });
+    qc.invalidateQueries({ queryKey: ['cash-transactions'] });
+    qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
+    qc.invalidateQueries({ queryKey: ['cash-flow-report'] });
   };
   return {
     setForOrder: useMutation({
       mutationFn: ({ orderId, amount, headers }: { orderId: string; amount: number; headers?: BranchHeaders }) => payrollApi.incentives.setForOrder(orderId, { amount }, headers),
       onSuccess: () => { toast('Insentif sales diperbarui'); inval(); },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
+    pay: useMutation({
+      mutationFn: ({ id, body, headers }: { id: string; body: { cashAccountId: string; paidDate: string; description?: string }; headers?: BranchHeaders }) => payrollApi.incentives.pay(id, body, headers),
+      onSuccess: () => { toast('Insentif sales berhasil dibayar'); inval(); },
       onError: (e: unknown) => notifyApiError(e),
     }),
   };
@@ -227,6 +235,9 @@ export const usePayrollRuns = (branchKey: string, params: ListParams & { period?
 export const usePayrollRun = (branchKey: string, id: string | null, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['payroll-run', branchKey, id], queryFn: () => payrollApi.runs.get(id as string, headers), enabled: !!id });
 
+export const usePayrollRunPendingIncentives = (branchKey: string, id: string | null, headers?: BranchHeaders, enabled = true) =>
+  useQuery({ queryKey: ['payroll-run-pending-incentives', branchKey, id], queryFn: () => payrollApi.runs.pendingIncentives(id as string, headers), enabled: !!id && enabled });
+
 export const usePayrollRunMutations = () => {
   const qc = useQueryClient();
   const inval = () => {
@@ -235,6 +246,12 @@ export const usePayrollRunMutations = () => {
     qc.invalidateQueries({ queryKey: ['sales-incentives'] });
     qc.invalidateQueries({ queryKey: ['cash-transactions'] });
     qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
+    qc.invalidateQueries({ queryKey: ['cash-flow-report'] });
+    qc.invalidateQueries({ queryKey: ['book-periods'] });
+    qc.invalidateQueries({ queryKey: ['book-period'] });
+    qc.invalidateQueries({ queryKey: ['book-ledger'] });
+    qc.invalidateQueries({ queryKey: ['book-profit-summary'] });
+    qc.invalidateQueries({ queryKey: ['payroll-run-pending-incentives'] });
   };
   return {
     generate: useMutation({
@@ -245,6 +262,11 @@ export const usePayrollRunMutations = () => {
     updateItem: useMutation({
       mutationFn: ({ id, itemId, body, headers }: { id: string; itemId: string; body: { allowance: number; deduction: number }; headers?: BranchHeaders }) => payrollApi.runs.updateItem(id, itemId, body, headers),
       onSuccess: () => { toast('Item payroll diperbarui'); inval(); },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
+    refreshIncentives: useMutation({
+      mutationFn: ({ id, headers }: { id: string; headers?: BranchHeaders }) => payrollApi.runs.refreshIncentives(id, headers),
+      onSuccess: (result) => { toast(result.data.addedCount ? `${result.data.addedCount} insentif dimasukkan ke payroll` : 'Tidak ada insentif baru untuk payroll ini'); inval(); },
       onError: (e: unknown) => notifyApiError(e),
     }),
     pay: useMutation({

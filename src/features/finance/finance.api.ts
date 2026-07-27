@@ -151,16 +151,21 @@ export const payrollApi = {
       apiClient.get<ApiResponse<SalesIncentive[]>>('/payroll/sales-incentives', { params, headers }).then((r) => r.data),
     setForOrder: (orderId: string, body: { amount: number }, headers?: BranchHeaders) =>
       apiClient.put<ApiResponse<unknown>>(`/lead-orders/${orderId}/sales-incentive`, body, { headers }).then((r) => r.data),
+    pay: (id: string, body: { cashAccountId: string; paidDate: string; description?: string }, headers?: BranchHeaders) =>
+      apiClient.post<ApiResponse<SalesIncentive>>(`/payroll/sales-incentives/${id}/pay`, body, { headers }).then((r) => r.data),
   },
   runs: {
     list: (params: ListParams & { period?: string; status?: string }, headers?: BranchHeaders) =>
       apiClient.get<ApiResponse<PayrollRun[]>>('/payroll/runs', { params, headers }).then((r) => r.data),
     get: (id: string, headers?: BranchHeaders) => apiClient.get<ApiResponse<PayrollRun>>(`/payroll/runs/${id}`, { headers }).then((r) => r.data.data),
+    pendingIncentives: (id: string, headers?: BranchHeaders) => apiClient.get<ApiResponse<import('./types').PayrollPendingIncentives>>(`/payroll/runs/${id}/pending-incentives`, { headers }).then((r) => r.data.data),
     /** Backend `generate()` memanggil `requireBranchId()` — Owner WAJIB pilih cabang. */
     generate: (body: { period: string }, headers?: BranchHeaders) => apiClient.post<ApiResponse<PayrollRun>>('/payroll/runs/generate', body, { headers }).then((r) => r.data),
     /** Backend `updateItem()` TIDAK memanggil `requireBranchId()`. */
     updateItem: (id: string, itemId: string, body: { allowance: number; deduction: number }, headers?: BranchHeaders) =>
       apiClient.patch<ApiResponse<PayrollRun>>(`/payroll/runs/${id}/items/${itemId}`, body, { headers }).then((r) => r.data),
+    refreshIncentives: (id: string, headers?: BranchHeaders) =>
+      apiClient.post<ApiResponse<import('./types').PayrollRefreshIncentivesResult>>(`/payroll/runs/${id}/refresh-incentives`, undefined, { headers }).then((r) => r.data),
     /** Backend `pay()` TIDAK memanggil `requireBranchId()` — branch diambil dari `run.branchId`, dan TIDAK menerima/memakai `Idempotency-Key`. */
     pay: (id: string, body: { cashAccountId: string; paidDate: string; description?: string }, headers?: BranchHeaders) =>
       apiClient.post<ApiResponse<PayrollRun>>(`/payroll/runs/${id}/pay`, body, { headers }).then((r) => r.data),
