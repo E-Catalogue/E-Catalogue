@@ -11,17 +11,17 @@ const toast = (message: string) => store.dispatch(showToast({ title: 'Berhasil',
 export const useBookPeriods = (branchKey: string, params: { period?: string } = {}, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['book-periods', branchKey, params], queryFn: () => bookApi.periods(params, headers) });
 
-export const useBookPeriod = (branchKey: string, period: string | null, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['book-period', branchKey, period], queryFn: () => bookApi.period(period as string, headers), enabled: !!period });
+export const useBookPeriod = (branchKey: string, period: string | null, headers?: BranchHeaders, enabled = true) =>
+  useQuery({ queryKey: ['book-period', branchKey, period], queryFn: () => bookApi.period(period as string, headers), enabled: !!period && enabled });
 
 export const useBookLedger = (branchKey: string, params: { period?: string; page?: number; limit?: number; cashAccountId?: string }, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['book-ledger', branchKey, params], queryFn: () => bookApi.ledger(params, headers) });
 
-export const useBookCashSummary = (branchKey: string, params: { period?: string }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['book-cash-summary', branchKey, params], queryFn: () => bookApi.cashSummary(params, headers) });
+export const useBookCashSummary = (branchKey: string, params: { period?: string }, headers?: BranchHeaders, enabled = true) =>
+  useQuery({ queryKey: ['book-cash-summary', branchKey, params], queryFn: () => bookApi.cashSummary(params, headers), enabled });
 
-export const useBookProfitSummary = (branchKey: string, params: { period?: string }, headers?: BranchHeaders) =>
-  useQuery({ queryKey: ['book-profit-summary', branchKey, params], queryFn: () => bookApi.profitSummary(params, headers) });
+export const useBookProfitSummary = (branchKey: string, params: { period?: string }, headers?: BranchHeaders, enabled = true) =>
+  useQuery({ queryKey: ['book-profit-summary', branchKey, params], queryFn: () => bookApi.profitSummary(params, headers), enabled });
 
 export const useTaxSettings = (branchKey: string, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['tax-settings', branchKey], queryFn: () => bookApi.taxSettings(headers) });

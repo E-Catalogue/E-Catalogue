@@ -5,16 +5,17 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
-import { TextField, SelectField } from '@/shared/components/ui/Field';
+import { TextField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
 import { MonthField } from '@/shared/components/ui/MonthField';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can, RequirePermission } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
-import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect, SalesSelect } from '@/features/finance/components';
-import { usePayrollCashAccounts, usePayrollDealOrderLookup, usePayrollSalesLookup, usePayrollUserLookup } from '@/features/finance/lookup';
+import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect } from '@/features/finance/components';
+import { usePayrollCashAccounts, usePayrollDealOrderLookup, usePayrollUserLookup } from '@/features/finance/lookup';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { usePayrollBaseSalaries, usePayrollBaseSalaryMutations, usePayrollRun, usePayrollRunMutations, usePayrollRuns, useSalesIncentiveMutations, useSalesIncentives } from '@/features/finance/finance.hooks';
 import { fromIsoDate, showName, toIsoDate } from '@/features/finance/finance.utils';
@@ -52,38 +53,30 @@ const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onC
 };
 
 const IncentiveForm = ({ item, onClose }: { item: SalesIncentive | null; onClose: () => void }) => {
-  const mutations = useSalesIncentiveMutations();
   const { branchHeader, branchKey } = useBranchScope();
-  const readonly = item?.status === 'INCLUDED' || item?.status === 'PAID';
-  const { data: sales = [], isLoading: salesLoading } = usePayrollSalesLookup(branchKey, { headers: branchHeader });
+  const mutations = useSalesIncentiveMutations(branchKey);
+  const readonly = !!item && !['DRAFT', 'EARNED'].includes(item.status);
   const { data: dealOrders = [], isLoading: dealOrdersLoading } = usePayrollDealOrderLookup(branchKey, { headers: branchHeader });
-  const [form, setForm] = useState({ salesId: item?.salesId ?? '', leadOrderId: item?.leadOrderId ?? '', amount: String(item?.amount ?? ''), period: item?.period ?? month(), description: item?.description ?? '', status: item?.status ?? 'DRAFT' });
+  const [form, setForm] = useState({ leadOrderId: item?.leadOrderId ?? '', amount: String(item?.amount ?? '') });
   const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const body = { ...form, amount: Number(form.amount || 0) };
     const opts = { onError: (e: unknown) => notifyApiError(e), onSuccess: () => onClose() };
-    if (item) mutations.update.mutate({ id: item.id, body, headers: branchHeader }, opts);
-    else mutations.create.mutate({ body, headers: branchHeader }, opts);
+    mutations.setForOrder.mutate({ orderId: form.leadOrderId, amount: Number(form.amount || 0), headers: branchHeader }, opts);
   };
   return (
-    <Modal open onClose={onClose} title={item ? 'Edit Insentif Sales' : 'Tambah Insentif Sales'} icon={<ReceiptText size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="incentive-form" disabled={readonly || mutations.create.isPending || mutations.update.isPending}>Simpan</Button></>}>
+    <Modal open onClose={onClose} title={item ? 'Edit Insentif Sales' : 'Tambah Insentif Sales'} icon={<ReceiptText size={20} />} footer={<><Button variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" form="incentive-form" disabled={readonly || !form.leadOrderId || mutations.setForOrder.isPending}>Simpan</Button></>}>
       <form id="incentive-form" onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SalesSelect required disabled={readonly} value={form.salesId} onChange={(value) => setForm((f) => ({ ...f, salesId: value, leadOrderId: '' }))} sales={sales} loading={salesLoading} />
         <DealOrderSelect
           required
-          disabled={readonly || !form.salesId}
+          disabled={readonly || !!item}
           value={form.leadOrderId}
           onChange={(value) => set('leadOrderId', value)}
           loading={dealOrdersLoading}
           orders={dealOrders
-            .filter((o) => !form.salesId || o.salesId === form.salesId)
             .map((o) => ({ id: o.id, nomorOrder: o.nomorOrder, customerName: o.lead?.nama ?? o.sales?.name, hargaFinal: o.hargaFinal, dealDate: o.dealAt }))}
         />
         <CurrencyField label="Nominal" required disabled={readonly} value={form.amount} onChange={(e) => set('amount', e.target.value)} />
-        <MonthField label="Periode" required disabled={readonly} value={form.period} onChange={(v) => set('period', v)} />
-        {item && <SelectField label="Status" disabled={readonly} value={form.status} onChange={(e) => set('status', e.target.value)} options={[{ value: 'DRAFT', label: 'Draft' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />}
-        <TextField label="Keterangan" wrapClass="sm:col-span-2" disabled={readonly} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </form>
     </Modal>
   );
@@ -181,7 +174,6 @@ const PayrollPageInner = () => {
   const [baseForm, setBaseForm] = useState<PayrollBaseSalary | null | undefined>();
   const [baseDelete, setBaseDelete] = useState<PayrollBaseSalary | null>(null);
   const [incentiveForm, setIncentiveForm] = useState<SalesIncentive | null | undefined>();
-  const [incentiveDelete, setIncentiveDelete] = useState<SalesIncentive | null>(null);
   const [generate, setGenerate] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const { branchKey, branchHeader } = useBranchScope();
@@ -189,7 +181,7 @@ const PayrollPageInner = () => {
   const incentives = useSalesIncentives(branchKey, { page: 1, limit: 50 }, branchHeader);
   const runs = usePayrollRuns(branchKey, { page: 1, limit: 50 }, branchHeader);
   const baseMutations = usePayrollBaseSalaryMutations();
-  const incentiveMutations = useSalesIncentiveMutations();
+  const { can } = usePermissions();
   const baseColumns: Column<PayrollBaseSalary>[] = [
     { header: 'User', cell: (x) => <span className="font-bold text-ink">{showName(x.user) || x.userId}</span> },
     { header: 'Gapok', align: 'right', cell: (x) => formatCurrency(x.amount) },
@@ -204,7 +196,7 @@ const PayrollPageInner = () => {
     { header: 'Periode', cell: (x) => x.period },
     { header: 'Status', cell: (x) => <FinanceStatusBadge status={x.status} /> },
     { header: 'Nominal', align: 'right', cell: (x) => formatCurrency(x.amount) },
-    { header: '', align: 'right', cell: (x) => <RowActions onEdit={() => setIncentiveForm(x)} onDelete={x.status === 'DRAFT' ? () => setIncentiveDelete(x) : undefined} /> },
+    { header: '', align: 'right', cell: (x) => <RowActions onEdit={can('SALE_SETTLEMENT_FINALIZE') && ['DRAFT', 'EARNED'].includes(x.status) ? () => setIncentiveForm(x) : undefined} /> },
   ];
   const runColumns: Column<PayrollRun>[] = [
     { header: 'Periode', cell: (x) => <span className="font-bold text-ink">{x.period}</span> },
@@ -216,7 +208,7 @@ const PayrollPageInner = () => {
   ];
   return (
     <div className="max-w-[1600px] mx-auto  space-y-5">
-      <PageHeader title="Payroll" description="Master gapok, insentif sales, dan pembayaran payroll" action={tab === 'base' ? <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setBaseForm(null)}>Tambah Gapok</Button></Can> : tab === 'incentives' ? <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setIncentiveForm(null)}>Tambah Insentif</Button></Can> : <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setGenerate(true)}>Generate Payroll</Button></Can>} />
+      <PageHeader title="Payroll" description="Master gapok, insentif sales, dan pembayaran payroll" action={tab === 'base' ? <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setBaseForm(null)}>Tambah Gapok</Button></Can> : tab === 'incentives' ? <Can code="SALE_SETTLEMENT_FINALIZE"><Button icon={<Plus size={17} />} onClick={() => setIncentiveForm(null)}>Tambah Insentif</Button></Can> : <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setGenerate(true)}>Generate Payroll</Button></Can>} />
       <div className="flex flex-wrap gap-2">{[{ id: 'base', label: 'Master Gapok' }, { id: 'incentives', label: 'Insentif Sales' }, { id: 'runs', label: 'Pembayaran Payroll' }].map((x) => <button key={x.id} onClick={() => setTab(x.id as Tab)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === x.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>{x.label}</button>)}</div>
       {tab === 'base' && <SectionCard title="Master Gapok" icon={<Users size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={baseColumns} data={base.data?.data ?? []} rowKey={(x) => x.id} loading={base.isLoading} refreshing={base.isFetching && !base.isLoading} error={base.isError} onRetry={() => base.refetch()} emptyState={{ title: 'Belum ada master gapok', description: 'Tambahkan gaji pokok untuk user payroll pada cabang ini.' }} /></SectionCard>}
       {tab === 'incentives' && <SectionCard title="Insentif Sales" icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={incentiveColumns} data={incentives.data?.data ?? []} rowKey={(x) => x.id} loading={incentives.isLoading} refreshing={incentives.isFetching && !incentives.isLoading} error={incentives.isError} onRetry={() => incentives.refetch()} emptyState={{ title: 'Belum ada insentif sales', description: 'Insentif sales yang dicatat akan tampil di sini.' }} /></SectionCard>}
@@ -226,7 +218,6 @@ const PayrollPageInner = () => {
       {generate && <GeneratePayrollForm onClose={() => setGenerate(false)} />}
       {detailId && <PayrollDetail id={detailId} onClose={() => setDetailId(null)} />}
       <ConfirmDialog open={!!baseDelete} onClose={() => setBaseDelete(null)} onConfirm={() => baseDelete && baseMutations.remove.mutate({ id: baseDelete.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setBaseDelete(null) })} loading={baseMutations.remove.isPending} closeOnConfirm={false} title="Nonaktifkan Gapok" message={baseDelete ? `Nonaktifkan gapok ${showName(baseDelete.user)}?` : ''} />
-      <ConfirmDialog open={!!incentiveDelete} onClose={() => setIncentiveDelete(null)} onConfirm={() => incentiveDelete && incentiveMutations.remove.mutate({ id: incentiveDelete.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setIncentiveDelete(null) })} loading={incentiveMutations.remove.isPending} closeOnConfirm={false} title="Batalkan Insentif" message={incentiveDelete ? `Batalkan insentif ${formatCurrency(incentiveDelete.amount)}?` : ''} />
     </div>
   );
 };

@@ -135,7 +135,7 @@ export interface PayrollBaseSalary {
   user?: { id: string; name?: string | null; username?: string | null; isActive?: boolean };
 }
 
-export type SalesIncentiveStatus = 'DRAFT' | 'INCLUDED' | 'PAID' | 'CANCELLED';
+export type SalesIncentiveStatus = 'PENDING_AMOUNT' | 'DRAFT' | 'EARNED' | 'INCLUDED' | 'PAID' | 'CANCELLED';
 
 export interface SalesIncentive {
   id: string;

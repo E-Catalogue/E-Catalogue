@@ -62,7 +62,7 @@ const TargetPageInner = () => {
       align: 'right',
       cell: (r) => (
         <span className="font-semibold text-ink-soft text-[13px]">
-          {formatNumber(r.unitTarget)} / {formatNumber(r.actualUnit ?? 0)}
+          {formatNumber(r.unitTarget)} / {formatNumber(r.achievement?.unitActual ?? r.actualUnit ?? 0)}
         </span>
       ),
     },
@@ -71,7 +71,7 @@ const TargetPageInner = () => {
       align: 'right',
       cell: (r) => (
         <span className="font-semibold text-ink-soft text-[13px]">
-          {idr(r.revenueTarget)} / {idr(r.actualRevenue ?? 0)}
+          {idr(r.revenueTarget)} / {idr(r.achievement?.revenueActual ?? r.actualRevenue ?? 0)}
         </span>
       ),
     },

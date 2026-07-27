@@ -11,6 +11,8 @@ export interface BookPeriod {
   cashOut: number;
   endingCash: number;
   salesRevenue: number;
+  /** `null` means this historical snapshot was created before unit counts were recorded. */
+  unitSold: number | null;
   unitHpp: number;
   operationalExpense: number;
   payrollExpense: number;

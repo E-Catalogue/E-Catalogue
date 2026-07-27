@@ -3,7 +3,7 @@ import { cashAccountApi, cashTransactionApi, operationalExpenseApi, payrollApi, 
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
-import type { CashAccount, OperationalExpense, PayrollBaseSalary, RecurringExpense, SalesIncentive, ListParams } from './types';
+import type { CashAccount, OperationalExpense, PayrollBaseSalary, RecurringExpense, ListParams } from './types';
 
 type BranchHeaders = Record<string, string> | undefined;
 
@@ -193,23 +193,24 @@ export const usePayrollBaseSalaryMutations = () => {
 export const useSalesIncentives = (branchKey: string, params: ListParams & { salesId?: string; leadOrderId?: string; period?: string; status?: string }, headers?: BranchHeaders) =>
   useQuery({ queryKey: ['sales-incentives', branchKey, params], queryFn: () => payrollApi.incentives.list(params, headers) });
 
-export const useSalesIncentiveMutations = () => {
+export const useSalesIncentiveMutations = (branchKey: string) => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['sales-incentives'] });
+  const inval = () => {
+    qc.invalidateQueries({ queryKey: ['sales-incentives'] });
+    qc.invalidateQueries({ queryKey: ['lead-orders'] });
+    qc.invalidateQueries({ queryKey: ['lead-order', branchKey] });
+    qc.invalidateQueries({ queryKey: ['lead-order-settlement', branchKey] });
+    qc.invalidateQueries({ queryKey: ['payroll-runs'] });
+    qc.invalidateQueries({ queryKey: ['payroll-run'] });
+    qc.invalidateQueries({ queryKey: ['book-periods'] });
+    qc.invalidateQueries({ queryKey: ['book-period'] });
+    qc.invalidateQueries({ queryKey: ['book-ledger'] });
+    qc.invalidateQueries({ queryKey: ['book-profit-summary'] });
+  };
   return {
-    create: useMutation({
-      mutationFn: ({ body, headers }: { body: Partial<SalesIncentive>; headers?: BranchHeaders }) => payrollApi.incentives.create(body, headers),
-      onSuccess: () => { toast('Insentif sales ditambahkan'); inval(); },
-      onError: (e: unknown) => notifyApiError(e),
-    }),
-    update: useMutation({
-      mutationFn: ({ id, body, headers }: { id: string; body: Partial<SalesIncentive>; headers?: BranchHeaders }) => payrollApi.incentives.update(id, body, headers),
+    setForOrder: useMutation({
+      mutationFn: ({ orderId, amount, headers }: { orderId: string; amount: number; headers?: BranchHeaders }) => payrollApi.incentives.setForOrder(orderId, { amount }, headers),
       onSuccess: () => { toast('Insentif sales diperbarui'); inval(); },
-      onError: (e: unknown) => notifyApiError(e),
-    }),
-    remove: useMutation({
-      mutationFn: ({ id, headers }: { id: string; headers?: BranchHeaders }) => payrollApi.incentives.remove(id, headers),
-      onSuccess: () => { toast('Insentif sales dihapus'); inval(); },
       onError: (e: unknown) => notifyApiError(e),
     }),
   };

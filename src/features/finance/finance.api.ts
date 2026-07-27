@@ -143,12 +143,8 @@ export const payrollApi = {
   incentives: {
     list: (params: ListParams & { salesId?: string; leadOrderId?: string; period?: string; status?: string }, headers?: BranchHeaders) =>
       apiClient.get<ApiResponse<SalesIncentive[]>>('/payroll/sales-incentives', { params, headers }).then((r) => r.data),
-    /** Backend `create()` selalu melempar 410 `SALES_INCENTIVE_CREATE_DEPRECATED` — dipertahankan hanya karena sudah dipakai UI existing, headers diteruskan untuk konsistensi saja. */
-    create: (body: Partial<SalesIncentive>, headers?: BranchHeaders) => apiClient.post<ApiResponse<SalesIncentive>>('/payroll/sales-incentives', body, { headers }).then((r) => r.data),
-    /** Backend `update()` TIDAK memanggil `requireBranchId()`. */
-    update: (id: string, body: Partial<SalesIncentive>, headers?: BranchHeaders) => apiClient.patch<ApiResponse<SalesIncentive>>(`/payroll/sales-incentives/${id}`, body, { headers }).then((r) => r.data),
-    /** Backend `remove()` TIDAK memanggil `requireBranchId()`. */
-    remove: (id: string, headers?: BranchHeaders) => apiClient.delete<ApiResponse<unknown>>(`/payroll/sales-incentives/${id}`, { headers }).then((r) => r.data),
+    setForOrder: (orderId: string, body: { amount: number }, headers?: BranchHeaders) =>
+      apiClient.put<ApiResponse<unknown>>(`/lead-orders/${orderId}/sales-incentive`, body, { headers }).then((r) => r.data),
   },
   runs: {
     list: (params: ListParams & { period?: string; status?: string }, headers?: BranchHeaders) =>

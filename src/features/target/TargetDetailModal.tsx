@@ -13,16 +13,13 @@ import type { ApiErrorBody } from '@/core/api/types';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { usePermissions } from '@/features/auth/usePermissions';
-import { useTargetBranch, useTargetAchievement, useTargetLookupSales, useTargetMutations } from './target.hooks';
+import { useTargetBranch, useTargetLookupSales, useTargetMutations } from './target.hooks';
 import {
   TARGET_STATUS_COLOR,
   TARGET_STATUS_LABEL,
-  isTargetAchievementConsolidated,
   type BranchTarget,
   type SalesTarget,
-  type SalesTargetAchievement,
   type SalesTargetReplaceRow,
-  type TargetAchievement,
 } from './target.types';
 
 const idr = (n?: number | null) => (n == null ? '-' : formatCurrency(n));
@@ -91,16 +88,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
   const confirmAction = useConfirmedAction();
 
   const isClosed = target.status === 'CLOSED';
-  const { data: achRes } = useTargetAchievement(!isClosed ? target.period : undefined, branchKey, branchHeader);
-
-  const achData = achRes?.data ?? null;
-  let achievement: TargetAchievement | undefined;
-  const salesAchievement = new Map<string, SalesTargetAchievement>();
-  if (achData) {
-    const single = isTargetAchievementConsolidated(achData) ? achData.breakdown.find((b) => b.branchId === target.branchId) : achData;
-    achievement = single?.achievement;
-    single?.salesTargets?.forEach((st) => { if (st.achievement) salesAchievement.set(st.salesId, st.achievement); });
-  }
+  const achievement = target.achievement;
 
   // Lookup sales di-scope ke cabang target ITU SENDIRI, bukan branchHeader halaman (Owner yang sedang
   // "semua cabang" tetap bisa mengedit distribusi target milik satu cabang tertentu).
@@ -303,7 +291,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
                   />
                 ) : (
                   target.salesTargets!.map((st) => {
-                    const ach = isClosed ? { unitActual: st.actualUnit ?? 0, revenueActual: st.actualRevenue ?? 0 } : salesAchievement.get(st.salesId);
+                    const ach = st.achievement ?? { unitActual: st.actualUnit ?? 0, revenueActual: st.actualRevenue ?? 0 };
                     return (
                       <div key={st.id} className="flex items-center gap-3 px-4 py-3 border-b border-divider last:border-0">
                         <div className="flex-1 min-w-0">

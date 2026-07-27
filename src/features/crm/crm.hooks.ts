@@ -87,8 +87,7 @@ export const useLeadOrderMutations = (branchKey: string) => {
   /**
    * Cache invalidation setelah transisi status (README §18, contoh DEAL):
    * order detail/list, lead detail/list, unit detail/list, settlement, dashboard.
-   * Target achievement & book profit summary SENGAJA tidak diinvalidate — modul itu
-   * belum punya hooks TanStack Query di codebase ini (tidak mengarang query key baru).
+   * Target achievement juga di-invalidasi agar angka target langsung mengikuti perubahan DEAL.
    */
   const invalAfterStatusChange = (order: LeadOrder) => {
     invalList();
@@ -101,6 +100,9 @@ export const useLeadOrderMutations = (branchKey: string) => {
     if (order.unitId) qc.invalidateQueries({ queryKey: ['unit', order.unitId] });
     qc.invalidateQueries({ queryKey: ['lead-order-settlement', branchKey, order.id] });
     qc.invalidateQueries({ queryKey: ['dashboard-overview'] });
+    qc.invalidateQueries({ queryKey: ['targets'] });
+    qc.invalidateQueries({ queryKey: ['target'] });
+    qc.invalidateQueries({ queryKey: ['target-achievement'] });
     qc.invalidateQueries({ queryKey: ['lead-payments'] });
     qc.invalidateQueries({ queryKey: ['cash-accounts'] });
     qc.invalidateQueries({ queryKey: ['cash-transactions'] });

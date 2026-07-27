@@ -6,6 +6,13 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   READY_STOCK: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
   HOLD: { label: 'Hold', className: 'bg-accent-amber/10 text-accent-amber' },
   SOLD: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
+  // Payroll sales incentive statuses
+  PENDING_AMOUNT: { label: 'Menunggu Nominal', className: 'bg-accent-amber/10 text-accent-amber' },
+  DRAFT: { label: 'Draft', className: 'bg-slate-100 text-slate-600' },
+  EARNED: { label: 'Siap Payroll', className: 'bg-accent-blue/10 text-accent-blue' },
+  INCLUDED: { label: 'Masuk Payroll', className: 'bg-accent-purple/10 text-accent-purple' },
+  PAID: { label: 'Dibayar', className: 'bg-accent-green/10 text-accent-green' },
+  CANCELLED: { label: 'Dibatalkan', className: 'bg-primary/10 text-primary' },
   // Unit statuses (Old/Dummy - keep for compatibility if used elsewhere)
   ready: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
   rekondisi: { label: 'Rekondisi', className: 'bg-accent-amber/10 text-accent-amber' },
