@@ -109,7 +109,7 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
   const { summary, inventory } = data;
 
   const targetUnitPct = summary.targetUnit > 0 ? asPct((summary.unitSold / summary.targetUnit) * 100) : 0;
-  const targetRevenuePct = summary.targetRevenue > 0 ? asPct((summary.revenue / summary.targetRevenue) * 100) : 0;
+  const targetGrossProfitPct = summary.targetGrossProfit > 0 ? asPct((summary.grossProfit / summary.targetGrossProfit) * 100) : 0;
   const marginPct = summary.revenue > 0 ? Number(((summary.netProfit / summary.revenue) * 100).toFixed(1)) : 0;
   const expenseRatioPct = summary.revenue > 0 ? ((summary.expense / summary.revenue) * 100).toFixed(1) : '0';
 
@@ -152,11 +152,10 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
             color="green"
             label="Total Omzet"
             value={formatCurrency(summary.revenue, { compact: true })}
-            progress={{ percent: targetRevenuePct, label: 'Pencapaian Target Omzet' }}
             details={[
-              { label: 'Target Omzet', value: formatCurrency(summary.targetRevenue, { compact: true }) },
-              { label: 'Sisa Target', value: formatCurrency(Math.max(summary.targetRevenue - summary.revenue, 0), { compact: true }), color: 'text-accent-amber' },
               { label: 'Cash In', value: formatCurrency(summary.cashIn, { compact: true }) },
+              { label: 'HPP Terjual', value: formatCurrency(summary.hpp, { compact: true }) },
+              { label: 'Gross Profit', value: formatCurrency(summary.grossProfit, { compact: true }), color: 'text-accent-green' },
             ]}
           />
           <StatCard
@@ -167,6 +166,7 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
             subtitle={{ text: 'Margin bersih:', highlight: `${marginPct}% dari omzet` }}
             details={[
               { label: 'Gross Profit', value: formatCurrency(summary.grossProfit, { compact: true }) },
+              { label: 'Target Gross Profit', value: formatCurrency(summary.targetGrossProfit, { compact: true }) },
               { label: 'HPP', value: formatCurrency(summary.hpp, { compact: true }) },
               { label: 'Expense', value: formatCurrency(summary.expense, { compact: true }), color: 'text-semantic-error' },
             ]}
@@ -274,14 +274,14 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
             </div>
             <div>
               <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
-                <span className="text-muted">Omzet</span>
-                <span className="text-accent-green">{targetRevenuePct}%</span>
+                <span className="text-muted">Gross Profit</span>
+                <span className="text-accent-green">{targetGrossProfitPct}%</span>
               </div>
               <div className="h-3 rounded-full bg-surface-soft overflow-hidden">
-                <div className="h-full rounded-full bg-accent-green" style={{ width: `${Math.min(targetRevenuePct, 100)}%` }} />
+                <div className="h-full rounded-full bg-accent-green" style={{ width: `${Math.min(targetGrossProfitPct, 100)}%` }} />
               </div>
               <div className="mt-1 text-[11px] font-bold text-ink">
-                {formatCurrency(summary.revenue, { compact: true })} / {formatCurrency(summary.targetRevenue, { compact: true })}
+                {formatCurrency(summary.grossProfit, { compact: true })} / {formatCurrency(summary.targetGrossProfit, { compact: true })}
               </div>
             </div>
           </div>

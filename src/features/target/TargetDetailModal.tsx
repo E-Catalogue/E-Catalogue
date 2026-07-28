@@ -29,7 +29,7 @@ interface DistributionRow extends SalesTargetReplaceRow {
 }
 
 const rowsFromSalesTargets = (rows?: SalesTarget[]): DistributionRow[] =>
-  (rows ?? []).map((r) => ({ key: r.id, salesId: r.salesId, unitTarget: r.unitTarget, revenueTarget: r.revenueTarget }));
+  (rows ?? []).map((r) => ({ key: r.id, salesId: r.salesId, unitTarget: r.unitTarget, grossProfitTarget: r.grossProfitTarget }));
 
 interface Props {
   open: boolean;
@@ -105,12 +105,12 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
   const [confirmClose, setConfirmClose] = useState(false);
 
   const sumUnit = rows.reduce((t, r) => t + (r.unitTarget || 0), 0);
-  const sumRevenue = rows.reduce((t, r) => t + (r.revenueTarget || 0), 0);
+  const sumGrossProfit = rows.reduce((t, r) => t + (r.grossProfitTarget || 0), 0);
   const diffUnit = target.unitTarget - sumUnit;
-  const diffRevenue = target.revenueTarget - sumRevenue;
-  const distributionMatches = diffUnit === 0 && diffRevenue === 0 && rows.length > 0;
+  const diffGrossProfit = target.grossProfitTarget - sumGrossProfit;
+  const distributionMatches = diffUnit === 0 && diffGrossProfit === 0 && rows.length > 0;
 
-  const addRow = () => setRows((prev) => [...prev, { key: `new-${Date.now()}-${prev.length}`, salesId: '', unitTarget: 0, revenueTarget: 0 }]);
+  const addRow = () => setRows((prev) => [...prev, { key: `new-${Date.now()}-${prev.length}`, salesId: '', unitTarget: 0, grossProfitTarget: 0 }]);
   const removeRow = (key: string) => setRows((prev) => prev.filter((r) => r.key !== key));
   const updateRow = (key: string, patch: Partial<DistributionRow>) =>
     setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -142,7 +142,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
   const saveDistribution = () => {
     setDistError(null);
     setDupSalesIds(new Set());
-    const sales = rows.filter((r) => r.salesId).map(({ salesId, unitTarget, revenueTarget }) => ({ salesId, unitTarget, revenueTarget }));
+    const sales = rows.filter((r) => r.salesId).map(({ salesId, unitTarget, grossProfitTarget }) => ({ salesId, unitTarget, grossProfitTarget }));
     const body = { sales };
     confirmAction({
       title: 'Simpan Distribusi Sales',
@@ -218,11 +218,11 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
               </p>
             </div>
             <div className="rounded-2xl border border-border p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Target Revenue</p>
-              <p className="text-xl font-extrabold text-ink">{idr(target.revenueTarget)}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Target Gross Profit</p>
+              <p className="text-xl font-extrabold text-ink">{idr(target.grossProfitTarget)}</p>
               <p className="text-[12px] font-semibold text-muted mt-1">
-                Aktual: {idr(isClosed ? (target.actualRevenue ?? 0) : (achievement?.revenueActual ?? 0))}
-                {!isClosed && achievement && <span className="ml-1 text-primary">({achievement.revenuePercent}%)</span>}
+                Aktual: {idr(isClosed ? (target.actualGrossProfit ?? 0) : (achievement?.grossProfitActual ?? 0))}
+                {!isClosed && achievement && <span className="ml-1 text-primary">({achievement.grossProfitPercent}%)</span>}
               </p>
             </div>
           </div>
@@ -267,7 +267,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
                       ]}
                     />
                     <NumericField label="Target Unit" wrapClass="w-32" value={row.unitTarget} onChange={(v) => updateRow(row.key, { unitTarget: v })} min={0} suffix="unit" />
-                    <NumericField label="Target Revenue" wrapClass="w-44" value={row.revenueTarget} onChange={(v) => updateRow(row.key, { revenueTarget: v })} min={0} prefix="Rp" />
+                    <NumericField label="Target Gross Profit" wrapClass="w-44" value={row.grossProfitTarget} onChange={(v) => updateRow(row.key, { grossProfitTarget: v })} min={0} prefix="Rp" />
                     <button type="button" onClick={() => removeRow(row.key)} className="h-11 px-2.5 rounded-xl text-muted hover:text-semantic-error hover:bg-semantic-error/10 transition-colors shrink-0">
                       <Trash2 size={15} />
                     </button>
@@ -276,7 +276,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
 
                 <div className={`rounded-xl p-3 text-[12px] font-semibold flex flex-wrap gap-x-4 gap-y-1 ${distributionMatches ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-amber/10 text-accent-amber'}`}>
                   <span>Total unit: {formatNumber(sumUnit)} / {formatNumber(target.unitTarget)} {diffUnit !== 0 && `(selisih ${diffUnit > 0 ? '-' : '+'}${formatNumber(Math.abs(diffUnit))})`}</span>
-                  <span>Total revenue: {idr(sumRevenue)} / {idr(target.revenueTarget)} {diffRevenue !== 0 && `(selisih ${diffRevenue > 0 ? '-' : '+'}${idr(Math.abs(diffRevenue))})`}</span>
+                  <span>Total gross profit: {idr(sumGrossProfit)} / {idr(target.grossProfitTarget)} {diffGrossProfit !== 0 && `(selisih ${diffGrossProfit > 0 ? '-' : '+'}${idr(Math.abs(diffGrossProfit))})`}</span>
                 </div>
                 {distError && <p className="text-[11px] font-semibold text-semantic-error">{distError}</p>}
               </div>
@@ -291,16 +291,16 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
                   />
                 ) : (
                   target.salesTargets!.map((st) => {
-                    const ach = st.achievement ?? { unitActual: st.actualUnit ?? 0, revenueActual: st.actualRevenue ?? 0 };
+                    const ach = st.achievement ?? { unitActual: st.actualUnit ?? 0, grossProfitActual: st.actualGrossProfit ?? 0 };
                     return (
                       <div key={st.id} className="flex items-center gap-3 px-4 py-3 border-b border-divider last:border-0">
                         <div className="flex-1 min-w-0">
                           <p className="text-[13px] font-bold text-ink truncate">{st.sales?.name ?? st.salesId}</p>
-                          <p className="text-[11px] text-muted font-medium">Target: {formatNumber(st.unitTarget)} unit · {idr(st.revenueTarget)}</p>
+                          <p className="text-[11px] text-muted font-medium">Target: {formatNumber(st.unitTarget)} unit · {idr(st.grossProfitTarget)}</p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-[12px] font-bold text-ink">{formatNumber(ach?.unitActual ?? 0)} unit</p>
-                          <p className="text-[11px] text-muted font-medium">{idr(ach?.revenueActual ?? 0)}</p>
+                          <p className="text-[11px] text-muted font-medium">{idr(ach?.grossProfitActual ?? 0)}</p>
                         </div>
                       </div>
                     );

@@ -17,16 +17,16 @@ export interface TargetBranchLookup {
 
 export interface SalesTargetAchievement {
   unitActual: number;
-  revenueActual: number;
+  grossProfitActual: number;
 }
 
 export interface SalesTarget {
   id: string;
   salesId: string;
   unitTarget: number;
-  revenueTarget: number;
+  grossProfitTarget: number;
   actualUnit: number | null;
-  actualRevenue: number | null;
+  actualGrossProfit: number | null;
   sales?: {
     id: string;
     branchId: string;
@@ -40,9 +40,9 @@ export interface SalesTarget {
 
 export interface TargetAchievement {
   unitActual: number;
-  revenueActual: number;
+  grossProfitActual: number;
   unitPercent: number;
-  revenuePercent: number;
+  grossProfitPercent: number;
 }
 
 export interface BranchTarget {
@@ -50,12 +50,12 @@ export interface BranchTarget {
   branchId: string;
   period: string;
   unitTarget: number;
-  revenueTarget: number;
+  grossProfitTarget: number;
   status: TargetStatus;
   activatedAt: string | null;
   closedAt: string | null;
   actualUnit: number | null;
-  actualRevenue: number | null;
+  actualGrossProfit: number | null;
   createdAt: string;
   updatedAt: string;
   branch?: { id: string; nama: string; code: string };
@@ -71,7 +71,7 @@ export interface BranchTargetCreateInput {
   branchId: string;
   period: string;
   unitTarget: number;
-  revenueTarget: number;
+  grossProfitTarget: number;
 }
 
 /** Update TIDAK boleh mengubah cabang (backend `delete data.branchId`) — hanya period/target. */
@@ -80,7 +80,7 @@ export type BranchTargetUpdateInput = Partial<Omit<BranchTargetCreateInput, 'bra
 export interface SalesTargetReplaceRow {
   salesId: string;
   unitTarget: number;
-  revenueTarget: number;
+  grossProfitTarget: number;
 }
 
 export interface SalesTargetReplaceInput {
@@ -95,9 +95,9 @@ export interface TargetListParams {
 export interface TargetAchievementConsolidated {
   consolidated: {
     unitTarget: number;
-    revenueTarget: number;
+    grossProfitTarget: number;
     unitActual: number;
-    revenueActual: number;
+    grossProfitActual: number;
   };
   breakdown: BranchTarget[];
 }

@@ -35,7 +35,7 @@ export const TargetFormModal = ({ open, onClose, target, branchId, branchName, b
   // jadi state cukup di-init langsung dari `target` tanpa perlu useEffect untuk menyinkronkannya.
   const [period, setPeriod] = useState(() => target?.period ?? currentPeriod());
   const [unitTarget, setUnitTarget] = useState(() => target?.unitTarget ?? 0);
-  const [revenueTarget, setRevenueTarget] = useState(() => target?.revenueTarget ?? 0);
+  const [grossProfitTarget, setGrossProfitTarget] = useState(() => target?.grossProfitTarget ?? 0);
   const [periodError, setPeriodError] = useState<string | null>(null);
   const m = useTargetMutations(branchKey, branchHeader);
 
@@ -67,7 +67,7 @@ export const TargetFormModal = ({ open, onClose, target, branchId, branchName, b
       const data: Record<string, unknown> = {};
       if (period !== target.period) data.period = period;
       if (unitTarget !== target.unitTarget) data.unitTarget = unitTarget;
-      if (revenueTarget !== target.revenueTarget) data.revenueTarget = revenueTarget;
+      if (grossProfitTarget !== target.grossProfitTarget) data.grossProfitTarget = grossProfitTarget;
       if (Object.keys(data).length === 0) {
         onClose();
         return;
@@ -82,7 +82,7 @@ export const TargetFormModal = ({ open, onClose, target, branchId, branchName, b
         onError: handleError,
       });
     } else {
-      const body = { branchId, period, unitTarget, revenueTarget };
+      const body = { branchId, period, unitTarget, grossProfitTarget };
       confirmAction({
         title: 'Buat Target Cabang',
         message: `Buat target cabang${branchName ? ` ${branchName}` : ''} untuk periode ${period}?`,
@@ -133,10 +133,10 @@ export const TargetFormModal = ({ open, onClose, target, branchId, branchName, b
             suffix="unit"
           />
           <NumericField
-            label="Target Revenue"
+            label="Target Gross Profit"
             required
-            value={revenueTarget}
-            onChange={setRevenueTarget}
+            value={grossProfitTarget}
+            onChange={setGrossProfitTarget}
             min={0}
             prefix="Rp"
           />

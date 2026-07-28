@@ -34,7 +34,7 @@ export interface DashboardSummary {
   totalTestDrives: number;
   conversionRate: number;
   targetUnit: number;
-  targetRevenue: number;
+  targetGrossProfit: number;
   /** Hanya ada di summary single-branch; summary konsolidasi Owner tidak mengirim field ini. */
   targetStatus?: string | null;
 }

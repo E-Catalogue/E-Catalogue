@@ -52,7 +52,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/penjualan', label: 'Penjualan', icon: ReceiptText, group: 'operasional', code: 'PENJUALAN' },
   // SALES_TARGET/REVENUE_TARGET (dua menu terpisah) sudah deprecated permanen di backend
   // (prisma/seed.js deprecatedMenuCodes) — diganti satu resource BranchTarget yang menyimpan
-  // unitTarget+revenueTarget sekaligus, menu tunggal "Target Cabang & Sales" (code BRANCH_TARGET).
+  // unitTarget+grossProfitTarget sekaligus, menu tunggal "Target Cabang & Sales" (code BRANCH_TARGET).
   { path: '/targets', label: 'Target Cabang & Sales', icon: Target, group: 'operasional', code: 'BRANCH_TARGET' },
   { path: '/pembayaran', label: 'Pembayaran', icon: Wallet, group: 'operasional', code: 'PEMBAYARAN' },
   { path: '/pengeluaran', label: 'Pengeluaran', icon: TrendingDown, group: 'operasional', code: 'PENGELUARAN' },

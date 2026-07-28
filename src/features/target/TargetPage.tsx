@@ -67,11 +67,11 @@ const TargetPageInner = () => {
       ),
     },
     {
-      header: 'Target / Aktual Revenue',
+      header: 'Target / Aktual Gross Profit',
       align: 'right',
       cell: (r) => (
         <span className="font-semibold text-ink-soft text-[13px]">
-          {idr(r.revenueTarget)} / {idr(r.achievement?.revenueActual ?? r.actualRevenue ?? 0)}
+          {idr(r.grossProfitTarget)} / {idr(r.achievement?.grossProfitActual ?? r.actualGrossProfit ?? 0)}
         </span>
       ),
     },

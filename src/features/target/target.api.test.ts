@@ -15,7 +15,7 @@ describe('targetApi kontrak backend aktif', () => {
   });
 
   it('create mengirim branchId di body (update_target) + header X-Branch-Id untuk validasi scope', async () => {
-    const body = { branchId: 'branch-1', period: '2026-07', unitTarget: 10, revenueTarget: 2_000_000_000 };
+    const body = { branchId: 'branch-1', period: '2026-07', unitTarget: 10, grossProfitTarget: 2_000_000_000 };
     const headers = { 'X-Branch-Id': 'branch-1' };
     await targetApi.create(body, headers);
     expect(mocks.post).toHaveBeenCalledWith('/targets/branches', body, { headers });
