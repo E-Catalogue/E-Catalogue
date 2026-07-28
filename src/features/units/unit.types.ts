@@ -1,5 +1,13 @@
 export type StatusUnit = 'INVENTORY' | 'READY_STOCK' | 'HOLD' | 'SOLD';
 export type Transmisi = 'MANUAL' | 'AUTOMATIC';
+export type BahanBakar = 'BENSIN' | 'DIESEL' | 'HYBRID' | 'LISTRIK';
+
+export const BAHAN_BAKAR_LABEL: Record<BahanBakar, string> = {
+  BENSIN: 'Bensin',
+  DIESEL: 'Diesel',
+  HYBRID: 'Hybrid',
+  LISTRIK: 'Listrik',
+};
 
 export type FundingSource = 'COMPANY_OWNED' | 'INVESTOR';
 export type FundingScheme = 'FIXED_MONTHLY' | 'PROFIT_SHARE';
@@ -83,10 +91,11 @@ export interface Unit {
   targetPrice?: number | null;
   otrPrice?: number | null;
   pricingFinalizedAt?: string | null;
+  readyStockAt?: string | null;
   isNew?: boolean;
   statusKatalog?: string | null;
   variant?: string | null;
-  bahanBakar?: string | null;
+  bahanBakar?: BahanBakar | null;
   deskripsi?: string | null;
   isPublished?: boolean;
   createdAt: string;
@@ -136,6 +145,7 @@ export interface UnitFormData {
   purchaseCost: number;
   tanggalPembelian: string; // ISO String
   cashAccountId?: string;
+  bahanBakar?: BahanBakar | null;
   /** Wajib pada create (`POST /units`); tidak dikirim/diterima pada update. */
   funding?: UnitFundingInput;
   kelengkapans: string[];

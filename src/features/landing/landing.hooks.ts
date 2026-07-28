@@ -28,6 +28,9 @@ export const usePublicCatalog = (params: CatalogQuery) =>
 export const usePublicCatalogBrands = () =>
   useQuery({ queryKey: ['public', 'catalog-brands'], queryFn: landingApi.getCatalogBrands, staleTime: FIVE_MIN });
 
+export const usePublicSales = (enabled = true) =>
+  useQuery({ queryKey: ['public', 'sales'], queryFn: landingApi.getSales, staleTime: FIVE_MIN, enabled });
+
 export const usePublicCatalogUnit = (id?: string) =>
   useQuery({ queryKey: ['public', 'catalog', id], queryFn: () => landingApi.getCatalogUnit(id as string), enabled: !!id });
 

@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Car, Phone, Menu, X, MapPin, Mail, MessageCircle, Globe } from 'lucide-react';
-import { PUBLIC_NAV, WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { Car, Phone, Menu, X, MapPin, Mail, Globe } from 'lucide-react';
+import { FaInstagram, FaFacebookF, FaWhatsapp, FaTiktok } from 'react-icons/fa6';
+import { PUBLIC_NAV } from './publicNav';
 import { usePublicSiteSettings, usePublicNavMenus } from './landing.hooks';
 import { cmsImageUrl } from '@/features/cms/cms.api';
+import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 
 
 const NavLogo = ({ logoUrl, companyName, tagline }: { logoUrl?: string | null; companyName: string; tagline: string }) => (
@@ -32,7 +34,7 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
   const companyName = s?.companyName || 'GM MOBILINDO';
   const tagline = s?.tagline || 'Used Car Specialist';
   const logoUrl = cmsImageUrl('site', s?.logoFilename);
-  const waUrl = s?.whatsappNumber ? `https://wa.me/${s.whatsappNumber}` : DEFAULT_WA;
+  const waUrl = buildWhatsAppUrl(s?.whatsappNumber, waMessages.generalContact(s?.companyName));
   const contactLabel = s?.navContactLabel || 'Hubungi Kami';
 
   // Array kosong adalah kondisi valid saat semua menu dinonaktifkan oleh CMS.
@@ -107,9 +109,10 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
               {s?.footerDescription || 'Showroom mobil bekas berkualitas dengan layanan terpercaya, bergaransi, dan harga transparan untuk mobil impian Anda.'}
             </p>
             <div className="flex gap-3 mt-5">
-              <a href={waUrl} target="_blank" rel="noreferrer" title="WhatsApp" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><MessageCircle size={18} /></a>
-              {s?.social?.instagram && <a href={s.social.instagram} target="_blank" rel="noreferrer" title="Instagram" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
-              {s?.social?.facebook && <a href={s.social.facebook} target="_blank" rel="noreferrer" title="Facebook" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
+              <a href={waUrl} target="_blank" rel="noreferrer" title="WhatsApp" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><FaWhatsapp size={18} /></a>
+              {s?.social?.instagram && <a href={s.social.instagram} target="_blank" rel="noreferrer" title="Instagram" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><FaInstagram size={18} /></a>}
+              {s?.social?.facebook && <a href={s.social.facebook} target="_blank" rel="noreferrer" title="Facebook" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><FaFacebookF size={16} /></a>}
+              {s?.social?.tiktok && <a href={s.social.tiktok} target="_blank" rel="noreferrer" title="TikTok" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><FaTiktok size={16} /></a>}
               {s?.social?.website && <a href={s.social.website} target="_blank" rel="noreferrer" title="Website" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-colors"><Globe size={18} /></a>}
             </div>
           </div>

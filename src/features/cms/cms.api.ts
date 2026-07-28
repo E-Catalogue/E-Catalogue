@@ -104,12 +104,20 @@ export const cmsCatalogApi = {
   patchFeatured: (id: string, isFeatured: boolean) => apiClient.patch<ApiResponse<CmsCatalogRow>>(`/cms/catalog/${id}/featured`, { isFeatured }).then((r) => r.data.data),
   uploadImage: (id: string, file: File) =>
     apiClient
-      .post<ApiResponse<{ id: string; filename: string; sequence: number }>>(`/cms/catalog/${id}/images`, fileForm(file), uploadCfg)
+      .post<ApiResponse<{ id: string; filename: string; sequence: number; isMain: boolean }>>(`/cms/catalog/${id}/images`, fileForm(file), uploadCfg)
       .then((r): CmsCatalogImage => ({
         id: r.data.data.id,
         filename: r.data.data.filename,
         sortOrder: r.data.data.sequence,
+        isMain: r.data.data.isMain,
       })),
+  uploadImages: (id: string, files: File[], mainIndex?: number | null) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+    if (mainIndex !== undefined && mainIndex !== null) formData.append('mainIndex', String(mainIndex));
+    return apiClient.post<ApiResponse<CmsCatalogImage[]>>(`/cms/catalog/${id}/images/bulk`, formData, uploadCfg).then((r) => r.data.data);
+  },
   reorderImages: (id: string, orderedIds: string[]) => apiClient.patch<ApiResponse<CmsCatalogRow>>(`/cms/catalog/${id}/images/reorder`, { orderedIds }).then((r) => r.data.data),
+  setMainImage: (id: string, imageId: string) => apiClient.patch<ApiResponse<CmsCatalogImage>>(`/cms/catalog/${id}/images/${imageId}/main`).then((r) => r.data.data),
   deleteImage: (id: string, imageId: string) => apiClient.delete(`/cms/catalog/${id}/images/${imageId}`).then((r) => r.data),
 };

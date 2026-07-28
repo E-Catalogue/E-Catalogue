@@ -10,5 +10,3 @@ export const PUBLIC_NAV: PublicNavItem[] = [
   { to: '/tentang', label: 'Tentang' },
   { to: '/kontak', label: 'Kontak' },
 ];
-
-export const WHATSAPP_URL = 'https://wa.me/628000000000';

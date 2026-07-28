@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
-import { ArrowDown, ArrowUp, BadgeCheck, Calendar, CheckCircle, Cog, Gauge, Hash, Image as ImageIcon, Pencil, Receipt, Save, Star, Trash2, TrendingUp, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { BadgeCheck, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, Palette, Pencil, Receipt, Save, TrendingUp } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { usePermissions } from '@/features/auth/usePermissions';
-import { FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type Unit } from '@/features/units/unit.types';
+import { UnitGalleryManager } from './UnitGalleryManager';
+import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type Unit } from '@/features/units/unit.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
@@ -44,23 +45,13 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   const updateFunding = useUpdateUnitFunding();
   const confirmAction = useConfirmedAction();
   const { can } = usePermissions();
-  const [imageError, setImageError] = useState('');
   const [confirmFinalize, setConfirmFinalize] = useState(false);
   const [confirmNoRekondisi, setConfirmNoRekondisi] = useState(false);
-  const [draftImages, setDraftImages] = useState<NonNullable<Unit['unitImages']> | null>(null);
-  const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [cyclePolicy, setCyclePolicy] = useState<FinalCyclePolicy | ''>('');
-  const pendingImageUrl = useMemo(() => pendingImage ? URL.createObjectURL(pendingImage) : '', [pendingImage]);
-
-  useEffect(() => {
-    return () => { if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl); };
-  }, [pendingImageUrl]);
 
   if (!current) return null;
 
-  const serverImages = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
-  const images = draftImages ?? serverImages;
-  const imageOrderDirty = serverImages.map((image) => image.id).join(',') !== images.map((image) => image.id).join(',');
+  const images = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
   const mainImage = images.find((img) => img.isMain) ?? images[0];
   const otrPrice = current.otrPrice ?? null;
   const targetPrice = current.targetPrice ?? null;
@@ -88,45 +79,12 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
     : DEFAULT_CAR_IMAGE;
 
   const isNew = new Date().getTime() - new Date(current.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000;
-  const validateImage = (file: File) => {
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) return 'File harus JPG, JPEG, atau PNG.';
-    if (file.size > 5 * 1024 * 1024) return 'Ukuran file maksimal 5MB.';
-    return '';
-  };
-  const selectImage = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const error = validateImage(file);
-    setImageError(error);
-    setPendingImage(error ? null : file);
-    event.target.value = '';
-  };
-  const uploadImage = () => {
-    if (!pendingImage) return;
-    const file = pendingImage;
-    confirmAction({
-      title: 'Upload Gambar Unit',
-      message: `Upload ${file.name} ke galeri unit ini?`,
-      confirmLabel: 'Upload Gambar',
-      execute: () => imageMutations.upload.mutateAsync({ file, isMain: images.length === 0 }),
-      onSuccess: () => setPendingImage(null),
-      onError: notifyApiError,
-    });
-  };
-  const reorder = (imageId: string, direction: -1 | 1) => {
-    const index = images.findIndex((img) => img.id === imageId);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= images.length) return;
-    const next = [...images];
-    [next[index], next[target]] = [next[target], next[index]];
-    setDraftImages(next);
-  };
-  const saveImageOrder = () => confirmAction({
-    title: 'Simpan Urutan Gambar',
-    message: 'Simpan urutan galeri unit sesuai susunan saat ini?',
-    confirmLabel: 'Simpan Urutan',
-    execute: () => imageMutations.reorder.mutateAsync(images.map((img, idx) => ({ id: img.id, sequence: idx + 1 }))),
-    onSuccess: () => setDraftImages(null),
+  const deleteImage = (imageId: string) => confirmAction({
+    title: 'Hapus Foto Unit',
+    message: 'Foto ini akan dihapus permanen dari unit. Lanjutkan?',
+    confirmLabel: 'Hapus Foto',
+    tone: 'danger',
+    execute: () => imageMutations.remove.mutateAsync(imageId),
     onError: notifyApiError,
   });
 
@@ -134,8 +92,11 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
     <Modal
       open={open}
       onClose={onClose}
-      size="lg"
-      busy={imageMutations.upload.isPending || imageMutations.reorder.isPending || imageMutations.remove.isPending || imageMutations.setMain.isPending || finalizePricing.isPending}
+      size="xl"
+      icon={<Car size={20} />}
+      title={unitDisplayName(current)}
+      subtitle={`${[current.merek?.name, current.tipe?.name].filter(Boolean).join(' ') || '—'} · ${current.platNomor}`}
+      busy={imageMutations.uploadMany.isPending || imageMutations.reorder.isPending || imageMutations.remove.isPending || imageMutations.setMain.isPending || finalizePricing.isPending}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
@@ -143,53 +104,54 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
         </>
       }
     >
-      <div className="relative rounded-2xl overflow-hidden aspect-[16/9] bg-surface-soft">
-        <img
-          src={imageUrl}
-          alt=""
-          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-3 left-3 flex gap-2">
-          {isNew && <span className="bg-primary text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg shadow-glow">Baru</span>}
-          <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg">{current.platNomor}</span>
+      {/* Ringkasan: hero + info harga & spesifikasi utama */}
+      <div className="grid lg:grid-cols-2 gap-5">
+        <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-surface-soft border border-border">
+          <img
+            src={imageUrl}
+            alt=""
+            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-3 left-3 flex gap-2">
+            {isNew && <span className="bg-primary text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg shadow-glow">Baru</span>}
+            <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg">{current.platNomor}</span>
+          </div>
+          <div className="absolute top-3 right-3"><StatusBadge status={current.statusUnit} /></div>
+          {images.length > 1 && (
+            <span className="absolute bottom-3 right-3 bg-ink/70 text-white text-[10px] font-bold px-2 py-1 rounded-lg">{images.length} foto</span>
+          )}
         </div>
-        <div className="absolute top-3 right-3"><StatusBadge status={current.statusUnit} /></div>
+
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-primary p-4 text-white shadow-glow">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">OTR</p>
+              <p className="text-2xl font-extrabold leading-tight mt-1">{otrPrice ? formatCurrency(otrPrice, { compact: true }) : '-'}</p>
+            </div>
+            <div className="rounded-2xl bg-surface-soft border border-border p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Target</p>
+              <p className="text-2xl font-extrabold text-ink leading-tight mt-1">{targetPrice ? formatCurrency(targetPrice, { compact: true }) : '-'}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <Spec icon={Calendar} label="Tahun" value={`${current.tahun}`} />
+            <Spec icon={Gauge} label="Kilometer" value={`${formatNumber(current.kilometer)} KM`} />
+            <Spec icon={Cog} label="Transmisi" value={current.transmisi === 'AUTOMATIC' ? 'Automatic (AT)' : 'Manual (MT)'} />
+            <Spec icon={Fuel} label="Bahan Bakar" value={current.bahanBakar ? BAHAN_BAKAR_LABEL[current.bahanBakar] : '-'} />
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-start justify-between gap-3 mt-4">
-        <div className="min-w-0">
-          <h3 className="text-xl font-extrabold text-ink leading-tight">{unitDisplayName(current)}</h3>
-          <p className="text-[13px] text-muted font-semibold">{[current.merek?.name, current.tipe?.name].filter(Boolean).join(' ') || '—'}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-4 text-right shrink-0">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1">OTR</p>
-            <p className="text-xl font-extrabold text-primary leading-none">{otrPrice ? formatCurrency(otrPrice) : '-'}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1">Target</p>
-            <p className="text-xl font-extrabold text-ink leading-none">{targetPrice ? formatCurrency(targetPrice) : '-'}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
-        <Spec icon={Calendar} label="Tahun" value={`${current.tahun}`} />
-        <Spec icon={Gauge} label="Kilometer" value={`${formatNumber(current.kilometer)} KM`} />
+      {/* Spesifikasi & biaya lengkap */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 mt-4">
         <Spec icon={Receipt} label="Pajak" value={current.tanggalPajak ? new Date(current.tanggalPajak).toLocaleDateString('id-ID') : '-'} />
-        <Spec icon={Cog} label="Transmisi" value={current.transmisi === 'AUTOMATIC' ? 'Automatic (AT)' : 'Manual (MT)'} />
-        <Spec icon={Hash} label="Warna" value={current.warna || '-'} />
+        <Spec icon={Palette} label="Warna" value={current.warna || '-'} />
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />
+        {current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost, { compact: true })} /> : null}
+        {hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(hpp, { compact: true })} /> : null}
+        {margin !== null ? <Spec icon={TrendingUp} label="Est. Margin" value={formatCurrency(margin, { compact: true })} /> : null}
       </div>
-
-      {(margin !== null || hpp) && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-2.5">
-          {current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost)} /> : null}
-          {hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(hpp)} /> : null}
-          {margin !== null ? <Spec icon={TrendingUp} label="Estimasi Margin" value={formatCurrency(margin)} /> : null}
-        </div>
-      )}
 
       <div className="mt-5 border-t border-divider pt-4">
         <div className="flex items-center justify-between gap-3 mb-3">
@@ -248,66 +210,22 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
       )}
 
       <div className="mt-5 border-t border-divider pt-4">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <p className="text-[13px] font-extrabold text-ink">Galeri Unit</p>
-            <p className="text-[11px] font-semibold text-muted">Upload, urutkan, dan pilih gambar utama</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {imageOrderDirty && <Button size="sm" onClick={saveImageOrder} loading={imageMutations.reorder.isPending}>Simpan Urutan</Button>}
-            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-[12px] font-bold cursor-pointer">
-              <Upload size={14} /> Upload
-              <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={selectImage} className="hidden" />
-            </label>
-          </div>
+        <div className="mb-3">
+          <p className="text-[13px] font-extrabold text-ink">Galeri Unit</p>
+          <p className="text-[11px] font-semibold text-muted">Upload beberapa foto sekaligus, urutkan, dan pilih gambar utama</p>
         </div>
-        {imageError && <p className="text-[12px] font-semibold text-semantic-error mb-2">{imageError}</p>}
-        {pendingImage && (
-          <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border bg-surface-soft p-3">
-            <img src={pendingImageUrl} alt="Preview gambar yang akan diupload" className="h-16 w-24 rounded-xl object-cover" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-extrabold text-ink">{pendingImage.name}</p>
-              <p className="text-[11px] font-semibold text-muted">{(pendingImage.size / 1024 / 1024).toFixed(2)} MB · Siap diupload</p>
-            </div>
-            <Button size="sm" variant="secondary" onClick={() => setPendingImage(null)}>Batal</Button>
-            <Button size="sm" onClick={uploadImage} loading={imageMutations.upload.isPending}>Upload</Button>
-          </div>
-        )}
-        {images.length === 0 ? (
-          <div className="border border-dashed border-border rounded-2xl py-8 text-center text-muted">
-            <ImageIcon size={28} className="mx-auto mb-2" />
-            <p className="text-sm font-semibold">Belum ada gambar unit</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {images.map((img, index) => (
-              <div key={img.id} className="relative rounded-2xl border border-border overflow-hidden bg-surface-soft">
-                <img src={`${API_ORIGIN}/public/unit/${img.filename}`} alt={img.originalName} className="w-full aspect-[4/3] object-cover" />
-                {img.isMain && <span className="absolute top-2 left-2 bg-primary text-white rounded-lg px-2 py-1 text-[10px] font-bold">Utama</span>}
-                <div className="p-2 flex items-center justify-between gap-1">
-                  <div className="flex gap-1">
-                    <button type="button" title="Naik" disabled={index === 0} onClick={() => reorder(img.id, -1)} className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-primary-light disabled:opacity-40"><ArrowUp size={14} /></button>
-                    <button type="button" title="Turun" disabled={index === images.length - 1} onClick={() => reorder(img.id, 1)} className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-primary-light disabled:opacity-40"><ArrowDown size={14} /></button>
-                    <button type="button" title="Jadikan utama" disabled={!!img.isMain} onClick={() => imageMutations.setMain.mutate(img.id, { onError: (err) => notifyApiError(err) })} className="p-1.5 rounded-lg text-muted hover:text-accent-amber hover:bg-accent-amber/10 disabled:opacity-40"><Star size={14} /></button>
-                  </div>
-                  <button
-                    type="button"
-                    title="Hapus"
-                    onClick={() => confirmAction({
-                      title: 'Hapus Foto Unit',
-                      message: 'Foto ini akan dihapus permanen dari unit. Lanjutkan?',
-                      confirmLabel: 'Hapus Foto',
-                      tone: 'danger',
-                      execute: () => imageMutations.remove.mutateAsync(img.id),
-                      onError: notifyApiError,
-                    })}
-                    className="p-1.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"
-                  ><Trash2 size={14} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <UnitGalleryManager
+          images={images}
+          uploading={imageMutations.uploadMany.isPending}
+          reordering={imageMutations.reorder.isPending}
+          deleting={imageMutations.remove.isPending}
+          settingMain={imageMutations.setMain.isPending}
+          onUpload={(files, mainIndex) => imageMutations.uploadMany.mutateAsync({ files, mainIndex }).catch((err) => { notifyApiError(err); throw err; })}
+          onReorder={(next) => imageMutations.reorder.mutate(next, { onError: (err) => notifyApiError(err) })}
+          onSetMain={(imageId) => imageMutations.setMain.mutate(imageId, { onError: (err) => notifyApiError(err) })}
+          onDelete={deleteImage}
+          emptyHint="Belum ada gambar unit"
+        />
       </div>
 
       <ConfirmDialog

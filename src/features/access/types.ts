@@ -27,6 +27,7 @@ export interface AccessUser {
   name: string;
   email: string;
   username: string;
+  phone?: string | null;
   isActive: boolean;
   role?: { id: string; name: string; code: string } | null;
   branch?: { id: string; nama?: string; name?: string } | null;

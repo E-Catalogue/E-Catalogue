@@ -78,6 +78,17 @@ export const unitApi = {
     return res.data;
   },
 
+  /** Unggah banyak foto sekaligus dalam SATU request. `mainIndex` = indeks file yang jadi foto utama. */
+  uploadImages: async (id: string, files: File[], mainIndex?: number | null) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+    if (mainIndex !== undefined && mainIndex !== null) formData.append('mainIndex', String(mainIndex));
+    const res = await apiClient.post<ApiResponse<Unit['unitImages']>>(`/units/${id}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
   deleteImage: async (id: string, imageId: string) => {
     const res = await apiClient.delete<ApiResponse<Unit>>(`/units/${id}/image/${imageId}`);
     return res.data;

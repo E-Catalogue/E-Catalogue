@@ -1,8 +1,9 @@
-import { Heart, Gauge, Calendar, GitMerge } from 'lucide-react';
+import { Heart, Gauge, Calendar, GitMerge, Fuel } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
+import { BAHAN_BAKAR_LABEL, type BahanBakar } from '@/features/units/unit.types';
 import type { CatalogCard } from './public.types';
 
 export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (c: CatalogCard) => void }) => {
@@ -40,10 +41,13 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
           {title}
         </h3>
         {subtitle && <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitle}{card.variant ? ` · ${card.variant}` : ''}</p>}
-        <div className="flex items-center gap-3 mt-2 text-[11px] font-semibold text-muted">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] font-semibold text-muted">
           <span className="flex items-center gap-1"><Calendar size={12} /> {card.tahun}</span>
           <span className="flex items-center gap-1"><GitMerge size={12} /> {card.transmisi}</span>
           <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(card.kilometer)} KM</span>
+          {card.bahanBakar && (
+            <span className="flex items-center gap-1"><Fuel size={12} /> {BAHAN_BAKAR_LABEL[card.bahanBakar as BahanBakar] ?? card.bahanBakar}</span>
+          )}
         </div>
         <div className="flex items-end justify-between gap-2 mt-3 pt-3 border-t border-divider">
           <span className="font-extrabold text-primary text-[15px] truncate">{formatCurrency(card.harga)}</span>

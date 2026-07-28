@@ -25,9 +25,9 @@ const Badge = ({ active }: { active: boolean }) => (
 );
 
 interface FormState {
-  name: string; email: string; username: string; password: string; roleId: string; branchId: string; isActive: boolean;
+  name: string; email: string; username: string; password: string; phone: string; roleId: string; branchId: string; isActive: boolean;
 }
-const emptyForm = (): FormState => ({ name: '', email: '', username: '', password: '', roleId: '', branchId: '', isActive: true });
+const emptyForm = (): FormState => ({ name: '', email: '', username: '', password: '', phone: '', roleId: '', branchId: '', isActive: true });
 
 const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdate = true, canBranchUpdate = true }: {
   open: boolean; onClose: () => void; item?: AccessUser | null; submitting?: boolean; onSubmit: (v: FormState) => void;
@@ -38,7 +38,7 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
   const [seedId, setSeedId] = useState<string | undefined>('init');
 
   const seedFrom = (u?: AccessUser | null): FormState =>
-    u ? { name: u.name, email: u.email, username: u.username, password: '', roleId: u.role?.id ?? '', branchId: u.branch?.id ?? '', isActive: u.isActive } : emptyForm();
+    u ? { name: u.name, email: u.email, username: u.username, password: '', phone: u.phone ?? '', roleId: u.role?.id ?? '', branchId: u.branch?.id ?? '', isActive: u.isActive } : emptyForm();
   if (open && (item?.id ?? 'new') !== seedId) { setSeedId(item?.id ?? 'new'); setForm(seedFrom(item)); }
 
   const set = (k: keyof FormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
@@ -55,6 +55,7 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
         <TextField label="Nama" required value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Nama lengkap" />
         <TextField label="Username" required value={form.username} onChange={(e) => set('username', e.target.value)} placeholder="username" />
         <TextField label="Email" type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="email@contoh.com" />
+        <TextField label="No. Telepon / WhatsApp" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="628xxxxxxxxxx" />
         <TextField label={item ? 'Password (kosongkan jika tetap)' : 'Password'} type="password" required={!item} value={form.password} onChange={(e) => set('password', e.target.value)} placeholder="••••••••" />
         <SearchableSelect label="Role" required value={roleIsCurrent ? form.roleId : ''} onChange={(v) => set('roleId', v)} options={roleOpts} disabled={!!item && !canRoleUpdate} placeholder="Pilih role" searchPlaceholder="Cari role..." />
         <SearchableSelect label="Cabang" value={form.branchId} onChange={(v) => set('branchId', v)} options={branchOpts} disabled={!!item && !canBranchUpdate} clearable placeholder="Tanpa cabang" searchPlaceholder="Cari cabang..." />
@@ -88,13 +89,13 @@ const UserPageInner = () => {
   const handleSubmit = async (v: FormState) => {
     try {
       if (form?.item) {
-        const body: Record<string, unknown> = { name: v.name, email: v.email, username: v.username, isActive: v.isActive };
+        const body: Record<string, unknown> = { name: v.name, email: v.email, username: v.username, phone: v.phone.trim() || null, isActive: v.isActive };
         if (v.password) body.password = v.password;
         await m.update.mutateAsync({ id: form.item.id, body });
         if (v.roleId && v.roleId !== form.item.role?.id && can('USER_ROLE_UPDATE')) await m.setRole.mutateAsync({ id: form.item.id, roleId: v.roleId });
         if (v.branchId !== form.item.branch?.id && can('USER_BRANCH_UPDATE')) await m.setBranch.mutateAsync({ id: form.item.id, branchId: v.branchId });
       } else {
-        const body: Record<string, unknown> = { name: v.name, email: v.email, username: v.username, password: v.password, roleId: v.roleId, isActive: v.isActive };
+        const body: Record<string, unknown> = { name: v.name, email: v.email, username: v.username, password: v.password, phone: v.phone.trim() || undefined, roleId: v.roleId, isActive: v.isActive };
         if (v.branchId) body.branchId = v.branchId;
         await m.create.mutateAsync(body);
       }

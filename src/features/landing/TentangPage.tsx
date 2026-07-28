@@ -5,14 +5,14 @@ import { Ic } from './Ic';
 import { CustomerLoader, CustomerServerError, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { usePublicAbout, usePublicSiteSettings } from './landing.hooks';
-import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 
 const HERO_FALLBACK = 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?q=80&w=1400&auto=format&fit=crop';
 
 export const TentangPage = () => {
   const { data: about, isLoading, isError, refetch } = usePublicAbout();
   const { data: settings } = usePublicSiteSettings();
-  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
+  const waUrl = buildWhatsAppUrl(settings?.whatsappNumber, waMessages.generalContact(settings?.companyName));
   const resolve = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
 
   if (isLoading) return <CustomerLoader />;

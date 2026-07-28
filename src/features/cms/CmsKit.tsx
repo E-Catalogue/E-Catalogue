@@ -4,6 +4,26 @@ import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
 import type { CmsIconItem, CmsStat } from './cms.types';
 
+/** Navigasi tab CMS (segmented) dengan ikon berbeda per tab. */
+export const CmsTabs = <K extends string>({ tabs, active, onChange }: {
+  tabs: { key: K; label: string; icon: ReactNode }[]; active: K; onChange: (k: K) => void;
+}) => (
+  <div className="flex items-center gap-1 overflow-x-auto scrollbar-slim rounded-2xl border border-border bg-surface p-1.5">
+    {tabs.map((t) => (
+      <button
+        key={t.key}
+        type="button"
+        onClick={() => onChange(t.key)}
+        className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[12px] font-bold whitespace-nowrap transition-all shrink-0 ${
+          active === t.key ? 'bg-primary text-white shadow-glow' : 'text-ink-soft hover:bg-surface-soft'
+        }`}
+      >
+        {t.icon} {t.label}
+      </button>
+    ))}
+  </div>
+);
+
 /** Textarea berlabel seragam. */
 export const TextArea = ({ label, value, onChange, rows = 3, placeholder }: {
   label: string; value: string; onChange: (v: string) => void; rows?: number; placeholder?: string;
@@ -15,14 +35,17 @@ export const TextArea = ({ label, value, onChange, rows = 3, placeholder }: {
   </div>
 );
 
-/** Baris atas kartu section: judul + toggle tampil + tombol simpan. */
-export const SectionBar = ({ title, hint, isVisible, onToggleVisible, onSave, saving }: {
-  title: string; hint?: string; isVisible?: boolean; onToggleVisible?: () => void; onSave: () => void; saving?: boolean;
+/** Baris atas kartu section: ikon + judul + toggle tampil + tombol simpan. */
+export const SectionBar = ({ title, hint, icon, isVisible, onToggleVisible, onSave, saving }: {
+  title: string; hint?: string; icon?: ReactNode; isVisible?: boolean; onToggleVisible?: () => void; onSave: () => void; saving?: boolean;
 }) => (
-  <div className="flex items-center justify-between gap-3 flex-wrap">
-    <div>
-      <h3 className="text-[14px] font-extrabold text-ink">{title}</h3>
-      {hint && <p className="text-[12px] text-muted font-medium mt-0.5">{hint}</p>}
+  <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-divider">
+    <div className="flex items-center gap-3 min-w-0">
+      {icon && <span className="w-9 h-9 rounded-xl bg-primary-light text-primary flex items-center justify-center shrink-0">{icon}</span>}
+      <div className="min-w-0">
+        <h3 className="text-[14px] font-extrabold text-ink truncate">{title}</h3>
+        {hint && <p className="text-[12px] text-muted font-medium mt-0.5 truncate">{hint}</p>}
+      </div>
     </div>
     <div className="flex items-center gap-2">
       {onToggleVisible && (
@@ -150,5 +173,5 @@ export const StatsEditor = ({ items, onChange, withIcon }: {
 
 /** Kartu pembungkus section CMS. */
 export const SectionCardShell = ({ children }: { children: ReactNode }) => (
-  <div className="bg-surface rounded-2xl border border-border p-5 space-y-4">{children}</div>
+  <div className="bg-surface rounded-3xl border border-border shadow-card p-5 md:p-6 space-y-5 animate-float-up">{children}</div>
 );

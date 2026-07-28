@@ -174,7 +174,13 @@ export const useCmsCatalogMutations = () => {
       },
     }),
     uploadImage: useMutation({ mutationFn: (v: { id: string; file: File }) => cmsCatalogApi.uploadImage(v.id, v.file), onSuccess: () => { inval(); toastOk('Foto ditambahkan'); } }),
+    // Unggah semua foto dalam SATU request (array), foto utama via mainIndex.
+    uploadImages: useMutation({
+      mutationFn: (v: { id: string; files: File[]; mainIndex: number | null }) => cmsCatalogApi.uploadImages(v.id, v.files, v.mainIndex),
+      onSuccess: (_d, v) => { inval(); toastOk(`${v.files.length} foto ditambahkan`); },
+    }),
     deleteImage: useMutation({ mutationFn: (v: { id: string; imageId: string }) => cmsCatalogApi.deleteImage(v.id, v.imageId), onSuccess: () => { inval(); toastOk('Foto dihapus'); } }),
     reorderImages: useMutation({ mutationFn: (v: { id: string; orderedIds: string[] }) => cmsCatalogApi.reorderImages(v.id, v.orderedIds), onSuccess: () => { inval(); toastOk('Urutan foto diperbarui'); } }),
+    setMainImage: useMutation({ mutationFn: (v: { id: string; imageId: string }) => cmsCatalogApi.setMainImage(v.id, v.imageId), onSuccess: () => { inval(); toastOk('Foto utama diperbarui'); } }),
   };
 };

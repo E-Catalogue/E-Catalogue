@@ -45,5 +45,15 @@ export const notifyApiError = (err: unknown, fallback = 'Terjadi kesalahan. Coba
     store.dispatch(showToast({ type: 'general', variant: 'error', ...branchFriendly }));
     return;
   }
+  // Error validasi: pesan top-level generik ("Data request tidak valid"), rincian ada di error.details.
+  // Tampilkan alasan spesifik per-field agar user tahu kenapa gagal.
+  if (code === 'VALIDATION_ERROR') {
+    const details = ax.response?.data?.error?.details as Array<{ field?: string; message?: string }> | undefined;
+    if (Array.isArray(details) && details.length) {
+      const message = details.map((d) => d.message).filter(Boolean).join('\n');
+      store.dispatch(showToast({ type: 'general', variant: 'error', title: 'Data belum valid', message: message || (ax.response?.data?.message ?? fallback) }));
+      return;
+    }
+  }
   store.dispatch(showToast({ type: 'general', variant: 'error', title: 'Gagal', message: ax.response?.data?.message ?? fallback }));
 };

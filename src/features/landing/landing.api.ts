@@ -4,7 +4,7 @@ import type {
   SiteSettings, PublicHomepage, PublicAbout, ContactPageData,
   CatalogCard, CatalogDetail, CatalogBrand, CatalogQuery,
   CreditSimConfig, CreditCalcInput, CreditCalcResult,
-  PublicNavMenuItem,
+  PublicNavMenuItem, SalesContact,
 } from './public.types';
 
 /** Header + rentang harga halaman katalog publik. */
@@ -67,6 +67,7 @@ export const landingApi = {
   getCatalog: (params: CatalogQuery): Promise<CatalogListResponse> =>
     apiClient.get<ApiResponse<CatalogCard[]>>('/public/catalog', { params }).then((r) => ({ data: (r.data.data || []).map(mapCatalogUnit), meta: r.data.meta })),
   getCatalogBrands: () => apiClient.get<ApiResponse<CatalogBrand[]>>('/public/catalog/brands').then((r) => r.data.data),
+  getSales: () => apiClient.get<ApiResponse<SalesContact[]>>('/public/sales').then((r) => r.data.data),
   getCatalogUnit: (id: string) => apiClient.get<ApiResponse<CatalogDetail>>(`/public/catalog/${id}`).then((r) => mapCatalogUnit(r.data.data)),
   getRelatedUnits: (id: string, limit = 4) => apiClient.get<ApiResponse<CatalogCard[]>>(`/public/catalog/${id}/related`, { params: { limit } }).then((r) => (r.data.data || []).map(mapCatalogUnit)),
 

@@ -16,6 +16,8 @@ import { Pagination } from '@/shared/components/ui/Pagination';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { useTestimonials, useTestimonialMutations } from './cms.hooks';
+import { cmsImageUrl } from './cms.api';
+import { ImageUpload } from './ImageUpload';
 import type { Testimonial, TestimonialForm } from './cms.types';
 
 const emptyForm: TestimonialForm = {
@@ -133,7 +135,7 @@ export const TestimoniPage = () => {
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto  space-y-5">
+    <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
       <PageHeader
         title="Testimoni"
         description="Kelola testimoni pelanggan yang ditampilkan di halaman utama website."
@@ -203,9 +205,19 @@ export const TestimoniPage = () => {
       {/* Form Modal */}
       <Modal open={!!form} onClose={() => setForm(null)} title={form?.item ? 'Edit Testimoni' : 'Tambah Testimoni'} icon={<Quote size={20} />}>
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <TextField label="Nama" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Andre P." />
-            <TextField label="Profesi / Role" value={formData.role ?? ''} onChange={(e) => setFormData({ ...formData, role: e.target.value })} placeholder="Karyawan Swasta" />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-32 shrink-0">
+              {form?.item ? (
+                <ImageUpload label="Foto / Avatar" aspect="aspect-square" previewUrl={cmsImageUrl('testimoni', formData.avatarFilename)} isUploading={m.uploadAvatar.isPending}
+                  onFile={(file) => m.uploadAvatar.mutate({ id: form.item!.id, file }, { onSuccess: (r) => setFormData((p) => ({ ...p, avatarFilename: r.filename })), onError: (e) => notifyApiError(e) })} />
+              ) : (
+                <div className="text-[11px] text-muted font-medium bg-surface-soft border border-dashed border-border rounded-xl p-3 h-full flex items-center text-center">Simpan dulu untuk mengunggah foto.</div>
+              )}
+            </div>
+            <div className="flex-1 grid grid-cols-1 gap-4">
+              <TextField label="Nama" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Andre P." />
+              <TextField label="Profesi / Role" value={formData.role ?? ''} onChange={(e) => setFormData({ ...formData, role: e.target.value })} placeholder="Karyawan Swasta" />
+            </div>
           </div>
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Testimoni</label>

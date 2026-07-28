@@ -109,12 +109,12 @@ export const ContactInboxPage = () => {
 
       <HeaderEditor />
 
-      {/* Inbox */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Inbox — filter status */}
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-slim rounded-2xl border border-border bg-surface p-1.5">
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-xl text-[12px] font-bold transition-all ${
-              tab === t.key ? 'bg-primary text-white shadow-glow' : 'bg-surface border border-border text-ink-soft hover:border-primary'
+            className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-xl text-[12px] font-bold whitespace-nowrap transition-all shrink-0 ${
+              tab === t.key ? 'bg-primary text-white shadow-glow' : 'text-ink-soft hover:bg-surface-soft'
             }`}>
             {t.label}
             {t.key === 'NEW' && countNew && countNew.new > 0 && (

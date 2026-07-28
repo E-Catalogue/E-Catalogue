@@ -34,7 +34,7 @@ export const GlobalErrorModal = () => {
           <Icon size={28} strokeWidth={2.2} />
         </div>
         <h3 className="text-lg font-extrabold text-ink">{title}</h3>
-        <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed">{message}</p>
+        <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed whitespace-pre-line">{message}</p>
         <Button block onClick={close} className="mt-6">Tutup</Button>
       </div>
     </Modal>

@@ -5,7 +5,7 @@ import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
 import { CustomerLoader, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
-import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
 import type { CatalogCard } from './public.types';
 
@@ -16,7 +16,7 @@ export const LandingPage = () => {
   const { data: site } = usePublicSiteSettings();
   const navigate = useNavigate();
   const openDetail = (u: CatalogCard) => navigate({ to: '/katalog/$id', params: { id: u.id } });
-  const waUrl = site?.whatsappNumber ? `https://wa.me/${site.whatsappNumber}` : DEFAULT_WA;
+  const waUrl = buildWhatsAppUrl(site?.whatsappNumber, waMessages.creditConsult(site?.companyName));
   const resolveLink = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
 
   // Tampilkan hanya setelah data siap — hindari render setengah jadi.

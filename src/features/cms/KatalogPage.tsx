@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ArrowLeft, ArrowRight, ChevronDown, Save, Plus,
+  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ChevronDown, Save, Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -13,9 +13,8 @@ import { TextField } from '@/shared/components/ui/Field';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
-import { cmsImageUrl } from './cms.api';
 import { useCmsCatalog, useCmsCatalogMutations, useCatalogPage, useUpdateCatalogPage } from './cms.hooks';
-import { ImageUpload } from './ImageUpload';
+import { UnitGalleryManager } from '@/features/units/UnitGalleryManager';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import type { CmsCatalogRow, CatalogPage as CatalogPageType, PriceRange } from './cms.types';
 import { unitDisplayName } from '@/features/units/unit.display';
@@ -90,57 +89,30 @@ const CatalogHeaderEditor = () => {
 const GalleryModal = ({ row, onClose }: { row: CmsCatalogRow; onClose: () => void }) => {
   const m = useCmsCatalogMutations();
   const confirmAction = useConfirmedAction();
-  const [imgs, setImgs] = useState(() => row.images ?? []);
-  const orderDirty = (row.images ?? []).map((image) => image.id).join(',') !== imgs.map((image) => image.id).join(',');
-  const move = (idx: number, dir: -1 | 1) => {
-    const next = [...imgs];
-    const j = idx + dir;
-    if (j < 0 || j >= next.length) return;
-    [next[idx], next[j]] = [next[j], next[idx]];
-    setImgs(next);
-  };
-  const saveOrder = () => confirmAction({
-    title: 'Simpan Urutan Foto',
-    message: 'Simpan urutan foto katalog sesuai susunan saat ini?',
-    confirmLabel: 'Simpan Urutan',
-    execute: () => m.reorderImages.mutateAsync({ id: row.id, orderedIds: imgs.map((image) => image.id) }),
+  const deleteImage = (imageId: string) => confirmAction({
+    title: 'Hapus Foto',
+    message: 'Foto ini akan dihapus permanen dari galeri unit. Lanjutkan?',
+    confirmLabel: 'Hapus Foto',
+    tone: 'danger',
+    execute: () => m.deleteImage.mutateAsync({ id: row.id, imageId }),
     onError: notifyApiError,
   });
   return (
     <Modal open onClose={onClose} title="Kelola Foto Unit" subtitle={`${unitDisplayName(row)} · ${row.platNomor}`} icon={<Images size={18} />} size="lg"
-      busy={m.uploadImage.isPending || m.reorderImages.isPending || m.deleteImage.isPending}
-      footer={<><Button variant="secondary" onClick={onClose}>Tutup</Button>{orderDirty && <Button onClick={saveOrder} loading={m.reorderImages.isPending}>Simpan Urutan</Button>}</>}>
-      <div className="space-y-4">
-        <ImageUpload label="Tambah Foto" aspect="aspect-[16/7]" previewUrl={null} isUploading={m.uploadImage.isPending}
-          onFile={(file) => m.uploadImage.mutate({ id: row.id, file }, { onError: (e) => notifyApiError(e) })} />
-        {imgs.length === 0 ? (
-          <p className="text-center py-8 text-[12px] text-muted border border-dashed border-border rounded-xl">Belum ada foto.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {imgs.map((img, i) => (
-              <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border aspect-[4/3] bg-surface-soft">
-                <img src={cmsImageUrl('unit', img.filename) ?? ''} alt="" className="w-full h-full object-cover" />
-                {i === 0 && <span className="absolute top-1.5 left-1.5 bg-primary text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded">UTAMA</span>}
-                <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                  <button onClick={() => move(i, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg bg-white/90 text-ink flex items-center justify-center disabled:opacity-30"><ArrowLeft size={13} /></button>
-                  <button onClick={() => move(i, 1)} disabled={i === imgs.length - 1} className="w-7 h-7 rounded-lg bg-white/90 text-ink flex items-center justify-center disabled:opacity-30"><ArrowRight size={13} /></button>
-                  <button
-                    onClick={() => confirmAction({
-                      title: 'Hapus Foto',
-                      message: 'Foto ini akan dihapus permanen dari galeri unit. Lanjutkan?',
-                      confirmLabel: 'Hapus Foto',
-                      tone: 'danger',
-                      execute: () => m.deleteImage.mutateAsync({ id: row.id, imageId: img.id }),
-                      onError: notifyApiError,
-                    })}
-                    className="w-7 h-7 rounded-lg bg-semantic-error text-white flex items-center justify-center"
-                  ><Trash2 size={13} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      busy={m.uploadImages.isPending || m.reorderImages.isPending || m.deleteImage.isPending || m.setMainImage.isPending}
+      footer={<Button variant="secondary" onClick={onClose}>Tutup</Button>}>
+      <UnitGalleryManager
+        images={row.images ?? []}
+        uploading={m.uploadImages.isPending}
+        reordering={m.reorderImages.isPending}
+        deleting={m.deleteImage.isPending}
+        settingMain={m.setMainImage.isPending}
+        onUpload={(files, mainIndex) => m.uploadImages.mutateAsync({ id: row.id, files, mainIndex }).catch((e) => { notifyApiError(e); throw e; })}
+        onReorder={(next) => m.reorderImages.mutate({ id: row.id, orderedIds: next.map((i) => i.id) }, { onError: (e) => notifyApiError(e) })}
+        onSetMain={(imageId) => m.setMainImage.mutate({ id: row.id, imageId }, { onError: (e) => notifyApiError(e) })}
+        onDelete={deleteImage}
+        emptyHint="Belum ada foto."
+      />
     </Modal>
   );
 };

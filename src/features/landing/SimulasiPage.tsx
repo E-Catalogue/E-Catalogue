@@ -5,7 +5,7 @@ import { PublicHeader } from './PublicHeader';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicCatalog, usePublicCreditConfig, usePublicSiteSettings, useCalculateCredit } from './landing.hooks';
 import type { CreditCalcResult } from './public.types';
 
@@ -46,7 +46,8 @@ export const SimulasiPage = () => {
 
   const tenors = config?.tenorOptions ?? [12, 24, 36, 48, 60];
   const cicilan = server?.cicilanPerBulan ?? local.cicilan;
-  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
+  const unitLabel = selected ? `${selected.merek?.name ?? ''} ${selected.tipe?.name ?? ''}`.trim() : undefined;
+  const waUrl = buildWhatsAppUrl(settings?.whatsappNumber, waMessages.creditSimulation({ unitLabel, dpPercent, tenor, cicilan }));
 
   const rows = server?.breakdown ?? [
     { label: 'Harga Mobil', value: price },

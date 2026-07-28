@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { Construction, MapPinOff, ServerCrash, Home, Search, RefreshCw, MessageCircle, Car } from 'lucide-react';
-import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicSiteSettings } from './landing.hooks';
+
+const DEFAULT_WA = buildWhatsAppUrl(undefined, waMessages.generalContact());
 import { cmsImageUrl } from '@/features/cms/cms.api';
 
 const Shell = ({ children }: { children: React.ReactNode }) => (

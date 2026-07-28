@@ -56,6 +56,16 @@ export interface CatalogDetail extends CatalogCard {
 
 export interface CatalogBrand { id: string; name: string; count: number; }
 
+/** Kontak sales publik (GET /public/sales). */
+export interface SalesContact {
+  id: string;
+  name: string;
+  phone: string | null;
+  branchName: string | null;
+  branchLocation: string | null;
+  branchContact: string | null;
+}
+
 /* ── Homepage aggregat ── */
 export interface PublicTestimonial {
   id: string; name: string; role: string | null; text: string; rating: number; avatarFilename: string | null;

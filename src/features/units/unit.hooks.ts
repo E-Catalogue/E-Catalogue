@@ -126,6 +126,14 @@ export function useUnitImageMutations(unitId: string) {
         invalidate();
       },
     }),
+    // Unggah semua foto sekaligus dalam SATU request (array), foto utama via mainIndex.
+    uploadMany: useMutation({
+      mutationFn: ({ files, mainIndex }: { files: File[]; mainIndex: number | null }) => unitApi.uploadImages(unitId, files, mainIndex),
+      onSuccess: (_, { files }) => {
+        store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: `${files.length} foto unit diunggah`, variant: 'success' }));
+        invalidate();
+      },
+    }),
     remove: useMutation({
       mutationFn: (imageId: string) => unitApi.deleteImage(unitId, imageId),
       onSuccess: () => {

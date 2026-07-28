@@ -201,7 +201,7 @@ export interface CreditSimConfig {
 
 /* ── Katalog CMS (kelola tayang) ── */
 export type StatusKatalog = 'READY' | 'BOOKED';
-export interface CmsCatalogImage { id: string; filename: string; sortOrder: number; }
+export interface CmsCatalogImage { id: string; filename: string; sortOrder: number; isMain?: boolean; }
 export interface CmsCatalogRow {
   id: string;
   /** Nama Unit (teks utama kolom Unit di CMS) — PRD frontend_unit_name_20260722. */

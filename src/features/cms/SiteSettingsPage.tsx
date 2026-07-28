@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Save, Building2, Phone, Share2, Loader2, ExternalLink } from 'lucide-react';
+import { Save, Building2, Phone, Share2, Loader2, ExternalLink } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { Button } from '@/shared/components/ui/Button';
@@ -95,8 +95,6 @@ export const SiteSettingsPage = () => {
         <TextField label="URL Embed Peta" value={f.mapEmbedUrl ?? ''} onChange={(e) => set('mapEmbedUrl', e.target.value)} placeholder="https://..." />
       </SectionCard>
 
-
-
       {/* Sosial */}
       <SectionCard title="Media Sosial" icon={<Share2 size={16} />}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -106,10 +104,6 @@ export const SiteSettingsPage = () => {
           <TextField label="Website (URL)" value={f.socialWebsite ?? ''} onChange={(e) => set('socialWebsite', e.target.value)} placeholder="https://..." />
         </div>
       </SectionCard>
-
-      <div className="flex justify-end">
-        <Button icon={<Settings size={15} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan Semua'}</Button>
-      </div>
     </div>
   );
 };

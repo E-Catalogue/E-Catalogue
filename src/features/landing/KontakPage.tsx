@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, MessageCircle, Loader2 } from 'lucide-react';
 import { PublicHeader } from './PublicHeader';
-import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
+import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicSiteSettings, usePublicContactPage, useSubmitContact } from './landing.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import { Reveal } from '@/shared/components/Reveal';
@@ -32,7 +32,7 @@ export const KontakPage = () => {
     { icon: Clock, title: 'Jam Buka', value: settings?.businessHours },
   ].filter((i) => i.value);
 
-  const waUrl = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
+  const waUrl = buildWhatsAppUrl(settings?.whatsappNumber, waMessages.generalContact(settings?.companyName));
   const mapUrl = settings?.mapEmbedUrl || 'https://www.openstreetmap.org/export/embed.html?bbox=106.78%2C-6.30%2C106.86%2C-6.22&layer=mapnik';
 
   return (

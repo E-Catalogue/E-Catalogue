@@ -16,7 +16,7 @@ import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateRekondisi, useRekondisiStatusCheck, useUnit, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
-import type { Unit, StatusUnit } from '@/features/units/unit.types';
+import { BAHAN_BAKAR_LABEL, type Unit, type StatusUnit } from '@/features/units/unit.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 import { notifyApiError } from '@/core/api/notify';
 
@@ -39,13 +39,42 @@ const TX_LABEL: Record<string, string> = { AUTOMATIC: 'AT', MANUAL: 'MT' };
 const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { compact: true }));
 
 /* ── Filter Modal ── */
+type OwnerFilter = 'ALL' | 'COMPANY_OWNED' | 'INVESTOR';
+type StockAgeFilter = 'ALL' | 'lt30' | '30to60' | '60to90' | 'gt90';
 interface FilterState {
   tx: 'ALL' | 'MANUAL' | 'AUTOMATIC';
   tahunMin: string;
   tahunMax: string;
   merek: string;
+  owner: OwnerFilter;
+  stockAge: StockAgeFilter;
 }
-const FILTER_DEFAULT: FilterState = { tx: 'ALL', tahunMin: '', tahunMax: '', merek: '' };
+const FILTER_DEFAULT: FilterState = { tx: 'ALL', tahunMin: '', tahunMax: '', merek: '', owner: 'ALL', stockAge: 'ALL' };
+
+const OWNER_LABEL: Record<OwnerFilter, string> = { ALL: 'Semua', COMPANY_OWNED: 'Perusahaan', INVESTOR: 'Investor' };
+const STOCK_AGE_OPTIONS: { value: StockAgeFilter; label: string }[] = [
+  { value: 'ALL', label: 'Semua' },
+  { value: 'lt30', label: '< 30 hari' },
+  { value: '30to60', label: '30–60 hari' },
+  { value: '60to90', label: '60–90 hari' },
+  { value: 'gt90', label: '> 90 hari' },
+];
+
+/** Umur stock (hari) sejak readyStockAt; null jika unit belum pernah READY. */
+const stockAgeDays = (readyStockAt?: string | null): number | null => {
+  if (!readyStockAt) return null;
+  const ms = Date.now() - new Date(readyStockAt).getTime();
+  return ms < 0 ? 0 : Math.floor(ms / 86_400_000);
+};
+const matchStockAge = (readyStockAt: string | null | undefined, bucket: StockAgeFilter): boolean => {
+  const d = stockAgeDays(readyStockAt);
+  if (d === null) return false;
+  if (bucket === 'lt30') return d < 30;
+  if (bucket === '30to60') return d >= 30 && d < 60;
+  if (bucket === '60to90') return d >= 60 && d < 90;
+  if (bucket === 'gt90') return d >= 90;
+  return true;
+};
 
 const FilterModal = ({
   open, onClose, value, onApply, merkList,
@@ -67,7 +96,7 @@ const FilterModal = ({
     <Modal
       open={open} onClose={onClose}
       title="Filter Lanjutan"
-      subtitle="Saring unit berdasarkan transmisi, tahun, atau merek"
+      subtitle="Saring unit: transmisi, tahun, merek, pemilik, atau umur stock"
       icon={<SlidersHorizontal size={18} />}
       size="sm"
       footer={
@@ -130,6 +159,36 @@ const FilterModal = ({
             options={[{ value: '', label: 'Semua Merek' }, ...merkList.map((mk) => ({ value: mk, label: mk }))]}
           />
         )}
+
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Pemilik Unit</p>
+          <div className="flex gap-2">
+            {(['ALL', 'COMPANY_OWNED', 'INVESTOR'] as OwnerFilter[]).map((o) => (
+              <button key={o} onClick={() => set('owner', o)}
+                className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold border transition-colors ${
+                  draft.owner === o ? 'bg-primary text-white border-primary shadow-glow' : 'bg-surface-soft border-border text-ink-soft hover:border-primary'
+                }`}
+              >
+                {OWNER_LABEL[o]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Umur Stock (sejak Ready)</p>
+          <div className="grid grid-cols-3 gap-2">
+            {STOCK_AGE_OPTIONS.map((o) => (
+              <button key={o.value} onClick={() => set('stockAge', o.value)}
+                className={`py-2 rounded-xl text-[12px] font-bold border transition-colors ${
+                  draft.stockAge === o.value ? 'bg-primary text-white border-primary shadow-glow' : 'bg-surface-soft border-border text-ink-soft hover:border-primary'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </Modal>
   );
@@ -298,8 +357,10 @@ const InventoryPageInner = () => {
   if (filter.merek)        rows = rows.filter((u) => u.merek?.name === filter.merek);
   if (filter.tahunMin)     rows = rows.filter((u) => u.tahun >= Number(filter.tahunMin));
   if (filter.tahunMax)     rows = rows.filter((u) => u.tahun <= Number(filter.tahunMax));
+  if (filter.owner !== 'ALL') rows = rows.filter((u) => (u.fundingAgreement?.fundingSource ?? 'COMPANY_OWNED') === filter.owner);
+  if (filter.stockAge !== 'ALL') rows = rows.filter((u) => matchStockAge(u.readyStockAt, filter.stockAge));
 
-  const activeFilters = [filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax)].filter(Boolean).length;
+  const activeFilters = [filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax), filter.owner !== 'ALL', filter.stockAge !== 'ALL'].filter(Boolean).length;
 
   const m = useUnitModals();
 
@@ -318,12 +379,18 @@ const InventoryPageInner = () => {
   const columns: Column<Unit>[] = [
     {
       header: 'Unit',
-      cell: (u) => (
-        <div className="min-w-0">
-          <p className="font-bold text-ink text-[13px] truncate" title={unitDisplayName(u)}>{unitDisplayName(u)}</p>
-          <p className="text-[11px] text-muted font-medium mt-0.5 truncate">{[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || '—'} · {u.platNomor}</p>
-        </div>
-      ),
+      cell: (u) => {
+        const investor = u.fundingAgreement?.fundingSource === 'INVESTOR';
+        return (
+          <div className="min-w-0">
+            <p className="font-bold text-ink text-[13px] truncate" title={unitDisplayName(u)}>{unitDisplayName(u)}</p>
+            <p className="text-[11px] text-muted font-medium mt-0.5 truncate">{[u.merek?.name, u.tipe?.name].filter(Boolean).join(' ') || '—'} · {u.platNomor}</p>
+            <span className={`inline-flex mt-1 items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide ${investor ? 'bg-accent-amber/10 text-accent-amber' : 'bg-accent-blue/10 text-accent-blue'}`}>
+              {investor ? (u.fundingAgreement?.investor?.name ?? 'Investor') : 'Milik Perusahaan'}
+            </span>
+          </div>
+        );
+      },
     },
     {
       header: 'Tahun / KM',
@@ -339,11 +406,14 @@ const InventoryPageInner = () => {
       header: 'Transmisi',
       align: 'center',
       cell: (u) => (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-          u.transmisi === 'AUTOMATIC' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted/10 text-muted'
-        }`}>
-          {TX_LABEL[u.transmisi] ?? u.transmisi}
-        </span>
+        <div className="flex flex-col items-center gap-1">
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+            u.transmisi === 'AUTOMATIC' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted/10 text-muted'
+          }`}>
+            {TX_LABEL[u.transmisi] ?? u.transmisi}
+          </span>
+          {u.bahanBakar && <span className="text-[10px] font-bold text-muted">{BAHAN_BAKAR_LABEL[u.bahanBakar]}</span>}
+        </div>
       ),
     },
     {
@@ -369,7 +439,17 @@ const InventoryPageInner = () => {
     {
       header: 'Status',
       align: 'center',
-      cell: (u) => <StatusBadge status={u.statusUnit} />,
+      cell: (u) => {
+        const age = stockAgeDays(u.readyStockAt);
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <StatusBadge status={u.statusUnit} />
+            {u.statusUnit === 'READY_STOCK' && age !== null && (
+              <span className={`text-[10px] font-bold ${age > 90 ? 'text-semantic-error' : age > 60 ? 'text-accent-amber' : 'text-muted'}`}>{age} hari</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: '',

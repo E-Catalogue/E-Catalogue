@@ -1,17 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link, useParams, useNavigate } from '@tanstack/react-router';
 import {
   ChevronRight, Calendar, Gauge, Fuel, Cog, Palette, Hash, ShieldCheck,
   Phone, ArrowLeft, BadgeCheck, MapPin, ChevronLeft, ChevronRight as ChevronRightIcon,
-  Percent, Wallet, Info, Calculator, Car, Loader2, CheckCircle2,
+  Car, Loader2, CheckCircle2,
 } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
+import { SalesPickerModal } from './SalesPickerModal';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
-import { WHATSAPP_URL as DEFAULT_WA } from './publicNav';
-import { usePublicCatalogUnit, usePublicRelatedUnits, usePublicCreditConfig, usePublicSiteSettings } from './landing.hooks';
-import type { CatalogCard, CatalogDetail, CreditSimConfig } from './public.types';
+import { waMessages } from '@/core/utils/whatsapp';
+import { usePublicCatalogUnit, usePublicRelatedUnits, usePublicSiteSettings } from './landing.hooks';
+import type { CatalogCard, CatalogDetail } from './public.types';
 
 const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: string; value: string }) => (
   <div className="flex items-center gap-3 p-3.5 rounded-xl bg-surface-soft border border-border">
@@ -23,91 +24,14 @@ const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: stri
   </div>
 );
 
-/* ── Inline credit simulator (params dari config API) ── */
-const SimulasiInline = ({ price, config }: { price: number; config?: CreditSimConfig }) => {
-  const c = config;
-  const [dpPercent, setDpPercent] = useState(c?.dpDefaultPercent ?? 20);
-  const [tenor, setTenor] = useState((c?.tenorOptions ?? [12, 24, 36, 48, 60])[2] ?? 36);
-  const [rate, setRate] = useState(c?.rateDefault ?? 4.5);
-
-  const calc = useMemo(() => {
-    const dp = Math.round((price * dpPercent) / 100);
-    const pokok = price - dp;
-    const totalBunga = Math.round((pokok * (rate / 100) * tenor) / 12);
-    const cicilan = Math.round((pokok + totalBunga) / tenor);
-    return { dp, pokok, totalBunga, cicilan };
-  }, [price, dpPercent, tenor, rate]);
-
-  const tenors = c?.tenorOptions ?? [12, 24, 36, 48, 60];
-
-  return (
-    <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center"><Calculator size={16} className="text-primary" /></div>
-        <h3 className="text-[14px] font-extrabold text-ink">Simulasi Kredit</h3>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border">
-        <div className="p-5 space-y-5">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="flex items-center gap-1.5 text-[12px] font-bold text-ink"><Wallet size={13} className="text-primary" /> Uang Muka</label>
-              <span className="text-[13px] font-extrabold text-primary">{dpPercent}% · {formatCurrency(calc.dp, { compact: true })}</span>
-            </div>
-            <input type="range" min={c?.dpMinPercent ?? 10} max={c?.dpMaxPercent ?? 70} step={c?.dpStep ?? 5} value={dpPercent} onChange={(e) => setDpPercent(Number(e.target.value))} className="w-full accent-[color:var(--color-primary)]" />
-            <div className="flex justify-between text-[10px] text-muted font-semibold mt-1"><span>{c?.dpMinPercent ?? 10}%</span><span>{c?.dpMaxPercent ?? 70}%</span></div>
-          </div>
-          <div>
-            <label className="flex items-center gap-1.5 text-[12px] font-bold text-ink mb-2.5"><Calendar size={13} className="text-primary" /> Tenor (bulan)</label>
-            <div className="grid grid-cols-5 gap-1.5">
-              {tenors.map((t) => (
-                <button key={t} onClick={() => setTenor(t)} className={`py-2 rounded-xl text-[12px] font-bold transition-colors ${tenor === t ? 'bg-primary text-white shadow-glow' : 'bg-surface-soft border border-border text-ink-soft hover:border-primary'}`}>{t}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="flex items-center gap-1.5 text-[12px] font-bold text-ink"><Percent size={13} className="text-primary" /> Bunga / Tahun (flat)</label>
-              <span className="text-[13px] font-extrabold text-primary">{rate}%</span>
-            </div>
-            <input type="range" min={c?.rateMin ?? 2} max={c?.rateMax ?? 9} step={c?.rateStep ?? 0.5} value={rate} onChange={(e) => setRate(Number(e.target.value))} className="w-full accent-[color:var(--color-primary)]" />
-            <div className="flex justify-between text-[10px] text-muted font-semibold mt-1"><span>{c?.rateMin ?? 2}%</span><span>{c?.rateMax ?? 9}%</span></div>
-          </div>
-        </div>
-        <div className="p-5 flex flex-col gap-4">
-          <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-5 text-white relative overflow-hidden">
-            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 blur-2xl" />
-            <p className="relative text-[11px] font-bold uppercase tracking-wide text-white/80">Estimasi Cicilan / Bulan</p>
-            <p className="relative text-3xl font-extrabold mt-1.5">{formatCurrency(calc.cicilan)}</p>
-            <p className="relative text-white/75 text-[12px] font-medium mt-1">{tenor} bulan · DP {dpPercent}%</p>
-          </div>
-          <div className="space-y-2.5">
-            {[
-              { label: 'Harga Mobil', value: formatCurrency(price) },
-              { label: `Uang Muka (${dpPercent}%)`, value: formatCurrency(calc.dp) },
-              { label: 'Pokok Kredit', value: formatCurrency(calc.pokok) },
-              { label: `Bunga (${rate}%/th)`, value: formatCurrency(calc.totalBunga) },
-            ].map((r) => (
-              <div key={r.label} className="flex items-center justify-between text-[12px]"><span className="font-semibold text-muted">{r.label}</span><span className="font-extrabold text-ink">{r.value}</span></div>
-            ))}
-          </div>
-          <div className="flex items-start gap-2 text-[11px] text-muted font-medium bg-surface-soft border border-border rounded-xl p-3 mt-auto">
-            <Info size={13} className="text-primary shrink-0 mt-0.5" />
-            {c?.disclaimer ?? 'Estimasi ilustrasi, angka final mengikuti ketentuan leasing.'}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const KatalogDetailPage = () => {
   const { id } = useParams({ from: '/_public/katalog/$id' as never });
   const navigate = useNavigate();
   const { data: unit, isLoading, isError } = usePublicCatalogUnit(id as string);
   const { data: related } = usePublicRelatedUnits(id as string, 4);
-  const { data: config } = usePublicCreditConfig();
   const { data: settings } = usePublicSiteSettings();
   const [activeImg, setActiveImg] = useState(0);
+  const [salesOpen, setSalesOpen] = useState(false);
 
   if (isLoading) return <div className="flex items-center justify-center py-40 text-muted"><Loader2 size={30} className="animate-spin" /></div>;
 
@@ -128,10 +52,7 @@ export const KatalogDetailPage = () => {
   // Judul/breadcrumb/heading/alt/pesan WA memakai nama Unit (PRD §8.6).
   const title = d.name?.trim() || merekTipe || 'Unit';
   const merekTipeSubtitle = title !== merekTipe ? merekTipe : '';
-  const waBase = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : DEFAULT_WA;
-  const waText = encodeURIComponent(`Halo, saya tertarik dengan ${title} (${d.tahun}) seharga ${formatCurrency(d.harga)}. Apakah masih tersedia?`);
-  const waUrl = `${waBase}?text=${waText}`;
-  const installmentFrom = Math.round(d.harga * (config?.installmentFromFactor ?? 0.022));
+  const waText = waMessages.unitInquiry({ title, tahun: d.tahun, harga: d.harga, unitId: d.id });
 
   const prevImg = () => setActiveImg((i) => (i - 1 + gallery.length) % gallery.length);
   const nextImg = () => setActiveImg((i) => (i + 1) % gallery.length);
@@ -190,7 +111,6 @@ export const KatalogDetailPage = () => {
           <div className="p-4 rounded-2xl bg-primary-light/60 border border-primary/15">
             <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Harga</p>
             <p className="text-3xl font-extrabold text-primary mt-1">{formatCurrency(d.harga)}</p>
-            <p className="text-[12px] text-ink-soft font-semibold mt-1">Cicilan mulai {formatCurrency(installmentFrom, { compact: true })}/bln*</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Spec icon={Calendar} label="Tahun" value={`${d.tahun}`} />
@@ -199,8 +119,7 @@ export const KatalogDetailPage = () => {
             <Spec icon={Cog} label="Transmisi" value={d.transmisi} />
           </div>
           <div className="flex flex-col gap-2.5">
-            <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors w-full"><Phone size={17} /> Tanya / Booking Unit Ini</a>
-            <a href="#simulasi-kredit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3.5 hover:border-primary hover:text-primary transition-colors w-full"><Calculator size={17} /> Hitung Cicilan</a>
+            <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors w-full"><Phone size={17} /> Tanya / Booking Unit Ini</button>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-semibold text-ink-soft pt-1">
             <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent-green" /> Garansi Mesin 1 Bulan</span>
@@ -243,13 +162,10 @@ export const KatalogDetailPage = () => {
         <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white h-fit">
           <h3 className="text-lg font-extrabold">Tertarik dengan unit ini?</h3>
           <p className="text-white/85 text-[13px] font-medium mt-1.5 leading-relaxed">Hubungi sales kami untuk info lebih lanjut, negosiasi harga, atau jadwalkan test drive.</p>
-          <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 w-full mt-5 rounded-xl bg-white text-primary font-bold text-[14px] px-5 py-3 hover:bg-white/90 transition-colors"><Phone size={17} /> Chat WhatsApp Sekarang</a>
+          <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 w-full mt-5 rounded-xl bg-white text-primary font-bold text-[14px] px-5 py-3 hover:bg-white/90 transition-colors"><Phone size={17} /> Chat Sales Sekarang</button>
           {settings?.phone && <p className="text-center text-white/70 text-[12px] font-medium mt-4">atau call {settings.phone}</p>}
         </div>
       </div>
-
-      {/* Simulasi */}
-      <div id="simulasi-kredit" className="mt-8 scroll-mt-20"><SimulasiInline price={d.harga} config={config} /></div>
 
       {/* Related */}
       {related && related.length > 0 && (
@@ -263,6 +179,8 @@ export const KatalogDetailPage = () => {
           </div>
         </div>
       )}
+
+      <SalesPickerModal open={salesOpen} onClose={() => setSalesOpen(false)} waText={waText} fallbackNumber={settings?.whatsappNumber} />
     </div>
   );
 };

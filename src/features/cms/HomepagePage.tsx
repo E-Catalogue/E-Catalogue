@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Home, Loader2, ExternalLink, Search, Check } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { LayoutTemplate, Tags, ShieldCheck, ListChecks, Star, Quote, Megaphone, Loader2, ExternalLink, Search, Check } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
@@ -8,7 +8,7 @@ import { cmsImageUrl } from './cms.api';
 import { useSectionForm, useUploadHeroImage, useHomepageLookup } from './cms.hooks';
 import { unitOptionLabel } from '@/features/units/unit.display';
 import { ImageUpload } from './ImageUpload';
-import { SectionBar, SectionCardShell, TextArea, IconItemsEditor, AutoValueField, ModeSelect } from './CmsKit';
+import { SectionBar, SectionCardShell, TextArea, IconItemsEditor, AutoValueField, ModeSelect, CmsTabs } from './CmsKit';
 import type {
   HomepageHero, HomepageBrands, HomepageWhyUs, HomepageHowItWorks,
   HomepageFeatured, HomepageTestimonialsHeader, HomepageCta,
@@ -71,7 +71,7 @@ const HeroEditor = () => {
   const setStat = (i: number, k: 'value' | 'label', v: string) => patch({ stats: form.stats.map((s, idx) => (idx === i ? { ...s, [k]: v } : s)) });
   return (
     <SectionCardShell>
-      <SectionBar title="Hero" hint="Bagian paling atas beranda" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Hero" icon={<LayoutTemplate size={17} />} hint="Bagian paling atas beranda" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Badge" value={form.badgeText} onChange={(e) => patch({ badgeText: e.target.value })} />
         <TextField label="Judul (pakai <em>…</em>)" value={form.titleHtml} onChange={(e) => patch({ titleHtml: e.target.value })} />
@@ -118,7 +118,7 @@ const BrandsEditor = () => {
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
-      <SectionBar title="Merek Populer" hint="Chip merek di bawah hero" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Merek Populer" icon={<Tags size={17} />} hint="Chip merek di bawah hero" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Label" value={form.label} onChange={(e) => patch({ label: e.target.value })} placeholder="Merek populer:" />
         <TextField label="Jumlah Merek Ditampilkan" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} />
@@ -140,15 +140,15 @@ const BrandsEditor = () => {
 };
 
 /* ── Why Us / How It Works (pola eyebrow+title+subtitle+items) ── */
-const IconListSection = ({ section, title, hint, field }: {
-  section: 'why-us' | 'how-it-works'; title: string; hint: string; field: 'items' | 'steps';
+const IconListSection = ({ section, title, hint, field, icon }: {
+  section: 'why-us' | 'how-it-works'; title: string; hint: string; field: 'items' | 'steps'; icon: ReactNode;
 }) => {
   const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageWhyUs & HomepageHowItWorks>('homepage', section);
   if (isLoading || !form) return <Spinner />;
   const list = (field === 'items' ? form.items : form.steps) ?? [];
   return (
     <SectionCardShell>
-      <SectionBar title={title} hint={hint} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title={title} icon={icon} hint={hint} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} />
         <TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} />
@@ -166,7 +166,7 @@ const FeaturedEditor = () => {
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
-      <SectionBar title="Unit Unggulan" hint="Kartu unit pilihan di beranda" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Unit Unggulan" icon={<Star size={17} />} hint="Kartu unit pilihan di beranda" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} />
         <TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} />
@@ -204,7 +204,7 @@ const TestimonialsHeaderEditor = () => {
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
-      <SectionBar title="Judul Section Testimoni" hint="Isi testimoni dikelola di menu Testimoni" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Judul Section Testimoni" icon={<Quote size={17} />} hint="Isi testimoni dikelola di menu Testimoni" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} />
         <TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} />
@@ -221,7 +221,7 @@ const CtaEditor = () => {
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
-      <SectionBar title="Ajakan (CTA) Bawah" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Ajakan (CTA) Bawah" icon={<Megaphone size={17} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
       <TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} />
       <TextArea label="Subtitle" value={form.subtitle} onChange={(v) => patch({ subtitle: v })} rows={2} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,13 +235,13 @@ const CtaEditor = () => {
 };
 
 const TABS = [
-  { key: 'hero', label: 'Hero' },
-  { key: 'brands', label: 'Merek' },
-  { key: 'why-us', label: 'Keunggulan' },
-  { key: 'how-it-works', label: 'Cara Kerja' },
-  { key: 'featured', label: 'Unit Unggulan' },
-  { key: 'testimonials', label: 'Testimoni' },
-  { key: 'cta', label: 'CTA' },
+  { key: 'hero', label: 'Hero', icon: <LayoutTemplate size={14} /> },
+  { key: 'brands', label: 'Merek', icon: <Tags size={14} /> },
+  { key: 'why-us', label: 'Keunggulan', icon: <ShieldCheck size={14} /> },
+  { key: 'how-it-works', label: 'Cara Kerja', icon: <ListChecks size={14} /> },
+  { key: 'featured', label: 'Unit Unggulan', icon: <Star size={14} /> },
+  { key: 'testimonials', label: 'Testimoni', icon: <Quote size={14} /> },
+  { key: 'cta', label: 'CTA', icon: <Megaphone size={14} /> },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
 
@@ -252,21 +252,12 @@ export const HomepagePage = () => {
       <PageHeader title="Beranda" description="Kelola seluruh section halaman utama website — tiap section disimpan terpisah."
         action={<a href="/" target="_blank" rel="noopener noreferrer"><Button variant="secondary" icon={<ExternalLink size={16} />}>Preview</Button></a>} />
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {TABS.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[12px] font-bold transition-all ${
-              tab === t.key ? 'bg-primary text-white shadow-glow' : 'bg-surface border border-border text-ink-soft hover:border-primary'
-            }`}>
-            <Home size={13} /> {t.label}
-          </button>
-        ))}
-      </div>
+      <CmsTabs tabs={TABS.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} active={tab} onChange={setTab} />
 
       {tab === 'hero' && <HeroEditor />}
       {tab === 'brands' && <BrandsEditor />}
-      {tab === 'why-us' && <IconListSection section="why-us" title="Keunggulan" hint="Kenapa memilih kami" field="items" />}
-      {tab === 'how-it-works' && <IconListSection section="how-it-works" title="Cara Kerja" hint="Langkah-langkah" field="steps" />}
+      {tab === 'why-us' && <IconListSection section="why-us" title="Keunggulan" hint="Kenapa memilih kami" field="items" icon={<ShieldCheck size={17} />} />}
+      {tab === 'how-it-works' && <IconListSection section="how-it-works" title="Cara Kerja" hint="Langkah-langkah" field="steps" icon={<ListChecks size={17} />} />}
       {tab === 'featured' && <FeaturedEditor />}
       {tab === 'testimonials' && <TestimonialsHeaderEditor />}
       {tab === 'cta' && <CtaEditor />}
