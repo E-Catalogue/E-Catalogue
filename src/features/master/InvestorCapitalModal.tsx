@@ -225,6 +225,7 @@ export const InvestorCapitalModal = ({ open, onClose, investor }: Props) => {
 
   const [txPage, setTxPage] = useState(1);
   const [txType, setTxType] = useState<CapitalTransactionType | ''>('');
+  const [tab, setTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit');
 
   const qc = useQueryClient();
   const { data: accountsRes, isLoading: accountsLoading } = useCapitalAccounts(branchKey, open ? investorId : null, branchHeader);
@@ -305,47 +306,71 @@ export const InvestorCapitalModal = ({ open, onClose, investor }: Props) => {
           </section>
         )}
 
-        {!mutationBlocked && !isConsolidated && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {can('INVESTOR_CAPITAL_DEPOSIT') && (
-              <section>
-                <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Setor Modal</p>
-                <DepositForm investorId={investorId} branchKey={branchKey} branchHeader={branchHeader} availableBalance={availableBalance} onDone={refetchAfterMutation} />
-              </section>
-            )}
-            {can('INVESTOR_CAPITAL_WITHDRAW') && (
-              <section>
-                <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Tarik Modal</p>
-                <WithdrawalForm investorId={investorId} branchKey={branchKey} branchHeader={branchHeader} availableBalance={availableBalance} onDone={refetchAfterMutation} />
-              </section>
-            )}
-          </div>
-        )}
+        {(() => {
+          const canDeposit = !mutationBlocked && !isConsolidated && can('INVESTOR_CAPITAL_DEPOSIT');
+          const canWithdraw = !mutationBlocked && !isConsolidated && can('INVESTOR_CAPITAL_WITHDRAW');
+          const tabs = [
+            ...(canDeposit ? [{ key: 'deposit' as const, label: 'Setor Modal', icon: ArrowDownCircle }] : []),
+            ...(canWithdraw ? [{ key: 'withdraw' as const, label: 'Tarik Modal', icon: ArrowUpCircle }] : []),
+            { key: 'history' as const, label: 'Histori Transaksi', icon: History },
+          ];
+          const activeTab = tabs.some((t) => t.key === tab) ? tab : tabs[0].key;
+          return (
+            <>
+              {/* Navigasi tab: Setor / Tarik / Histori */}
+              <div className="flex items-center gap-1 rounded-2xl border border-border bg-surface p-1.5">
+                {tabs.map((t) => {
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setTab(t.key)}
+                      className={`flex-1 inline-flex items-center justify-center gap-1.5 h-10 rounded-xl text-[12px] font-bold transition-all ${
+                        activeTab === t.key ? 'bg-primary text-white shadow-glow' : 'text-ink-soft hover:bg-surface-soft'
+                      }`}
+                    >
+                      <Icon size={15} /> {t.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-        <section>
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted inline-flex items-center gap-1.5"><History size={13} /> Histori Transaksi</p>
-            <SearchableSelect
-              value={txType}
-              onChange={(v) => setTxType(v as CapitalTransactionType | '')}
-              options={[
-                { value: '', label: 'Semua tipe' },
-                ...(Object.keys(CAPITAL_TX_TYPE_LABEL) as CapitalTransactionType[]).map((t) => ({ value: t, label: CAPITAL_TX_TYPE_LABEL[t] })),
-              ]}
-              wrapClass="w-40"
-            />
-          </div>
-          {txLoading ? (
-            <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-muted" /></div>
-          ) : filteredTx.length === 0 ? (
-            <p className="text-center py-6 text-[12px] text-muted border border-dashed border-border rounded-xl">Belum ada transaksi modal.</p>
-          ) : (
-            <div className="border border-border rounded-xl overflow-hidden divide-y divide-divider">
-              {filteredTx.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}
-            </div>
-          )}
-          <Pagination meta={txRes?.meta} page={txPage} onChange={setTxPage} />
-        </section>
+              {activeTab === 'deposit' && canDeposit && (
+                <DepositForm investorId={investorId} branchKey={branchKey} branchHeader={branchHeader} availableBalance={availableBalance} onDone={refetchAfterMutation} />
+              )}
+              {activeTab === 'withdraw' && canWithdraw && (
+                <WithdrawalForm investorId={investorId} branchKey={branchKey} branchHeader={branchHeader} availableBalance={availableBalance} onDone={refetchAfterMutation} />
+              )}
+              {activeTab === 'history' && (
+                <section>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted inline-flex items-center gap-1.5"><History size={13} /> Histori Transaksi</p>
+                    <SearchableSelect
+                      value={txType}
+                      onChange={(v) => setTxType(v as CapitalTransactionType | '')}
+                      options={[
+                        { value: '', label: 'Semua tipe' },
+                        ...(Object.keys(CAPITAL_TX_TYPE_LABEL) as CapitalTransactionType[]).map((t) => ({ value: t, label: CAPITAL_TX_TYPE_LABEL[t] })),
+                      ]}
+                      wrapClass="w-40"
+                    />
+                  </div>
+                  {txLoading ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-muted" /></div>
+                  ) : filteredTx.length === 0 ? (
+                    <p className="text-center py-6 text-[12px] text-muted border border-dashed border-border rounded-xl">Belum ada transaksi modal.</p>
+                  ) : (
+                    <div className="border border-border rounded-xl overflow-hidden divide-y divide-divider">
+                      {filteredTx.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}
+                    </div>
+                  )}
+                  <Pagination meta={txRes?.meta} page={txPage} onChange={setTxPage} />
+                </section>
+              )}
+            </>
+          );
+        })()}
       </div>
     </Modal>
   );

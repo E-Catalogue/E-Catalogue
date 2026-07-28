@@ -39,6 +39,7 @@ export interface SiteSettings {
   faviconFilename: string | null;
   footerDescription: string | null;
   navContactLabel: string;
+  primaryColor: string | null;
   whatsappNumber: string | null;
   phone: string | null;
   email: string | null;
@@ -59,6 +60,7 @@ export interface SiteSettingsRaw {
   faviconFilename: string | null;
   footerDescription: string | null;
   navContactLabel: string | null;
+  primaryColor: string | null;
   whatsappNumber: string | null;
   phone: string | null;
   email: string | null;
@@ -79,6 +81,7 @@ export interface SiteSettingsUpdate {
   tagline?: string;
   footerDescription?: string;
   navContactLabel?: string;
+  primaryColor?: string | null;
   whatsappNumber?: string;
   phone?: string;
   email?: string;

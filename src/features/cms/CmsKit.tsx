@@ -98,20 +98,20 @@ export const AutoValueField = ({ label = 'Nilai', value, onChange, autoHint = 'D
   return (
     <div className="min-w-0">
       <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">{label}</label>
-      <div className="flex items-center gap-1.5">
-        <div className="inline-flex h-10 p-0.5 rounded-lg bg-surface border border-border shrink-0">
+      <div className="space-y-1.5">
+        <div className="inline-flex h-9 p-0.5 rounded-lg bg-surface border border-border">
           <button type="button" onClick={() => onChange('')}
-            className={`px-2.5 rounded-md text-[11px] font-bold transition-colors ${!isAuto ? 'bg-primary text-white' : 'text-ink-soft'}`}>Manual</button>
+            className={`px-3 rounded-md text-[11px] font-bold transition-colors ${!isAuto ? 'bg-primary text-white' : 'text-ink-soft'}`}>Manual</button>
           <button type="button" onClick={() => onChange('auto')}
-            className={`px-2.5 rounded-md text-[11px] font-bold transition-colors ${isAuto ? 'bg-primary text-white' : 'text-ink-soft'}`}>Otomatis</button>
+            className={`px-3 rounded-md text-[11px] font-bold transition-colors ${isAuto ? 'bg-primary text-white' : 'text-ink-soft'}`}>Otomatis</button>
         </div>
         {isAuto ? (
-          <span className="flex-1 h-10 flex items-center gap-1.5 px-2.5 rounded-lg bg-accent-green/8 border border-dashed border-accent-green/30 text-[11px] font-bold text-accent-green truncate">
-            <Sparkles size={12} /> {autoHint}
+          <span className="w-full h-10 flex items-center gap-1.5 px-2.5 rounded-lg bg-accent-green/8 border border-dashed border-accent-green/30 text-[11px] font-bold text-accent-green">
+            <Sparkles size={12} className="shrink-0" /> <span className="truncate">{autoHint}</span>
           </span>
         ) : (
           <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="mis. 120+"
-            className="flex-1 min-w-0 h-10 px-2.5 rounded-lg bg-surface border border-border text-[13px] font-semibold focus:outline-none focus:border-primary" />
+            className="w-full min-w-0 h-10 px-2.5 rounded-lg bg-surface border border-border text-[13px] font-semibold focus:outline-none focus:border-primary" />
         )}
       </div>
     </div>

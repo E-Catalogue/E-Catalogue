@@ -3,7 +3,7 @@ import { LayoutTemplate, Tags, ShieldCheck, ListChecks, Star, Quote, Megaphone, 
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
-import { notifyApiError } from '@/core/api/notify';
+import { grantMutationConfirmationLease } from '@/core/api/mutationConfirmation';
 import { cmsImageUrl } from './cms.api';
 import { useSectionForm, useUploadHeroImage, useHomepageLookup } from './cms.hooks';
 import { unitOptionLabel } from '@/features/units/unit.display';
@@ -65,13 +65,22 @@ const ManualPicker = ({ options, selected, onChange, loading, searchPlaceholder 
 
 /* ── Hero ── */
 const HeroEditor = () => {
-  const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageHero>('homepage', 'hero');
   const uploadHero = useUploadHeroImage('homepage');
+  const [pendingHero, setPendingHero] = useState<File | null>(null);
+  const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageHero>('homepage', 'hero', {
+    onBeforeSave: async () => {
+      if (!pendingHero) return;
+      grantMutationConfirmationLease();
+      const r = await uploadHero.mutateAsync(pendingHero);
+      setPendingHero(null);
+      return { imageFilename: r.filename } as Partial<HomepageHero>;
+    },
+  });
   if (isLoading || !form) return <Spinner />;
   const setStat = (i: number, k: 'value' | 'label', v: string) => patch({ stats: form.stats.map((s, idx) => (idx === i ? { ...s, [k]: v } : s)) });
   return (
     <SectionCardShell>
-      <SectionBar title="Hero" icon={<LayoutTemplate size={17} />} hint="Bagian paling atas beranda" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Hero" icon={<LayoutTemplate size={17} />} hint="Bagian paling atas beranda" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving || uploadHero.isPending} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Badge" value={form.badgeText} onChange={(e) => patch({ badgeText: e.target.value })} />
         <TextField label="Judul (pakai <em>…</em>)" value={form.titleHtml} onChange={(e) => patch({ titleHtml: e.target.value })} />
@@ -84,8 +93,7 @@ const HeroEditor = () => {
         <TextField label="CTA Kedua — Link" value={form.secondaryCtaLink} onChange={(e) => patch({ secondaryCtaLink: e.target.value })} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ImageUpload label="Gambar Hero" previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending}
-          onFile={(file) => uploadHero.mutate(file, { onSuccess: (r) => patch({ imageFilename: r.filename }), onError: (e) => notifyApiError(e) })} />
+        <ImageUpload label="Gambar Hero" hint={pendingHero ? 'Tersimpan saat klik Simpan' : 'JPG/PNG maks 5 MB'} previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending} onFile={setPendingHero} />
         <div className="space-y-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Kartu Badge Mengambang</p>
           <TextField label="Ikon" value={form.floatingCard.icon} onChange={(e) => patch({ floatingCard: { ...form.floatingCard, icon: e.target.value } })} placeholder="shield-check" />

@@ -31,6 +31,7 @@ import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
 import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
 import { Route as AdminLaporanCashflowRouteImport } from './routes/_admin/laporan-cashflow'
 import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
+import { Route as AdminDashboardUnitRouteImport } from './routes/_admin/dashboard-unit'
 import { Route as AdminDashboardCashflowRouteImport } from './routes/_admin/dashboard-cashflow'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
@@ -49,6 +50,9 @@ import { Route as AdminMasterInvestorObligationRouteImport } from './routes/_adm
 import { Route as AdminMasterInvestorFundingUsageRouteImport } from './routes/_admin/master.investor-funding-usage'
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
+import { Route as AdminInvestorPendanaanUnitRouteImport } from './routes/_admin/investor.pendanaan-unit'
+import { Route as AdminInvestorPembayaranRouteImport } from './routes/_admin/investor.pembayaran'
+import { Route as AdminInvestorModalRouteImport } from './routes/_admin/investor.modal'
 import { Route as AdminCmsTestimoniRouteImport } from './routes/_admin/cms.testimoni'
 import { Route as AdminCmsSiteSettingsRouteImport } from './routes/_admin/cms.site-settings'
 import { Route as AdminCmsSimulasiRouteImport } from './routes/_admin/cms.simulasi'
@@ -169,6 +173,11 @@ const AdminInventoryRoute = AdminInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDashboardUnitRoute = AdminDashboardUnitRouteImport.update({
+  id: '/dashboard-unit',
+  path: '/dashboard-unit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDashboardCashflowRoute = AdminDashboardCashflowRouteImport.update({
   id: '/dashboard-cashflow',
   path: '/dashboard-cashflow',
@@ -263,6 +272,22 @@ const AdminMasterDokumenRoute = AdminMasterDokumenRouteImport.update({
   path: '/master/dokumen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminInvestorPendanaanUnitRoute =
+  AdminInvestorPendanaanUnitRouteImport.update({
+    id: '/investor/pendanaan-unit',
+    path: '/investor/pendanaan-unit',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminInvestorPembayaranRoute = AdminInvestorPembayaranRouteImport.update({
+  id: '/investor/pembayaran',
+  path: '/investor/pembayaran',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInvestorModalRoute = AdminInvestorModalRouteImport.update({
+  id: '/investor/modal',
+  path: '/investor/modal',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCmsTestimoniRoute = AdminCmsTestimoniRouteImport.update({
   id: '/cms/testimoni',
   path: '/cms/testimoni',
@@ -328,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof AdminCrmRoute
   '/dashboard': typeof AdminDashboardRoute
   '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
+  '/dashboard-unit': typeof AdminDashboardUnitRoute
   '/inventory': typeof AdminInventoryRoute
   '/laporan-cashflow': typeof AdminLaporanCashflowRoute
   '/merek': typeof AdminMerekRoute
@@ -357,6 +383,9 @@ export interface FileRoutesByFullPath {
   '/cms/simulasi': typeof AdminCmsSimulasiRoute
   '/cms/site-settings': typeof AdminCmsSiteSettingsRoute
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
+  '/investor/modal': typeof AdminInvestorModalRoute
+  '/investor/pembayaran': typeof AdminInvestorPembayaranRoute
+  '/investor/pendanaan-unit': typeof AdminInvestorPendanaanUnitRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
@@ -379,6 +408,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AdminCrmRoute
   '/dashboard': typeof AdminDashboardRoute
   '/dashboard-cashflow': typeof AdminDashboardCashflowRoute
+  '/dashboard-unit': typeof AdminDashboardUnitRoute
   '/inventory': typeof AdminInventoryRoute
   '/laporan-cashflow': typeof AdminLaporanCashflowRoute
   '/merek': typeof AdminMerekRoute
@@ -408,6 +438,9 @@ export interface FileRoutesByTo {
   '/cms/simulasi': typeof AdminCmsSimulasiRoute
   '/cms/site-settings': typeof AdminCmsSiteSettingsRoute
   '/cms/testimoni': typeof AdminCmsTestimoniRoute
+  '/investor/modal': typeof AdminInvestorModalRoute
+  '/investor/pembayaran': typeof AdminInvestorPembayaranRoute
+  '/investor/pendanaan-unit': typeof AdminInvestorPendanaanUnitRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
@@ -432,6 +465,7 @@ export interface FileRoutesById {
   '/_admin/crm': typeof AdminCrmRoute
   '/_admin/dashboard': typeof AdminDashboardRoute
   '/_admin/dashboard-cashflow': typeof AdminDashboardCashflowRoute
+  '/_admin/dashboard-unit': typeof AdminDashboardUnitRoute
   '/_admin/inventory': typeof AdminInventoryRoute
   '/_admin/laporan-cashflow': typeof AdminLaporanCashflowRoute
   '/_admin/merek': typeof AdminMerekRoute
@@ -462,6 +496,9 @@ export interface FileRoutesById {
   '/_admin/cms/simulasi': typeof AdminCmsSimulasiRoute
   '/_admin/cms/site-settings': typeof AdminCmsSiteSettingsRoute
   '/_admin/cms/testimoni': typeof AdminCmsTestimoniRoute
+  '/_admin/investor/modal': typeof AdminInvestorModalRoute
+  '/_admin/investor/pembayaran': typeof AdminInvestorPembayaranRoute
+  '/_admin/investor/pendanaan-unit': typeof AdminInvestorPendanaanUnitRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
   '/_admin/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
@@ -486,6 +523,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/dashboard'
     | '/dashboard-cashflow'
+    | '/dashboard-unit'
     | '/inventory'
     | '/laporan-cashflow'
     | '/merek'
@@ -515,6 +553,9 @@ export interface FileRouteTypes {
     | '/cms/simulasi'
     | '/cms/site-settings'
     | '/cms/testimoni'
+    | '/investor/modal'
+    | '/investor/pembayaran'
+    | '/investor/pendanaan-unit'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/investor-funding-usage'
@@ -537,6 +578,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/dashboard'
     | '/dashboard-cashflow'
+    | '/dashboard-unit'
     | '/inventory'
     | '/laporan-cashflow'
     | '/merek'
@@ -566,6 +608,9 @@ export interface FileRouteTypes {
     | '/cms/simulasi'
     | '/cms/site-settings'
     | '/cms/testimoni'
+    | '/investor/modal'
+    | '/investor/pembayaran'
+    | '/investor/pendanaan-unit'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/investor-funding-usage'
@@ -589,6 +634,7 @@ export interface FileRouteTypes {
     | '/_admin/crm'
     | '/_admin/dashboard'
     | '/_admin/dashboard-cashflow'
+    | '/_admin/dashboard-unit'
     | '/_admin/inventory'
     | '/_admin/laporan-cashflow'
     | '/_admin/merek'
@@ -619,6 +665,9 @@ export interface FileRouteTypes {
     | '/_admin/cms/simulasi'
     | '/_admin/cms/site-settings'
     | '/_admin/cms/testimoni'
+    | '/_admin/investor/modal'
+    | '/_admin/investor/pembayaran'
+    | '/_admin/investor/pendanaan-unit'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
     | '/_admin/master/investor-funding-usage'
@@ -795,6 +844,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInventoryRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/dashboard-unit': {
+      id: '/_admin/dashboard-unit'
+      path: '/dashboard-unit'
+      fullPath: '/dashboard-unit'
+      preLoaderRoute: typeof AdminDashboardUnitRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/dashboard-cashflow': {
       id: '/_admin/dashboard-cashflow'
       path: '/dashboard-cashflow'
@@ -921,6 +977,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterDokumenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/investor/pendanaan-unit': {
+      id: '/_admin/investor/pendanaan-unit'
+      path: '/investor/pendanaan-unit'
+      fullPath: '/investor/pendanaan-unit'
+      preLoaderRoute: typeof AdminInvestorPendanaanUnitRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/investor/pembayaran': {
+      id: '/_admin/investor/pembayaran'
+      path: '/investor/pembayaran'
+      fullPath: '/investor/pembayaran'
+      preLoaderRoute: typeof AdminInvestorPembayaranRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/investor/modal': {
+      id: '/_admin/investor/modal'
+      path: '/investor/modal'
+      fullPath: '/investor/modal'
+      preLoaderRoute: typeof AdminInvestorModalRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/cms/testimoni': {
       id: '/_admin/cms/testimoni'
       path: '/cms/testimoni'
@@ -1008,6 +1085,7 @@ interface AdminRouteChildren {
   AdminCrmRoute: typeof AdminCrmRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDashboardCashflowRoute: typeof AdminDashboardCashflowRoute
+  AdminDashboardUnitRoute: typeof AdminDashboardUnitRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminLaporanCashflowRoute: typeof AdminLaporanCashflowRoute
   AdminMerekRoute: typeof AdminMerekRoute
@@ -1034,6 +1112,9 @@ interface AdminRouteChildren {
   AdminCmsSimulasiRoute: typeof AdminCmsSimulasiRoute
   AdminCmsSiteSettingsRoute: typeof AdminCmsSiteSettingsRoute
   AdminCmsTestimoniRoute: typeof AdminCmsTestimoniRoute
+  AdminInvestorModalRoute: typeof AdminInvestorModalRoute
+  AdminInvestorPembayaranRoute: typeof AdminInvestorPembayaranRoute
+  AdminInvestorPendanaanUnitRoute: typeof AdminInvestorPendanaanUnitRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
   AdminMasterInvestorFundingUsageRoute: typeof AdminMasterInvestorFundingUsageRoute
@@ -1053,6 +1134,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmRoute: AdminCrmRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminDashboardCashflowRoute: AdminDashboardCashflowRoute,
+  AdminDashboardUnitRoute: AdminDashboardUnitRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminLaporanCashflowRoute: AdminLaporanCashflowRoute,
   AdminMerekRoute: AdminMerekRoute,
@@ -1079,6 +1161,9 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCmsSimulasiRoute: AdminCmsSimulasiRoute,
   AdminCmsSiteSettingsRoute: AdminCmsSiteSettingsRoute,
   AdminCmsTestimoniRoute: AdminCmsTestimoniRoute,
+  AdminInvestorModalRoute: AdminInvestorModalRoute,
+  AdminInvestorPembayaranRoute: AdminInvestorPembayaranRoute,
+  AdminInvestorPendanaanUnitRoute: AdminInvestorPendanaanUnitRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,
   AdminMasterInvestorFundingUsageRoute: AdminMasterInvestorFundingUsageRoute,
