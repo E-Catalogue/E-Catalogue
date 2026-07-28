@@ -21,6 +21,7 @@ import {
   CreditCard,
   FileText,
   Package,
+  PackageSearch,
   PiggyBank,
   Banknote,
   ShieldCheck,
@@ -43,6 +44,7 @@ export interface MenuItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'main', code: 'DASHBOARD' },
+  { path: '/dashboard-unit', label: 'Laporan Stok', icon: PackageSearch, group: 'main', code: 'STOCK_REPORT' },
   { path: '/inventory', label: 'Inventori', icon: Car, group: 'operasional', code: 'INVENTORI' },
   { path: '/pembelian', label: 'Pembelian Unit', icon: ShoppingCart, group: 'operasional', code: 'PEMBELIAN' },
   { path: '/rekondisi', label: 'Rekondisi', icon: Wrench, group: 'operasional', code: 'REKONDISI' },
@@ -67,14 +69,13 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/master/metode-pembayaran', label: 'Metode Pembayaran', icon: CreditCard, group: 'master', code: 'METODE_PEMBAYARAN' },
   { path: '/master/dokumen', label: 'Dokumen', icon: FileText, group: 'master', code: 'DOKUMEN' },
   { path: '/master/perlengkapan', label: 'Perlengkapan', icon: Package, group: 'master', code: 'PERLENGKAPAN' },
+  // Suite Investor (grup INVESTOR di backend; fallback statis dikelompokkan di 'master').
   { path: '/master/investor', label: 'Investor', icon: PiggyBank, group: 'master', code: 'INVESTOR' },
-  // Kewajiban Investor: backend TIDAK punya baris menu terpisah — permission
-  // INVESTOR_OBLIGATION_READ/GENERATE/PAY/REVERSE (prisma/seed.js) dibundel di bawah
-  // menu "Investor" (code INVESTOR, path /master/investor) yang sama. Karena itu item
-  // ini sengaja TANPA `code` (kalau diberi code: 'INVESTOR', akan menimpa mapping
-  // PATH_BY_CODE untuk halaman Investor CRUD). Halaman ini dijangkau lewat tautan di
-  // InvestorPage dan lewat sidebar statis (fallback saat groupMenus dari /auth/me kosong).
-  { path: '/master/investor-obligation', label: 'Kewajiban Investor', icon: HandCoins, group: 'master' },
+  { path: '/investor/modal', label: 'Modal Investor', icon: Wallet, group: 'master', code: 'INVESTOR_CAPITAL' },
+  { path: '/investor/pendanaan-unit', label: 'Pendanaan Unit', icon: HandCoins, group: 'master', code: 'UNIT_FUNDING' },
+  { path: '/master/investor-obligation', label: 'Kewajiban Investor', icon: ReceiptText, group: 'master', code: 'INVESTOR_OBLIGATION' },
+  { path: '/investor/pembayaran', label: 'Pembayaran Investor', icon: Banknote, group: 'master', code: 'INVESTOR_PAYMENT' },
+  { path: '/master/investor-funding-usage', label: 'Penggunaan Dana Investor', icon: BarChart3, group: 'master', code: 'INVESTOR_FUNDING_USAGE' },
   { path: '/access-control/roles', label: 'Role', icon: ShieldCheck, group: 'akses', code: 'ROLE' },
   { path: '/access-control/users', label: 'User', icon: UserCog, group: 'akses', code: 'USER' },
   { path: '/access-control/menus', label: 'Menu & Permission', icon: SquareMenu, group: 'akses', code: 'MENU' },

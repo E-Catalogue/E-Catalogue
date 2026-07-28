@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { store } from '../store';
 import { queryClient } from '../queryClient';
 import { AuthBootstrap } from './AuthBootstrap';
+import { ThemeColorApplier } from './ThemeColorApplier';
 import { GlobalErrorModal } from '@/shared/components/ui/GlobalErrorModal';
 import { ToastStack } from '@/shared/components/ui/ToastStack';
 import { ConfirmedActionProvider } from '@/shared/components/ui/ConfirmedActionProvider';
@@ -19,6 +20,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       <QueryClientProvider client={queryClient}>
         <AuthBootstrap>
           <ConfirmedActionProvider>
+            <ThemeColorApplier />
             {children}
             <GlobalErrorModal />
             <ToastStack />

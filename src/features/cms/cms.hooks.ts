@@ -4,6 +4,7 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
+import { grantMutationConfirmationLease } from '@/core/api/mutationConfirmation';
 import {
   sectionApi, uploadCmsImage, homepageLookupApi,
   siteSettingsApi, contactPageApi, catalogPageApi,
@@ -45,7 +46,11 @@ export const useUploadCmsImage = (folder: CmsUploadFolder) =>
  * Form 1 section (homepage/about): load → seed state lokal → save (PUT partial).
  * Menyederhanakan editor per-section yang berulang.
  */
-export function useSectionForm<T extends { isVisible?: boolean }>(page: 'homepage' | 'about', section: string) {
+export function useSectionForm<T extends { isVisible?: boolean }>(
+  page: 'homepage' | 'about',
+  section: string,
+  opts?: { onBeforeSave?: () => Promise<Partial<T> | void> },
+) {
   const q = useCmsSection<T>(page, section);
   const m = useUpdateCmsSection<T>(page, section);
   const confirmAction = useConfirmedAction();
@@ -61,7 +66,12 @@ export function useSectionForm<T extends { isVisible?: boolean }>(page: 'homepag
       message: 'Perubahan section ini akan langsung tayang di situs publik. Lanjutkan?',
       confirmLabel: 'Simpan',
       tone: 'primary',
-      execute: () => m.mutateAsync(form),
+      // Jalankan pra-simpan (mis. unggah gambar yang di-stage) lalu simpan section — satu alur konfirmasi.
+      execute: async () => {
+        const extra = opts?.onBeforeSave ? await opts.onBeforeSave() : undefined;
+        grantMutationConfirmationLease();
+        await m.mutateAsync({ ...form, ...(extra ?? {}) });
+      },
       onSuccess: () => setDraft(null),
       onError: (e) => notifyApiError(e),
     });

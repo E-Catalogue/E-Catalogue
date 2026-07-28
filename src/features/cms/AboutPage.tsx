@@ -3,7 +3,7 @@ import { LayoutTemplate, BarChart3, Target, Gem, Megaphone, Loader2, ExternalLin
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
-import { notifyApiError } from '@/core/api/notify';
+import { grantMutationConfirmationLease } from '@/core/api/mutationConfirmation';
 import { cmsImageUrl } from './cms.api';
 import { useSectionForm, useUploadHeroImage } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
@@ -13,12 +13,21 @@ import type { AboutHero, AboutStats, AboutVisiMisi, AboutValues, AboutCta } from
 const Spinner = () => <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={22} className="animate-spin" /></div>;
 
 const HeroEditor = () => {
-  const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<AboutHero>('about', 'hero');
   const uploadHero = useUploadHeroImage('about');
+  const [pendingHero, setPendingHero] = useState<File | null>(null);
+  const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<AboutHero>('about', 'hero', {
+    onBeforeSave: async () => {
+      if (!pendingHero) return;
+      grantMutationConfirmationLease();
+      const r = await uploadHero.mutateAsync(pendingHero);
+      setPendingHero(null);
+      return { imageFilename: r.filename } as Partial<AboutHero>;
+    },
+  });
   if (isLoading || !form) return <Spinner />;
   return (
     <SectionCardShell>
-      <SectionBar title="Hero" icon={<LayoutTemplate size={17} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} />
+      <SectionBar title="Hero" icon={<LayoutTemplate size={17} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving || uploadHero.isPending} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} />
         <TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} />
@@ -28,8 +37,7 @@ const HeroEditor = () => {
         <TextField label="CTA — Label" value={form.ctaLabel} onChange={(e) => patch({ ctaLabel: e.target.value })} />
         <TextField label="CTA — Link" value={form.ctaLink} onChange={(e) => patch({ ctaLink: e.target.value })} />
       </div>
-      <ImageUpload label="Gambar Hero" previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending}
-        onFile={(file) => uploadHero.mutate(file, { onSuccess: (r) => patch({ imageFilename: r.filename }), onError: (e) => notifyApiError(e) })} />
+      <ImageUpload label="Gambar Hero" hint={pendingHero ? 'Tersimpan saat klik Simpan' : 'JPG/PNG maks 5 MB'} previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending} onFile={setPendingHero} />
     </SectionCardShell>
   );
 };
