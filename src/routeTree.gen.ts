@@ -29,6 +29,8 @@ import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
 import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
 import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
 import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
+import { Route as AdminLaporanPengeluaranRouteImport } from './routes/_admin/laporan-pengeluaran'
+import { Route as AdminLaporanClosingRouteImport } from './routes/_admin/laporan-closing'
 import { Route as AdminLaporanCashflowRouteImport } from './routes/_admin/laporan-cashflow'
 import { Route as AdminInventoryRouteImport } from './routes/_admin/inventory'
 import { Route as AdminDashboardUnitRouteImport } from './routes/_admin/dashboard-unit'
@@ -161,6 +163,16 @@ const AdminPayrollRoute = AdminPayrollRouteImport.update({
 const AdminMerekRoute = AdminMerekRouteImport.update({
   id: '/merek',
   path: '/merek',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLaporanPengeluaranRoute = AdminLaporanPengeluaranRouteImport.update({
+  id: '/laporan-pengeluaran',
+  path: '/laporan-pengeluaran',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLaporanClosingRoute = AdminLaporanClosingRouteImport.update({
+  id: '/laporan-closing',
+  path: '/laporan-closing',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLaporanCashflowRoute = AdminLaporanCashflowRouteImport.update({
@@ -356,6 +368,8 @@ export interface FileRoutesByFullPath {
   '/dashboard-unit': typeof AdminDashboardUnitRoute
   '/inventory': typeof AdminInventoryRoute
   '/laporan-cashflow': typeof AdminLaporanCashflowRoute
+  '/laporan-closing': typeof AdminLaporanClosingRoute
+  '/laporan-pengeluaran': typeof AdminLaporanPengeluaranRoute
   '/merek': typeof AdminMerekRoute
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
@@ -411,6 +425,8 @@ export interface FileRoutesByTo {
   '/dashboard-unit': typeof AdminDashboardUnitRoute
   '/inventory': typeof AdminInventoryRoute
   '/laporan-cashflow': typeof AdminLaporanCashflowRoute
+  '/laporan-closing': typeof AdminLaporanClosingRoute
+  '/laporan-pengeluaran': typeof AdminLaporanPengeluaranRoute
   '/merek': typeof AdminMerekRoute
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
@@ -468,6 +484,8 @@ export interface FileRoutesById {
   '/_admin/dashboard-unit': typeof AdminDashboardUnitRoute
   '/_admin/inventory': typeof AdminInventoryRoute
   '/_admin/laporan-cashflow': typeof AdminLaporanCashflowRoute
+  '/_admin/laporan-closing': typeof AdminLaporanClosingRoute
+  '/_admin/laporan-pengeluaran': typeof AdminLaporanPengeluaranRoute
   '/_admin/merek': typeof AdminMerekRoute
   '/_admin/payroll': typeof AdminPayrollRoute
   '/_admin/pembayaran': typeof AdminPembayaranRoute
@@ -526,6 +544,8 @@ export interface FileRouteTypes {
     | '/dashboard-unit'
     | '/inventory'
     | '/laporan-cashflow'
+    | '/laporan-closing'
+    | '/laporan-pengeluaran'
     | '/merek'
     | '/payroll'
     | '/pembayaran'
@@ -581,6 +601,8 @@ export interface FileRouteTypes {
     | '/dashboard-unit'
     | '/inventory'
     | '/laporan-cashflow'
+    | '/laporan-closing'
+    | '/laporan-pengeluaran'
     | '/merek'
     | '/payroll'
     | '/pembayaran'
@@ -637,6 +659,8 @@ export interface FileRouteTypes {
     | '/_admin/dashboard-unit'
     | '/_admin/inventory'
     | '/_admin/laporan-cashflow'
+    | '/_admin/laporan-closing'
+    | '/_admin/laporan-pengeluaran'
     | '/_admin/merek'
     | '/_admin/payroll'
     | '/_admin/pembayaran'
@@ -828,6 +852,20 @@ declare module '@tanstack/react-router' {
       path: '/merek'
       fullPath: '/merek'
       preLoaderRoute: typeof AdminMerekRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/laporan-pengeluaran': {
+      id: '/_admin/laporan-pengeluaran'
+      path: '/laporan-pengeluaran'
+      fullPath: '/laporan-pengeluaran'
+      preLoaderRoute: typeof AdminLaporanPengeluaranRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/laporan-closing': {
+      id: '/_admin/laporan-closing'
+      path: '/laporan-closing'
+      fullPath: '/laporan-closing'
+      preLoaderRoute: typeof AdminLaporanClosingRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/laporan-cashflow': {
@@ -1088,6 +1126,8 @@ interface AdminRouteChildren {
   AdminDashboardUnitRoute: typeof AdminDashboardUnitRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminLaporanCashflowRoute: typeof AdminLaporanCashflowRoute
+  AdminLaporanClosingRoute: typeof AdminLaporanClosingRoute
+  AdminLaporanPengeluaranRoute: typeof AdminLaporanPengeluaranRoute
   AdminMerekRoute: typeof AdminMerekRoute
   AdminPayrollRoute: typeof AdminPayrollRoute
   AdminPembayaranRoute: typeof AdminPembayaranRoute
@@ -1137,6 +1177,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardUnitRoute: AdminDashboardUnitRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminLaporanCashflowRoute: AdminLaporanCashflowRoute,
+  AdminLaporanClosingRoute: AdminLaporanClosingRoute,
+  AdminLaporanPengeluaranRoute: AdminLaporanPengeluaranRoute,
   AdminMerekRoute: AdminMerekRoute,
   AdminPayrollRoute: AdminPayrollRoute,
   AdminPembayaranRoute: AdminPembayaranRoute,

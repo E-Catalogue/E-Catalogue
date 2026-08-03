@@ -17,6 +17,7 @@ export interface Rekondisi {
   additionalFee: number | null;
   total: number;
   invoiceUrl: string | null;
+  completedAt?: string | null;
   paidAt: string | null;
   cashAccountId: string | null;
   cashTransactionId: string | null;
@@ -70,6 +71,8 @@ export interface RekondisiListParams {
   limit?: number;
   unitId?: string;
   status?: RekondisiStatus;
+  period?: string;
+  dateBasis?: 'COMPLETED' | 'PAID';
 }
 
 /**

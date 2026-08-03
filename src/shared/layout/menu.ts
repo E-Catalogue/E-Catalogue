@@ -45,6 +45,8 @@ export interface MenuItem {
 export const MENU_ITEMS: MenuItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'main', code: 'DASHBOARD' },
   { path: '/dashboard-unit', label: 'Laporan Stok', icon: PackageSearch, group: 'main', code: 'STOCK_REPORT' },
+  { path: '/laporan-closing', label: 'Laporan Closing', icon: BarChart3, group: 'main', code: 'CLOSING_REPORT' },
+  { path: '/laporan-pengeluaran', label: 'Laporan Pengeluaran', icon: ReceiptText, group: 'main', code: 'EXPENSE_REPORT' },
   { path: '/inventory', label: 'Inventori', icon: Car, group: 'operasional', code: 'INVENTORI' },
   { path: '/pembelian', label: 'Pembelian Unit', icon: ShoppingCart, group: 'operasional', code: 'PEMBELIAN' },
   { path: '/rekondisi', label: 'Rekondisi', icon: Wrench, group: 'operasional', code: 'REKONDISI' },

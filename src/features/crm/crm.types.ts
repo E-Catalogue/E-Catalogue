@@ -10,6 +10,9 @@ export type OrderStatus = 'BOOKING' | 'DEAL' | 'CANCELLED';
 export type PaymentType = 'CASH' | 'KREDIT';
 export type StatusApproval = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type StatusSlik = 'LOLOS' | 'REJECT' | 'BI_CHECKING';
+export type SurveyStatus = 'PENDING' | 'SCHEDULED' | 'PASSED' | 'REJECTED';
+export type CreditProcessStage = 'SLIK' | 'SURVEY' | 'APPROVAL';
+export type OrderCancellationReason = 'CUSTOMER_REQUEST' | 'CREDIT_REJECTED' | 'UNIT_ISSUE' | 'PRICE_DISAGREEMENT' | 'DUPLICATE_ORDER' | 'OTHER';
 
 export type JenisPembayaran =
   | 'BOOKING_FEE' | 'DP' | 'TAMBAHAN_DP' | 'PELUNASAN'
@@ -170,16 +173,42 @@ export interface LeadOrder {
   leasingId?: string | null;
   leasing?: { id: string; name: string } | null;
   statusSlik?: string | null;
+  statusSlikChangedAt?: string | null;
+  surveyStatus?: SurveyStatus | null;
+  surveyStatusChangedAt?: string | null;
   statusApproval?: StatusApproval | null;
+  statusApprovalChangedAt?: string | null;
   status: OrderStatus;
   tanggalOrder?: string | null;
   /** Diisi backend saat transisi ke DEAL — dipakai sebagai tanggal penjualan (README §24: jangan pakai `updatedAt`). */
   dealAt?: string | null;
   cancelledAt?: string | null;
+  cancellationReason?: OrderCancellationReason | null;
+  cancellationNote?: string | null;
+  stageEvents?: LeadOrderStageEvent[];
   catatan?: string | null;
   totalPaid?: number;
   remainingPayment?: number;
   isPaid?: boolean;
+}
+
+export interface LeadOrderStageEvent {
+  id: string;
+  stage: CreditProcessStage;
+  fromStatus?: string | null;
+  toStatus: string;
+  effectiveAt: string;
+  reason?: string | null;
+  note?: string | null;
+  createdBy?: { id: string; name: string; username?: string | null };
+}
+
+export interface CreditStagePayload {
+  stage: CreditProcessStage;
+  status: string;
+  effectiveAt: string;
+  reason?: string;
+  note?: string;
 }
 
 export interface LeadPayment {
@@ -210,6 +239,12 @@ export interface LeadOrderCancellationRefund {
   cashAccountId: string;
   transactionDate: string;
   description?: string;
+}
+
+export interface LeadOrderCancellation {
+  cancellationReason: OrderCancellationReason;
+  cancellationNote?: string;
+  refund?: LeadOrderCancellationRefund;
 }
 
 /** Response `POST /lead-orders/:orderId/payments/:id/reverse` — payment sudah ter-update + entri kas kompensasi. */

@@ -27,4 +27,11 @@ describe('targetApi kontrak backend aktif', () => {
     await targetApi.activate('target-1', headers);
     expect(mocks.post).toHaveBeenCalledWith('/targets/branches/target-1/activate', undefined, { headers });
   });
+
+  it('mengambil target pribadi tanpa mengekspos endpoint pengelolaan target', async () => {
+    const headers = { 'X-Branch-Id': 'branch-1' };
+    mocks.get.mockResolvedValue({ data: { success: true, data: { unitTarget: 4, unitActual: 2 } } });
+    await targetApi.myTarget('2026-08', headers);
+    expect(mocks.get).toHaveBeenCalledWith('/targets/me', { params: { period: '2026-08' }, headers });
+  });
 });

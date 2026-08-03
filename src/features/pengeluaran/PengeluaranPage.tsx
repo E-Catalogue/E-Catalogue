@@ -208,11 +208,13 @@ const PengeluaranPageInner = () => {
   const expenseMutations = useOperationalExpenseMutations();
   const recurringMutations = useRecurringExpenseMutations();
   const totalDraft = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.status === 'DRAFT').reduce((s, x) => s + x.amount, 0), [expenses.data]);
+  const recurringPaid = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.recurringExpenseId && x.status === 'PAID').reduce((s, x) => s + x.amount, 0), [expenses.data]);
+  const recurringUnpaid = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.recurringExpenseId && x.status === 'DRAFT').reduce((s, x) => s + x.amount, 0), [expenses.data]);
   const expenseColumns: Column<OperationalExpense>[] = [
     { header: 'Tanggal', cell: (e) => formatDate(e.expenseDate) },
     { header: 'Judul', cell: (e) => <span className="font-bold text-ink">{e.title}</span> },
     { header: 'Kategori', cell: (e) => e.kategoriPengeluaran?.name ?? '-' },
-    { header: 'Tipe', cell: (e) => e.type },
+    { header: 'Tipe', cell: (e) => e.recurringExpenseId ? <span className="font-bold text-primary">Rutin · {e.recurringPeriod}</span> : 'Non-Rutin' },
     { header: 'Status', cell: (e) => <FinanceStatusBadge status={e.status} /> },
     { header: 'Nominal', align: 'right', cell: (e) => <span className="font-bold text-semantic-error">{formatCurrency(e.amount)}</span> },
     { header: '', align: 'right', cell: (e) => <RowActions onEdit={() => setExpenseForm(e)} onDelete={e.status === 'DRAFT' ? () => setCancelExpense(e) : undefined} extra={e.status === 'DRAFT' && can('OPERATIONAL_EXPENSE_PAY') ? [{ label: 'Bayar', icon: <Wallet size={13} />, onClick: () => setPayExpense(e), variant: 'primary' }] : undefined} /> },
@@ -232,6 +234,8 @@ const PengeluaranPageInner = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Draft Belum Dibayar</p><p className="text-xl font-extrabold text-semantic-error mt-1">{formatCurrency(totalDraft, { compact: true })}</p></div>
+            <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Rutin Sudah Dibayar</p><p className="text-xl font-extrabold text-accent-green mt-1">{formatCurrency(recurringPaid, { compact: true })}</p><p className="text-[10px] text-muted mt-1">Pada data halaman aktif</p></div>
+            <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Rutin Belum Dibayar</p><p className="text-xl font-extrabold text-accent-amber mt-1">{formatCurrency(recurringUnpaid, { compact: true })}</p><p className="text-[10px] text-muted mt-1">Pada data halaman aktif</p></div>
             <SelectField label="Filter Status" value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: '', label: 'Semua' }, { value: 'DRAFT', label: 'Draft' }, { value: 'PAID', label: 'Sudah Dibayar' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />
           </div>
           <SectionCard title="Daftar Pengeluaran" icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={expenseColumns} data={expenses.data?.data ?? []} rowKey={(e) => e.id} loading={expenses.isLoading} refreshing={expenses.isFetching && !expenses.isLoading} error={expenses.isError} onRetry={() => expenses.refetch()} emptyState={{ title: 'Belum ada pengeluaran', description: status ? 'Tidak ada pengeluaran dengan status yang dipilih.' : 'Catat pengeluaran operasional agar tampil di sini.' }} /></SectionCard>

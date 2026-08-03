@@ -448,15 +448,28 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
             <InfoItem label="Harga Final" value={<span className="font-bold text-ink">{idr(o.hargaFinal)}</span>} />
             {o.status === 'DEAL' && o.dealAt && <InfoItem label="Tanggal Deal" value={new Date(o.dealAt).toLocaleDateString('id-ID')} />}
             {o.status === 'CANCELLED' && o.cancelledAt && <InfoItem label="Tanggal Batal" value={new Date(o.cancelledAt).toLocaleDateString('id-ID')} />}
+            {o.status === 'CANCELLED' && <InfoItem label="Alasan Batal" value={o.cancellationReason?.replaceAll('_', ' ') ?? '-'} />}
+            {o.status === 'CANCELLED' && o.cancellationNote && <InfoItem label="Catatan Batal" value={o.cancellationNote} />}
             {o.paymentType === 'KREDIT' && (
               <>
                 <InfoItem label="Leasing" value={o.leasing?.name ?? '-'} />
                 <InfoItem label="Status SLIK" value={o.statusSlik ?? '-'} />
+                <InfoItem label="Tanggal SLIK" value={o.statusSlikChangedAt ? new Date(o.statusSlikChangedAt).toLocaleDateString('id-ID') : '-'} />
+                <InfoItem label="Status Survei" value={o.surveyStatus ?? '-'} />
+                <InfoItem label="Tanggal Survei" value={o.surveyStatusChangedAt ? new Date(o.surveyStatusChangedAt).toLocaleDateString('id-ID') : '-'} />
                 <InfoItem label="Status Approval" value={o.statusApproval ?? '-'} />
+                <InfoItem label="Tanggal Approval" value={o.statusApprovalChangedAt ? new Date(o.statusApprovalChangedAt).toLocaleDateString('id-ID') : '-'} />
               </>
             )}
             {o.catatan && <InfoItem label="Catatan" value={o.catatan} wrapClass="col-span-2 md:col-span-3" />}
           </div>
+
+          {o.paymentType === 'KREDIT' && (
+            <section>
+              <p className="text-[12px] font-bold text-ink mb-2">Riwayat Proses Kredit ({o.stageEvents?.length ?? 0})</p>
+              {(o.stageEvents?.length ?? 0) === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-[12px] text-muted">Belum ada milestone bertanggal. Status lama tanpa event dianggap data legacy.</div> : <div className="divide-y divide-divider rounded-xl border border-border">{o.stageEvents?.map((event) => <div key={event.id} className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 text-[11px]"><span className="font-bold text-ink">{event.stage}</span><span>{event.fromStatus ?? '-'} → {event.toStatus}</span><span>{new Date(event.effectiveAt).toLocaleDateString('id-ID')}</span><span>{event.reason ?? '-'}</span><span className="text-muted">{event.createdBy?.name ?? '-'}{event.note ? ` · ${event.note}` : ''}</span></div>)}</div>}
+            </section>
+          )}
 
           {/* Payment summary */}
           <div className="flex flex-wrap gap-3">

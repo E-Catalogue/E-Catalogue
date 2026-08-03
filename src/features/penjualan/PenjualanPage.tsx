@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Plus, Search, ReceiptText, RefreshCw, AlertTriangle,
+  Plus, Search, ReceiptText, RefreshCw, AlertTriangle, ClipboardCheck,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -16,6 +16,8 @@ import { useBranchScope } from '@/features/auth/useBranchScope';
 import { SalesOrderFormModal } from './SalesOrderFormModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { OrderStatusModal } from './OrderStatusModal';
+import { CreditStageModal } from './CreditStageModal';
+import { DateField } from '@/shared/components/ui/DateField';
 import { useLeadOrders, useLeadOrderMutations, useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { useAppSelector } from '@/app/store';
@@ -32,6 +34,8 @@ const STATUS_FILTER_OPTIONS = [
 
 export const PenjualanPage = () => {
   const currentUserId = useAppSelector((s) => s.auth.user?.id);
+  const roleCode = useAppSelector((s) => s.auth.user?.role?.code);
+  const isSales = roleCode === 'SALES';
   const { can } = usePermissions();
   const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
   const mutationBlocked = isOwner && !selectedBranchId;
@@ -40,13 +44,22 @@ export const PenjualanPage = () => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSales, setFilterSales] = useState('');
+  const [paymentType, setPaymentType] = useState('');
+  const [statusSlik, setStatusSlik] = useState('');
+  const [surveyStatus, setSurveyStatus] = useState('');
+  const [statusApproval, setStatusApproval] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const debounced = useDebouncedValue(search, 350);
 
   const { data, isLoading, isError } = useLeadOrders(branchKey, {
     page, limit: 15,
     search: debounced || undefined,
     status: (filterStatus as OrderStatus) || undefined,
-    salesId: filterSales || undefined,
+    salesId: isSales ? undefined : filterSales || undefined,
+    paymentType: paymentType || undefined, statusSlik: statusSlik || undefined,
+    surveyStatus: surveyStatus || undefined, statusApproval: statusApproval || undefined,
+    dateFrom: dateFrom || undefined, dateTo: dateTo || undefined,
   }, branchHeader);
   const { data: lookup } = useLeadOrderFormLookup(branchKey, branchHeader);
   const m = useLeadOrderMutations(branchKey);
@@ -54,6 +67,7 @@ export const PenjualanPage = () => {
   const [form, setForm] = useState<{ item: LeadOrder | null } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [statusModal, setStatusModal] = useState<LeadOrder | null>(null);
+  const [creditModal, setCreditModal] = useState<LeadOrder | null>(null);
 
   const orders = data?.data ?? [];
   const salesFilterOptions = [
@@ -138,7 +152,10 @@ export const PenjualanPage = () => {
         <RowActions
           onView={() => setDetail(r.id)}
           onEdit={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? () => setForm({ item: r }) : undefined}
-          extra={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? [{ label: 'Ubah Status', icon: <RefreshCw size={13} />, onClick: () => setStatusModal(r) }] : []}
+          extra={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? [
+            ...(r.paymentType === 'KREDIT' ? [{ label: 'Proses Kredit', icon: <ClipboardCheck size={13} />, onClick: () => setCreditModal(r) }] : []),
+            { label: 'Ubah Status', icon: <RefreshCw size={13} />, onClick: () => setStatusModal(r) },
+          ] : []}
         />
       ),
     },
@@ -148,8 +165,8 @@ export const PenjualanPage = () => {
     <RequirePermission code="LEAD_ORDER_READ">
       <div className="max-w-[1600px] mx-auto  space-y-5">
         <PageHeader
-          title="Penjualan"
-          description="Sales order & manajemen transaksi"
+          title={isSales ? 'Penjualan Saya' : 'Penjualan'}
+          description={isSales ? 'Riwayat aplikasi dan penjualan milik Anda' : 'Sales order & manajemen transaksi'}
           action={can('LEAD_ORDER_CREATE') && (
             <Button
               icon={<Plus size={17} strokeWidth={2.5} />}
@@ -186,13 +203,19 @@ export const PenjualanPage = () => {
             options={STATUS_FILTER_OPTIONS}
             wrapClass="min-w-[180px]"
           />
-          <SelectField
+          <SelectField label="" value={paymentType} onChange={(e) => { setPaymentType(e.target.value); setPage(1); }} options={[{ value: '', label: 'Cash & Kredit' }, { value: 'CASH', label: 'Cash' }, { value: 'KREDIT', label: 'Kredit' }]} wrapClass="min-w-[150px]" />
+          <SelectField label="" value={statusSlik} onChange={(e) => { setStatusSlik(e.target.value); setPage(1); }} options={[{ value: '', label: 'Semua SLIK' }, { value: 'BI_CHECKING', label: 'BI Checking' }, { value: 'LOLOS', label: 'SLIK Lolos' }, { value: 'REJECT', label: 'SLIK Reject' }]} wrapClass="min-w-[150px]" />
+          <SelectField label="" value={surveyStatus} onChange={(e) => { setSurveyStatus(e.target.value); setPage(1); }} options={[{ value: '', label: 'Semua Survei' }, { value: 'PENDING', label: 'Survei Pending' }, { value: 'SCHEDULED', label: 'Survei Terjadwal' }, { value: 'PASSED', label: 'Survei Lolos' }, { value: 'REJECTED', label: 'Survei Reject' }]} wrapClass="min-w-[160px]" />
+          <SelectField label="" value={statusApproval} onChange={(e) => { setStatusApproval(e.target.value); setPage(1); }} options={[{ value: '', label: 'Semua Approval' }, { value: 'PENDING', label: 'Approval Pending' }, { value: 'APPROVED', label: 'Approved' }, { value: 'REJECTED', label: 'Approval Reject' }]} wrapClass="min-w-[160px]" />
+          <DateField value={dateFrom} onChange={(value) => { setDateFrom(value); setPage(1); }} placeholder="Dari tanggal" clearable wrapClass="w-40" />
+          <DateField value={dateTo} onChange={(value) => { setDateTo(value); setPage(1); }} placeholder="Sampai tanggal" clearable wrapClass="w-40" />
+          {!isSales && <SelectField
             label=""
             value={filterSales}
             onChange={(e) => { setFilterSales(e.target.value); setPage(1); }}
             options={salesFilterOptions}
             wrapClass="min-w-[180px]"
-          />
+          />}
         </div>
 
         <SectionCard title={`Daftar Order (${data?.meta?.total ?? 0})`} icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0">
@@ -239,13 +262,23 @@ export const PenjualanPage = () => {
           onClose={() => setStatusModal(null)}
           order={statusModal}
           submitting={m.updateStatus.isPending}
-          onSubmit={(status, refund) =>
+          onSubmit={(status, cancellation) =>
             statusModal &&
             m.updateStatus.mutate(
-              { id: statusModal.id, status, refund, headers: statusModal.branchId ? { 'X-Branch-Id': statusModal.branchId } : branchHeader },
+              { id: statusModal.id, status, cancellation, headers: statusModal.branchId ? { 'X-Branch-Id': statusModal.branchId } : branchHeader },
               { onSuccess: () => setStatusModal(null) },
             )
           }
+        />
+        <CreditStageModal
+          open={!!creditModal}
+          onClose={() => setCreditModal(null)}
+          order={creditModal}
+          submitting={m.updateCreditStage.isPending}
+          onSubmit={(body) => creditModal && m.updateCreditStage.mutate(
+            { id: creditModal.id, body, headers: creditModal.branchId ? { 'X-Branch-Id': creditModal.branchId } : branchHeader },
+            { onSuccess: () => setCreditModal(null) },
+          )}
         />
       </div>
     </RequirePermission>

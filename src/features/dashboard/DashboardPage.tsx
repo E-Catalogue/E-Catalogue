@@ -30,6 +30,8 @@ import {
 } from './dashboard.types';
 import { SalesChart } from './components/SalesChart';
 import { StatCard } from './components/StatCard';
+import { useClosingReport } from '@/features/reports/report.hooks';
+import { usePermissions } from '@/features/auth/usePermissions';
 
 const MONTH_LABEL_LONG = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -52,6 +54,10 @@ const asPct = (value: number) => Math.max(0, Math.min(Math.round(value), 999));
 const DashboardPageInner = () => {
   const [period, setPeriod] = useState(currentMonth());
   const { branchHeader, branchKey } = useBranchScope();
+  const { can } = usePermissions();
+  const [year, month] = period.split('-').map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+  const closing = useClosingReport(branchKey, { dateFrom: `${period}-01`, dateTo: `${period}-${String(lastDay).padStart(2, '0')}` }, branchHeader, can('CLOSING_REPORT_READ'));
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['dashboard-overview', period, branchKey],
@@ -98,7 +104,12 @@ const DashboardPageInner = () => {
       )}
 
       {data && !isLoading && !isError && (
-        <DashboardContent data={data} isFetching={isFetching} />
+        <>
+          {closing.data && <section className="space-y-3"><div className="flex items-center justify-between"><h2 className="text-sm font-extrabold text-ink">Ringkasan Closing</h2><a href="/laporan-closing" className="text-[12px] font-bold text-primary hover:underline">Lihat laporan lengkap</a></div><div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">{[
+            ['Aplikasi', closing.data.summary.totalApplications], ['Lolos SLIK', closing.data.summary.slikPassed], ['Reject SLIK', closing.data.summary.slikRejected], ['Reject Survei', closing.data.summary.surveyRejected], ['Approved', closing.data.summary.approved], ['Batal', closing.data.summary.cancelled], ['Deal', closing.data.summary.deals],
+          ].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-surface p-3"><p className="text-[10px] font-bold uppercase text-muted">{label}</p><p className="text-xl font-extrabold text-ink mt-1">{value}</p></div>)}</div></section>}
+          <DashboardContent data={data} isFetching={isFetching} />
+        </>
       )}
     </div>
   );
