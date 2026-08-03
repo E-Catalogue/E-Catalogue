@@ -1,4 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
 import { ArrowRight, Search, HandCoins, Star, Quote } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
@@ -7,6 +8,7 @@ import { CustomerLoader, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
+import { heroContainer, fadeUpItem, staggerContainer } from './landing.motion';
 import type { CatalogCard } from './public.types';
 
 const HERO_FALLBACK_IMG = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1400&auto=format&fit=crop';
@@ -56,64 +58,85 @@ export const LandingPage = () => {
       {/* HERO */}
       {hero?.isVisible !== false && hero && (
         <section className="relative overflow-hidden">
-          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
+          {/* Ambient blobs bergerak halus */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-32 -right-24 w-[30rem] h-[30rem] rounded-full bg-primary/12 blur-3xl animate-blob" />
+            <div className="absolute top-40 -left-24 w-80 h-80 rounded-full bg-accent-green/10 blur-3xl animate-blob-slow" />
+            <div className="absolute bottom-4 right-1/3 w-64 h-64 rounded-full bg-primary/8 blur-3xl animate-breathe" />
+          </div>
+
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-20 grid lg:grid-cols-2 gap-10 items-center relative">
-            <div className="animate-float-up">
-              <span className="inline-flex items-center gap-2 rounded-full bg-primary-light text-primary text-[12px] font-bold px-3 py-1.5">
+            <motion.div variants={heroContainer} initial="hidden" animate="show">
+              <motion.span variants={fadeUpItem} className="inline-flex items-center gap-2 rounded-full bg-primary-light text-primary text-[12px] font-bold px-3 py-1.5">
                 <Ic name={fc?.icon ?? 'badge-check'} size={14} /> {hero.badgeText}
-              </span>
-              <h1 className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-ink leading-[1.1] mt-4">
+              </motion.span>
+              <motion.h1 variants={fadeUpItem} className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-ink leading-[1.1] mt-4">
                 {hero.titleHtml.split(/(<em>.*?<\/em>)/g).filter(Boolean).map((part, i) => {
                   const m = part.match(/^<em>(.*?)<\/em>$/);
                   return m ? <span key={i} className="text-primary">{m[1]}</span> : <span key={i}>{part}</span>;
                 })}
-              </h1>
-              <p className="text-muted font-medium mt-4 text-[15px] leading-relaxed max-w-md">{hero.subtitle}</p>
-              <div className="flex flex-wrap gap-3 mt-6">
-                <Link to={resolveLink(hero.primaryCtaLink)} className="inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark transition-colors">
-                  <Search size={17} /> {hero.primaryCtaLabel}
+              </motion.h1>
+              <motion.p variants={fadeUpItem} className="text-muted font-medium mt-4 text-[15px] leading-relaxed max-w-md">{hero.subtitle}</motion.p>
+              <motion.div variants={fadeUpItem} className="flex flex-wrap gap-3 mt-6">
+                <Link to={resolveLink(hero.primaryCtaLink)} className="group inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark hover:scale-[1.03] active:scale-[0.97] transition-all">
+                  <Search size={17} /> {hero.primaryCtaLabel} <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
                 </Link>
-                <Link to={resolveLink(hero.secondaryCtaLink)} className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary transition-colors">
+                <Link to={resolveLink(hero.secondaryCtaLink)} className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary hover:scale-[1.03] active:scale-[0.97] transition-all">
                   <HandCoins size={17} /> {hero.secondaryCtaLabel}
                 </Link>
-              </div>
-              <div className="flex gap-8 mt-9">
+              </motion.div>
+              <motion.div variants={fadeUpItem} className="flex gap-8 mt-9">
                 {hero.stats.map((s) => (
-                  <div key={s.label}>
+                  <motion.div key={s.label} whileHover={{ y: -3 }} className="cursor-default">
                     <p className="text-2xl md:text-3xl font-extrabold text-ink">{s.value}</p>
                     <p className="text-[11px] font-semibold text-muted uppercase tracking-wide">{s.label}</p>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-            <div className="relative animate-scale-in">
-              <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 to-transparent rounded-[3rem] blur-2xl" />
-              <img src={heroImg} alt={hero.badgeText} className="relative rounded-[2.5rem] shadow-card-hover w-full object-cover aspect-[4/3]" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, x: 24 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 60, damping: 14 }}
+              className="relative"
+            >
+              <div className="absolute -inset-4 bg-gradient-to-tr from-primary/25 to-transparent rounded-[3rem] blur-2xl animate-breathe" />
+              <div className="animate-bob-slow">
+                <img src={heroImg} alt={hero.badgeText} className="relative rounded-[2.5rem] shadow-card-hover w-full object-cover aspect-[4/3]" />
+              </div>
               {fc && (
-                <div className="absolute -bottom-5 left-2 sm:left-6 bg-surface rounded-2xl shadow-card-hover border border-border p-4 flex items-center gap-3 animate-float-up">
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.55, type: 'spring', stiffness: 110, damping: 15 }}
+                  whileHover={{ y: -4, scale: 1.03 }}
+                  className="absolute -bottom-5 left-2 sm:left-6 bg-surface rounded-2xl shadow-card-hover border border-border p-4 flex items-center gap-3"
+                >
                   <div className="w-11 h-11 rounded-xl bg-accent-green/10 text-accent-green flex items-center justify-center"><Ic name={fc.icon} size={22} /></div>
                   <div>
                     <p className="text-[13px] font-extrabold text-ink leading-none">{fc.title}</p>
                     <p className="text-[11px] text-muted font-semibold mt-1">{fc.subtitle}</p>
                   </div>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           </div>
 
           {/* Brand chips */}
           {hp?.brands?.isVisible !== false && hp?.brands?.items?.length ? (
-            <div className="max-w-7xl mx-auto px-4 md:px-6 pb-6">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }} className="max-w-7xl mx-auto px-4 md:px-6 pb-6">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-[12px] font-bold text-muted mr-1">{hp.brands.label}</span>
+                <motion.span variants={fadeUpItem} className="text-[12px] font-bold text-muted mr-1">{hp.brands.label}</motion.span>
                 {hp.brands.items.map((b) => (
-                  <Link key={b.id} to="/katalog" className="px-3.5 py-1.5 rounded-full bg-surface border border-border text-[12px] font-bold text-ink-soft hover:border-primary hover:text-primary transition-colors">
-                    {b.name}
-                  </Link>
+                  <motion.div key={b.id} variants={fadeUpItem} whileHover={{ y: -3, scale: 1.05 }}>
+                    <Link to="/katalog" className="inline-block px-3.5 py-1.5 rounded-full bg-surface border border-border text-[12px] font-bold text-ink-soft hover:border-primary hover:text-primary transition-colors">
+                      {b.name}
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ) : null}
         </section>
       )}
@@ -127,15 +150,15 @@ export const LandingPage = () => {
               <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">{hp.whyUs.title}</h2>
               <p className="text-muted font-medium mt-2">{hp.whyUs.subtitle}</p>
             </Reveal>
-            <Reveal delay={120} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {hp.whyUs.items.map((f) => (
-                <div key={f.title} className="bg-background rounded-2xl border border-border p-6 hover:shadow-card hover:-translate-y-1 transition-all">
-                  <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow mb-4"><Ic name={f.icon} size={24} strokeWidth={2.2} /></div>
+                <motion.div key={f.title} variants={fadeUpItem} whileHover={{ y: -8 }} className="group bg-background rounded-2xl border border-border p-6 hover:shadow-card hover:border-primary/30 transition-colors">
+                  <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow mb-4 transition-transform group-hover:scale-110 group-hover:rotate-6"><Ic name={f.icon} size={24} strokeWidth={2.2} /></div>
                   <h3 className="font-extrabold text-ink text-[15px]">{f.title}</h3>
                   <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed">{f.desc}</p>
-                </div>
+                </motion.div>
               ))}
-            </Reveal>
+            </motion.div>
           </div>
         </section>
       )}
@@ -148,16 +171,16 @@ export const LandingPage = () => {
             <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">{hp.howItWorks.title}</h2>
             <p className="text-muted font-medium mt-2">{hp.howItWorks.subtitle}</p>
           </Reveal>
-          <Reveal delay={120} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {hp.howItWorks.steps.map((s, i) => (
-              <div key={s.title} className="relative bg-surface rounded-2xl border border-border p-6">
-                <span className="absolute top-5 right-5 text-4xl font-extrabold text-primary/10">0{i + 1}</span>
-                <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center mb-4"><Ic name={s.icon} size={24} strokeWidth={2.2} /></div>
-                <h3 className="font-extrabold text-ink text-[15px]">{s.title}</h3>
-                <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed">{s.desc}</p>
-              </div>
+              <motion.div key={s.title} variants={fadeUpItem} whileHover={{ y: -8 }} className="group relative bg-surface rounded-2xl border border-border p-6 hover:border-primary/30 hover:shadow-card transition-colors overflow-hidden">
+                <span className="absolute top-4 right-5 text-5xl font-black text-primary/10 group-hover:text-primary/20 transition-colors">0{i + 1}</span>
+                <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center mb-4 transition-transform group-hover:scale-110"><Ic name={s.icon} size={24} strokeWidth={2.2} /></div>
+                <h3 className="font-extrabold text-ink text-[15px] relative">{s.title}</h3>
+                <p className="text-[13px] text-muted font-medium mt-1.5 leading-relaxed relative">{s.desc}</p>
+              </motion.div>
             ))}
-          </Reveal>
+          </motion.div>
         </section>
       )}
 
@@ -174,9 +197,11 @@ export const LandingPage = () => {
                 {hp.featured.seeAllLabel || 'Lihat Semua'} <ArrowRight size={16} />
               </Link>
             </Reveal>
-            <Reveal delay={120} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {hp.featured.units.map((u) => <PublicUnitCard key={u.id} card={u} onView={openDetail} />)}
-            </Reveal>
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {hp.featured.units.map((u) => (
+                <motion.div key={u.id} variants={fadeUpItem}><PublicUnitCard card={u} onView={openDetail} /></motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
       ) : null}
@@ -189,10 +214,10 @@ export const LandingPage = () => {
             <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">{hp.testimonials.title}</h2>
             <p className="text-muted font-medium mt-2">{hp.testimonials.subtitle}</p>
           </Reveal>
-          <Reveal delay={120} className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {hp.testimonials.items.map((t) => (
-              <div key={t.id} className="bg-surface rounded-2xl border border-border p-6">
-                <Quote size={28} className="text-primary/30" />
+              <motion.div key={t.id} variants={fadeUpItem} whileHover={{ y: -6 }} className="group bg-surface rounded-2xl border border-border p-6 hover:shadow-card hover:border-primary/30 transition-colors">
+                <Quote size={28} className="text-primary/30 group-hover:text-primary/50 transition-colors" />
                 <div className="flex gap-0.5 mt-3">
                   {Array.from({ length: t.rating }).map((_, i) => <Star key={i} size={15} className="fill-accent-amber text-accent-amber" />)}
                 </div>
@@ -208,30 +233,31 @@ export const LandingPage = () => {
                     {t.role && <p className="text-[11px] text-muted font-semibold">{t.role}</p>}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </Reveal>
+          </motion.div>
         </section>
       ) : null}
 
       {/* CTA */}
       {hp?.cta?.isVisible !== false && hp?.cta && (
         <section className="max-w-7xl mx-auto px-4 md:px-6 pb-16">
-          <Reveal className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark p-8 md:p-14 text-center text-white">
-            <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
+          <Reveal className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-dark to-primary p-8 md:p-14 text-center text-white animate-gradient-pan">
+            <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-2xl animate-blob" />
+            <div className="absolute -bottom-20 -right-10 w-72 h-72 rounded-full bg-white/10 blur-3xl animate-blob-slow" />
             <h2 className="relative text-2xl md:text-4xl font-extrabold leading-tight">{hp.cta.title}</h2>
             <p className="relative text-white/85 font-medium mt-3 max-w-lg mx-auto">{hp.cta.subtitle}</p>
             <div className="relative flex flex-wrap gap-3 justify-center mt-6">
-              <Link to={resolveLink(hp.cta.primaryLink)} className="inline-flex items-center gap-2 rounded-xl bg-white text-primary font-bold text-[14px] px-6 py-3 hover:bg-white/90 transition-colors">
+              <Link to={resolveLink(hp.cta.primaryLink)} className="inline-flex items-center gap-2 rounded-xl bg-white text-primary font-bold text-[14px] px-6 py-3 shadow-lg hover:bg-white/90 hover:scale-[1.04] active:scale-[0.97] transition-all">
                 <Search size={17} /> {hp.cta.primaryLabel}
               </Link>
               {hp.cta.secondaryLink === 'whatsapp' ? (
-                <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-ink/20 backdrop-blur border border-white/30 text-white font-bold text-[14px] px-6 py-3 hover:bg-ink/30 transition-colors">
-                  {hp.cta.secondaryLabel} <ArrowRight size={16} />
+                <a href={waUrl} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-2 rounded-xl bg-ink/20 backdrop-blur border border-white/30 text-white font-bold text-[14px] px-6 py-3 hover:bg-ink/30 hover:scale-[1.04] active:scale-[0.97] transition-all">
+                  {hp.cta.secondaryLabel} <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </a>
               ) : (
-                <Link to={resolveLink(hp.cta.secondaryLink)} className="inline-flex items-center gap-2 rounded-xl bg-ink/20 backdrop-blur border border-white/30 text-white font-bold text-[14px] px-6 py-3 hover:bg-ink/30 transition-colors">
-                  {hp.cta.secondaryLabel} <ArrowRight size={16} />
+                <Link to={resolveLink(hp.cta.secondaryLink)} className="group inline-flex items-center gap-2 rounded-xl bg-ink/20 backdrop-blur border border-white/30 text-white font-bold text-[14px] px-6 py-3 hover:bg-ink/30 hover:scale-[1.04] active:scale-[0.97] transition-all">
+                  {hp.cta.secondaryLabel} <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
               )}
             </div>

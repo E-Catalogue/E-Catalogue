@@ -30,6 +30,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@adobe/css-tools": "4.4.0",
     "@eslint/js": "^9.39.4",
     "@tanstack/react-query-devtools": "^5.99.0",
     "@tanstack/router-devtools": "^1.166.13",

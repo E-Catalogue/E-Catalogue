@@ -3,6 +3,7 @@ import { Building2, ChevronDown, Check, Globe } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useBranchScope } from '@/features/auth/useBranchScope';
 import { useBranchContextOptions } from '@/features/auth/branchContext.api';
+import { useAnchoredOverlay } from '@/shared/hooks/useAnchoredOverlay';
 
 /**
  * Branch switcher GLOBAL untuk role OWNER/ADMIN (`.prd/frontend_owner_admin_branch_context_20260721.md`
@@ -18,9 +19,9 @@ export const BranchSwitcher = () => {
   const { data: options } = useBranchContextOptions();
   const branches = useMemo(() => options?.data ?? [], [options?.data]);
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const overlayStyle = useAnchoredOverlay(open, triggerRef, panelRef, { width: 240, align: 'end', estimatedHeight: 320 });
 
   // Verifikasi cabang tersimpan terhadap options terbaru — reset kalau tidak valid lagi (PRD §3).
   useEffect(() => {
@@ -42,10 +43,6 @@ export const BranchSwitcher = () => {
 
   const selected = branches.find((b) => b.id === selectedBranchId);
   const toggle = () => {
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + window.scrollY + 6, right: window.innerWidth - r.right });
-    }
     setOpen((v) => !v);
   };
 
@@ -64,11 +61,11 @@ export const BranchSwitcher = () => {
         <ChevronDown size={14} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && pos && createPortal(
+      {open && overlayStyle && createPortal(
         <div
           ref={panelRef}
-          style={{ top: pos.top, right: pos.right, position: 'absolute' }}
-          className="z-[150] w-60 bg-surface border border-border rounded-2xl shadow-xl py-1.5 max-h-80 overflow-y-auto scrollbar-slim"
+          style={overlayStyle}
+          className="z-[150] bg-surface border border-border rounded-2xl shadow-xl py-1.5 overflow-y-auto scrollbar-slim"
         >
           <button
             onClick={() => { setSelectedBranchId(null); setOpen(false); }}

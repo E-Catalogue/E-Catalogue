@@ -5,6 +5,8 @@ import { UnitDetailModal } from './UnitDetailModal';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useDeleteUnit } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
+import { unitApi } from './unit.api';
+import { notifyApiError } from '@/core/api/notify';
 
 export const useUnitModals = () => {
   const [detail, setDetail] = useState<Unit | null>(null);
@@ -15,7 +17,11 @@ export const useUnitModals = () => {
 
   const openDetail = useCallback((u: Unit) => setDetail(u), []);
   const openCreate = useCallback(() => setForm({ unit: null }), []);
-  const openEdit = useCallback((u: Unit) => { setDetail(null); setForm({ unit: u }); }, []);
+  const openEdit = useCallback((u: Unit) => {
+    unitApi.get(u.id)
+      .then((response) => { setDetail(null); setForm({ unit: response.data }); })
+      .catch(notifyApiError);
+  }, []);
   const openDelete = useCallback((u: Unit) => setToDelete(u), []);
 
   const handleDelete = () => {

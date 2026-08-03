@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, Loader2, Search, X } from 'lucide-react';
 import { FieldWrap } from './Field';
+import { useAnchoredOverlay } from '@/shared/hooks/useAnchoredOverlay';
 
 export interface SearchableSelectOption {
   value: string;
@@ -37,11 +38,11 @@ export const SearchableSelect = ({
 }: SearchableSelectProps) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const [highlight, setHighlight] = useState(0);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const overlayStyle = useAnchoredOverlay(open, triggerRef, panelRef, { width: 'trigger', minWidth: 260, estimatedHeight: 320 });
 
   const selected = options.find((o) => o.value === value);
 
@@ -74,10 +75,6 @@ export const SearchableSelect = ({
 
   const toggle = () => {
     if (disabled || loading) return;
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left, width: r.width });
-    }
     setOpen((v) => !v);
   };
 
@@ -124,11 +121,11 @@ export const SearchableSelect = ({
         </span>
       </button>
 
-      {open && pos && createPortal(
+      {open && overlayStyle && createPortal(
         <div
           ref={panelRef}
-          style={{ top: pos.top, left: pos.left, width: Math.max(pos.width, 260) }}
-          className="fixed z-[150] bg-surface border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-80"
+          style={overlayStyle}
+          className="z-[150] bg-surface border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col"
         >
           <div className="shrink-0 p-2 border-b border-divider">
             <div className="relative">

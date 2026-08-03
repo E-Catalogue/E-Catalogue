@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { SearchableSelect } from './SearchableSelect';
 
 const baseInput =
@@ -113,11 +113,13 @@ export const NumericField = ({
   const [focused, setFocused] = useState(false);
   // raw: what the user is typing while focused
   const [raw, setRaw] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const liveRupiah = prefix === 'Rp' && thousands && !decimal;
 
   const displayValue = focused ? raw : fmt(value, thousands);
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    const s = value === 0 ? '' : String(value);
+    const s = value === 0 ? '' : (liveRupiah ? value.toLocaleString('id-ID') : String(value));
     setRaw(s);
     setFocused(true);
     setTimeout(() => e.target.select(), 0);
@@ -125,17 +127,33 @@ export const NumericField = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value;
+    const caret = e.target.selectionStart ?? input.length;
+    const digitsBeforeCaret = input.slice(0, caret).replace(/\D/g, '').length;
     if (decimal) {
       // Allow digits + at most one comma or dot
       input = input.replace(/[^0-9,]/g, '');
     } else {
       input = input.replace(/\D/g, '');
     }
+    if (liveRupiah) input = input ? Number(input).toLocaleString('id-ID') : '';
     setRaw(input);
     const num = parseNum(input, decimal);
     if (min !== undefined && num < min) return;
     if (max !== undefined && num > max) return;
     onChange(num);
+    if (liveRupiah) {
+      requestAnimationFrame(() => {
+        const el = inputRef.current;
+        if (!el) return;
+        let seen = 0;
+        let nextCaret = el.value.length;
+        for (let i = 0; i < el.value.length; i += 1) {
+          if (/\d/.test(el.value[i])) seen += 1;
+          if (seen === digitsBeforeCaret) { nextCaret = i + 1; break; }
+        }
+        el.setSelectionRange(nextCaret, nextCaret);
+      });
+    }
   };
 
   const handleBlur = () => {
@@ -155,6 +173,7 @@ export const NumericField = ({
           </span>
         )}
         <input
+          ref={inputRef}
           id={inputId}
           type="text"
           inputMode={decimal ? 'decimal' : 'numeric'}

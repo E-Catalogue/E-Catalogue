@@ -85,6 +85,39 @@
 }
 .animate-scale-in { animation: scaleIn 0.25s ease-out both; }
 
+/* ── Ambient / continuous motion untuk landing page ── */
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(24px, -30px) scale(1.06); }
+  66% { transform: translate(-18px, 18px) scale(0.96); }
+}
+.animate-blob { animation: blobFloat 16s ease-in-out infinite; }
+.animate-blob-slow { animation: blobFloat 22s ease-in-out infinite reverse; }
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+.animate-breathe { animation: breathe 7s ease-in-out infinite; }
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-bob { animation: bob 5s ease-in-out infinite; }
+.animate-bob-slow { animation: bob 6.5s ease-in-out infinite; }
+
+@keyframes gradientPan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient-pan { background-size: 200% 200%; animation: gradientPan 12s ease infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob, .animate-blob-slow, .animate-breathe, .animate-bob, .animate-bob-slow, .animate-gradient-pan { animation: none; }
+}
+
 /* Staggered list helper */
 .stagger > * { animation: floatUp 0.4s ease-out both; }
 .stagger > *:nth-child(1) { animation-delay: 0.02s; }

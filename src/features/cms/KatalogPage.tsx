@@ -9,7 +9,7 @@ import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
-import { TextField } from '@/shared/components/ui/Field';
+import { NumericField, TextField } from '@/shared/components/ui/Field';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
@@ -68,8 +68,8 @@ const CatalogHeaderEditor = () => {
               {f.priceRanges.map((r, i) => (
                 <div key={i} className="flex items-end gap-2 rounded-xl border border-border bg-surface-soft p-2.5">
                   <TextField label="Label" wrapClass="flex-1" value={r.label} onChange={(e) => setRange(i, { label: e.target.value })} placeholder="< 100 Juta" />
-                  <TextField label="Min" wrapClass="w-32" type="number" value={String(r.min)} onChange={(e) => setRange(i, { min: Number(e.target.value) })} />
-                  <TextField label="Max (kosong=∞)" wrapClass="w-32" type="number" value={r.max == null ? '' : String(r.max)} onChange={(e) => setRange(i, { max: e.target.value === '' ? null : Number(e.target.value) })} />
+                  <NumericField label="Min" wrapClass="w-36" prefix="Rp" value={r.min} onChange={(value) => setRange(i, { min: value })} />
+                  <NumericField label="Max (0=∞)" wrapClass="w-36" prefix="Rp" value={r.max ?? 0} onChange={(value) => setRange(i, { max: value || null })} />
                   <button onClick={() => setF({ ...f, priceRanges: f.priceRanges.filter((_, idx) => idx !== i) })} className="p-2 mb-0.5 rounded-lg text-muted hover:text-semantic-error hover:bg-semantic-error/10"><Trash2 size={14} /></button>
                 </div>
               ))}

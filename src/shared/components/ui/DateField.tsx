@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { FieldWrap } from './Field';
+import { useAnchoredOverlay } from '@/shared/hooks/useAnchoredOverlay';
 
 const DAY_LABELS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const MONTH_LABELS = [
@@ -39,13 +40,13 @@ interface DateFieldProps {
  */
 export const DateField = ({ label, required, value, onChange, disabled, min, max, placeholder = 'Pilih tanggal', wrapClass, clearable }: DateFieldProps) => {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const selected = parseIso(value);
   const minDate = parseIso(min);
   const maxDate = parseIso(max);
   const [viewDate, setViewDate] = useState(() => selected ?? new Date());
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const overlayStyle = useAnchoredOverlay(open, triggerRef, panelRef, { width: 280, estimatedHeight: 360 });
 
   useEffect(() => {
     if (!open) return;
@@ -61,9 +62,7 @@ export const DateField = ({ label, required, value, onChange, disabled, min, max
 
   const toggle = () => {
     if (disabled) return;
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left });
+    if (!open) {
       setViewDate(selected ?? new Date());
     }
     setOpen((v) => !v);
@@ -108,11 +107,11 @@ export const DateField = ({ label, required, value, onChange, disabled, min, max
         </span>
       </button>
 
-      {open && pos && createPortal(
+      {open && overlayStyle && createPortal(
         <div
           ref={panelRef}
-          style={{ top: pos.top, left: pos.left }}
-          className="fixed z-[150] bg-surface border border-border rounded-2xl shadow-xl p-3 w-[280px]"
+          style={overlayStyle}
+          className="z-[150] bg-surface border border-border rounded-2xl shadow-xl p-3 overflow-y-auto"
         >
           <div className="flex items-center justify-between mb-2.5">
             <button type="button" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-primary hover:bg-primary-light transition-colors">

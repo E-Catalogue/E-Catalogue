@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench, LayoutGrid, Table2, Share2, X } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -13,20 +13,17 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
-import { useCreateRekondisi, useRekondisiStatusCheck, useUnit, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
+import { useCreateRekondisi, useRekondisiStatusCheck, useUnits, useUpdateUnitStatus } from '@/features/units/unit.hooks';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { BAHAN_BAKAR_LABEL, type Unit, type StatusUnit } from '@/features/units/unit.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 import { notifyApiError } from '@/core/api/notify';
+import { UnitCard } from '@/shared/components/ui/UnitCard';
+import { unitApi } from '@/features/units/unit.api';
+import { buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
 
-const TABS: { key: StatusUnit | 'all'; label: string }[] = [
-  { key: 'all',         label: 'Semua' },
-  { key: 'INVENTORY',   label: 'Inventory' },
-  { key: 'READY_STOCK', label: 'Ready Stock' },
-  { key: 'HOLD',        label: 'Hold' },
-  { key: 'SOLD',        label: 'Terjual' },
-];
+const STATUS_LABEL: Record<StatusUnit, string> = { INVENTORY: 'Coming Soon', READY_STOCK: 'Ready Stock', HOLD: 'Hold', SOLD: 'Terjual' };
 
 const STATUS_OPTIONS: { value: StatusUnit; label: string }[] = [
   { value: 'INVENTORY', label: 'Inventory' },
@@ -34,6 +31,10 @@ const STATUS_OPTIONS: { value: StatusUnit; label: string }[] = [
   { value: 'HOLD', label: 'Hold' },
   { value: 'SOLD', label: 'Terjual' },
 ];
+const STATUS_CHANGE_OPTIONS = [
+  { value: 'INVENTORY', label: 'Coming Soon' },
+  { value: 'READY_STOCK', label: 'Ready Stock' },
+] satisfies { value: StatusUnit; label: string }[];
 
 const TX_LABEL: Record<string, string> = { AUTOMATIC: 'AT', MANUAL: 'MT' };
 const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { compact: true }));
@@ -42,6 +43,7 @@ const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { comp
 type OwnerFilter = 'ALL' | 'COMPANY_OWNED' | 'INVESTOR';
 type StockAgeFilter = 'ALL' | 'lt30' | '30to60' | '60to90' | 'gt90';
 interface FilterState {
+  statuses: StatusUnit[];
   tx: 'ALL' | 'MANUAL' | 'AUTOMATIC';
   tahunMin: string;
   tahunMax: string;
@@ -49,7 +51,7 @@ interface FilterState {
   owner: OwnerFilter;
   stockAge: StockAgeFilter;
 }
-const FILTER_DEFAULT: FilterState = { tx: 'ALL', tahunMin: '', tahunMax: '', merek: '', owner: 'ALL', stockAge: 'ALL' };
+const FILTER_DEFAULT: FilterState = { statuses: [], tx: 'ALL', tahunMin: '', tahunMax: '', merek: '', owner: 'ALL', stockAge: 'ALL' };
 
 const OWNER_LABEL: Record<OwnerFilter, string> = { ALL: 'Semua', COMPANY_OWNED: 'Perusahaan', INVESTOR: 'Investor' };
 const STOCK_AGE_OPTIONS: { value: StockAgeFilter; label: string }[] = [
@@ -88,10 +90,6 @@ const FilterModal = ({
     setDraft((p) => ({ ...p, [k]: v }));
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(FILTER_DEFAULT);
 
-  // Reset draft every time modal opens
-  const handleOpen = () => { if (open) setDraft(value); };
-  void handleOpen;
-
   return (
     <Modal
       open={open} onClose={onClose}
@@ -113,6 +111,19 @@ const FilterModal = ({
       }
     >
       <div className="space-y-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Status Unit</p>
+          <div className="grid grid-cols-2 gap-2">
+            {STATUS_OPTIONS.map((option) => {
+              const active = draft.statuses.includes(option.value);
+              return <button key={option.value} type="button" onClick={() => set('statuses', active ? draft.statuses.filter((status) => status !== option.value) : [...draft.statuses, option.value])}
+                className={`py-2.5 rounded-xl text-[12px] font-bold border transition-colors ${active ? 'bg-primary text-white border-primary shadow-glow' : 'bg-surface-soft border-border text-ink-soft hover:border-primary'}`}>
+                {STATUS_LABEL[option.value]}
+              </button>;
+            })}
+          </div>
+          <p className="mt-1.5 text-[10px] font-semibold text-muted">Tidak memilih status berarti menampilkan semua.</p>
+        </div>
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Transmisi</p>
           <div className="flex gap-2">
@@ -237,13 +248,9 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
             label="Status Unit"
             value={draft}
             onChange={(e) => setDraft(e.target.value as StatusUnit)}
-            options={STATUS_OPTIONS}
+            options={STATUS_CHANGE_OPTIONS}
           />
-          {draft === 'SOLD' && (
-            <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-3 py-2.5 text-[12px] font-semibold text-ink-soft">
-              Pastikan unit memang sudah selesai terjual sebelum mengubah status ke Terjual.
-            </div>
-          )}
+          <p className="text-[11px] font-semibold text-muted">Status Hold dan Terjual hanya berubah melalui alur penjualan agar pencatatan stok dan ledger tetap konsisten.</p>
         </div>
       </Modal>
       <ConfirmDialog
@@ -337,22 +344,26 @@ const CreateRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => vo
 
 const InventoryPageInner = () => {
   const { can } = usePermissions();
-  const [tab, setTab]           = useState<StatusUnit | 'all'>('all');
+  const [view, setView] = useState<'table' | 'card'>(() => {
+    const stored = localStorage.getItem('inventory-view');
+    if (stored === 'table' || stored === 'card') return stored;
+    return window.matchMedia('(max-width: 639px)').matches ? 'card' : 'table';
+  });
   const [query, setQuery]       = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter]     = useState<FilterState>(FILTER_DEFAULT);
   const [statusUnit, setStatusUnit] = useState<Unit | null>(null);
   const [rekondisiTarget, setRekondisiTarget] = useState<Unit | null>(null);
-  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const debounced               = useDebouncedValue(query, 400);
 
+  useEffect(() => localStorage.setItem('inventory-view', view), [view]);
+
   const { data, isLoading, isError } = useUnits({ page: 1, limit: 100, search: debounced || undefined });
-  const { data: editUnitData, error: editUnitError } = useUnit(editingUnitId ?? undefined);
 
   const all: Unit[] = data?.data ?? [];
   const merkList = [...new Set(all.map((u) => u.merek?.name).filter(Boolean))].sort() as string[];
 
-  let rows = tab !== 'all' ? all.filter((u) => u.statusUnit === tab) : [...all];
+  let rows = filter.statuses.length ? all.filter((u) => filter.statuses.includes(u.statusUnit)) : [...all];
   if (filter.tx !== 'ALL') rows = rows.filter((u) => u.transmisi === filter.tx);
   if (filter.merek)        rows = rows.filter((u) => u.merek?.name === filter.merek);
   if (filter.tahunMin)     rows = rows.filter((u) => u.tahun >= Number(filter.tahunMin));
@@ -360,21 +371,30 @@ const InventoryPageInner = () => {
   if (filter.owner !== 'ALL') rows = rows.filter((u) => (u.fundingAgreement?.fundingSource ?? 'COMPANY_OWNED') === filter.owner);
   if (filter.stockAge !== 'ALL') rows = rows.filter((u) => matchStockAge(u.readyStockAt, filter.stockAge));
 
-  const activeFilters = [filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax), filter.owner !== 'ALL', filter.stockAge !== 'ALL'].filter(Boolean).length;
+  const activeFilters = [filter.statuses.length > 0, filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax), filter.owner !== 'ALL', filter.stockAge !== 'ALL'].filter(Boolean).length;
 
   const m = useUnitModals();
 
-  useEffect(() => {
-    if (!editingUnitId || !editUnitData?.data) return;
-    m.openEdit(editUnitData.data);
-    setEditingUnitId(null);
-  }, [editingUnitId, editUnitData, m.openEdit]);
+  const shareUnit = (unit: Unit) => {
+    const target = window.open('about:blank', '_blank');
+    if (target) target.opener = null;
+    unitApi.get(unit.id).then((response) => {
+      const url = buildWhatsAppShareUrl(buildUnitShareMessage(response.data));
+      if (target) target.location.href = url;
+      else window.open(url, '_blank', 'noopener,noreferrer');
+    }).catch((error) => { target?.close(); notifyApiError(error); });
+  };
 
-  useEffect(() => {
-    if (!editingUnitId || !editUnitError) return;
-    notifyApiError(editUnitError);
-    setEditingUnitId(null);
-  }, [editingUnitId, editUnitError]);
+  const actionItems = (unit: Unit) => [
+    { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(unit) },
+    { icon: <Share2 size={13} />, label: 'Bagikan WhatsApp', onClick: () => shareUnit(unit), variant: 'primary' as const },
+    ...(can('UNIT_UPDATE') ? [
+      { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(unit) },
+      ...(unit.statusUnit === 'INVENTORY' ? [{ icon: <RefreshCw size={13} />, label: 'Jadikan Ready Stock', onClick: () => setStatusUnit(unit) }] : []),
+    ] : []),
+    ...(can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
+    ...(can('UNIT_DELETE') ? [{ icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(unit), variant: 'danger' as const }] : []),
+  ];
 
   const columns: Column<Unit>[] = [
     {
@@ -455,20 +475,7 @@ const InventoryPageInner = () => {
       header: '',
       align: 'right',
       cell: (u) => (
-        <ActionMenu items={[
-          { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(u) },
-          ...(can('UNIT_UPDATE') ? [
-            { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => setEditingUnitId(u.id) },
-            { icon: <RefreshCw size={13} />, label: 'Ubah Status', onClick: () => setStatusUnit(u) },
-          ] : []),
-          ...(can('REKONDISI_CREATE') ? [{
-            icon: <Wrench size={13} />,
-            label: 'Tambah Rekondisi',
-            onClick: () => setRekondisiTarget(u),
-            dividerAfter: true,
-          }] : []),
-          ...(can('UNIT_DELETE') ? [{ icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(u), variant: 'danger' as const }] : []),
-        ]} />
+        <ActionMenu items={actionItems(u)} />
       ),
     },
   ];
@@ -483,31 +490,14 @@ const InventoryPageInner = () => {
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
-        {/* Status tabs */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {TABS.map((t) => {
-            const count  = t.key === 'all' ? all.length : all.filter((u) => u.statusUnit === t.key).length;
-            const active = tab === t.key;
-            return (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-xl text-[12px] font-bold transition-all ${
-                  active ? 'bg-primary text-white shadow-glow' : 'bg-surface border border-border text-ink-soft hover:border-primary'
-                }`}
-              >
-                {t.label}
-                {!isLoading && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
-                    active ? 'bg-white/20 text-white' : 'bg-surface-soft text-muted'
-                  }`}>{count}</span>
-                )}
-              </button>
-            );
-          })}
+        <div className="inline-flex self-start rounded-xl border border-border bg-surface p-1">
+          <button type="button" onClick={() => setView('table')} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold transition-colors ${view === 'table' ? 'bg-primary text-white shadow-glow' : 'text-muted hover:text-primary'}`}><Table2 size={15} /> Tabel</button>
+          <button type="button" onClick={() => setView('card')} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold transition-colors ${view === 'card' ? 'bg-primary text-white shadow-glow' : 'text-muted hover:text-primary'}`}><LayoutGrid size={15} /> Kartu</button>
         </div>
 
         {/* Search + filter */}
-        <div className="flex items-center gap-2.5 sm:ml-auto">
-          <div className="relative">
+        <div className="flex items-center gap-2.5 sm:ml-auto w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
             <input value={query} onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari plat nomor, merek..."
@@ -529,11 +519,16 @@ const InventoryPageInner = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {filter.statuses.length > 0 && <div className="flex items-center gap-2 flex-wrap -mt-2">
+        <span className="text-[11px] font-bold text-muted">Status:</span>
+        {filter.statuses.map((status) => <button key={status} type="button" onClick={() => setFilter((current) => ({ ...current, statuses: current.statuses.filter((item) => item !== status) }))}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-light px-2.5 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/15">{STATUS_LABEL[status]} <X size={12} /></button>)}
+      </div>}
+
       <SectionCard
         title={`Daftar Unit (${rows.length})`}
-        icon={<Boxes size={16} />}
-        bodyClassName="p-0 md:p-0"
+        icon={view === 'table' ? <Table2 size={16} /> : <LayoutGrid size={16} />}
+        bodyClassName={view === 'table' ? 'p-0 md:p-0' : 'p-4 md:p-5'}
         action={activeFilters > 0 ? (
           <button onClick={() => setFilter(FILTER_DEFAULT)} className="text-[11px] font-bold text-primary hover:underline">
             Reset Filter
@@ -550,8 +545,13 @@ const InventoryPageInner = () => {
             <p className="font-bold text-ink text-[14px]">Tidak ada unit yang cocok</p>
             <p className="text-muted text-[12px] font-medium mt-1">Coba ubah filter atau tambahkan unit baru.</p>
           </div>
-        ) : (
+        ) : view === 'table' ? (
           <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            {rows.map((unit) => <UnitCard key={unit.id} unit={unit} onView={m.openDetail}
+              actions={<ActionMenu items={actionItems(unit)} />} />)}
+          </div>
         )}
       </SectionCard>
 
@@ -571,8 +571,8 @@ const InventoryPageInner = () => {
         />
       )}
 
-      <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)}
-        value={filter} onApply={setFilter} merkList={merkList} />
+      {filterOpen && <FilterModal open onClose={() => setFilterOpen(false)}
+        value={filter} onApply={setFilter} merkList={merkList} />}
     </div>
   );
 };

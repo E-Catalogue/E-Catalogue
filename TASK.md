@@ -5,7 +5,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 26 Juli 2026 (rev 25 — implementasi enam PRD frontend aktif dari commit backend hari ini: pendanaan investor Unit/Rekondisi + laporan, cancel order dengan refund DP atomik, homepage featured/fallback, ubah password, tipe pembayaran fixed-monthly, dan proteksi modul User. Seeder navigasi publik dipisahkan menjadi seeder khusus dengan lima menu hardcode lama dan test idempotensi. Build frontend hijau; QA E2E menunggu backend di laptop tujuan.)
+> **Terakhir diperbarui:** 3 Agustus 2026 (rev 26 — revamp Inventori Tabel/Kartu, filter status multi-select, anchored dropdown portal, format Rupiah langsung, penawaran leasing per Unit, gate Ready Stock, dan share detail internal ke WhatsApp. Implementasi mengikuti `.prd/backend_inventory_leasing_whatsapp_20260803.md`; QA E2E menunggu backend di laptop tujuan.)
 >
 > rev 24 — **revamp CMS/Public terimplementasi end-to-end**: CRUD/toggle/reorder menu publik, Unit Unggulan, logo rounded, dan ikon submenu selesai.
 >
@@ -23,7 +23,18 @@
 
 ---
 
-## ⚠️ Status eksekusi saat ini (26 Juli 2026)
+## ⚠️ Status eksekusi saat ini (3 Agustus 2026)
+
+### ✅ Revamp Inventori, Leasing Unit, dan WhatsApp (rev 26)
+
+- [x] Dropdown/select, date/month picker, action menu, dan branch switcher tetap menempel saat modal/page di-scroll.
+- [x] Input nominal Rupiah memformat pemisah ribuan langsung saat mengetik.
+- [x] Inventori memiliki tampilan Tabel/Kartu adaptif dan tersimpan; status dipindah ke modal filter multi-select.
+- [x] `INVENTORY` ditampilkan sebagai Coming Soon tanpa mengubah kontrak database.
+- [x] Form Unit memiliki step Leasing dengan banyak variasi leasing/tenor/DP dan detail pencairan setelah OTR final.
+- [x] Unit tanpa penawaran leasing tidak dapat menjadi Ready Stock; Hold/Sold tetap lewat flow penjualan.
+- [x] Share WhatsApp detail tersedia dari tabel, kartu, dan detail Unit.
+- [ ] Jalankan migration/generate/restart backend dan QA E2E dari laptop backend tujuan.
 
 ### ✅ Revamp CMS Dashboard & Public Site (rev 24 — `.prd/backend_cms_public_revamp_20260723.md`)
 

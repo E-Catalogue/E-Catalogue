@@ -93,6 +93,7 @@ export interface Unit {
   pricingFinalizedAt?: string | null;
   readyStockAt?: string | null;
   isNew?: boolean;
+  isFeatured?: boolean;
   statusKatalog?: string | null;
   variant?: string | null;
   bahanBakar?: BahanBakar | null;
@@ -127,6 +128,22 @@ export interface Unit {
     dokumenId: string;
     dokumen?: { id: string; name: string; code: string };
   }>;
+  leasingOffers?: UnitLeasingOffer[];
+}
+
+export interface UnitLeasingOfferInput {
+  leasingId: string;
+  tenorMonths: number;
+  dpAmount: number;
+}
+
+export interface UnitLeasingOffer extends UnitLeasingOfferInput {
+  id: string;
+  otrPrice: number | null;
+  disbursementAmount: number | null;
+  leasing: { id: string; name: string; code: string; isActive: boolean };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UnitFormData {
@@ -150,6 +167,7 @@ export interface UnitFormData {
   funding?: UnitFundingInput;
   kelengkapans: string[];
   dokumens: string[];
+  leasingOffers: UnitLeasingOfferInput[];
 }
 
 export interface UnitStatusUpdate {
@@ -229,6 +247,7 @@ export interface UnitLookups {
   cashAccounts: UnitLookupCashAccount[];
   investors: UnitLookupInvestor[];
   pricingPolicies: UnitLookupPricingPolicy[];
+  leasings: Array<{ id: string; name: string; code: string }>;
   finalCyclePolicies: FinalCyclePolicy[];
 }
 

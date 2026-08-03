@@ -32,16 +32,13 @@ const idr = (n?: number | null) =>
 /** Input nominal ringkas (h-8, dipakai di baris form inline) dengan pemisah ribuan — dulunya
  * `<input type="number">` polos tanpa format sama sekali selagi mengetik. */
 const MiniCurrencyInput = ({ value, onChange, className = '', placeholder = 'Nominal' }: { value: string; onChange: (v: string) => void; className?: string; placeholder?: string }) => {
-  const [focused, setFocused] = useState(false);
   const digits = value.replace(/\D/g, '');
-  const display = focused ? digits : (digits ? Number(digits).toLocaleString('id-ID') : '');
+  const display = digits ? Number(digits).toLocaleString('id-ID') : '';
   return (
     <input
       required
       inputMode="numeric"
       value={display}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
       placeholder={placeholder}
       className={`h-8 px-2.5 rounded-lg border border-border text-[12px] bg-surface focus:outline-none focus:border-primary ${className}`}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
+import { useAnchoredOverlay } from '@/shared/hooks/useAnchoredOverlay';
 
 export interface ActionItem {
   label: string;
@@ -18,9 +19,9 @@ interface ActionMenuProps {
 
 export const ActionMenu = ({ items, label = 'Aksi' }: ActionMenuProps) => {
   const [open, setOpen]     = useState(false);
-  const [pos, setPos]       = useState<{ top: number; right: number } | null>(null);
   const triggerRef          = useRef<HTMLButtonElement>(null);
   const menuRef             = useRef<HTMLDivElement>(null);
+  const overlayStyle = useAnchoredOverlay(open, triggerRef, menuRef, { width: 208, align: 'end', estimatedHeight: 280 });
 
   /* Close on outside click */
   useEffect(() => {
@@ -42,10 +43,6 @@ export const ActionMenu = ({ items, label = 'Aksi' }: ActionMenuProps) => {
   }, [open]);
 
   const toggle = () => {
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + window.scrollY + 6, right: window.innerWidth - r.right });
-    }
     setOpen((v) => !v);
   };
 
@@ -70,11 +67,11 @@ export const ActionMenu = ({ items, label = 'Aksi' }: ActionMenuProps) => {
         <ChevronDown size={13} strokeWidth={2.5} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && pos && createPortal(
+      {open && overlayStyle && createPortal(
         <div
           ref={menuRef}
-          style={{ top: pos.top, right: pos.right, position: 'absolute' }}
-          className="z-[150] w-52 bg-surface border border-border rounded-2xl shadow-xl py-1.5 "
+          style={overlayStyle}
+          className="z-[150] bg-surface border border-border rounded-2xl shadow-xl py-1.5 overflow-y-auto"
         >
           {items.map((item, i) => (
             <div key={i}>

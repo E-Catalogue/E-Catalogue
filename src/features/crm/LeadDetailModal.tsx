@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { History, UserRound } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -66,8 +66,9 @@ const OpportunityCard = ({ item }: { item: LeadOpportunityHistory }) => (
 );
 
 export const LeadDetailModal = ({ id, onClose }: Props) => {
-  const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [id]);
+  const [pagination, setPagination] = useState({ leadId: id, page: 1 });
+  const page = pagination.leadId === id ? pagination.page : 1;
+  const setPage = (nextPage: number) => setPagination({ leadId: id, page: nextPage });
   const lead = useLead(id);
   const opportunities = useLeadOpportunities(id, page, 10);
   const data = lead.data;

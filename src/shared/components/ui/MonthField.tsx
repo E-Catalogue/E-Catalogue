@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FieldWrap } from './Field';
+import { useAnchoredOverlay } from '@/shared/hooks/useAnchoredOverlay';
 
 const MONTH_LABELS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
@@ -38,13 +39,13 @@ interface MonthFieldProps {
  */
 export const MonthField = ({ label, required, value, onChange, disabled, min, max, placeholder = 'Pilih bulan', wrapClass }: MonthFieldProps) => {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const selected = parseIso(value);
   const minVal = parseIso(min);
   const maxVal = parseIso(max);
   const [viewYear, setViewYear] = useState(() => selected?.year ?? new Date().getFullYear());
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const overlayStyle = useAnchoredOverlay(open, triggerRef, panelRef, { width: 260, estimatedHeight: 240 });
 
   useEffect(() => {
     if (!open) return;
@@ -60,9 +61,7 @@ export const MonthField = ({ label, required, value, onChange, disabled, min, ma
 
   const toggle = () => {
     if (disabled) return;
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left });
+    if (!open) {
       setViewYear(selected?.year ?? new Date().getFullYear());
     }
     setOpen((v) => !v);
@@ -93,11 +92,11 @@ export const MonthField = ({ label, required, value, onChange, disabled, min, ma
         <Calendar size={15} className="text-muted shrink-0" />
       </button>
 
-      {open && pos && createPortal(
+      {open && overlayStyle && createPortal(
         <div
           ref={panelRef}
-          style={{ top: pos.top, left: pos.left }}
-          className="fixed z-[150] bg-surface border border-border rounded-2xl shadow-xl p-3 w-[260px]"
+          style={overlayStyle}
+          className="z-[150] bg-surface border border-border rounded-2xl shadow-xl p-3 overflow-y-auto"
         >
           <div className="flex items-center justify-between mb-2.5">
             <button type="button" onClick={() => setViewYear((y) => y - 1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-primary hover:bg-primary-light transition-colors">

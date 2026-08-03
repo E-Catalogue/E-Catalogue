@@ -1,4 +1,5 @@
 import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import type { Unit as BackendUnit } from '@/features/units/unit.types';
 import type { Unit as MockUnit } from '@/data/types';
@@ -13,9 +14,10 @@ interface UnitCardProps<T extends UnitCardUnit> {
   onView?: (unit: T) => void;
   onEdit?: (unit: T) => void;
   onDelete?: (unit: T) => void;
+  actions?: ReactNode;
 }
 
-export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelete }: UnitCardProps<T>) => {
+export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelete, actions }: UnitCardProps<T>) => {
   const clickable = !!onView;
   const isMock = 'brand' in unit;
   
@@ -73,7 +75,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
           </span>
         )}
 
-        {onEdit || onDelete ? (
+        {onEdit || onDelete || actions ? (
           <div className="absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
             {onView && (
               <button onClick={(e) => { e.stopPropagation(); onView(unit); }} className="w-8 h-8 rounded-full bg-surface/95 backdrop-blur flex items-center justify-center text-muted hover:text-primary shadow-sm transition-colors" title="Detail">
@@ -127,6 +129,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
           )}
           <StatusBadge status={statusUnit as never} />
         </div>
+        {actions && <div onClick={(event) => event.stopPropagation()} className="mt-3 pt-3 border-t border-divider flex justify-end">{actions}</div>}
       </div>
     </motion.div>
   );
