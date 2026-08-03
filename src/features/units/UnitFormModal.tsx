@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { ArrowRight, Car, Check, Info, Landmark, Plus, Save, Search, Trash2 } from 'lucide-react';
+import { ArrowRight, Car, Check, Info, Save, Search } from 'lucide-react';
 import { DateField } from '@/shared/components/ui/DateField';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -10,7 +10,6 @@ import { notifyApiError } from '@/core/api/notify';
 import { getApiErrorCode } from '@/core/api/apiError';
 import { useCreateUnit, useUnit, useUnitImageMutations, useUnitLookups, useUpdateUnit } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
-import { formatCurrency } from '@/core/utils/format';
 import { UnitGalleryManager } from './UnitGalleryManager';
 import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type BahanBakar, type FinalCyclePolicy, type FundingSource, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
 
@@ -155,7 +154,6 @@ const STEPS: { label: string; desc: string }[] = [
   { label: 'Data Unit', desc: 'Identitas & spesifikasi' },
   { label: 'Pembelian & Pendanaan', desc: 'Harga beli & sumber dana' },
   { label: 'Kelengkapan & Dokumen', desc: 'Perlengkapan & surat' },
-  { label: 'Leasing', desc: 'Tenor, DP & pencairan' },
   { label: 'Foto Unit', desc: 'Galeri foto katalog' },
 ];
 
@@ -201,47 +199,6 @@ const Locked = ({ text }: { text: string }) => (
   </div>
 );
 
-const LeasingOffersSection = ({ offers, leasings, otrPrice, disabled, onChange }: {
-  offers: UnitFormState['leasingOffers'];
-  leasings: Array<{ id: string; name: string; code: string }>;
-  otrPrice?: number | null;
-  disabled?: boolean;
-  onChange: (offers: UnitFormState['leasingOffers']) => void;
-}) => {
-  const update = (index: number, patch: Partial<UnitFormState['leasingOffers'][number]>) =>
-    onChange(offers.map((offer, i) => i === index ? { ...offer, ...patch } : offer));
-  return (
-    <div className="sm:col-span-2 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div><p className="text-[13px] font-extrabold text-ink">Daftar Pencairan Leasing</p><p className="text-[11px] font-semibold text-muted">Leasing yang sama boleh ditambahkan dengan tenor berbeda.</p></div>
-        <Button type="button" size="sm" variant="secondary" icon={<Plus size={14} />} disabled={disabled}
-          onClick={() => onChange([...offers, { leasingId: '', tenorMonths: 12, dpAmount: 0 }])}>Tambah Leasing</Button>
-      </div>
-      {offers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-surface-soft px-4 py-8 text-center">
-          <Landmark size={24} className="mx-auto text-muted" /><p className="mt-2 text-[12px] font-bold text-ink">Belum ada penawaran leasing</p><p className="mt-1 text-[11px] font-medium text-muted">Unit tetap dapat dibuat, tetapi belum dapat menjadi Ready Stock.</p>
-        </div>
-      ) : offers.map((offer, index) => {
-        const disbursement = otrPrice == null ? null : otrPrice - offer.dpAmount;
-        return <div key={index} className="rounded-2xl border border-border bg-surface-soft p-3.5">
-          <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.7fr_1fr_auto] gap-3 items-end">
-            <SearchableSelect label={`Leasing ${index + 1}`} required disabled={disabled} value={offer.leasingId} onChange={(value) => update(index, { leasingId: value })}
-              options={leasings.map((item) => ({ value: item.id, label: item.name, sublabel: item.code }))} placeholder="Pilih leasing" searchPlaceholder="Cari leasing..." />
-            <NumericField label="Tenor" required thousands={false} disabled={disabled} value={offer.tenorMonths} onChange={(value) => update(index, { tenorMonths: value })} min={1} max={120} suffix="bulan" />
-            <NumericField label="DP" required disabled={disabled} value={offer.dpAmount} onChange={(value) => update(index, { dpAmount: value })} min={0} prefix="Rp" />
-            <button type="button" disabled={disabled} onClick={() => onChange(offers.filter((_, i) => i !== index))} aria-label={`Hapus leasing ${index + 1}`}
-              className="h-11 w-11 rounded-xl border border-border bg-surface text-muted hover:text-semantic-error hover:border-semantic-error/40 disabled:opacity-50 flex items-center justify-center"><Trash2 size={16} /></button>
-          </div>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="rounded-xl bg-surface border border-border px-3 py-2"><p className="text-[10px] font-bold uppercase text-muted">Harga OTR Unit</p><p className="text-[12px] font-extrabold text-ink mt-0.5">{otrPrice == null ? 'Menunggu finalisasi harga' : formatCurrency(otrPrice)}</p></div>
-            <div className={`rounded-xl border px-3 py-2 ${disbursement != null && disbursement < 0 ? 'bg-semantic-error/8 border-semantic-error/30' : 'bg-surface border-border'}`}><p className="text-[10px] font-bold uppercase text-muted">Pencairan</p><p className={`text-[12px] font-extrabold mt-0.5 ${disbursement != null && disbursement < 0 ? 'text-semantic-error' : 'text-primary'}`}>{disbursement == null ? 'Menunggu finalisasi harga' : formatCurrency(disbursement)}</p></div>
-          </div>
-        </div>;
-      })}
-    </div>
-  );
-};
-
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const [form, setForm] = useState<UnitFormState>(() => toForm(unit));
   const [seedId, setSeedId] = useState<string | null | undefined>('init');
@@ -266,9 +223,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const persistedUnit = unit ?? createdUnit;
   const isEdit = !!unit;
   // Create: step Foto terkunci sampai unit berhasil dibuat. Edit: seluruh step langsung bisa diakses.
-  const maxReachableStep = isEdit ? 4 : (createdUnit ? 4 : 3);
+  const maxReachableStep = isEdit ? 3 : (createdUnit ? 3 : 2);
   const activeUnitId = persistedUnit?.id;
-  const { data: liveUnitRes } = useUnit(step === 4 ? activeUnitId : undefined);
+  const { data: liveUnitRes } = useUnit(step === 3 ? activeUnitId : undefined);
   const liveImages = liveUnitRes?.data?.unitImages ?? persistedUnit?.unitImages ?? [];
   const imageMutations = useUnitImageMutations(activeUnitId ?? '');
 
@@ -279,7 +236,6 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const dokumens = useMemo(() => lookupsData?.data.documents ?? [], [lookupsData]);
   const cashAccounts = useMemo(() => lookupsData?.data.cashAccounts ?? [], [lookupsData]);
   const investors = useMemo(() => lookupsData?.data.investors ?? [], [lookupsData]);
-  const leasings = useMemo(() => lookupsData?.data.leasings ?? [], [lookupsData]);
   const kelengkapanLoading = lookupsLoading;
   const dokumenLoading = lookupsLoading;
   const selectedInvestor = useMemo(() => investors.find((i) => i.id === form.investorId), [investors, form.investorId]);
@@ -320,20 +276,12 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     !unit &&
     fundingRequiresInvestor &&
     (!form.investorId || (fundingRequiresFinalCycle && !form.finalCyclePolicy) || insufficientCapital);
-  const completeOffers = form.leasingOffers.filter((offer) => offer.leasingId);
-  const leasingKeys = completeOffers.map((offer) => `${offer.leasingId}:${offer.tenorMonths}`);
-  const leasingError = form.leasingOffers.some((offer) => !offer.leasingId || offer.tenorMonths < 1)
-    ? 'Lengkapi leasing dan tenor pada setiap baris.'
-    : new Set(leasingKeys).size !== leasingKeys.length
-      ? 'Leasing dan tenor yang sama tidak boleh diduplikasi.'
-      : null;
-
   const goJump = (i: number) => { if (i <= maxReachableStep) setStep(i); };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (fundingIncomplete || nameError || leasingError) return;
+    if (fundingIncomplete || nameError) return;
     const payload: UnitFormData = {
       ...form,
       name: nameTrimmed,
@@ -351,14 +299,16 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
           : { fundingSource: 'COMPANY_OWNED' },
     };
     if (unit) {
-      updateUnit.mutate({ id: unit.id, data: payload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
+      const unitPayload: Partial<UnitFormData> = { ...payload };
+      delete unitPayload.leasingOffers;
+      updateUnit.mutate({ id: unit.id, data: unitPayload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
     } else {
       createUnit.mutate(payload, {
         onError: (err) => {
           if (getApiErrorCode(err) === 'FINAL_CYCLE_POLICY_REQUIRED') setCyclePolicyError('Tipe pembayaran investor wajib dipilih.');
           notifyApiError(err);
         },
-        onSuccess: (res) => { setCreatedUnit(res.data); setStep(4); },
+        onSuccess: (res) => { setCreatedUnit(res.data); setStep(3); },
       });
     }
   };
@@ -375,23 +325,22 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     : <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>;
 
   const renderFooterActions = () => {
-    if (step === 4) return <Button onClick={onClose}>Selesai</Button>;
+    if (step === 3) return <Button onClick={onClose}>Selesai</Button>;
     if (isEdit) {
-      const nextLabel = step === 3 ? 'Lanjut ke Foto' : 'Lanjut';
+      const nextLabel = step === 2 ? 'Lanjut ke Foto' : 'Lanjut';
       return (
         <>
           <Button variant="secondary" icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)}>{nextLabel}</Button>
-          <Button icon={<Save size={15} />} onClick={submitForm} loading={updateUnit.isPending} disabled={!!nameError || !!leasingError}>Simpan Perubahan</Button>
+          <Button icon={<Save size={15} />} onClick={submitForm} loading={updateUnit.isPending} disabled={!!nameError}>Simpan Perubahan</Button>
         </>
       );
     }
     // Create
-    if (step < 3) {
+    if (step < 2) {
       return <Button icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)} disabled={step === 0 ? !!nameError : fundingIncomplete}>Lanjut</Button>;
     }
-    // step === 3 (create)
-    if (fieldsLocked) return <Button icon={<ArrowRight size={15} />} onClick={() => setStep(4)}>Lanjut ke Foto</Button>;
-    return <Button icon={<Save size={15} />} onClick={submitForm} loading={isPending} disabled={isPending || fundingIncomplete || !!nameError || !!leasingError}>Buat Unit &amp; Lanjut ke Foto</Button>;
+    // step === 2 (create)
+    return <Button icon={<Save size={15} />} onClick={submitForm} loading={isPending} disabled={isPending || fundingIncomplete || !!nameError}>Buat Unit &amp; Lanjut ke Foto</Button>;
   };
 
   return (
@@ -411,7 +360,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     >
       <StepIndicator activeIndex={step} maxReached={maxReachableStep} onJump={goJump} />
 
-      <form id="unit-form" onSubmit={handleSubmit} className={step <= 3 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'hidden'}>
+      <form id="unit-form" onSubmit={handleSubmit} className={step <= 2 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'hidden'}>
         {step === 0 && (
           <>
             <div className="sm:col-span-2">
@@ -586,13 +535,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
             />
           </div>
         )}
-        {step === 3 && (
-          <LeasingOffersSection offers={form.leasingOffers} leasings={leasings} otrPrice={persistedUnit?.otrPrice}
-            disabled={fieldsLocked} onChange={(offers) => set('leasingOffers', offers)} />
-        )}
       </form>
 
-      {step === 4 && (
+      {step === 3 && (
         activeUnitId ? (
           <UnitGalleryManager
             images={liveImages}

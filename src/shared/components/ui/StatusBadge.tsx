@@ -2,8 +2,8 @@ import type { UnitStatus } from '@/data/types';
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   // Unit statuses (Backend)
-  INVENTORY: { label: 'Coming Soon', className: 'bg-accent-blue/10 text-accent-blue' },
-  READY_STOCK: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
+  INVENTORY: { label: 'Inventory', className: 'bg-accent-blue/10 text-accent-blue' },
+  READY_STOCK: { label: 'Ready Stock', className: 'bg-accent-green/10 text-accent-green' },
   HOLD: { label: 'Hold', className: 'bg-accent-amber/10 text-accent-amber' },
   SOLD: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
   // Payroll sales incentive statuses
@@ -33,13 +33,14 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
 
 interface StatusBadgeProps {
   status: UnitStatus | string;
+  label?: string;
 }
 
-export const StatusBadge = ({ status }: StatusBadgeProps) => {
+export const StatusBadge = ({ status, label }: StatusBadgeProps) => {
   const config = STATUS_MAP[status] ?? { label: status, className: 'bg-muted/10 text-muted' };
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${config.className}`}>
-      {config.label}
+      {label ?? config.label}
     </span>
   );
 };

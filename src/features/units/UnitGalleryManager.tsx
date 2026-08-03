@@ -24,19 +24,20 @@ interface UnitGalleryManagerProps {
   reordering?: boolean;
   deleting?: boolean;
   settingMain?: boolean;
+  readOnly?: boolean;
   /** Unggah semua file yang sudah dipratinjau; `mainIndex` = indeks file yang ditandai utama (null = biarkan default). */
-  onUpload: (files: File[], mainIndex: number | null) => Promise<unknown>;
+  onUpload?: (files: File[], mainIndex: number | null) => Promise<unknown>;
   /** Dipanggil segera setiap kali urutan foto tersimpan berubah. */
-  onReorder: (images: { id: string; sequence: number }[]) => void;
+  onReorder?: (images: { id: string; sequence: number }[]) => void;
   onSetMain?: (imageId: string) => void;
-  onDelete: (imageId: string) => void;
+  onDelete?: (imageId: string) => void;
   emptyHint?: string;
 }
 
 let stagedCounter = 0;
 
 export const UnitGalleryManager = ({
-  images, uploading, reordering, deleting, settingMain,
+  images, uploading, reordering, deleting, settingMain, readOnly = false,
   onUpload, onReorder, onSetMain, onDelete, emptyHint = 'Belum ada foto tersimpan',
 }: UnitGalleryManagerProps) => {
   const [order, setOrder] = useState(images);
@@ -96,7 +97,7 @@ export const UnitGalleryManager = ({
   };
 
   const saveAll = async () => {
-    if (staged.length === 0) return;
+    if (staged.length === 0 || !onUpload) return;
     try {
       await onUpload(staged.map((s) => s.file), staged.length ? stagedMain : null);
       staged.forEach((s) => URL.revokeObjectURL(s.url));
@@ -114,13 +115,13 @@ export const UnitGalleryManager = ({
     const next = [...order];
     [next[index], next[target]] = [next[target], next[index]];
     setOrder(next);
-    onReorder(next.map((img, idx) => ({ id: img.id, sequence: idx + 1 })));
+    onReorder?.(next.map((img, idx) => ({ id: img.id, sequence: idx + 1 })));
   };
 
   return (
     <div className="space-y-4">
       {/* Dropzone */}
-      <div
+      {!readOnly && <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
@@ -133,11 +134,11 @@ export const UnitGalleryManager = ({
         <p className="text-[13px] font-extrabold text-ink">Seret &amp; letakkan atau klik untuk pilih foto</p>
         <p className="text-[11px] font-semibold text-muted">Bisa pilih banyak sekaligus · JPG/PNG · maks 5MB per file</p>
         <input ref={inputRef} type="file" accept="image/jpeg,image/jpg,image/png" multiple onChange={onInputChange} className="hidden" />
-      </div>
-      {error && <p className="text-[12px] font-semibold text-semantic-error">{error}</p>}
+      </div>}
+      {!readOnly && error && <p className="text-[12px] font-semibold text-semantic-error">{error}</p>}
 
       {/* Area pratinjau (staging) — muncul sebelum benar-benar diunggah */}
-      {staged.length > 0 && (
+      {!readOnly && staged.length > 0 && (
         <div className="rounded-2xl border border-primary/30 bg-primary-light/20 p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
@@ -181,18 +182,27 @@ export const UnitGalleryManager = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {order.map((img, index) => (
               <div key={img.id} className="relative rounded-xl border border-border overflow-hidden bg-surface-soft group">
-                <img src={cmsImageUrl('unit', img.filename) ?? ''} alt={img.originalName ?? ''} className="w-full aspect-[4/3] object-cover" />
-                {img.isMain && <span className="absolute top-1.5 left-1.5 bg-primary text-white rounded-md px-1.5 py-0.5 text-[9px] font-extrabold">UTAMA</span>}
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-ink/45 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="flex gap-1">
-                    <button type="button" title="Naik" disabled={index === 0 || reordering} onClick={() => reorder(img.id, -1)} className="p-1 rounded-md text-white hover:bg-white/20 disabled:opacity-30"><ArrowUp size={13} /></button>
-                    <button type="button" title="Turun" disabled={index === order.length - 1 || reordering} onClick={() => reorder(img.id, 1)} className="p-1 rounded-md text-white hover:bg-white/20 disabled:opacity-30"><ArrowDown size={13} /></button>
-                    {onSetMain && (
-                      <button type="button" title="Jadikan utama" disabled={!!img.isMain || settingMain} onClick={() => onSetMain(img.id)} className="p-1 rounded-md text-white hover:bg-accent-amber disabled:opacity-30"><Star size={13} fill={img.isMain ? 'currentColor' : 'none'} /></button>
-                    )}
-                  </div>
-                  <button type="button" title="Hapus" disabled={deleting} onClick={() => onDelete(img.id)} className="p-1 rounded-md text-white hover:bg-semantic-error disabled:opacity-30"><Trash2 size={13} /></button>
-                </div>
+                {readOnly ? (
+                  <button type="button" title="Lihat foto" aria-label={`Lihat foto ${img.originalName || img.filename}`} onClick={() => window.open(cmsImageUrl('unit', img.filename) ?? '', '_blank', 'noopener,noreferrer')} className="block w-full cursor-zoom-in">
+                    <img src={cmsImageUrl('unit', img.filename) ?? ''} alt={img.originalName ?? ''} className="w-full aspect-[4/3] object-cover" />
+                    {img.isMain && <span className="absolute top-1.5 left-1.5 bg-primary text-white rounded-md px-1.5 py-0.5 text-[9px] font-extrabold">UTAMA</span>}
+                  </button>
+                ) : (
+                  <>
+                    <img src={cmsImageUrl('unit', img.filename) ?? ''} alt={img.originalName ?? ''} className="w-full aspect-[4/3] object-cover" />
+                    {img.isMain && <span className="absolute top-1.5 left-1.5 bg-primary text-white rounded-md px-1.5 py-0.5 text-[9px] font-extrabold">UTAMA</span>}
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-ink/45 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1">
+                        <button type="button" title="Naik" disabled={index === 0 || reordering} onClick={() => reorder(img.id, -1)} className="p-1 rounded-md text-white hover:bg-white/20 disabled:opacity-30"><ArrowUp size={13} /></button>
+                        <button type="button" title="Turun" disabled={index === order.length - 1 || reordering} onClick={() => reorder(img.id, 1)} className="p-1 rounded-md text-white hover:bg-white/20 disabled:opacity-30"><ArrowDown size={13} /></button>
+                        {onSetMain && (
+                          <button type="button" title="Jadikan utama" disabled={!!img.isMain || settingMain} onClick={() => onSetMain(img.id)} className="p-1 rounded-md text-white hover:bg-accent-amber disabled:opacity-30"><Star size={13} fill={img.isMain ? 'currentColor' : 'none'} /></button>
+                        )}
+                      </div>
+                      <button type="button" title="Hapus" disabled={deleting} onClick={() => onDelete?.(img.id)} className="p-1 rounded-md text-white hover:bg-semantic-error disabled:opacity-30"><Trash2 size={13} /></button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
