@@ -8,6 +8,7 @@ import { setCredentials } from '@/app/store/authSlice';
 import { authApi } from './auth.api';
 import { classifyAxiosError } from '@/core/api/errorHandler';
 import type { ApiErrorBody } from '@/core/api/types';
+import { firstAccessibleMenuPath } from '@/shared/layout/menu';
 
 const STATS = [
   { icon: Car, value: '42', label: 'Unit Stok' },
@@ -34,7 +35,10 @@ export const LoginPage = () => {
     try {
       const payload = await authApi.login(identifier.trim(), password);
       dispatch(setCredentials(payload));
-      navigate({ to: '/dashboard' });
+      const initialPath = payload.permissionCodes.includes('DASHBOARD_READ')
+        ? '/dashboard'
+        : firstAccessibleMenuPath(payload.groupMenus);
+      navigate({ to: initialPath ?? '/dashboard' });
     } catch (err) {
       // Error infrastruktur (network/timeout/5xx) sudah ditangani modal global (1 pintu).
       // Di sini cukup tampilkan error bisnis (kredensial salah / validasi).

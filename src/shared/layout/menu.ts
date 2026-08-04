@@ -32,6 +32,7 @@ import {
   BookOpen,
   type LucideIcon,
 } from 'lucide-react';
+import type { GroupMenu } from '@/features/auth/types';
 
 export interface MenuItem {
   path: string;
@@ -132,6 +133,17 @@ export const resolveFrontendPath = (m: { path?: string | null; code?: string }):
   if (m.path && VALID_PATHS.has(m.path)) return m.path;
   // Fallback: If it starts with / let it pass, assuming backend is correct
   if (m.path?.startsWith('/')) return m.path;
+  return null;
+};
+
+/** Menu pertama yang dapat dibuka, mengikuti urutan Group Menu lalu Menu dari RBAC backend. */
+export const firstAccessibleMenuPath = (groupMenus: GroupMenu[]): string | null => {
+  for (const group of [...groupMenus].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))) {
+    for (const menu of [...(group.menus ?? [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))) {
+      const path = resolveFrontendPath(menu);
+      if (path) return path;
+    }
+  }
   return null;
 };
 
