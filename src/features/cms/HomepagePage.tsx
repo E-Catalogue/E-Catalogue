@@ -93,7 +93,7 @@ const HeroEditor = () => {
         <TextField label="CTA Kedua — Link" value={form.secondaryCtaLink} onChange={(e) => patch({ secondaryCtaLink: e.target.value })} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ImageUpload label="Gambar Hero" hint={pendingHero ? 'Tersimpan saat klik Simpan' : 'JPG/PNG maks 5 MB'} previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending} onFile={setPendingHero} />
+        <ImageUpload label="Gambar Hero" hint={pendingHero ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending} onFile={setPendingHero} />
         <div className="space-y-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Kartu Badge Mengambang</p>
           <TextField label="Ikon" value={form.floatingCard.icon} onChange={(e) => patch({ floatingCard: { ...form.floatingCard, icon: e.target.value } })} placeholder="shield-check" />

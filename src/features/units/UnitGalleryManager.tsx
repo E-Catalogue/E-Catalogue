@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'r
 import { ArrowDown, ArrowUp, ImagePlus, Images, Star, Trash2, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { cmsImageUrl } from '@/features/cms/cms.api';
-import { validateImageFile } from '@/core/utils/imageValidation';
+import { IMAGE_UPLOAD_NOTE, validateImageFile } from '@/core/utils/imageValidation';
 
 export interface UnitGalleryImage {
   id: string;
@@ -132,7 +132,7 @@ export const UnitGalleryManager = ({
       >
         <div className="w-11 h-11 rounded-2xl bg-primary-light flex items-center justify-center text-primary"><ImagePlus size={22} /></div>
         <p className="text-[13px] font-extrabold text-ink">Seret &amp; letakkan atau klik untuk pilih foto</p>
-        <p className="text-[11px] font-semibold text-muted">Bisa pilih banyak sekaligus · JPG/PNG · maks 5MB per file</p>
+        <p className="text-[11px] font-semibold text-muted">Bisa pilih banyak sekaligus · {IMAGE_UPLOAD_NOTE}</p>
         <input ref={inputRef} type="file" accept="image/jpeg,image/jpg,image/png" multiple onChange={onInputChange} className="hidden" />
       </div>}
       {!readOnly && error && <p className="text-[12px] font-semibold text-semantic-error">{error}</p>}

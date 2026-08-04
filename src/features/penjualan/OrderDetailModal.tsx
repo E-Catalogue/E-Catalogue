@@ -197,6 +197,7 @@ export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabled
         <div className="sm:col-span-2">
           <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Bukti Pembayaran (opsional)</label>
           <input type="file" accept="image/*,.pdf" onChange={(e) => set('bukti', e.target.files?.[0] ?? null, false)} className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5" />
+          <p className="mt-1.5 text-[11px] font-medium text-muted">Jika berupa gambar: maksimal 2 MB per gambar.</p>
         </div>
         <Button type="submit" icon={<Plus size={14} />} disabled={!valid || disabled} className="sm:col-span-2">Tambah Pembayaran</Button>
       </form>

@@ -9,7 +9,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { validateImageFile } from '@/core/utils/imageValidation';
+import { IMAGE_UPLOAD_NOTE, validateImageFile } from '@/core/utils/imageValidation';
 import type { Branch } from './types';
 
 interface Props {
@@ -68,8 +68,8 @@ export const BranchImagesModal = ({ open, onClose, branch }: Props) => {
       size="lg"
       footer={<Button variant="secondary" onClick={onClose}>Tutup</Button>}
     >
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-[13px] font-semibold text-muted">{images.length} foto</p>
+      <div className="flex justify-between items-start gap-3 mb-4">
+        <div><p className="text-[13px] font-semibold text-muted">{images.length} foto</p><p className="mt-1 text-[11px] font-medium text-muted">{IMAGE_UPLOAD_NOTE}</p></div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
         <Button icon={<ImagePlus size={16} />} onClick={() => fileRef.current?.click()} disabled={m.uploadImage.isPending}>Pilih Foto</Button>
       </div>

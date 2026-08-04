@@ -86,6 +86,7 @@ const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClo
             onChange={(e) => setProof(e.target.files?.[0] ?? null)}
             className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5 disabled:opacity-60"
           />
+          <p className="mt-1.5 text-[11px] font-medium text-muted">Jika berupa gambar: maksimal 2 MB per gambar.</p>
         </div>
       </form>
     </Modal>
@@ -120,6 +121,7 @@ const PayExpenseForm = ({ item, onClose }: { item: OperationalExpense; onClose: 
             onChange={(e) => setProof(e.target.files?.[0] ?? null)}
             className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5"
           />
+          <p className="mt-1.5 text-[11px] font-medium text-muted">Jika berupa gambar: maksimal 2 MB per gambar.</p>
         </div>
       </form>
     </Modal>

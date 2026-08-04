@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Upload, Loader2, ImageIcon, Trash2 } from 'lucide-react';
-import { validateImageFile } from '@/core/utils/imageValidation';
+import { IMAGE_UPLOAD_NOTE, validateImageFile } from '@/core/utils/imageValidation';
 
 interface ImageUploadProps {
   /** URL gambar saat ini (hasil cmsImageUrl), null bila belum ada. */
@@ -20,7 +20,7 @@ interface ImageUploadProps {
 
 export const ImageUpload = ({
   previewUrl, onFile, isUploading, onRemove,
-  label, hint = 'JPG/PNG maks 5 MB', aspect = 'aspect-[16/10]', rounded, className = '',
+  label, hint = IMAGE_UPLOAD_NOTE, aspect = 'aspect-[16/10]', rounded, className = '',
 }: ImageUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
@@ -68,7 +68,7 @@ export const ImageUpload = ({
               <ImageIcon size={20} className="text-muted" />
             </div>
             <p className="text-[12px] font-bold text-ink-soft">Klik atau seret gambar</p>
-            <p className="text-[11px] text-muted font-medium mt-0.5">{hint}</p>
+            <p className="text-[11px] text-muted font-medium mt-0.5">Pilih gambar</p>
           </div>
         )}
 
@@ -78,6 +78,7 @@ export const ImageUpload = ({
           </div>
         )}
       </div>
+      <p className="text-[11px] text-muted font-medium mt-1.5">{hint}</p>
       {err && <p className="text-[11px] font-semibold text-semantic-error mt-1.5">{err}</p>}
 
       <input ref={inputRef} type="file" accept="image/png,image/jpeg" className="hidden"
