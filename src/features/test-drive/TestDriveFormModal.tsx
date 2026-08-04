@@ -8,6 +8,7 @@ import { DateField } from '@/shared/components/ui/DateField';
 import { notifyApiError } from '@/core/api/notify';
 import { useTestDriveMutations, useTestDriveLookups } from './testDrive.hooks';
 import { unitOptionLabel } from '@/features/units/unit.display';
+import { IMAGE_UPLOAD_NOTE, validateImageFile } from '@/core/utils/imageValidation';
 import type { TestDrive, TestDriveStatus } from './testDrive.types';
 
 interface Props {
@@ -52,12 +53,7 @@ const toForm = (item: TestDrive): FormState => ({
   fotoSim: null,
 });
 
-const validateImage = (file: File | null) => {
-  if (!file) return null;
-  if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) return 'File harus JPG, JPEG, atau PNG.';
-  if (file.size > 5 * 1024 * 1024) return 'Ukuran file maksimal 5MB.';
-  return null;
-};
+const validateImage = (file: File | null) => file ? validateImageFile(file) : null;
 
 export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
   const [form, setForm] = useState<FormState>(item ? toForm(item) : empty());
@@ -127,8 +123,8 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
         <SelectField label="Status" value={form.status} onChange={(e) => set('status', e.target.value as TestDriveStatus)} options={[{ value: 'SCHEDULED', label: 'Dijadwalkan' }, { value: 'COMPLETED', label: 'Selesai' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />
         <DateField label="Tanggal" required value={form.scheduledDate} onChange={(v) => set('scheduledDate', v)} />
         <TextField label="Jam" required type="time" value={form.scheduledTime} onChange={(e) => set('scheduledTime', e.target.value)} />
-        <TextField label="Foto KTP" required={!item} type="file" accept="image/jpeg,image/jpg,image/png" onChange={fileChange('fotoKtp')} />
-        <TextField label="Foto SIM" required={!item} type="file" accept="image/jpeg,image/jpg,image/png" onChange={fileChange('fotoSim')} />
+        <div><TextField label="Foto KTP" required={!item} type="file" accept="image/jpeg,image/jpg,image/png" onChange={fileChange('fotoKtp')} /><p className="mt-1.5 text-[11px] font-medium text-muted">{IMAGE_UPLOAD_NOTE}</p></div>
+        <div><TextField label="Foto SIM" required={!item} type="file" accept="image/jpeg,image/jpg,image/png" onChange={fileChange('fotoSim')} /><p className="mt-1.5 text-[11px] font-medium text-muted">{IMAGE_UPLOAD_NOTE}</p></div>
         {fileError && <p className="sm:col-span-2 text-[12px] font-semibold text-semantic-error">{fileError}</p>}
         <div className="sm:col-span-2">
           <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Catatan</label>

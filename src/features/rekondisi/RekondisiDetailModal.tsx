@@ -153,6 +153,7 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Invoice (opsional)</p>
           <input type="file" accept="image/*,.pdf" onChange={(e) => setInvoice(e.target.files?.[0] ?? null)} className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5" />
+          <p className="mt-1.5 text-[11px] font-medium text-muted">Jika berupa gambar: maksimal 2 MB per gambar.</p>
         </div>
         <button type="submit" className="w-full h-10 rounded-xl bg-accent-green text-white text-[12px] font-bold flex items-center justify-center gap-1.5">
           <CheckCircle size={14} /> Selesaikan Rekondisi

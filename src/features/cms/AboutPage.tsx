@@ -37,7 +37,7 @@ const HeroEditor = () => {
         <TextField label="CTA — Label" value={form.ctaLabel} onChange={(e) => patch({ ctaLabel: e.target.value })} />
         <TextField label="CTA — Link" value={form.ctaLink} onChange={(e) => patch({ ctaLink: e.target.value })} />
       </div>
-      <ImageUpload label="Gambar Hero" hint={pendingHero ? 'Tersimpan saat klik Simpan' : 'JPG/PNG maks 5 MB'} previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending} onFile={setPendingHero} />
+      <ImageUpload label="Gambar Hero" hint={pendingHero ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('page', form.imageFilename)} isUploading={uploadHero.isPending} onFile={setPendingHero} />
     </SectionCardShell>
   );
 };

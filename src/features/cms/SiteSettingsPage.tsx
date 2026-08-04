@@ -87,9 +87,9 @@ export const SiteSettingsPage = () => {
       {/* Identitas */}
       <SectionCard title="Identitas" icon={<Building2 size={16} />}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <ImageUpload label="Logo" aspect="aspect-video" hint={pendingLogo ? 'Tersimpan saat klik Simpan' : 'JPG/PNG maks 5 MB'} previewUrl={cmsImageUrl('site', f.logoFilename)} isUploading={uploadLogo.isPending}
+          <ImageUpload label="Logo" aspect="aspect-video" hint={pendingLogo ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.logoFilename)} isUploading={uploadLogo.isPending}
             onFile={setPendingLogo} />
-          <ImageUpload label="Favicon" aspect="aspect-square" hint={pendingFavicon ? 'Tersimpan saat klik Simpan' : 'JPG/PNG maks 5 MB'} previewUrl={cmsImageUrl('site', f.faviconFilename)} isUploading={uploadFavicon.isPending}
+          <ImageUpload label="Favicon" aspect="aspect-square" hint={pendingFavicon ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.faviconFilename)} isUploading={uploadFavicon.isPending}
             onFile={setPendingFavicon} />
           <div className="space-y-3">
             <TextField label="Nama Perusahaan" value={f.companyName ?? ''} onChange={(e) => set('companyName', e.target.value)} placeholder="GM Mobilindo" />

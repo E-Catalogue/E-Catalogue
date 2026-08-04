@@ -35,6 +35,7 @@
 - [x] Unit tanpa penawaran leasing tidak dapat menjadi Ready Stock; Hold/Sold tetap lewat flow penjualan.
 - [x] Share WhatsApp detail tersedia dari tabel, kartu, dan detail Unit.
 - [ ] Jalankan migration/generate/restart backend dan QA E2E dari laptop backend tujuan.
+- [x] **Revisi upload gambar** — maksimal 2 MB per gambar (bukan total batch), pesan error menyebut file/ukuran secara spesifik, dan note batas ukuran tersedia di seluruh input gambar.
 
 ### ✅ Revamp CMS Dashboard & Public Site (rev 24 — `.prd/backend_cms_public_revamp_20260723.md`)
 
@@ -282,7 +283,7 @@ Tidak ada item implementasi 🔴/🟠 tersisa dari revamp CMS/Public. Sisa tinda
 - [x] `cms.types.ts` — v2 per-section (SiteSettings + PublicNavMenu terpisah, Homepage sections hero/brands/whyUs/howItWorks/featured/testimonials/cta, About sections, ContactPage, CatalogPage, Testimonial, ContactMessage, CreditSimConfig, CmsCatalogRow)
 - [x] `cms.api.ts` — `sectionApi.get/update(page,section)` generik + `/cms/{page}/hero-image` + `uploadCmsImage(folder)` + site-settings/contact-page/catalog-page/testimonials/contact-messages/credit-sim/catalog. **Modul Banner dihapus (v2).**
 - [x] `cms.hooks.ts` — `useCmsSection`/`useUpdateCmsSection` generik, `usePublicSiteSettings`, dll (toast `variant:'success'`)
-- [x] **ImageUpload** — komponen upload dengan **preview gambar** (drag/drop, validasi 5MB JPG/PNG, preview instan)
+- [x] **ImageUpload** — komponen upload dengan **preview gambar** (drag/drop, validasi 2 MB per gambar JPG/PNG, preview instan)
 - [x] **BannerPage** → `/cms/homepage/hero` + `/cms/homepage/cta` (per-section, upload hero pakai ImageUpload)
 - [x] **ProfilPage** → `/cms/about/visi-misi` + `/stats` + `/values` (per-section)
 - [x] **TestimoniPage** → `/cms/testimonials` (CRUD + publish + avatar)
@@ -303,7 +304,7 @@ Tidak ada item implementasi 🔴/🟠 tersisa dari revamp CMS/Public. Sisa tinda
 
 ### CMS UX + Error/Upload + Tabel — *rev 11* (acuan [docs/frontend/cms_module_prd.md](docs/frontend/cms_module_prd.md) §1.5)
 - [x] **CMS auto/manual jelas** — `AutoValueField` (dropdown Otomatis/Manual + badge "Dihitung otomatis dari data") gantikan input ketik "auto" di Statistik Hero/About; `ModeSelect` (segmented radio + hint) gantikan input teks mode di Merek Populer & Unit Unggulan
-- [x] **Validasi upload gambar** — util `validateImageFile` (`core/utils/imageValidation.ts`: 5 MB, JPG/PNG) dipakai `ImageUpload` (feedback instan sebelum upload)
+- [x] **Validasi upload gambar** — util `validateImageFile` (`core/utils/imageValidation.ts`: 2 MB per gambar, JPG/PNG) dipakai `ImageUpload` (feedback instan sebelum upload)
 - [x] **Error handling terpusat** — `core/api/apiError.ts`: `getApiErrorCode` (branching), `getApiErrorMessage` (tampilan), `getFieldErrors` (highlight field dari `VALIDATION_ERROR.details`)
 - [x] **Tabel standar (§5)** — semua kolom aksi kini pakai dropdown `RowActions`/`ActionMenu`: BranchPage ("Kelola Foto" → extra), InvestorPage ("Kelola Modal" → extra), PembayaranPage ("Detail" → onView). Scan konfirmasi 0 deviasi.
 
