@@ -103,15 +103,16 @@ export const StockReportPage = () => {
 
       {/* KPI */}
       {ovLoading || !overview ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-[92px] rounded-2xl bg-surface border border-border animate-pulse" />)}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">{Array.from({ length: 7 }).map((_, i) => <div key={i} className="h-[92px] rounded-2xl bg-surface border border-border animate-pulse" />)}</div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Kpi icon={Boxes} label="Stok Aktif" value={formatNumber(overview.kpi.totalActive)} sub={`INV ${overview.kpi.byStatus.INVENTORY} · RS ${overview.kpi.byStatus.READY_STOCK} · Hold ${overview.kpi.byStatus.HOLD}`} />
-          <Kpi icon={Wallet} label="Nilai HPP" value={idr(overview.kpi.hppValue)} />
-          <Kpi icon={TrendingUp} label="Nilai Jual" value={idr(overview.kpi.jualValue)} tone="primary" />
-          <Kpi icon={Timer} label="Umur Rata-rata" value={`${overview.kpi.avgAgeDays} hari`} tone={overview.kpi.avgAgeDays > 90 ? 'error' : overview.kpi.avgAgeDays > 60 ? 'amber' : 'ink'} />
-          <Kpi icon={AlertTriangle} label="Slow Moving" value={formatNumber(overview.kpi.slowMovingCount)} tone="amber" />
-          <Kpi icon={Layers} label="Potensi Margin" value={idr(overview.kpi.potentialMargin)} tone="green" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <Kpi icon={Boxes} label="Stok Aktif" value={formatNumber(overview.kpi.totalActive)} sub={`Final ${overview.kpi.finalizedActiveCount} · Belum final ${overview.kpi.unfinalizedActiveCount}`} />
+          <Kpi icon={Wallet} label="HPP Sudah Finalisasi" value={idr(overview.kpi.hppFinalizedValue)} />
+          <Kpi icon={Wallet} label="HPP Belum Finalisasi" value={idr(overview.kpi.hppUnfinalizedValue)} tone="amber" />
+          <Kpi icon={TrendingUp} label="Nilai Jual (Final)" value={idr(overview.kpi.jualValue)} tone="primary" />
+          <Kpi icon={Timer} label="Umur Rata-rata (Final)" value={`${overview.kpi.avgAgeDays} hari`} tone={overview.kpi.avgAgeDays > 90 ? 'error' : overview.kpi.avgAgeDays > 60 ? 'amber' : 'ink'} />
+          <Kpi icon={AlertTriangle} label="Slow Moving (Final)" value={formatNumber(overview.kpi.slowMovingCount)} tone="amber" />
+          <Kpi icon={Layers} label="Potensi Margin (Final)" value={idr(overview.kpi.potentialMargin)} tone="green" />
         </div>
       )}
 

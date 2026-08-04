@@ -52,6 +52,8 @@ import { Route as AdminMasterInvestorObligationRouteImport } from './routes/_adm
 import { Route as AdminMasterInvestorFundingUsageRouteImport } from './routes/_admin/master.investor-funding-usage'
 import { Route as AdminMasterInvestorRouteImport } from './routes/_admin/master.investor'
 import { Route as AdminMasterDokumenRouteImport } from './routes/_admin/master.dokumen'
+import { Route as AdminManagerTargetUnitRouteImport } from './routes/_admin/manager.target-unit'
+import { Route as AdminManagerStokRouteImport } from './routes/_admin/manager.stok'
 import { Route as AdminInvestorPendanaanUnitRouteImport } from './routes/_admin/investor.pendanaan-unit'
 import { Route as AdminInvestorPembayaranRouteImport } from './routes/_admin/investor.pembayaran'
 import { Route as AdminInvestorModalRouteImport } from './routes/_admin/investor.modal'
@@ -284,6 +286,16 @@ const AdminMasterDokumenRoute = AdminMasterDokumenRouteImport.update({
   path: '/master/dokumen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminManagerTargetUnitRoute = AdminManagerTargetUnitRouteImport.update({
+  id: '/manager/target-unit',
+  path: '/manager/target-unit',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminManagerStokRoute = AdminManagerStokRouteImport.update({
+  id: '/manager/stok',
+  path: '/manager/stok',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminInvestorPendanaanUnitRoute =
   AdminInvestorPendanaanUnitRouteImport.update({
     id: '/investor/pendanaan-unit',
@@ -400,6 +412,8 @@ export interface FileRoutesByFullPath {
   '/investor/modal': typeof AdminInvestorModalRoute
   '/investor/pembayaran': typeof AdminInvestorPembayaranRoute
   '/investor/pendanaan-unit': typeof AdminInvestorPendanaanUnitRoute
+  '/manager/stok': typeof AdminManagerStokRoute
+  '/manager/target-unit': typeof AdminManagerTargetUnitRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
@@ -457,6 +471,8 @@ export interface FileRoutesByTo {
   '/investor/modal': typeof AdminInvestorModalRoute
   '/investor/pembayaran': typeof AdminInvestorPembayaranRoute
   '/investor/pendanaan-unit': typeof AdminInvestorPendanaanUnitRoute
+  '/manager/stok': typeof AdminManagerStokRoute
+  '/manager/target-unit': typeof AdminManagerTargetUnitRoute
   '/master/dokumen': typeof AdminMasterDokumenRoute
   '/master/investor': typeof AdminMasterInvestorRoute
   '/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
@@ -517,6 +533,8 @@ export interface FileRoutesById {
   '/_admin/investor/modal': typeof AdminInvestorModalRoute
   '/_admin/investor/pembayaran': typeof AdminInvestorPembayaranRoute
   '/_admin/investor/pendanaan-unit': typeof AdminInvestorPendanaanUnitRoute
+  '/_admin/manager/stok': typeof AdminManagerStokRoute
+  '/_admin/manager/target-unit': typeof AdminManagerTargetUnitRoute
   '/_admin/master/dokumen': typeof AdminMasterDokumenRoute
   '/_admin/master/investor': typeof AdminMasterInvestorRoute
   '/_admin/master/investor-funding-usage': typeof AdminMasterInvestorFundingUsageRoute
@@ -576,6 +594,8 @@ export interface FileRouteTypes {
     | '/investor/modal'
     | '/investor/pembayaran'
     | '/investor/pendanaan-unit'
+    | '/manager/stok'
+    | '/manager/target-unit'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/investor-funding-usage'
@@ -633,6 +653,8 @@ export interface FileRouteTypes {
     | '/investor/modal'
     | '/investor/pembayaran'
     | '/investor/pendanaan-unit'
+    | '/manager/stok'
+    | '/manager/target-unit'
     | '/master/dokumen'
     | '/master/investor'
     | '/master/investor-funding-usage'
@@ -692,6 +714,8 @@ export interface FileRouteTypes {
     | '/_admin/investor/modal'
     | '/_admin/investor/pembayaran'
     | '/_admin/investor/pendanaan-unit'
+    | '/_admin/manager/stok'
+    | '/_admin/manager/target-unit'
     | '/_admin/master/dokumen'
     | '/_admin/master/investor'
     | '/_admin/master/investor-funding-usage'
@@ -1015,6 +1039,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterDokumenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/manager/target-unit': {
+      id: '/_admin/manager/target-unit'
+      path: '/manager/target-unit'
+      fullPath: '/manager/target-unit'
+      preLoaderRoute: typeof AdminManagerTargetUnitRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/manager/stok': {
+      id: '/_admin/manager/stok'
+      path: '/manager/stok'
+      fullPath: '/manager/stok'
+      preLoaderRoute: typeof AdminManagerStokRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/investor/pendanaan-unit': {
       id: '/_admin/investor/pendanaan-unit'
       path: '/investor/pendanaan-unit'
@@ -1155,6 +1193,8 @@ interface AdminRouteChildren {
   AdminInvestorModalRoute: typeof AdminInvestorModalRoute
   AdminInvestorPembayaranRoute: typeof AdminInvestorPembayaranRoute
   AdminInvestorPendanaanUnitRoute: typeof AdminInvestorPendanaanUnitRoute
+  AdminManagerStokRoute: typeof AdminManagerStokRoute
+  AdminManagerTargetUnitRoute: typeof AdminManagerTargetUnitRoute
   AdminMasterDokumenRoute: typeof AdminMasterDokumenRoute
   AdminMasterInvestorRoute: typeof AdminMasterInvestorRoute
   AdminMasterInvestorFundingUsageRoute: typeof AdminMasterInvestorFundingUsageRoute
@@ -1206,6 +1246,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInvestorModalRoute: AdminInvestorModalRoute,
   AdminInvestorPembayaranRoute: AdminInvestorPembayaranRoute,
   AdminInvestorPendanaanUnitRoute: AdminInvestorPendanaanUnitRoute,
+  AdminManagerStokRoute: AdminManagerStokRoute,
+  AdminManagerTargetUnitRoute: AdminManagerTargetUnitRoute,
   AdminMasterDokumenRoute: AdminMasterDokumenRoute,
   AdminMasterInvestorRoute: AdminMasterInvestorRoute,
   AdminMasterInvestorFundingUsageRoute: AdminMasterInvestorFundingUsageRoute,

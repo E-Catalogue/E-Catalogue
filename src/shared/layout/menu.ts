@@ -58,6 +58,8 @@ export const MENU_ITEMS: MenuItem[] = [
   // (prisma/seed.js deprecatedMenuCodes) — diganti satu resource BranchTarget yang menyimpan
   // unitTarget+grossProfitTarget sekaligus, menu tunggal "Target Cabang & Sales" (code BRANCH_TARGET).
   { path: '/targets', label: 'Target Cabang & Sales', icon: Target, group: 'operasional', code: 'BRANCH_TARGET' },
+  { path: '/manager/stok', label: 'Stok Mobil', icon: Car, group: 'operasional', code: 'MANAGER_STOCK' },
+  { path: '/manager/target-unit', label: 'Target Unit', icon: Target, group: 'operasional', code: 'MANAGER_TARGET_UNIT' },
   { path: '/pembayaran', label: 'Pembayaran', icon: Wallet, group: 'operasional', code: 'PEMBAYARAN' },
   { path: '/pengeluaran', label: 'Pengeluaran', icon: TrendingDown, group: 'operasional', code: 'PENGELUARAN' },
   { path: '/payroll', label: 'Payroll', icon: Banknote, group: 'operasional', code: 'PAYROLL' },

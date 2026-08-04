@@ -58,6 +58,7 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
   const refundValid = (!refundEnabled || (paymentIds.length > 0 && !!cashAccountId && !!transactionDate))
     && (cancellationReason !== 'OTHER' || !!cancellationNote.trim());
   const canTransition = order?.status === 'BOOKING';
+  const isPaid = order?.isPaid === true;
 
   const close = () => {
     setPending(null);
@@ -93,9 +94,19 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
           </div>
           {canTransition ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button onClick={() => setPending('DEAL')} className="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-accent-green/30 bg-accent-green/5 hover:bg-accent-green/10 text-left">
+              <button
+                type="button"
+                onClick={() => isPaid && setPending('DEAL')}
+                disabled={!isPaid}
+                className="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-accent-green/30 bg-accent-green/5 hover:bg-accent-green/10 text-left disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent-green/5"
+              >
                 <CheckCircle2 size={18} className="text-accent-green shrink-0" />
-                <div><p className="text-[13px] font-bold text-ink">Tandai DEAL</p><p className="text-[11px] text-muted font-medium">Unit terjual, settlement dibuat otomatis</p></div>
+                <div>
+                  <p className="text-[13px] font-bold text-ink">Tandai DEAL</p>
+                  <p className="text-[11px] text-muted font-medium">
+                    {isPaid ? 'Unit terjual, settlement dibuat otomatis' : `Lunasi tagihan terlebih dahulu${order?.remainingPayment ? ` (sisa ${formatCurrency(order.remainingPayment)})` : ''}`}
+                  </p>
+                </div>
               </button>
               <button onClick={() => setPending('CANCELLED')} className="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-semantic-error/30 bg-semantic-error/5 hover:bg-semantic-error/10 text-left">
                 <XCircle size={18} className="text-semantic-error shrink-0" />

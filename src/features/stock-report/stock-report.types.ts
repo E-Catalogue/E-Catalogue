@@ -3,6 +3,10 @@ export interface StockKpi {
   byStatus: { INVENTORY: number; READY_STOCK: number; HOLD: number };
   belumReady: number;
   hppValue: number;
+  hppFinalizedValue: number;
+  hppUnfinalizedValue: number;
+  finalizedActiveCount: number;
+  unfinalizedActiveCount: number;
   jualValue: number;
   avgAgeDays: number;
   slowMovingCount: number;
