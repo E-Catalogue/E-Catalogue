@@ -7,27 +7,13 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { DateField } from '@/shared/components/ui/DateField';
 import { useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
 import { unitOptionLabel } from '@/features/units/unit.display';
-import type { LeadOrder, PaymentType, StatusApproval } from '@/features/crm/crm.types';
+import type { LeadOrder, PaymentType } from '@/features/crm/crm.types';
 
 type BranchHeaders = Record<string, string> | undefined;
 
 const PAYMENT_OPTIONS = [
   { value: 'CASH', label: 'Cash' },
   { value: 'KREDIT', label: 'Kredit' },
-];
-
-const SLIK_OPTIONS = [
-  { value: '', label: '(tidak ada)' },
-  { value: 'BI_CHECKING', label: 'Proses BI Checking' },
-  { value: 'LOLOS', label: 'Lolos' },
-  { value: 'REJECT', label: 'Ditolak' },
-];
-
-const APPROVAL_OPTIONS = [
-  { value: '', label: '(tidak ada)' },
-  { value: 'PENDING', label: 'Menunggu Approval' },
-  { value: 'APPROVED', label: 'Disetujui' },
-  { value: 'REJECTED', label: 'Ditolak' },
 ];
 
 interface FormState {
@@ -37,15 +23,13 @@ interface FormState {
   salesId: string;
   leasingId: string;
   diskonShowroom: string;
-  statusSlik: string;
-  statusApproval: '' | StatusApproval;
   tanggalOrder: string;
   catatan: string;
 }
 
 const emptyForm = (currentUserId?: string | null): FormState => ({
   leadId: '', unitId: '', paymentType: 'CASH', salesId: currentUserId ?? '', leasingId: '',
-  diskonShowroom: '0', statusSlik: '', statusApproval: '', tanggalOrder: '', catatan: '',
+  diskonShowroom: '0', tanggalOrder: '', catatan: '',
 });
 
 const toForm = (o: LeadOrder): FormState => ({
@@ -55,8 +39,6 @@ const toForm = (o: LeadOrder): FormState => ({
   salesId: o.salesId ?? '',
   leasingId: o.leasingId ?? '',
   diskonShowroom: String(o.diskonShowroom ?? 0),
-  statusSlik: o.statusSlik ?? '',
-  statusApproval: (o.statusApproval as StatusApproval | null) ?? '',
   tanggalOrder: o.tanggalOrder ? o.tanggalOrder.slice(0, 10) : '',
   catatan: o.catatan ?? '',
 });
@@ -105,8 +87,6 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUs
       salesId: form.salesId || undefined,
       leasingId: form.paymentType === 'KREDIT' ? form.leasingId || undefined : null,
       diskonShowroom: Number(form.diskonShowroom || 0),
-      statusSlik: form.paymentType === 'KREDIT' ? form.statusSlik || undefined : null,
-      statusApproval: form.paymentType === 'KREDIT' ? form.statusApproval || null : null,
       tanggalOrder: form.tanggalOrder ? new Date(form.tanggalOrder).toISOString() : undefined,
       catatan: form.catatan?.trim() || undefined,
     });
@@ -131,8 +111,6 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUs
         {form.paymentType === 'KREDIT' && (
           <>
             <SearchableSelect label="Leasing" value={form.leasingId} onChange={(v) => set('leasingId', v)} options={leasingOptions} loading={lookupLoading} clearable placeholder="(tidak ada)" searchPlaceholder="Cari leasing..." />
-            <SelectField label="Status SLIK" value={form.statusSlik} onChange={(e) => set('statusSlik', e.target.value)} options={SLIK_OPTIONS} />
-            <SelectField label="Status Approval" wrapClass="sm:col-span-2" value={form.statusApproval} onChange={(e) => set('statusApproval', e.target.value as FormState['statusApproval'])} options={APPROVAL_OPTIONS} />
           </>
         )}
 

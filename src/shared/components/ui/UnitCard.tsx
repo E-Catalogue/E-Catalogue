@@ -15,9 +15,11 @@ interface UnitCardProps<T extends UnitCardUnit> {
   onEdit?: (unit: T) => void;
   onDelete?: (unit: T) => void;
   actions?: ReactNode;
+  statusOverride?: string;
+  statusLabelOverride?: string;
 }
 
-export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelete, actions }: UnitCardProps<T>) => {
+export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelete, actions, statusOverride, statusLabelOverride }: UnitCardProps<T>) => {
   const clickable = !!onView;
   const isMock = 'brand' in unit;
   
@@ -50,7 +52,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
   const tahun = isMock ? (unit as MockUnit).year : (unit as BackendUnit).tahun;
   const transmisi = isMock ? (unit as MockUnit).transmission : ((unit as BackendUnit).transmisi === 'AUTOMATIC' ? 'AT' : 'MT');
   const km = isMock ? (unit as MockUnit).km : (unit as BackendUnit).kilometer;
-  const statusUnit = isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit;
+  const statusUnit = statusOverride ?? (isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit);
 
   return (
     <motion.div
@@ -127,7 +129,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
               </div>
             </div>
           )}
-          <StatusBadge status={statusUnit as never} />
+          <StatusBadge status={statusUnit as never} label={statusLabelOverride} />
         </div>
         {actions && <div onClick={(event) => event.stopPropagation()} className="mt-3 pt-3 border-t border-divider flex justify-end">{actions}</div>}
       </div>

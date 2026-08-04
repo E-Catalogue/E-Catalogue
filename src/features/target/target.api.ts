@@ -9,12 +9,14 @@ import type {
   TargetBranchLookup,
   TargetListParams,
   TargetSalesLookup,
+  MySalesTarget,
 } from './target.types';
 
 /** Header opsional `{ 'X-Branch-Id': branchId }` — wajib diisi caller untuk mutation Owner (README §8). */
 type BranchHeaders = Record<string, string> | undefined;
 
 export const targetApi = {
+  myTarget: (period: string, headers?: BranchHeaders) => apiClient.get<ApiResponse<MySalesTarget | null>>('/targets/me', { params: { period }, headers }).then((r) => r.data.data),
   /** `/targets/lookups/branches` — cabang yang dapat dipilih (Owner/Admin = semua aktif, lainnya = miliknya). */
   lookupBranches: (headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<TargetBranchLookup[]>>('/targets/lookups/branches', { headers }).then((r) => r.data.data ?? []),

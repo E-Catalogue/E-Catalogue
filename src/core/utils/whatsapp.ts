@@ -19,13 +19,17 @@ const value = (input: unknown) => input === null || input === undefined || input
 const date = (input?: string | null) => input ? new Date(input).toLocaleDateString('id-ID') : 'Belum tersedia';
 const money = (input?: number | null) => input == null ? 'Belum tersedia' : formatCurrency(input);
 
-export function buildUnitShareMessage(unit: Unit): string {
+/** Satu template informasi Sales untuk clipboard dan Bagikan WhatsApp. */
+export function buildUnitCopyText(unit: Unit): string {
   const equipment = unit.unitKelengkapans?.map((item) => item.perlengkapan?.name).filter(Boolean) ?? [];
   const documents = unit.unitDokumens?.map((item) => item.dokumen?.name).filter(Boolean) ?? [];
   const offers = unit.leasingOffers ?? [];
-  const funding = unit.fundingAgreement;
+  const status = unit.statusUnit === 'INVENTORY' || unit.statusUnit === 'HOLD'
+    ? 'Coming Soon'
+    : unit.statusUnit === 'READY_STOCK' ? 'Ready Stock' : 'Terjual';
+
   const lines = [
-    '*DETAIL LENGKAP UNIT*',
+    '*INFORMASI UNIT*',
     '',
     `Nama: ${value(unit.name)}`,
     `Cabang: ${value(unit.branch?.nama)}`,
@@ -36,52 +40,31 @@ export function buildUnitShareMessage(unit: Unit): string {
     `Bahan bakar: ${unit.bahanBakar ? ({ BENSIN: 'Bensin', DIESEL: 'Diesel', HYBRID: 'Hybrid', LISTRIK: 'Listrik' } as const)[unit.bahanBakar] : 'Belum tersedia'}`,
     `Kilometer: ${unit.kilometer.toLocaleString('id-ID')} km`,
     `Plat nomor: ${value(unit.platNomor)}`,
-    `Nomor rangka: ${value(unit.noRangka)}`,
-    `Nomor mesin: ${value(unit.noMesin)}`,
     `Tanggal pajak: ${date(unit.tanggalPajak)}`,
-    `Tanggal pembelian: ${date(unit.tanggalPembelian)}`,
     '',
-    '*HARGA & BIAYA*',
-    `Harga beli: ${money(unit.purchaseCost)}`,
-    `Rekondisi awal: ${money(unit.initialReconditioningCost)}`,
-    `Rekondisi tambahan: ${money(unit.additionalReconditioningCost)}`,
-    `HPP: ${money(unit.pricingCostBasis)}`,
-    `Total biaya aktual: ${money(unit.totalActualUnitCost)}`,
-    `Harga target: ${money(unit.targetPrice)}`,
+    '*HARGA*',
     `Harga OTR: ${money(unit.otrPrice)}`,
-    `Pricing difinalisasi: ${date(unit.pricingFinalizedAt)}`,
     '',
-    '*PENDANAAN*',
-    `Sumber: ${funding?.fundingSource === 'INVESTOR' ? 'Investor' : 'Perusahaan'}`,
-    `Investor: ${value(funding?.investor?.name)}`,
-    `Skema: ${value(funding?.scheme)}`,
-    `Modal pokok: ${money(funding?.principalAmount)}`,
-    `Return tetap: ${funding?.fixedReturnRate == null ? 'Belum tersedia' : `${funding.fixedReturnRate}%`}`,
-    `Bagi hasil: ${funding?.profitShareRate == null ? 'Belum tersedia' : `${funding.profitShareRate}%`}`,
-    `Kebijakan siklus akhir: ${value(funding?.finalCyclePolicy)}`,
-    `Tanggal efektif: ${date(funding?.effectiveDate)}`,
-    `Status pendanaan: ${value(funding?.status)}`,
+    '*STATUS*',
+    `Status unit: ${status}`,
     '',
-    '*STATUS & KATALOG*',
-    `Status unit: ${unit.statusUnit === 'INVENTORY' ? 'Coming Soon' : unit.statusUnit.replace('_', ' ')}`,
-    `Aktif: ${unit.isActive ? 'Ya' : 'Tidak'}`,
-    `Dipublikasikan: ${unit.isPublished ? 'Ya' : 'Tidak'}`,
-    `Status katalog: ${value(unit.statusKatalog)}`,
-    `Unit baru: ${unit.isNew ? 'Ya' : 'Tidak'}`,
-    `Unit unggulan: ${unit.isFeatured ? 'Ya' : 'Tidak'}`,
-    '',
+    '*KELENGKAPAN & DOKUMEN*',
     `Kelengkapan: ${equipment.length ? equipment.join(', ') : 'Belum tersedia'}`,
     `Dokumen: ${documents.length ? documents.join(', ') : 'Belum tersedia'}`,
     `Deskripsi: ${value(unit.deskripsi)}`,
     '',
     '*PENAWARAN LEASING*',
     ...(offers.length ? offers.flatMap((offer, index) => [
-      `${index + 1}. ${offer.leasing?.name ?? 'Leasing'} — ${offer.tenorMonths} bulan`,
+      `${index + 1}. ${offer.leasing?.name ?? 'Leasing'} - ${offer.tenorMonths} bulan`,
       `   DP: ${money(offer.dpAmount)} | OTR: ${money(offer.otrPrice)} | Pencairan: ${money(offer.disbursementAmount)}`,
     ]) : ['Belum tersedia']),
   ];
   if (unit.isPublished) lines.push('', `Katalog: ${WEBSITE_URL}/katalog/${unit.id}`);
   return lines.join('\n');
+}
+
+export function buildUnitShareMessage(unit: Unit): string {
+  return buildUnitCopyText(unit);
 }
 
 export const waMessages = {

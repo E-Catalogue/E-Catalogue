@@ -7,7 +7,7 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
 import type {
-  Lead, LeadOrder, LeadOrderCancellationRefund, LeadPayment, LeadStatus, OrderStatus,
+  Lead, LeadOrder, LeadPayment, LeadStatus, OrderStatus,
 } from './crm.types';
 
 type BranchHeaders = Record<string, string> | undefined;
@@ -131,12 +131,17 @@ export const useLeadOrderMutations = (branchKey: string) => {
       onError: (e: unknown) => notifyApiError(e),
     }),
     updateStatus: useMutation({
-      mutationFn: (v: { id: string; status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>; headers: BranchHeaders; refund?: LeadOrderCancellationRefund }) =>
-        leadOrderApi.updateStatus(v.id, v.status, v.headers, v.refund),
+      mutationFn: (v: { id: string; status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>; headers: BranchHeaders; cancellation?: import('./crm.types').LeadOrderCancellation }) =>
+        leadOrderApi.updateStatus(v.id, v.status, v.headers, v.cancellation),
       onSuccess: (order, v) => {
         toast(v.status === 'DEAL' ? 'Order berhasil ditandai DEAL' : 'Order berhasil dibatalkan');
         invalAfterStatusChange(order);
       },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
+    updateCreditStage: useMutation({
+      mutationFn: (v: { id: string; body: import('./crm.types').CreditStagePayload; headers: BranchHeaders }) => leadOrderApi.updateCreditStage(v.id, v.body, v.headers),
+      onSuccess: (order) => { toast('Tahap kredit diperbarui'); invalList(); invalOne(order.id); qc.invalidateQueries({ queryKey: ['closing-report'] }); },
       onError: (e: unknown) => notifyApiError(e),
     }),
   };

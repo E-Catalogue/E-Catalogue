@@ -150,6 +150,9 @@ export interface OperationalExpense {
   proofUrl?: string | null;
   cashAccountId?: string | null;
   cashTransactionId?: string | null;
+  recurringExpenseId?: string | null;
+  recurringPeriod?: string | null;
+  recurringExpense?: { id: string; name: string; defaultAmount: number; isActive: boolean } | null;
   kategoriPengeluaran?: { id: string; name: string; code?: string | null };
 }
 

@@ -24,6 +24,7 @@ interface UnitDetailModalProps {
   onClose: () => void;
   unit: Unit | null;
   onEdit?: (unit: Unit) => void;
+  salesView?: boolean;
 }
 
 const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: string; value: string }) => (
@@ -38,7 +39,7 @@ const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: stri
   </div>
 );
 
-export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModalProps) => {
+export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false }: UnitDetailModalProps) => {
   const { data: detailRes, refetch: refetchUnit } = useUnit(open ? unit?.id : undefined);
   const current = detailRes?.data ?? unit;
   const imageMutations = useUnitImageMutations(current?.id ?? '');
@@ -53,6 +54,8 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
   if (!current) return null;
 
   const images = [...(current.unitImages ?? [])].sort((a, b) => (a.sequence ?? 999) - (b.sequence ?? 999));
+  const equipmentNames = current.unitKelengkapans?.map((item) => item.perlengkapan?.name).filter(Boolean) as string[] | undefined;
+  const documentNames = current.unitDokumens?.map((item) => item.dokumen?.name).filter(Boolean) as string[] | undefined;
   const mainImage = images.find((img) => img.isMain) ?? images[0];
   const otrPrice = current.otrPrice ?? null;
   const targetPrice = current.targetPrice ?? null;
@@ -91,6 +94,9 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
     : DEFAULT_CAR_IMAGE;
 
   const isNew = new Date().getTime() - new Date(current.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+  const usesCardStatus = salesView && (current.statusUnit === 'INVENTORY' || current.statusUnit === 'HOLD');
+  const visibleStatus = usesCardStatus ? 'INVENTORY' : current.statusUnit;
+  const visibleStatusLabel = usesCardStatus ? 'Coming Soon' : undefined;
   const deleteImage = (imageId: string) => confirmAction({
     title: 'Hapus Foto Unit',
     message: 'Foto ini akan dihapus permanen dari unit. Lanjutkan?',
@@ -113,10 +119,18 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
         <>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
           <Button variant="secondary" icon={<Share2 size={15} />} onClick={handleShare}>Bagikan WhatsApp</Button>
-          {onEdit && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
+          {!salesView && onEdit && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
         </>
       }
     >
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-soft px-4 py-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Status Unit</p>
+          <p className="mt-0.5 text-[12px] font-semibold text-ink">Ketersediaan unit saat ini</p>
+        </div>
+        <StatusBadge status={visibleStatus} label={visibleStatusLabel} />
+      </div>
+
       {/* Ringkasan: hero + info harga & spesifikasi utama */}
       <div className="grid lg:grid-cols-2 gap-5">
         <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-surface-soft border border-border">
@@ -130,7 +144,6 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
             {isNew && <span className="bg-primary text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg shadow-glow">Baru</span>}
             <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg">{current.platNomor}</span>
           </div>
-          <div className="absolute top-3 right-3"><StatusBadge status={current.statusUnit} /></div>
           {images.length > 1 && (
             <span className="absolute bottom-3 right-3 bg-ink/70 text-white text-[10px] font-bold px-2 py-1 rounded-lg">{images.length} foto</span>
           )}
@@ -161,12 +174,12 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
         <Spec icon={Receipt} label="Pajak" value={current.tanggalPajak ? new Date(current.tanggalPajak).toLocaleDateString('id-ID') : '-'} />
         <Spec icon={Palette} label="Warna" value={current.warna || '-'} />
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />
-        {current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost, { compact: true })} /> : null}
-        {hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(hpp, { compact: true })} /> : null}
-        {margin !== null ? <Spec icon={TrendingUp} label="Est. Margin" value={formatCurrency(margin, { compact: true })} /> : null}
+        {!salesView && current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost, { compact: true })} /> : null}
+        {!salesView && hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(hpp, { compact: true })} /> : null}
+        {!salesView && margin !== null ? <Spec icon={TrendingUp} label="Est. Margin" value={formatCurrency(margin, { compact: true })} /> : null}
       </div>
 
-      <div className="mt-5 border-t border-divider pt-4">
+      {!salesView && <div className="mt-5 border-t border-divider pt-4">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
             <p className="text-[13px] font-extrabold text-ink">Pendanaan &amp; Harga Awal</p>
@@ -209,9 +222,9 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
             </p>
           </div>
         )}
-      </div>
+      </div>}
 
-      {can('UNIT_FUNDING_READ') && (
+      {!salesView && can('UNIT_FUNDING_READ') && (
         <InvestorFundingPanel
           resourceType="UNIT_PURCHASE"
           resourceId={current.id}
@@ -220,6 +233,41 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
           canAllocate={can('UNIT_FUNDING_MANAGE')}
           fundingSource={current.fundingAgreement?.fundingSource}
         />
+      )}
+
+      {salesView && (
+        <div className="mt-5 border-t border-divider pt-4">
+          <div className="mb-3">
+            <p className="text-[13px] font-extrabold text-ink">Kelengkapan &amp; Dokumen</p>
+            <p className="text-[11px] font-semibold text-muted">Perlengkapan dan dokumen yang tersedia bersama unit.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border bg-surface-soft p-3.5">
+              <p className="mb-2.5 text-[11px] font-extrabold uppercase tracking-wide text-ink">Kelengkapan</p>
+              {equipmentNames?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {equipmentNames.map((name) => (
+                    <span key={name} className="inline-flex items-center gap-1.5 rounded-lg bg-accent-green/10 px-2.5 py-1.5 text-[11px] font-bold text-accent-green">
+                      <CheckCircle size={13} /> {name}
+                    </span>
+                  ))}
+                </div>
+              ) : <p className="text-[11px] font-semibold text-muted">Belum ada data kelengkapan.</p>}
+            </div>
+            <div className="rounded-xl border border-border bg-surface-soft p-3.5">
+              <p className="mb-2.5 text-[11px] font-extrabold uppercase tracking-wide text-ink">Dokumen</p>
+              {documentNames?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {documentNames.map((name) => (
+                    <span key={name} className="inline-flex items-center gap-1.5 rounded-lg bg-accent-blue/10 px-2.5 py-1.5 text-[11px] font-bold text-accent-blue">
+                      <CheckCircle size={13} /> {name}
+                    </span>
+                  ))}
+                </div>
+              ) : <p className="text-[11px] font-semibold text-muted">Belum ada data dokumen.</p>}
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="mt-5 border-t border-divider pt-4">
@@ -239,10 +287,11 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
       <div className="mt-5 border-t border-divider pt-4">
         <div className="mb-3">
           <p className="text-[13px] font-extrabold text-ink">Galeri Unit</p>
-          <p className="text-[11px] font-semibold text-muted">Upload beberapa foto sekaligus, urutkan, dan pilih gambar utama</p>
+          <p className="text-[11px] font-semibold text-muted">{salesView ? 'Klik foto untuk melihat ukuran lebih besar' : 'Upload beberapa foto sekaligus, urutkan, dan pilih gambar utama'}</p>
         </div>
         <UnitGalleryManager
           images={images}
+          readOnly={salesView}
           uploading={imageMutations.uploadMany.isPending}
           reordering={imageMutations.reorder.isPending}
           deleting={imageMutations.remove.isPending}
@@ -255,7 +304,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
         />
       </div>
 
-      <ConfirmDialog
+      {!salesView && <ConfirmDialog
         open={confirmFinalize}
         onClose={() => setConfirmFinalize(false)}
         onConfirm={handleFinalizePricing}
@@ -276,7 +325,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit }: UnitDetailModal
           />
           Unit ini tidak memiliki rekondisi pertama — lanjutkan tanpa rekondisi.
         </label>
-      </ConfirmDialog>
+      </ConfirmDialog>}
     </Modal>
   );
 };

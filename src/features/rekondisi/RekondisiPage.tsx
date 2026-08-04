@@ -10,6 +10,7 @@ import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { SelectField } from '@/shared/components/ui/Field';
+import { MonthField } from '@/shared/components/ui/MonthField';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -125,16 +126,21 @@ const RekondisiPageInner = () => {
   const { can } = usePermissions();
   const [status, setStatus] = useState<RekondisiStatus | ''>('');
   const [unitId, setUnitId] = useState('');
+  const [period, setPeriod] = useState('');
+  const [dateBasis, setDateBasis] = useState<'COMPLETED' | 'PAID'>('COMPLETED');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailUnit, setDetailUnit] = useState<{ id: string; label?: string } | null>(null);
 
   // Filter unit: pakai daftar unit nyata (lihat catatan di CreateRekondisiModal — tidak ada lookup rekondisi).
   const { data: unitLookup } = useUnits({ page: 1, limit: 100 });
-  const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined });
+  const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined, period: period || undefined, dateBasis });
 
   const rows: Rekondisi[] = data?.data ?? [];
   const units = (unitLookup?.data ?? []).filter((u) => u.statusUnit === 'INVENTORY');
   const total = data?.meta?.total ?? rows.length;
+  const initialTotal = rows.filter((row) => row.seq === 1).reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const additionalTotal = rows.filter((row) => row.seq > 1).reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const paidTotal = rows.filter((row) => row.paidAt).reduce((sum, row) => sum + Number(row.total || 0), 0);
 
   const columns: Column<Rekondisi>[] = [
     {
@@ -209,7 +215,7 @@ const RekondisiPageInner = () => {
         action={can('REKONDISI_CREATE') ? <Button icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>Buat Rekondisi</Button> : undefined}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <SelectField
           label=""
           value={status}
@@ -225,7 +231,11 @@ const RekondisiPageInner = () => {
           searchPlaceholder="Cari unit..."
           emptyMessage="Tidak ada unit."
         />
+        <MonthField value={period} onChange={setPeriod} placeholder="Semua periode" />
+        <SelectField label="" value={dateBasis} onChange={(event) => setDateBasis(event.target.value as 'COMPLETED' | 'PAID')} options={[{ value: 'COMPLETED', label: 'Periode Selesai' }, { value: 'PAID', label: 'Periode Bayar' }]} />
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">{[['Rekondisi Awal (HPP)', initialTotal], ['Rekondisi Tambahan', additionalTotal], ['Sudah Dibayar', paidTotal]].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-[10px] uppercase font-bold text-muted">{label}</p><p className="text-lg font-extrabold text-ink mt-1">{idr(value as number)}</p></div>)}</div>
 
       <SectionCard title={`Daftar Rekondisi (${rows.length})`} icon={<Wrench size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (

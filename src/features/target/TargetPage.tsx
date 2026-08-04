@@ -14,6 +14,8 @@ import { useBranchScope } from '@/features/auth/useBranchScope';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useTargetBranches, useTargetLookupBranches, useTargetMutations } from './target.hooks';
+import { useMyTarget } from './target.hooks';
+import { useAppSelector } from '@/app/store';
 import { TargetFormModal } from './TargetFormModal';
 import { TargetDetailModal } from './TargetDetailModal';
 import { TARGET_STATUS_COLOR, TARGET_STATUS_LABEL, type BranchTarget } from './target.types';
@@ -191,7 +193,29 @@ const TargetPageInner = () => {
 };
 
 export const TargetPage = () => (
-  <RequirePermission code="TARGET_READ">
-    <TargetPageInner />
+  <RequirePermission any={['TARGET_READ', 'TARGET_SELF_READ']}>
+    <TargetRoleView />
   </RequirePermission>
 );
+
+const TargetRoleView = () => {
+  const isSales = useAppSelector((state) => state.auth.user?.role?.code === 'SALES');
+  return isSales ? <MyTargetView /> : <TargetPageInner />;
+};
+
+const MyTargetView = () => {
+  const [period, setPeriod] = useState(currentPeriod());
+  const { branchKey, branchHeader } = useBranchScope();
+  const query = useMyTarget(period, branchKey, branchHeader);
+  const target = query.data;
+  return <div className="max-w-[1000px] mx-auto space-y-5">
+    <PageHeader title="Target Saya" description="Target unit dan pencapaian penjualan pribadi" />
+    <MonthField value={period} onChange={(value) => setPeriod(value || currentPeriod())} wrapClass="w-56" />
+    {query.isLoading ? <div className="rounded-2xl border border-border bg-surface p-10 text-center text-muted">Memuat target...</div> : !target ? <div className="rounded-2xl border border-border bg-surface p-10 text-center text-muted">Belum ada target yang dibagikan kepada Anda untuk periode ini.</div> : <SectionCard title={`Target ${target.period}`} icon={<Target size={16} />}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[['Target Unit', target.unitTarget], ['Aktual Unit', target.unitActual], ['Sisa Target', target.remainingUnit], ['Pencapaian', `${target.achievementPercent}%`]].map(([label, value]) => <div key={label} className="rounded-xl bg-surface-soft border border-border p-4"><p className="text-[10px] uppercase font-bold text-muted">{label}</p><p className="text-2xl font-extrabold text-ink mt-1">{value}</p></div>)}
+      </div>
+      <div className="mt-5 h-3 rounded-full bg-surface-soft overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, target.achievementPercent)}%` }} /></div>
+    </SectionCard>}
+  </div>;
+};

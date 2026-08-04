@@ -91,6 +91,17 @@ export interface TargetListParams {
   period?: string;
 }
 
+export interface MySalesTarget {
+  id: string;
+  branchTargetId: string;
+  period: string;
+  status: TargetStatus;
+  unitTarget: number;
+  unitActual: number;
+  remainingUnit: number;
+  achievementPercent: number;
+}
+
 /** Bentuk respons GET /targets/achievement khusus Owner mode "all" (tanpa X-Branch-Id konkret). */
 export interface TargetAchievementConsolidated {
   consolidated: {

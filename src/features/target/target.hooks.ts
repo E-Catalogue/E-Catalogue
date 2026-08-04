@@ -36,6 +36,11 @@ export const useTargetAchievement = (period: string | undefined, branchKey: stri
     enabled: !!period,
   });
 
+export const useMyTarget = (period: string, branchKey: string, headers?: BranchHeaders) => useQuery({
+  queryKey: ['target-me', branchKey, period],
+  queryFn: () => targetApi.myTarget(period, headers),
+});
+
 export const useTargetBranches = (params: TargetListParams, branchKey: string, headers?: BranchHeaders) =>
   useQuery({
     queryKey: ['targets', branchKey, params],

@@ -1,7 +1,7 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellationRefund, LeadPayment, LeadPaymentReverseResult, LeadStatus,
+  CreditStagePayload, Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellation, LeadPayment, LeadPaymentReverseResult, LeadStatus,
   OrderStatus, SaleSettlement, UnitSummary,
 } from './crm.types';
 
@@ -24,6 +24,11 @@ export interface OrderListParams {
   leadId?: string;
   unitId?: string;
   paymentType?: string;
+  statusSlik?: string;
+  surveyStatus?: string;
+  statusApproval?: string;
+  dateFrom?: string;
+  dateTo?: string;
   isPaid?: boolean;
 }
 
@@ -80,8 +85,10 @@ export const leadOrderApi = {
   update: (id: string, body: Partial<LeadOrder>, headers?: BranchHeaders) =>
     apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}`, body, { headers }).then((r) => r.data.data),
   /** Hanya `DEAL` / `CANCELLED` yang valid dikirim — funnel lama ditolak backend 410 (README §24). */
-  updateStatus: (id: string, status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, headers?: BranchHeaders, refund?: LeadOrderCancellationRefund) =>
-    apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/status`, { status, ...(refund ? { refund } : {}) }, { headers }).then((r) => r.data.data),
+  updateStatus: (id: string, status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, headers?: BranchHeaders, cancellation?: LeadOrderCancellation) =>
+    apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/status`, { status, ...(cancellation ?? {}) }, { headers }).then((r) => r.data.data),
+  updateCreditStage: (id: string, body: CreditStagePayload, headers?: BranchHeaders) =>
+    apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/credit-stage`, body, { headers }).then((r) => r.data.data),
 };
 
 // ---- Payment (nested under order — payment.route.js) ----

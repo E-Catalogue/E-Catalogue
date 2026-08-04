@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench, LayoutGrid, Table2, Share2, X } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench, LayoutGrid, Table2, Share2, X, Landmark, Copy } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -9,6 +9,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { SelectField } from '@/shared/components/ui/Field';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { RequirePermission } from '@/features/auth/permissions';
@@ -21,20 +22,30 @@ import { unitDisplayName } from '@/features/units/unit.display';
 import { notifyApiError } from '@/core/api/notify';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
 import { unitApi } from '@/features/units/unit.api';
-import { buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
+import { buildUnitCopyText, buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
 
-const STATUS_LABEL: Record<StatusUnit, string> = { INVENTORY: 'Coming Soon', READY_STOCK: 'Ready Stock', HOLD: 'Hold', SOLD: 'Terjual' };
+const STATUS_LABEL: Record<StatusUnit, string> = { INVENTORY: 'Inventory', READY_STOCK: 'Ready Stock', HOLD: 'Hold', SOLD: 'Terjual' };
+const cardStatus = (status: StatusUnit): Exclude<StatusUnit, 'HOLD'> => ['READY_STOCK', 'SOLD'].includes(status) ? status as 'READY_STOCK' | 'SOLD' : 'INVENTORY';
+const cardStatusLabel = (status: StatusUnit) => cardStatus(status) === 'INVENTORY' ? 'Coming Soon' : STATUS_LABEL[cardStatus(status)];
 
-const STATUS_OPTIONS: { value: StatusUnit; label: string }[] = [
+const TABLE_STATUS_OPTIONS: { value: StatusUnit; label: string }[] = [
   { value: 'INVENTORY', label: 'Inventory' },
-  { value: 'READY_STOCK', label: 'Ready Stock' },
   { value: 'HOLD', label: 'Hold' },
+  { value: 'READY_STOCK', label: 'Ready Stock' },
+  { value: 'SOLD', label: 'Terjual' },
+];
+const CARD_STATUS_OPTIONS: { value: StatusUnit; label: string }[] = [
+  { value: 'INVENTORY', label: 'Coming Soon' },
+  { value: 'READY_STOCK', label: 'Ready Stock' },
   { value: 'SOLD', label: 'Terjual' },
 ];
 const STATUS_CHANGE_OPTIONS = [
-  { value: 'INVENTORY', label: 'Coming Soon' },
+  { value: 'INVENTORY', label: 'Inventory' },
+  { value: 'HOLD', label: 'Hold' },
   { value: 'READY_STOCK', label: 'Ready Stock' },
-] satisfies { value: StatusUnit; label: string }[];
+];
 
 const TX_LABEL: Record<string, string> = { AUTOMATIC: 'AT', MANUAL: 'MT' };
 const idr = (n?: number | null) => (n == null ? '—' : formatCurrency(n, { compact: true }));
@@ -79,16 +90,18 @@ const matchStockAge = (readyStockAt: string | null | undefined, bucket: StockAge
 };
 
 const FilterModal = ({
-  open, onClose, value, onApply, merkList,
+  open, onClose, value, onApply, merkList, view,
 }: {
   open: boolean; onClose: () => void;
   value: FilterState; onApply: (f: FilterState) => void;
   merkList: string[];
+  view: 'table' | 'card';
 }) => {
   const [draft, setDraft] = useState<FilterState>(value);
   const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) =>
     setDraft((p) => ({ ...p, [k]: v }));
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(FILTER_DEFAULT);
+  const statusOptions = view === 'card' ? CARD_STATUS_OPTIONS : TABLE_STATUS_OPTIONS;
 
   return (
     <Modal
@@ -114,11 +127,11 @@ const FilterModal = ({
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2.5">Status Unit</p>
           <div className="grid grid-cols-2 gap-2">
-            {STATUS_OPTIONS.map((option) => {
+            {statusOptions.map((option) => {
               const active = draft.statuses.includes(option.value);
               return <button key={option.value} type="button" onClick={() => set('statuses', active ? draft.statuses.filter((status) => status !== option.value) : [...draft.statuses, option.value])}
                 className={`py-2.5 rounded-xl text-[12px] font-bold border transition-colors ${active ? 'bg-primary text-white border-primary shadow-glow' : 'bg-surface-soft border-border text-ink-soft hover:border-primary'}`}>
-                {STATUS_LABEL[option.value]}
+                {option.label}
               </button>;
             })}
           </div>
@@ -244,13 +257,14 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
         }
       >
         <div className="space-y-4">
-          <SelectField
+          <SearchableSelect
             label="Status Unit"
             value={draft}
-            onChange={(e) => setDraft(e.target.value as StatusUnit)}
+            onChange={(value) => setDraft(value as StatusUnit)}
             options={STATUS_CHANGE_OPTIONS}
+            searchPlaceholder="Cari status..."
           />
-          <p className="text-[11px] font-semibold text-muted">Status Hold dan Terjual hanya berubah melalui alur penjualan agar pencatatan stok dan ledger tetap konsisten.</p>
+          <p className="text-[11px] font-semibold text-muted">Status Ready Stock memerlukan harga, pendanaan, rekondisi, dan keterangan leasing yang lengkap. Status Terjual hanya berubah melalui proses penjualan.</p>
         </div>
       </Modal>
       <ConfirmDialog
@@ -262,7 +276,7 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
         tone="warning"
         icon={AlertTriangle}
         title="Konfirmasi Ubah Status"
-        message={`Status ${unit.platNomor} akan diubah dari ${unit.statusUnit} menjadi ${draft}. Lanjutkan?`}
+        message={`Status ${unit.platNomor} akan diubah dari ${STATUS_LABEL[unit.statusUnit]} menjadi ${STATUS_LABEL[draft]}. Lanjutkan?`}
         confirmLabel="Ubah Status"
       />
     </>
@@ -363,7 +377,7 @@ const InventoryPageInner = () => {
   const all: Unit[] = data?.data ?? [];
   const merkList = [...new Set(all.map((u) => u.merek?.name).filter(Boolean))].sort() as string[];
 
-  let rows = filter.statuses.length ? all.filter((u) => filter.statuses.includes(u.statusUnit)) : [...all];
+  let rows = filter.statuses.length ? all.filter((u) => filter.statuses.includes(view === 'card' ? cardStatus(u.statusUnit) : u.statusUnit)) : [...all];
   if (filter.tx !== 'ALL') rows = rows.filter((u) => u.transmisi === filter.tx);
   if (filter.merek)        rows = rows.filter((u) => u.merek?.name === filter.merek);
   if (filter.tahunMin)     rows = rows.filter((u) => u.tahun >= Number(filter.tahunMin));
@@ -385,12 +399,28 @@ const InventoryPageInner = () => {
     }).catch((error) => { target?.close(); notifyApiError(error); });
   };
 
+  const copyUnit = async (unit: Unit) => {
+    try {
+      const response = await unitApi.get(unit.id);
+      await navigator.clipboard.writeText(buildUnitCopyText(response.data));
+      store.dispatch(showToast({
+        type: 'general',
+        variant: 'success',
+        title: 'Berhasil disalin',
+        message: 'Informasi unit sudah tersimpan di clipboard.',
+      }));
+    } catch (error) {
+      notifyApiError(error, 'Informasi unit gagal disalin. Izinkan akses clipboard lalu coba lagi.');
+    }
+  };
+
   const actionItems = (unit: Unit) => [
     { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(unit) },
     { icon: <Share2 size={13} />, label: 'Bagikan WhatsApp', onClick: () => shareUnit(unit), variant: 'primary' as const },
     ...(can('UNIT_UPDATE') ? [
       { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(unit) },
-      ...(unit.statusUnit === 'INVENTORY' ? [{ icon: <RefreshCw size={13} />, label: 'Jadikan Ready Stock', onClick: () => setStatusUnit(unit) }] : []),
+      { icon: <Landmark size={13} />, label: 'Tambah Keterangan Leasing', onClick: () => m.openLeasing(unit) },
+      ...(unit.statusUnit !== 'SOLD' ? [{ icon: <RefreshCw size={13} />, label: 'Ubah Status Unit', onClick: () => setStatusUnit(unit) }] : []),
     ] : []),
     ...(can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
     ...(can('UNIT_DELETE') ? [{ icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(unit), variant: 'danger' as const }] : []),
@@ -549,8 +579,37 @@ const InventoryPageInner = () => {
           <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-            {rows.map((unit) => <UnitCard key={unit.id} unit={unit} onView={m.openDetail}
-              actions={<ActionMenu items={actionItems(unit)} />} />)}
+            {rows.map((unit) => (
+              <UnitCard
+                key={unit.id}
+                unit={unit}
+                onView={m.openCardDetail}
+                statusOverride={cardStatus(unit.statusUnit)}
+                statusLabelOverride={cardStatusLabel(unit.statusUnit)}
+                actions={(
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      icon={<Copy size={14} />}
+                      onClick={() => copyUnit(unit)}
+                    >
+                      Salin
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      icon={<Share2 size={14} />}
+                      onClick={() => shareUnit(unit)}
+                    >
+                      Bagikan WhatsApp
+                    </Button>
+                  </div>
+                )}
+              />
+            ))}
           </div>
         )}
       </SectionCard>
@@ -572,7 +631,7 @@ const InventoryPageInner = () => {
       )}
 
       {filterOpen && <FilterModal open onClose={() => setFilterOpen(false)}
-        value={filter} onApply={setFilter} merkList={merkList} />}
+        value={filter} onApply={setFilter} merkList={merkList} view={view} />}
     </div>
   );
 };

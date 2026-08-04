@@ -3,7 +3,7 @@ import { CheckCircle2, RefreshCw, RotateCcw, XCircle } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
-import { TextField } from '@/shared/components/ui/Field';
+import { SelectField, TextField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
 import { CashAccountSelect } from '@/features/finance/components';
 import { useLeadOrderCashAccounts } from '@/features/finance/lookup';
@@ -11,7 +11,7 @@ import { useLeadPayments } from '@/features/crm/crm.hooks';
 import { formatCurrency } from '@/core/utils/format';
 import {
   ORDER_STATUS_LABEL, ORDER_STATUS_COLOR,
-  type LeadOrder, type LeadOrderCancellationRefund, type OrderStatus,
+  type LeadOrder, type LeadOrderCancellation, type OrderCancellationReason, type OrderStatus,
 } from '@/features/crm/crm.types';
 
 interface Props {
@@ -19,7 +19,7 @@ interface Props {
   onClose: () => void;
   order: LeadOrder | null;
   submitting?: boolean;
-  onSubmit: (status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, refund?: LeadOrderCancellationRefund) => void;
+  onSubmit: (status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, cancellation?: LeadOrderCancellation) => void;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -31,6 +31,8 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
   const [cashAccountId, setCashAccountId] = useState('');
   const [transactionDate, setTransactionDate] = useState(today());
   const [description, setDescription] = useState('Refund pembatalan booking');
+  const [cancellationReason, setCancellationReason] = useState<OrderCancellationReason>('CUSTOMER_REQUEST');
+  const [cancellationNote, setCancellationNote] = useState('');
 
   const resourceKey = order?.branchId ?? 'order';
   const resourceHeaders = order?.branchId ? { 'X-Branch-Id': order.branchId } : undefined;
@@ -53,7 +55,8 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
   const refundTotal = eligiblePayments
     .filter((payment) => paymentIds.includes(payment.id))
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
-  const refundValid = !refundEnabled || (paymentIds.length > 0 && !!cashAccountId && !!transactionDate);
+  const refundValid = (!refundEnabled || (paymentIds.length > 0 && !!cashAccountId && !!transactionDate))
+    && (cancellationReason !== 'OTHER' || !!cancellationNote.trim());
   const canTransition = order?.status === 'BOOKING';
 
   const close = () => {
@@ -63,18 +66,19 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
     setCashAccountId('');
     setTransactionDate(today());
     setDescription('Refund pembatalan booking');
+    setCancellationReason('CUSTOMER_REQUEST');
+    setCancellationNote('');
     onClose();
   };
   const togglePayment = (id: string) => setPaymentIds((current) =>
     current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const submitCancellation = () => {
     if (!refundValid) return;
-    onSubmit('CANCELLED', refundEnabled ? {
-      paymentIds,
-      cashAccountId,
-      transactionDate,
-      description: description.trim() || undefined,
-    } : undefined);
+    onSubmit('CANCELLED', {
+      cancellationReason,
+      cancellationNote: cancellationNote.trim() || undefined,
+      ...(refundEnabled ? { refund: { paymentIds, cashAccountId, transactionDate, description: description.trim() || undefined } } : {}),
+    });
   };
 
   return (
@@ -112,6 +116,12 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
         message="Order dan refund yang dipilih diproses atomik dalam satu request; tidak ada reversal terpisah."
         confirmLabel="Ya, Batalkan">
         <div className="mt-4 space-y-3 text-left">
+          <SelectField label="Alasan Pembatalan" required value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value as OrderCancellationReason)} options={[
+            { value: 'CUSTOMER_REQUEST', label: 'Permintaan Customer' }, { value: 'CREDIT_REJECTED', label: 'Kredit Ditolak' },
+            { value: 'UNIT_ISSUE', label: 'Masalah Unit' }, { value: 'PRICE_DISAGREEMENT', label: 'Harga Tidak Sepakat' },
+            { value: 'DUPLICATE_ORDER', label: 'Order Duplikat' }, { value: 'OTHER', label: 'Lainnya' },
+          ]} />
+          <TextField label={cancellationReason === 'OTHER' ? 'Catatan Pembatalan *' : 'Catatan Pembatalan'} value={cancellationNote} onChange={(event) => setCancellationNote(event.target.value)} maxLength={2000} />
           <label className="flex items-center gap-2.5 rounded-xl border border-border bg-surface-soft p-3 cursor-pointer">
             <input type="checkbox" checked={refundEnabled} onChange={(event) => { setRefundEnabled(event.target.checked); if (!event.target.checked) setPaymentIds([]); }} className="h-4 w-4 accent-[color:var(--color-primary)]" />
             <RotateCcw size={15} className="text-primary" />
