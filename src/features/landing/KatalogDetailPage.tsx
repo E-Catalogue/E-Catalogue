@@ -3,15 +3,17 @@ import { Link, useParams, useNavigate } from '@tanstack/react-router';
 import {
   ChevronRight, Calendar, Gauge, Fuel, Cog, Palette, Hash, ShieldCheck,
   Phone, ArrowLeft, BadgeCheck, MapPin, ChevronLeft, ChevronRight as ChevronRightIcon,
-  Car, Loader2, CheckCircle2,
+  Car, Loader2, CheckCircle2, Building2, Share2,
 } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { SalesPickerModal } from './SalesPickerModal';
-import { formatCurrency, formatNumber } from '@/core/utils/format';
+import { formatCurrency, formatNumber, formatTransmisi } from '@/core/utils/format';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { waMessages } from '@/core/utils/whatsapp';
 import { usePublicCatalogUnit, usePublicRelatedUnits, usePublicSiteSettings } from './landing.hooks';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
 import type { CatalogCard, CatalogDetail } from './public.types';
 
 const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: string; value: string }) => (
@@ -19,7 +21,7 @@ const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: stri
     <div className="w-9 h-9 rounded-lg bg-surface text-primary flex items-center justify-center shrink-0 border border-border"><Icon size={16} strokeWidth={2.2} /></div>
     <div className="min-w-0">
       <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p>
-      <p className="text-[13px] font-extrabold text-ink truncate">{value}</p>
+      <p className="text-[13px] font-extrabold text-ink truncate" title={value}>{value}</p>
     </div>
   </div>
 );
@@ -58,15 +60,45 @@ export const KatalogDetailPage = () => {
   const nextImg = () => setActiveImg((i) => (i + 1) % gallery.length);
   const openDetail = (u: CatalogCard) => { setActiveImg(0); navigate({ to: '/katalog/$id', params: { id: u.id } }); };
 
+  const handleCopyDetailUrl = () => {
+    const shareUrl = window.location.href;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(shareUrl).catch(() => {});
+    } else {
+      const input = document.createElement('input');
+      input.value = shareUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+    store.dispatch(
+      showToast({
+        title: 'Berhasil',
+        message: 'URL unit berhasil disalin ke clipboard',
+        variant: 'success',
+      })
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <nav className="flex items-center gap-1.5 text-[12px] font-semibold text-muted mb-5 flex-wrap">
-        <Link to="/" className="hover:text-primary transition-colors">Beranda</Link>
-        <ChevronRight size={13} />
-        <Link to="/katalog" className="hover:text-primary transition-colors">Katalog</Link>
-        <ChevronRight size={13} />
-        <span className="text-ink font-bold truncate">{title}</span>
-      </nav>
+      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+        <nav className="flex items-center gap-1.5 text-[12px] font-semibold text-muted flex-wrap">
+          <Link to="/" className="hover:text-primary transition-colors">Beranda</Link>
+          <ChevronRight size={13} />
+          <Link to="/katalog" className="hover:text-primary transition-colors">Katalog</Link>
+          <ChevronRight size={13} />
+          <span className="text-ink font-bold truncate">{title}</span>
+        </nav>
+        <button
+          type="button"
+          onClick={handleCopyDetailUrl}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-border text-[12px] font-bold text-ink hover:text-primary hover:border-primary/50 shadow-sm transition-all"
+        >
+          <Share2 size={14} /> Bagikan URL
+        </button>
+      </div>
 
       <div className="grid lg:grid-cols-[1fr_420px] gap-8 items-start">
         {/* GALLERY */}
@@ -77,8 +109,26 @@ export const KatalogDetailPage = () => {
               {d.isNew && <span className="bg-primary text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg shadow-glow">Baru</span>}
               <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg">{d.code}</span>
             </div>
-            <div className="absolute top-3 right-3">
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${d.statusKatalog === 'READY' ? 'bg-accent-green text-white' : 'bg-accent-amber text-white'}`}>{d.statusKatalog === 'READY' ? 'Ready Stock' : 'Booked'}</span>
+            <div className="absolute top-3 right-3 flex items-center gap-2">
+              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm ${
+                d.statusKatalog === 'SOLD' || (d as any).statusUnit === 'SOLD' || (d as any).isSold
+                  ? 'bg-semantic-error text-white'
+                  : (d as any).statusUnit === 'INVENTORY'
+                  ? 'bg-accent-blue text-white'
+                  : (d as any).statusUnit === 'HOLD' || d.statusKatalog === 'BOOKED'
+                  ? 'bg-accent-amber text-white'
+                  : 'bg-accent-green text-white'
+              }`}>
+                {d.statusKatalog === 'SOLD' || (d as any).statusUnit === 'SOLD' || (d as any).isSold
+                  ? 'Terjual'
+                  : (d as any).statusUnit === 'INVENTORY'
+                  ? 'Inventory'
+                  : (d as any).statusUnit === 'HOLD'
+                  ? 'Hold'
+                  : d.statusKatalog === 'BOOKED'
+                  ? 'Booked'
+                  : 'Ready Stock'}
+              </span>
             </div>
             {gallery.length > 1 && (
               <>
@@ -112,14 +162,24 @@ export const KatalogDetailPage = () => {
             <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Harga</p>
             <p className="text-3xl font-extrabold text-primary mt-1">{formatCurrency(d.harga)}</p>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <Spec icon={Calendar} label="Tahun" value={`${d.tahun}`} />
             <Spec icon={Gauge} label="Kilometer" value={`${formatNumber(d.kilometer)} KM`} />
+            <Spec icon={Cog} label="Transmisi" value={formatTransmisi(d.transmisi)} />
             <Spec icon={Fuel} label="BBM" value={d.bahanBakar ?? '-'} />
-            <Spec icon={Cog} label="Transmisi" value={d.transmisi} />
+            <Spec icon={Building2} label="Cabang" value={d.branch?.name ?? 'Cabang Utama'} />
+            <Spec icon={Palette} label="Warna" value={d.warna || '-'} />
           </div>
           <div className="flex flex-col gap-2.5">
-            <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors w-full"><Phone size={17} /> Tanya / Booking Unit Ini</button>
+            {d.statusKatalog === 'SOLD' || (d as any).statusUnit === 'SOLD' || (d as any).isSold ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl bg-semantic-error/10 border border-semantic-error/20 text-semantic-error font-bold text-[14px] px-5 py-3.5 w-full">
+                <CheckCircle2 size={17} className="text-semantic-error" /> Unit Ini Sudah Terjual (Sold)
+              </div>
+            ) : (
+              <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors w-full">
+                <Phone size={17} /> Tanya / Booking Unit Ini
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-semibold text-ink-soft pt-1">
             <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent-green" /> Garansi Mesin 1 Bulan</span>
@@ -133,15 +193,15 @@ export const KatalogDetailPage = () => {
       <div className="grid lg:grid-cols-[1fr_420px] gap-6 mt-8">
         <div className="bg-surface rounded-2xl border border-border p-6">
           <h2 className="text-[15px] font-extrabold text-ink mb-4">Spesifikasi Lengkap</h2>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             <Spec icon={Hash} label="Kode Unit" value={d.code} />
             <Spec icon={Palette} label="Warna" value={d.warna || '-'} />
             <Spec icon={Hash} label="Plat" value={d.plat || '-'} />
             <Spec icon={Calendar} label="Tahun" value={`${d.tahun}`} />
             <Spec icon={Gauge} label="Kilometer" value={`${formatNumber(d.kilometer)} KM`} />
-            <Spec icon={Cog} label="Transmisi" value={d.transmisi} />
+            <Spec icon={Cog} label="Transmisi" value={formatTransmisi(d.transmisi)} />
             <Spec icon={Fuel} label="Bahan Bakar" value={d.bahanBakar ?? '-'} />
-            <Spec icon={Palette} label="Status" value={d.statusKatalog === 'READY' ? 'Ready Stock' : 'Booked'} />
+            <Spec icon={Building2} label="Cabang" value={d.branch?.name || 'Cabang Utama'} />
           </div>
           <h3 className="text-[14px] font-extrabold text-ink mt-5 mb-2">Deskripsi</h3>
           <p className="text-[13px] text-muted font-medium leading-relaxed">{d.description}</p>
@@ -159,23 +219,30 @@ export const KatalogDetailPage = () => {
           ) : null}
         </div>
 
-        <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white h-fit">
+        <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white h-fit shadow-card">
           <h3 className="text-lg font-extrabold">Tertarik dengan unit ini?</h3>
           <p className="text-white/85 text-[13px] font-medium mt-1.5 leading-relaxed">Hubungi sales kami untuk info lebih lanjut, negosiasi harga, atau jadwalkan test drive.</p>
-          <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 w-full mt-5 rounded-xl bg-white text-primary font-bold text-[14px] px-5 py-3 hover:bg-white/90 transition-colors"><Phone size={17} /> Chat Sales Sekarang</button>
+          <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 w-full mt-5 rounded-xl bg-white text-primary font-bold text-[14px] px-5 py-3 hover:bg-white/90 shadow-md transition-colors"><Phone size={17} /> Chat Sales Sekarang</button>
+          {d.branch && (
+            <div className="mt-5 pt-4 border-t border-white/20 text-[12px] space-y-1.5">
+              <p className="font-extrabold text-[13px] text-white flex items-center gap-1.5"><Building2 size={14} /> {d.branch.name}</p>
+              {d.branch.contact && <p className="text-white/80 flex items-center gap-1.5"><Phone size={14} /> {d.branch.contact}</p>}
+            </div>
+          )}
           {settings?.phone && <p className="text-center text-white/70 text-[12px] font-medium mt-4">atau call {settings.phone}</p>}
         </div>
       </div>
+
 
       {/* Related */}
       {related && related.length > 0 && (
         <div className="mt-10">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <h2 className="text-xl font-extrabold text-ink">{related.some((r) => r.merek?.id === d.merek?.id) ? `Unit ${d.merek?.name} Lainnya` : 'Unit Serupa'}</h2>
+            <h2 className="text-xl font-extrabold text-ink">{related.some((r: CatalogCard) => r.merek?.id === d.merek?.id) ? `Unit ${d.merek?.name} Lainnya` : 'Unit Serupa'}</h2>
             <Link to="/katalog" className="text-[13px] font-bold text-primary hover:underline inline-flex items-center gap-1">Lihat Semua <ChevronRightIcon size={14} /></Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {related.map((u) => <PublicUnitCard key={u.id} card={u} onView={openDetail} />)}
+            {related.map((u: CatalogCard) => <PublicUnitCard key={u.id} card={u} onView={openDetail} />)}
           </div>
         </div>
       )}

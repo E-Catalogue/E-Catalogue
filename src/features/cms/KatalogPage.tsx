@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ChevronDown, Save, Plus,
+  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ChevronDown, Save, Plus, AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -16,6 +16,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { useCmsCatalog, useCmsCatalogMutations, useCatalogPage, useUpdateCatalogPage } from './cms.hooks';
 import { UnitGalleryManager } from '@/features/units/UnitGalleryManager';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
+import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import type { CmsCatalogRow, CatalogPage as CatalogPageType, PriceRange } from './cms.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 
@@ -133,13 +134,55 @@ export const KatalogPage = () => {
   const total = data?.meta?.total ?? rows.length;
   const m = useCmsCatalogMutations();
   const [galleryId, setGalleryId] = useState<string | null>(null);
+  const [unfinalizedUnit, setUnfinalizedUnit] = useState<CmsCatalogRow | null>(null);
   const galleryRow = rows.find((r) => r.id === galleryId) ?? null;
 
   const publishedCount = rows.filter((u) => u.isPublished).length;
   const featuredCount = rows.filter((u) => u.isFeatured).length;
 
+  const isUnitPricingFinalized = (u: CmsCatalogRow) =>
+    Boolean(u.isPricingFinalized || u.pricingFinalizedAt || (u.harga && u.harga > 0) || u.statusUnit === 'READY_STOCK' || u.statusUnit === 'SOLD');
+
   const patch = (id: string, body: Parameters<typeof m.publish.mutate>[0]['body']) =>
     m.publish.mutate({ id, body }, { onError: (err) => notifyApiError(err) });
+
+  const handleTogglePublish = (u: CmsCatalogRow) => {
+    if (!u.isPublished && !isUnitPricingFinalized(u)) {
+      setUnfinalizedUnit(u);
+      return;
+    }
+    m.publish.mutate(
+      { id: u.id, body: { isPublished: !u.isPublished } },
+      {
+        onError: (error: any) => {
+          if (error?.response?.data?.error?.code === 'UNIT_PRICING_NOT_FINALIZED') {
+            setUnfinalizedUnit(u);
+          } else {
+            notifyApiError(error);
+          }
+        },
+      },
+    );
+  };
+
+  const handleToggleFeatured = (u: CmsCatalogRow) => {
+    if (!u.isFeatured && !isUnitPricingFinalized(u)) {
+      setUnfinalizedUnit(u);
+      return;
+    }
+    m.patchFeatured.mutate(
+      { id: u.id, isFeatured: !u.isFeatured },
+      {
+        onError: (error: any) => {
+          if (error?.response?.data?.error?.code === 'UNIT_PRICING_NOT_FINALIZED') {
+            setUnfinalizedUnit(u);
+          } else {
+            notifyApiError(error);
+          }
+        },
+      },
+    );
+  };
 
   const VIEW_FILTERS: { key: ViewFilter; label: string; icon: React.ReactNode }[] = [
     { key: 'all',       label: 'Semua',        icon: <Filter size={13} /> },
@@ -166,7 +209,7 @@ export const KatalogPage = () => {
         <div className="flex items-center gap-2">
           <span className="font-bold text-ink text-[13px]">{u.tahun}</span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${u.transmisi === 'AUTOMATIC' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted/10 text-muted'}`}>
-            {u.transmisi === 'AUTOMATIC' ? 'AT' : 'MT'}
+            {u.transmisi === 'AUTOMATIC' ? 'Automatic' : 'Manual'}
           </span>
         </div>
       ),
@@ -195,9 +238,7 @@ export const KatalogPage = () => {
       align: 'center',
       cell: (u) => (
         <div className="flex flex-col items-center gap-1">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold ${u.statusKatalog === 'READY' ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-amber/10 text-accent-amber'}`}>
-            {u.statusKatalog}
-          </span>
+          <StatusBadge status={u.statusUnit} />
           {u.isNew && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-primary"><Sparkles size={9} /> BARU</span>}
         </div>
       ),
@@ -226,16 +267,13 @@ export const KatalogPage = () => {
           {
             icon: u.isPublished ? <EyeOff size={13} /> : <Eye size={13} />,
             label: u.isPublished ? 'Sembunyikan dari Katalog' : 'Tampilkan di Katalog',
-            onClick: () => patch(u.id, { isPublished: !u.isPublished }),
+            onClick: () => handleTogglePublish(u),
             variant: u.isPublished ? 'danger' : 'primary',
           },
           {
             icon: <Star size={13} className={u.isFeatured ? "text-accent-amber fill-accent-amber" : ""} />,
             label: u.isFeatured ? 'Hapus dari Unggulan' : 'Jadikan Unit Unggulan',
-            onClick: () => m.patchFeatured.mutate(
-              { id: u.id, isFeatured: !u.isFeatured },
-              { onError: (error) => notifyApiError(error) },
-            ),
+            onClick: () => handleToggleFeatured(u),
           },
           {
             icon: <Sparkles size={13} />,
@@ -333,6 +371,32 @@ export const KatalogPage = () => {
       </SectionCard>
 
       {galleryRow && <GalleryModal row={galleryRow} onClose={() => setGalleryId(null)} />}
+
+      {unfinalizedUnit && (
+        <Modal
+          open={!!unfinalizedUnit}
+          onClose={() => setUnfinalizedUnit(null)}
+          title="Harga Belum Difinalisasi"
+          icon={<AlertTriangle size={20} className="text-semantic-error" />}
+          size="md"
+          footer={<Button onClick={() => setUnfinalizedUnit(null)}>Saya Mengerti</Button>}
+        >
+          <div className="space-y-3 py-2 text-center">
+            <div className="w-12 h-12 rounded-full bg-semantic-error/10 text-semantic-error mx-auto flex items-center justify-center">
+              <AlertTriangle size={24} />
+            </div>
+            <h3 className="font-extrabold text-ink text-[15px]">Unit Belum Siap Ditampilkan</h3>
+            <p className="text-muted text-[13px] leading-relaxed">
+              Unit <strong className="text-ink">{unitDisplayName(unfinalizedUnit)}</strong> ({unfinalizedUnit.platNomor}) belum menyelesaikan <strong>Finalisasi Harga</strong>.
+            </p>
+            <div className="text-left text-muted text-[12px] bg-surface-soft p-3.5 rounded-xl border border-border space-y-1.5">
+              <p className="font-bold text-ink text-[12px]">Ketentuan Katalog Publik:</p>
+              <p>• Unit hanya dapat ditampilkan di katalog publik atau dijadikan unit unggulan setelah harga OTR difinalisasi.</p>
+              <p>• Silakan buka menu <strong>Inventori &gt; Detail Unit</strong> untuk memfinalisasi harga OTR unit ini terlebih dahulu.</p>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

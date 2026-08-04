@@ -10,7 +10,7 @@ export type { SiteSettings, CreditSimConfig, PublicNavMenuItem };
 
 export type PublicTransmisi = 'AT' | 'MT' | 'CVT';
 export interface CatalogMainImage { filename: string }
-export type PublicCatalogStatus = 'ready' | 'booked';
+export type PublicCatalogStatus = 'ready' | 'booked' | 'sold';
 
 export interface CatalogCard {
   id: string;
@@ -26,7 +26,16 @@ export interface CatalogCard {
   transmisi: PublicTransmisi;
   bahanBakar: string | null;
   warna: string;
-  statusKatalog: 'READY' | 'BOOKED';
+  statusKatalog: 'READY' | 'BOOKED' | 'SOLD';
+  statusUnit?: string;
+  isSold?: boolean;
+  branch?: {
+    id: string;
+    name: string;
+    code: string;
+    showroom?: string | null;
+    contact?: string | null;
+  } | null;
   isNew: boolean;
   image: CatalogMainImage | null;
   createdAt: string;

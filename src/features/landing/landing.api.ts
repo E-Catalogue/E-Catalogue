@@ -35,7 +35,7 @@ type LegacyCatalogShape = {
   warna?: string;
   plate?: string;
   plat?: string;
-  status?: 'ready' | 'booked';
+  status?: 'ready' | 'booked' | 'sold';
   statusKatalog?: string;
 };
 
@@ -52,7 +52,7 @@ const mapCatalogUnit = <T extends LegacyCatalogShape>(u: T): T => {
     fuel: u.fuel ?? u.bahanBakar ?? '-',
     color: u.color ?? u.warna ?? '-',
     plate: u.plate ?? u.plat ?? '-',
-    status: u.status ?? (u.statusKatalog?.toLowerCase() === 'ready' ? 'ready' : 'booked'),
+    status: u.status ?? (u.statusKatalog?.toLowerCase() === 'sold' ? 'sold' : u.statusKatalog?.toLowerCase() === 'ready' ? 'ready' : 'booked'),
   };
 };
 

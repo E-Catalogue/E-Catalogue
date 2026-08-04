@@ -86,9 +86,10 @@ interface ChecklistSectionProps {
   items: Array<MasterKelengkapan | MasterDokumen>;
   selected: string[];
   onToggle: (id: string, checked: boolean) => void;
+  onToggleAll?: (checked: boolean) => void;
 }
 
-const ChecklistSection = ({ title, loading, items, selected, onToggle }: ChecklistSectionProps) => {
+const ChecklistSection = ({ title, loading, items, selected, onToggle, onToggleAll }: ChecklistSectionProps) => {
   const [search, setSearch] = useState('');
   const filtered = items.filter((item) => {
     const q = search.trim().toLowerCase();
@@ -96,13 +97,30 @@ const ChecklistSection = ({ title, loading, items, selected, onToggle }: Checkli
     return item.name.toLowerCase().includes(q) || item.code?.toLowerCase().includes(q);
   });
 
+  const allSelected = items.length > 0 && items.every((item) => selected.includes(item.id));
+
   return (
   <div className="rounded-2xl border border-border bg-surface-soft p-3.5">
     <div className="flex items-center justify-between gap-3 mb-3">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{title}</p>
-      <span className="text-[10px] font-extrabold text-muted bg-surface px-2 py-1 rounded-full">
-        {selected.length} dipilih
-      </span>
+      <div className="flex items-center gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{title}</p>
+        <span className="text-[10px] font-extrabold text-muted bg-surface px-2 py-0.5 rounded-full border border-border">
+          {selected.length} / {items.length} dipilih
+        </span>
+      </div>
+      {!loading && items.length > 0 && onToggleAll && (
+        <button
+          type="button"
+          onClick={() => onToggleAll(!allSelected)}
+          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+            allSelected
+              ? 'bg-semantic-error/10 text-semantic-error hover:bg-semantic-error/20'
+              : 'bg-primary-light text-primary hover:bg-primary hover:text-white'
+          }`}
+        >
+          {allSelected ? 'Batal Semua' : 'Pilih Semua'}
+        </button>
+      )}
     </div>
     {!loading && items.length > 0 && (
       <div className="relative mb-2.5">
@@ -222,8 +240,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
   const persistedUnit = unit ?? createdUnit;
   const isEdit = !!unit;
-  // Create: step Foto terkunci sampai unit berhasil dibuat. Edit: seluruh step langsung bisa diakses.
-  const maxReachableStep = isEdit ? 3 : (createdUnit ? 3 : 2);
+  // Create: step hanya bisa maju lewat tombol aksi, stepper tidak boleh loncat ke depan.
+  // Edit / unit tersimpan: seluruh step langsung bisa diakses.
+  const maxReachableStep = isEdit ? 3 : (createdUnit ? 3 : step);
   const activeUnitId = persistedUnit?.id;
   const { data: liveUnitRes } = useUnit(step === 3 ? activeUnitId : undefined);
   const liveImages = liveUnitRes?.data?.unitImages ?? persistedUnit?.unitImages ?? [];
@@ -256,6 +275,18 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       if (checked) next.add(id);
       else next.delete(id);
       return { ...f, [key]: Array.from(next) };
+    });
+  };
+
+  const toggleAllChecklist = (key: 'kelengkapans' | 'dokumens', allItems: Array<{ id: string }>, checked: boolean) => {
+    setForm((f) => {
+      if (checked) {
+        const next = new Set([...f[key], ...allItems.map((item) => item.id)]);
+        return { ...f, [key]: Array.from(next) };
+      } else {
+        const itemIds = new Set(allItems.map((item) => item.id));
+        return { ...f, [key]: f[key].filter((id) => !itemIds.has(id)) };
+      }
     });
   };
 
@@ -525,6 +556,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
               items={kelengkapans}
               selected={form.kelengkapans}
               onToggle={(id, checked) => toggleChecklist('kelengkapans', id, checked)}
+              onToggleAll={(checked) => toggleAllChecklist('kelengkapans', kelengkapans, checked)}
             />
             <ChecklistSection
               title="Dokumen"
@@ -532,6 +564,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
               items={dokumens}
               selected={form.dokumens}
               onToggle={(id, checked) => toggleChecklist('dokumens', id, checked)}
+              onToggleAll={(checked) => toggleAllChecklist('dokumens', dokumens, checked)}
             />
           </div>
         )}

@@ -203,7 +203,7 @@ export interface CreditSimConfig {
 }
 
 /* ── Katalog CMS (kelola tayang) ── */
-export type StatusKatalog = 'READY' | 'BOOKED';
+export type StatusKatalog = 'READY' | 'BOOKED' | 'SOLD';
 export interface CmsCatalogImage { id: string; filename: string; sortOrder: number; isMain?: boolean; }
 export interface CmsCatalogRow {
   id: string;
@@ -219,6 +219,8 @@ export interface CmsCatalogRow {
   bahanBakar: string | null;
   kilometer: number;
   harga: number;
+  pricingFinalizedAt?: string | null;
+  isPricingFinalized?: boolean;
   statusUnit: string;
   statusKatalog: StatusKatalog;
   isPublished: boolean;

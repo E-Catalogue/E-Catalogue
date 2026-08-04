@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BadgeCheck, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, Palette, Pencil, Receipt, Save, Share2, TrendingUp } from 'lucide-react';
+import { BadgeCheck, Building2, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, MapPin, Palette, Pencil, Receipt, Save, Share2, TrendingUp } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
@@ -118,15 +118,29 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
-          <Button variant="secondary" icon={<Share2 size={15} />} onClick={handleShare}>Bagikan WhatsApp</Button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/25 hover:bg-[#25D366]/20"
+          >
+            <Share2 size={15} /> Bagikan WhatsApp
+          </button>
           {!salesView && onEdit && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
         </>
       }
     >
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-soft px-4 py-3">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-soft px-4 py-3 flex-wrap">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Status Unit</p>
-          <p className="mt-0.5 text-[12px] font-semibold text-ink">Ketersediaan unit saat ini</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Status &amp; Cabang</p>
+          <p className="mt-0.5 text-[12px] font-semibold text-ink flex items-center gap-1.5">
+            {current.branch ? (
+              <span className="inline-flex items-center gap-1 text-primary">
+                <MapPin size={13} className="shrink-0" /> {current.branch.nama}
+              </span>
+            ) : (
+              'Ketersediaan unit saat ini'
+            )}
+          </p>
         </div>
         <StatusBadge status={visibleStatus} label={visibleStatusLabel} />
       </div>
@@ -171,6 +185,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
 
       {/* Spesifikasi & biaya lengkap */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 mt-4">
+        <Spec icon={Building2} label="Cabang" value={current.branch?.nama || '-'} />
         <Spec icon={Receipt} label="Pajak" value={current.tanggalPajak ? new Date(current.tanggalPajak).toLocaleDateString('id-ID') : '-'} />
         <Spec icon={Palette} label="Warna" value={current.warna || '-'} />
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />

@@ -25,3 +25,13 @@ export const formatDate = (date: string | Date): string =>
     month: 'short',
     year: 'numeric',
   });
+
+export const formatTransmisi = (value?: string | null): string => {
+  if (!value) return '-';
+  const v = value.toUpperCase();
+  if (v === 'AUTOMATIC' || v === 'AT') return 'Automatic';
+  if (v === 'MANUAL' || v === 'MT') return 'Manual';
+  if (v === 'CVT') return 'CVT (Automatic)';
+  return value;
+};
+

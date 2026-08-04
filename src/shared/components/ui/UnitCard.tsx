@@ -1,4 +1,4 @@
-import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge } from 'lucide-react';
+import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge, Fuel, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import type { Unit as BackendUnit } from '@/features/units/unit.types';
@@ -6,6 +6,7 @@ import type { Unit as MockUnit } from '@/data/types';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { StatusBadge } from './StatusBadge';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
+import { API_ORIGIN } from '@/core/api/client';
 
 type UnitCardUnit = BackendUnit | MockUnit;
 
@@ -23,11 +24,13 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
   const clickable = !!onView;
   const isMock = 'brand' in unit;
   
-  const _backendImg = (unit as BackendUnit).unitImages?.[0];
+  // Prioritas: gambar dengan isMain=true, lalu urutan sequence terkecil, lalu index pertama.
+  const _backendImages = (unit as BackendUnit).unitImages ?? [];
+  const _mainImg = _backendImages.find((img) => img.isMain) ?? _backendImages[0];
   const imageUrl = isMock
     ? (unit as MockUnit).image
-    : (_backendImg
-      ? `${import.meta.env.VITE_API_URL}/public/unit/${_backendImg.filename}`
+    : (_mainImg
+      ? `${API_ORIGIN}/public/unit/${_mainImg.filename}`
       : DEFAULT_CAR_IMAGE);
 
   const backendUnit = unit as BackendUnit;
@@ -50,16 +53,18 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
     ? ''
     : [[brandName, modelName].filter(Boolean).join(' '), backendUnit.platNomor].filter(Boolean).join(' · ');
   const tahun = isMock ? (unit as MockUnit).year : (unit as BackendUnit).tahun;
-  const transmisi = isMock ? (unit as MockUnit).transmission : ((unit as BackendUnit).transmisi === 'AUTOMATIC' ? 'AT' : 'MT');
+  const transmisi = isMock ? (unit as MockUnit).transmission : ((unit as BackendUnit).transmisi === 'AUTOMATIC' ? 'Automatic' : 'Manual');
   const km = isMock ? (unit as MockUnit).km : (unit as BackendUnit).kilometer;
   const statusUnit = statusOverride ?? (isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit);
+
+  const bahanBakarLabel = isMock ? '' : (unit as BackendUnit).bahanBakar ?? '';
 
   return (
     <motion.div
       onClick={() => onView?.(unit)}
-      whileHover={clickable ? { y: -6, transition: { duration: 0.2 } } : {}}
+      whileHover={clickable ? { y: -4, transition: { duration: 0.2 } } : {}}
       whileTap={clickable ? { scale: 0.98 } : {}}
-      className={`group bg-surface rounded-2xl border border-border overflow-hidden hover:shadow-card-hover ${clickable ? 'cursor-pointer' : ''}`}
+      className={`group bg-surface rounded-2xl border border-border overflow-hidden hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 ${clickable ? 'cursor-pointer' : ''}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
         <motion.img
@@ -69,11 +74,35 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
           className="w-full h-full object-cover"
           whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         />
-        {isNew && (
+        {/* Gradient overlay bawah untuk kontras teks */}
+        {statusUnit === 'SOLD' || statusUnit === 'sold' || statusUnit === 'Terjual' ? (
+          <span className="absolute top-3 left-3 bg-semantic-error text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-lg shadow-sm">
+            Terjual
+          </span>
+        ) : isNew ? (
           <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-lg shadow-glow">
             Baru
+          </span>
+        ) : null}
+        {/* Badge transmisi + bahan bakar di pojok kiri bawah gambar */}
+        <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold shadow-sm ${
+            transmisi === 'Automatic' || transmisi === 'AT' ? 'bg-accent-blue text-white' : 'bg-white text-slate-900'
+          }`}>
+            <GitMerge size={10} strokeWidth={2.4} /> {transmisi}
+          </span>
+          {bahanBakarLabel && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-white text-slate-900 shadow-sm uppercase">
+              <Fuel size={10} strokeWidth={2.4} /> {bahanBakarLabel}
+            </span>
+          )}
+        </div>
+        {/* Jumlah gambar */}
+        {_backendImages.length > 1 && (
+          <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-black/50 text-white backdrop-blur-sm">
+            {_backendImages.length} foto
           </span>
         )}
 
@@ -103,35 +132,43 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
       </div>
 
       <div className="p-4">
-        <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate" title={titleText}>
-          {titleText}
-        </h3>
-        {subtitleText && (
-          <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitleText}</p>
-        )}
-        <div className="flex items-center gap-3 mt-2 text-[11px] font-semibold text-muted">
-          <span className="flex items-center gap-1"><Calendar size={12} /> {tahun}</span>
-          <span className="flex items-center gap-1"><GitMerge size={12} /> {transmisi}</span>
-          <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(km)} KM</span>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate" title={titleText}>
+              {titleText}
+            </h3>
+            {subtitleText && (
+              <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitleText}</p>
+            )}
+          </div>
+          <StatusBadge status={statusUnit as never} label={statusLabelOverride} />
         </div>
-        <div className="flex items-end justify-between gap-2 mt-3 pt-3 border-t border-divider">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[11px] font-semibold text-muted">
+          <span className="flex items-center gap-1"><Calendar size={12} /> {tahun}</span>
+          <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(km)} KM</span>
+          {!isMock && (
+            <span className="flex items-center gap-1 text-ink/80 truncate">
+              <MapPin size={12} className="text-primary shrink-0" /> {backendUnit.branch?.nama || 'Cabang Utama'}
+            </span>
+          )}
+        </div>
+        <div className="mt-3 pt-3 border-t border-divider">
           {isMock ? (
-            <span className="font-extrabold text-primary text-[14px] truncate">{formatCurrency(displayPrice)}</span>
+            <span className="font-extrabold text-primary text-[15px] truncate">{formatCurrency(displayPrice)}</span>
           ) : (
-            <div className="min-w-0 grid grid-cols-2 gap-3 flex-1">
+            <div className="min-w-0 grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-muted">OTR</p>
-                <p className="font-extrabold text-primary text-[13px] truncate">{otrPrice ? formatCurrency(otrPrice) : '-'}</p>
+                <p className="font-extrabold text-primary text-[14px] truncate">{otrPrice ? formatCurrency(otrPrice) : '-'}</p>
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Target</p>
-                <p className="font-extrabold text-ink text-[13px] truncate">{targetPrice ? formatCurrency(targetPrice) : '-'}</p>
+                <p className="font-extrabold text-ink text-[14px] truncate">{targetPrice ? formatCurrency(targetPrice) : '-'}</p>
               </div>
             </div>
           )}
-          <StatusBadge status={statusUnit as never} label={statusLabelOverride} />
         </div>
-        {actions && <div onClick={(event) => event.stopPropagation()} className="mt-3 pt-3 border-t border-divider flex justify-end">{actions}</div>}
+        {actions && <div onClick={(event) => event.stopPropagation()} className="mt-3 pt-3 border-t border-divider">{actions}</div>}
       </div>
     </motion.div>
   );

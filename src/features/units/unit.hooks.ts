@@ -46,6 +46,8 @@ export function useCreateUnit() {
     onSuccess: () => {
       store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Tindakan berhasil' }));
       qc.invalidateQueries({ queryKey: ['units'] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
     },
   });
 }
@@ -58,6 +60,8 @@ export function useUpdateUnit() {
       store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Unit berhasil diperbarui' }));
       qc.invalidateQueries({ queryKey: ['units'] });
       qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
     },
   });
 }
@@ -70,6 +74,9 @@ export function useUpdateUnitStatus() {
       store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Status unit berhasil diperbarui' }));
       qc.invalidateQueries({ queryKey: ['units'] });
       qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['lookup', 'cms-homepage', 'featured'] });
     },
   });
 }
@@ -210,6 +217,9 @@ export function useFinalizeInitialPricing() {
       qc.invalidateQueries({ queryKey: ['unit', id] });
       qc.invalidateQueries({ queryKey: ['unit-funding', id] });
       qc.invalidateQueries({ queryKey: ['units'] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['lookup', 'cms-homepage', 'featured'] });
     },
   });
 }

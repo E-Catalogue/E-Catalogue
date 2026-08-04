@@ -5,7 +5,7 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   INVENTORY: { label: 'Inventory', className: 'bg-accent-blue/10 text-accent-blue' },
   READY_STOCK: { label: 'Ready Stock', className: 'bg-accent-green/10 text-accent-green' },
   HOLD: { label: 'Hold', className: 'bg-accent-amber/10 text-accent-amber' },
-  SOLD: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
+  SOLD: { label: 'Terjual', className: 'bg-semantic-error/10 text-semantic-error border border-semantic-error/20' },
   // Payroll sales incentive statuses
   PENDING_AMOUNT: { label: 'Menunggu Nominal', className: 'bg-accent-amber/10 text-accent-amber' },
   DRAFT: { label: 'Draft', className: 'bg-slate-100 text-slate-600' },
@@ -14,10 +14,13 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   PAID: { label: 'Dibayar', className: 'bg-accent-green/10 text-accent-green' },
   CANCELLED: { label: 'Dibatalkan', className: 'bg-primary/10 text-primary' },
   // Unit statuses (Old/Dummy - keep for compatibility if used elsewhere)
-  ready: { label: 'Ready', className: 'bg-accent-green/10 text-accent-green' },
+  READY: { label: 'Ready Stock', className: 'bg-accent-green/10 text-accent-green' },
+  ready: { label: 'Ready Stock', className: 'bg-accent-green/10 text-accent-green' },
   rekondisi: { label: 'Rekondisi', className: 'bg-accent-amber/10 text-accent-amber' },
-  booked: { label: 'Booked', className: 'bg-accent-blue/10 text-accent-blue' },
-  sold: { label: 'Terjual', className: 'bg-muted/10 text-muted' },
+  BOOKED: { label: 'Booked', className: 'bg-accent-amber/10 text-accent-amber' },
+  booked: { label: 'Booked', className: 'bg-accent-amber/10 text-accent-amber' },
+  sold: { label: 'Terjual', className: 'bg-semantic-error/10 text-semantic-error border border-semantic-error/20' },
+  Terjual: { label: 'Terjual', className: 'bg-semantic-error/10 text-semantic-error border border-semantic-error/20' },
   pembelian: { label: 'Pembelian', className: 'bg-accent-purple/10 text-accent-purple' },
   // Generic
   Lunas: { label: 'Lunas', className: 'bg-accent-green/10 text-accent-green' },

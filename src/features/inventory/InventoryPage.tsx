@@ -419,7 +419,7 @@ const InventoryPageInner = () => {
     { icon: <Share2 size={13} />, label: 'Bagikan WhatsApp', onClick: () => shareUnit(unit), variant: 'primary' as const },
     ...(can('UNIT_UPDATE') ? [
       { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(unit) },
-      { icon: <Landmark size={13} />, label: 'Tambah Keterangan Leasing', onClick: () => m.openLeasing(unit) },
+      { icon: <Landmark size={13} />, label: 'Data Leasing', onClick: () => m.openLeasing(unit) },
       ...(unit.statusUnit !== 'SOLD' ? [{ icon: <RefreshCw size={13} />, label: 'Ubah Status Unit', onClick: () => setStatusUnit(unit) }] : []),
     ] : []),
     ...(can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
@@ -587,25 +587,21 @@ const InventoryPageInner = () => {
                 statusOverride={cardStatus(unit.statusUnit)}
                 statusLabelOverride={cardStatusLabel(unit.statusUnit)}
                 actions={(
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <Button
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
                       type="button"
-                      variant="secondary"
-                      size="sm"
-                      icon={<Copy size={14} />}
                       onClick={() => copyUnit(unit)}
+                      className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-accent-blue/10 text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/20"
                     >
-                      Salin
-                    </Button>
-                    <Button
+                      <Copy size={13} /> Salin
+                    </button>
+                    <button
                       type="button"
-                      variant="secondary"
-                      size="sm"
-                      icon={<Share2 size={14} />}
                       onClick={() => shareUnit(unit)}
+                      className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/25 hover:bg-[#25D366]/20"
                     >
-                      Bagikan WhatsApp
-                    </Button>
+                      <Share2 size={13} /> Bagikan WA
+                    </button>
                   </div>
                 )}
               />

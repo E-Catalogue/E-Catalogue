@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Landmark, Plus, Save, Trash2 } from 'lucide-react';
+import { CheckCircle2, Landmark, Plus, Save, Trash2 } from 'lucide-react';
+import { store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency } from '@/core/utils/format';
 import { Button } from '@/shared/components/ui/Button';
@@ -20,6 +22,7 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
   const [offers, setOffers] = useState<UnitLeasingOfferInput[]>(() =>
     unit.leasingOffers?.map(({ leasingId, tenorMonths, dpAmount }) => ({ leasingId, tenorMonths, dpAmount })) ?? [],
   );
+  const [showSuccess, setShowSuccess] = useState(false);
   const { data: lookupsData, isLoading } = useUnitLookups(open);
   const updateUnit = useUpdateUnit();
   const leasings = useMemo(() => lookupsData?.data.leasings ?? [], [lookupsData]);
@@ -33,6 +36,7 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
       : null;
 
   const updateOffer = (index: number, patch: Partial<UnitLeasingOfferInput>) => {
+    setShowSuccess(false);
     setOffers((current) => current.map((offer, offerIndex) => offerIndex === index ? { ...offer, ...patch } : offer));
   };
 
@@ -40,7 +44,17 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
     if (validationError) return;
     updateUnit.mutate(
       { id: unit.id, data: { leasingOffers: offers } },
-      { onSuccess: onClose, onError: (error) => notifyApiError(error) },
+      {
+        onSuccess: (res) => {
+          store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Data leasing berhasil disimpan' }));
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 4000);
+          if (res?.data?.leasingOffers) {
+            setOffers(res.data.leasingOffers.map(({ leasingId, tenorMonths, dpAmount }) => ({ leasingId, tenorMonths, dpAmount })));
+          }
+        },
+        onError: (error) => notifyApiError(error),
+      },
     );
   };
 
@@ -48,21 +62,27 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
     <Modal
       open={open}
       onClose={onClose}
-      title={`Keterangan Leasing ${unitDisplayName(unit)}`}
+      title={`Data Leasing ${unitDisplayName(unit)}`}
       subtitle={unit.platNomor}
       icon={<Landmark size={20} />}
       size="xl"
       busy={updateUnit.isPending}
       footer={(
         <>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={updateUnit.isPending}>Batal</Button>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={updateUnit.isPending}>Tutup</Button>
           <Button type="button" icon={<Save size={15} />} onClick={save} loading={updateUnit.isPending} disabled={!!validationError}>
-            Simpan Keterangan
+            Simpan Data Leasing
           </Button>
         </>
       )}
     >
       <div className="space-y-3">
+        {showSuccess && (
+          <div className="p-3 bg-accent-green/10 border border-accent-green/30 text-accent-green text-[12px] font-bold rounded-xl flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 size={16} className="shrink-0" />
+            <span>Data leasing berhasil disimpan! Anda dapat melanjutkan menambah atau mengubah data leasing lainnya.</span>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <p className="text-[13px] font-extrabold text-ink">Daftar Pencairan Leasing</p>

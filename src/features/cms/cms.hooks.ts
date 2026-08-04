@@ -169,9 +169,20 @@ export const useCmsCatalog = (params: CmsListParams) =>
   useQuery({ queryKey: ['cms', 'catalog', params], queryFn: () => cmsCatalogApi.list(params) });
 export const useCmsCatalogMutations = () => {
   const qc = useQueryClient();
-  const inval = () => qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+  const inval = () => {
+    qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+    qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
+    qc.invalidateQueries({ queryKey: ['public', 'catalog-brands'] });
+    qc.invalidateQueries({ queryKey: ['public', 'homepage'] });
+  };
   return {
-    publish: useMutation({ mutationFn: (v: { id: string; body: CmsCatalogPublishBody }) => cmsCatalogApi.publish(v.id, v.body), onSuccess: () => { inval(); toastOk('Status publikasi katalog diperbarui'); } }),
+    publish: useMutation({
+      mutationFn: (v: { id: string; body: CmsCatalogPublishBody }) => cmsCatalogApi.publish(v.id, v.body),
+      onSuccess: () => {
+        inval();
+        toastOk('Status publikasi katalog diperbarui');
+      },
+    }),
     patchFeatured: useMutation({
       mutationFn: (v: { id: string; isFeatured: boolean }) => cmsCatalogApi.patchFeatured(v.id, v.isFeatured),
       onSuccess: (_d, v) => {
