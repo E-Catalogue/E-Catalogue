@@ -19,6 +19,7 @@ import { OrderStatusModal } from './OrderStatusModal';
 import { CreditStageModal } from './CreditStageModal';
 import { DateField } from '@/shared/components/ui/DateField';
 import { useLeadOrders, useLeadOrderMutations, useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
+import { PendingDealFinalizationNotice } from '@/features/crm/PendingDealFinalizationNotice';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { useAppSelector } from '@/app/store';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, type LeadOrder, type OrderStatus } from '@/features/crm/crm.types';
@@ -179,6 +180,8 @@ export const PenjualanPage = () => {
           )}
         />
 
+        <PendingDealFinalizationNotice branchKey={branchKey} headers={branchHeader} />
+
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
             <AlertTriangle size={16} className="shrink-0" />
@@ -262,13 +265,15 @@ export const PenjualanPage = () => {
           onClose={() => setStatusModal(null)}
           order={statusModal}
           submitting={m.updateStatus.isPending}
-          onSubmit={(status, cancellation) =>
-            statusModal &&
-            m.updateStatus.mutate(
-              { id: statusModal.id, status, cancellation, headers: statusModal.branchId ? { 'X-Branch-Id': statusModal.branchId } : branchHeader },
-              { onSuccess: () => setStatusModal(null) },
-            )
-          }
+          onSubmit={(status, cancellation) => {
+            if (!statusModal) return Promise.reject(new Error('Order tidak ditemukan'));
+            return m.updateStatus.mutateAsync({
+              id: statusModal.id,
+              status,
+              cancellation,
+              headers: statusModal.branchId ? { 'X-Branch-Id': statusModal.branchId } : branchHeader,
+            });
+          }}
         />
         <CreditStageModal
           open={!!creditModal}

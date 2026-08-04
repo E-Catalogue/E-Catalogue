@@ -19,6 +19,8 @@ import { useRekondisis } from './rekondisi.hooks';
 import { useRekondisiCashAccounts } from '@/features/finance/lookup';
 import { useCreateRekondisi, useRekondisiStatusCheck } from '@/features/units/unit.hooks';
 import { notifyApiError } from '@/core/api/notify';
+import { getApiErrorMessage } from '@/core/api/apiError';
+import { IMAGE_UPLOAD_NOTE, validateImageFile } from '@/core/utils/imageValidation';
 import { InvestorFundingPanel } from '@/features/investor-funding/InvestorFundingPanel';
 import { useInvestorCapitalAccounts } from '@/features/investor-funding/investorFunding.hooks';
 import {
@@ -128,6 +130,7 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
   const [adminFee, setAdminFee] = useState('');
   const [additionalFee, setAdditionalFee] = useState('');
   const [invoice, setInvoice] = useState<File | null>(null);
+  const [invoiceError, setInvoiceError] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const m = useRekondisiMutations();
 
@@ -139,7 +142,7 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
 
   return (
     <>
-      <form onSubmit={(e) => { e.preventDefault(); setConfirmOpen(true); }} className="space-y-3">
+      <form onSubmit={(e) => { e.preventDefault(); if (!invoiceError) setConfirmOpen(true); }} className="space-y-3">
         <p className="text-[12px] text-muted font-medium">Masukkan komponen biaya akhir sebelum menutup pekerjaan rekondisi ini.</p>
         <div className="grid grid-cols-3 gap-2">
           {[
@@ -152,8 +155,15 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Invoice (opsional)</p>
-          <input type="file" accept="image/*,.pdf" onChange={(e) => setInvoice(e.target.files?.[0] ?? null)} className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5" />
-          <p className="mt-1.5 text-[11px] font-medium text-muted">Jika berupa gambar: maksimal 2 MB per gambar.</p>
+          <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            const error = file ? validateImageFile(file) : null;
+            setInvoiceError(error ?? '');
+            if (error) { setInvoice(null); e.currentTarget.value = ''; return; }
+            setInvoice(file);
+          }} className="w-full text-[12px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-[11px] file:font-bold file:px-3 file:py-1.5" />
+          <p className="mt-1.5 text-[11px] font-medium text-muted">{IMAGE_UPLOAD_NOTE}</p>
+          {invoiceError && <p className="mt-1 text-[11px] font-semibold text-semantic-error">{invoiceError}</p>}
         </div>
         <button type="submit" className="w-full h-10 rounded-xl bg-accent-green text-white text-[12px] font-bold flex items-center justify-center gap-1.5">
           <CheckCircle size={14} /> Selesaikan Rekondisi
@@ -162,7 +172,10 @@ const DoneForm = ({ rekondisiId, onDone }: { rekondisiId: string; onDone: () => 
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        onConfirm={() => m.done.mutate({ id: rekondisiId, data }, { onSuccess: () => { setConfirmOpen(false); onDone(); }, onError: (err) => notifyApiError(err) })}
+        onConfirm={() => m.done.mutate({ id: rekondisiId, data }, {
+          onSuccess: () => { setConfirmOpen(false); onDone(); },
+          onError: (err) => { setInvoiceError(getApiErrorMessage(err)); notifyApiError(err); },
+        })}
         closeOnConfirm={false}
         loading={m.done.isPending}
         tone="primary"

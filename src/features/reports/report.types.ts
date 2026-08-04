@@ -43,8 +43,12 @@ export interface ExpenseFilters {
 export interface ExpenseReport {
   period: { period: string; timezone: string };
   summary: {
-    recurringGenerated: number; recurringPaid: number; recurringUnpaid: number; nonRecurringExpense: number;
-    payrollExpense: number; initialReconditioningCapitalized: number; additionalReconditioningExpense: number;
+    recurringGenerated: number; recurringPaid: number; recurringUnpaid: number; nonRecurringExpense: number; operationalUnpaid: number;
+    payrollExpense: number; payrollPaid: number; payrollUnpaid: number;
+    payrollBaseSalary: number; payrollBaseSalaryPaid: number; payrollBaseSalaryUnpaid: number;
+    payrollSalaryPaid: number; payrollSalaryUnpaid: number;
+    payrollIncentive: number; payrollIncentivePaid: number; payrollIncentiveUnpaid: number;
+    initialReconditioningCapitalized: number; additionalReconditioningExpense: number;
     totalExpense: number; operationalCashOut: number; payrollCashOut: number;
     reconditioningCashOut: number; refundCashOut: number; totalCashOut: number;
   };

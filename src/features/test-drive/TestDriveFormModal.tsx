@@ -6,6 +6,7 @@ import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { DateField } from '@/shared/components/ui/DateField';
 import { notifyApiError } from '@/core/api/notify';
+import { getApiErrorMessage } from '@/core/api/apiError';
 import { useTestDriveMutations, useTestDriveLookups } from './testDrive.hooks';
 import { unitOptionLabel } from '@/features/units/unit.display';
 import { IMAGE_UPLOAD_NOTE, validateImageFile } from '@/core/utils/imageValidation';
@@ -71,7 +72,12 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     const file = event.target.files?.[0] ?? null;
     const err = validateImage(file);
     setFileError(err ?? '');
-    if (!err) set(key, file);
+    if (err) {
+      set(key, null);
+      event.currentTarget.value = '';
+      return;
+    }
+    set(key, file);
   };
 
   const submit = (e: FormEvent) => {
@@ -92,7 +98,13 @@ export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
     if (form.fotoKtp) body.append('fotoKtp', form.fotoKtp);
     if (form.fotoSim) body.append('fotoSim', form.fotoSim);
 
-    const opts = { onError: (err: unknown) => notifyApiError(err), onSuccess: () => onClose() };
+    const opts = {
+      onError: (err: unknown) => {
+        setFileError(getApiErrorMessage(err));
+        notifyApiError(err);
+      },
+      onSuccess: () => onClose(),
+    };
     if (item) mutations.update.mutate({ id: item.id, body }, opts);
     else mutations.create.mutate(body, opts);
   };
