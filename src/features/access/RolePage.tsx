@@ -78,7 +78,14 @@ const PermissionsModal = ({ open, onClose, role }: { open: boolean; onClose: () 
 
   useEffect(() => {
     if (open && role) {
-      roleApi.get(role.id).then((detail) => setSelected(new Set((detail.rolePermissions ?? []).map((rp) => rp.permission.id)))).catch(() => setSelected(new Set()));
+      roleApi.get(role.id)
+        .then((detail) => {
+          const permissionIds = detail.permissions?.map((permission) => permission.id)
+            ?? detail.rolePermissions?.map((rolePermission) => rolePermission.permission.id)
+            ?? [];
+          setSelected(new Set(permissionIds));
+        })
+        .catch(() => setSelected(new Set()));
     }
   }, [open, role]);
 

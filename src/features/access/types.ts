@@ -18,7 +18,9 @@ export interface Role {
   code: string;
   description?: string | null;
   isActive: boolean;
-  /** Hanya terisi di response detail (GET/POST/PATCH satu role) — bukan flat `permissions`. */
+  /** Permission flat dari response detail role. */
+  permissions?: (Permission & { menuId: string; menu: { id: string; name: string; code: string; path?: string | null } })[];
+  /** Dukungan untuk format response lama yang membungkus permission dalam relasi role. */
   rolePermissions?: RolePermissionLink[];
 }
 

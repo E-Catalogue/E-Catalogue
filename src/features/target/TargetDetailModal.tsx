@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { AxiosError } from 'axios';
-import { Target, Plus, Trash2, PlayCircle, Lock, TrendingUp, Users } from 'lucide-react';
+import { Target, Plus, Trash2, PlayCircle, Lock, TrendingUp, Users, Loader2 } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
@@ -93,7 +93,12 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
   // Lookup sales di-scope ke cabang target ITU SENDIRI, bukan branchHeader halaman (Owner yang sedang
   // "semua cabang" tetap bisa mengedit distribusi target milik satu cabang tertentu).
   const scopedBranchHeader = { 'X-Branch-Id': target.branchId };
-  const { data: lookupRes } = useTargetLookupSales(scopedBranchHeader, target.status === 'DRAFT');
+  const {
+    data: lookupRes,
+    isLoading: isSalesLoading,
+    isError: isSalesError,
+    refetch: refetchSales,
+  } = useTargetLookupSales(scopedBranchHeader, target.status === 'DRAFT');
   const lookupSales = lookupRes?.data ?? [];
 
   const m = useTargetMutations(branchKey, branchHeader);
@@ -186,7 +191,7 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
               </Button>
             )}
             {target.status === 'DRAFT' && can('TARGET_ACTIVATE') && (
-              <Button icon={<PlayCircle size={15} />} onClick={() => setConfirmActivate(true)} disabled={!distributionMatches}>
+              <Button icon={<PlayCircle size={15} />} onClick={() => setConfirmActivate(true)}>
                 Aktifkan
               </Button>
             )}
@@ -234,10 +239,11 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
                 <button
                   type="button"
                   onClick={addRow}
-                  disabled={lookupSales.length === 0 || usedSalesIds.size >= lookupSales.length}
+                  disabled={isSalesLoading || isSalesError || lookupSales.length === 0 || usedSalesIds.size >= lookupSales.length}
                   className="inline-flex items-center gap-1 text-[12px] font-bold text-primary hover:underline disabled:opacity-50 disabled:no-underline"
                 >
-                  <Plus size={13} /> Tambah Sales
+                  {isSalesLoading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                  {isSalesLoading ? 'Memuat sales...' : 'Tambah Sales'}
                 </button>
               )}
             </div>
@@ -247,10 +253,19 @@ const TargetDetailLoaded = ({ target, onClose, branchKey, branchHeader }: Loaded
                 {rows.length === 0 && (
                   <EmptyState
                     icon={Users}
-                    title="Belum ada distribusi sales"
-                    description="Klik Tambah Sales untuk membagi target. Pada kontrak backend aktif, total distribusi harus sama sebelum target dapat diaktifkan."
+                    title={isSalesLoading ? 'Memuat daftar sales...' : isSalesError ? 'Daftar sales gagal dimuat' : lookupSales.length === 0 ? 'Belum ada sales aktif di cabang ini' : 'Belum ada distribusi sales'}
+                    description={isSalesError
+                      ? 'Muat ulang daftar sales, lalu coba tambahkan kembali.'
+                      : lookupSales.length === 0
+                        ? 'Tambahkan user aktif dengan role Sales pada cabang ini terlebih dahulu.'
+                        : 'Klik Tambah Sales untuk membagi target. Pada kontrak backend aktif, total distribusi harus sama sebelum target dapat diaktifkan.'}
                     className="border border-dashed border-border rounded-xl !py-7"
                   />
+                )}
+                {isSalesError && (
+                  <button type="button" onClick={() => void refetchSales()} className="text-[12px] font-bold text-primary hover:underline">
+                    Muat ulang daftar sales
+                  </button>
                 )}
                 {rows.map((row) => (
                   <div key={row.key} className={`flex flex-wrap items-end gap-2 p-3 rounded-xl border ${dupSalesIds.has(row.salesId) ? 'border-semantic-error bg-semantic-error/5' : 'border-border'}`}>
