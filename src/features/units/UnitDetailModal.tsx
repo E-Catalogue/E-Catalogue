@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { BadgeCheck, Building2, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, MapPin, Palette, Pencil, Receipt, Save, Share2, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Building2, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, MapPin, Palette, Pencil, Receipt, Save, Share2, TrendingUp } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { UnitGalleryManager } from './UnitGalleryManager';
-import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type Unit } from '@/features/units/unit.types';
+import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type PricingInputMode, type Unit } from '@/features/units/unit.types';
 import { unitDisplayName } from '@/features/units/unit.display';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
 import { notifyApiError } from '@/core/api/notify';
 import { getApiErrorCode } from '@/core/api/apiError';
-import { useFinalizeInitialPricing, useUnit, useUnitImageMutations, useUpdateUnitFunding } from './unit.hooks';
+import { useFinalizeInitialPricing, usePricingPreview, useReopenPricing, useUnit, useUnitImageMutations, useUpdateUnitFunding } from './unit.hooks';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
-import { SelectField } from '@/shared/components/ui/Field';
+import { NumericField, SelectField } from '@/shared/components/ui/Field';
 import { InvestorFundingPanel } from '@/features/investor-funding/InvestorFundingPanel';
 import { buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
 
@@ -44,12 +44,24 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
   const current = detailRes?.data ?? unit;
   const imageMutations = useUnitImageMutations(current?.id ?? '');
   const finalizePricing = useFinalizeInitialPricing();
+  const reopenPricing = useReopenPricing();
   const updateFunding = useUpdateUnitFunding();
   const confirmAction = useConfirmedAction();
   const { can } = usePermissions();
   const [confirmFinalize, setConfirmFinalize] = useState(false);
   const [confirmNoRekondisi, setConfirmNoRekondisi] = useState(false);
   const [cyclePolicy, setCyclePolicy] = useState<FinalCyclePolicy | ''>('');
+  const [targetMode, setTargetMode] = useState<PricingInputMode>('PERCENT');
+  const [otrMode, setOtrMode] = useState<PricingInputMode>('PERCENT');
+  const [targetValue, setTargetValue] = useState<number | null>(null);
+  const [otrValue, setOtrValue] = useState<number | null>(null);
+  const [selectedReconditioningIds, setSelectedReconditioningIds] = useState<string[]>([]);
+  const [reopenDialog, setReopenDialog] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
+  const [showPricingHistory, setShowPricingHistory] = useState(false);
+  // HPP berubah saat pilihan rekondisi berubah. Nilai Target/OTR dihitung lokal
+  // agar mengetik nominal/persentase tidak memicu request, warning, atau flicker modal.
+  const pricingPreview = usePricingPreview(confirmFinalize ? unit?.id : undefined, { selectedReconditioningIds }, unit?.branchId ? { 'X-Branch-Id': unit.branchId } : undefined);
 
   if (!current) return null;
 
@@ -59,22 +71,45 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
   const mainImage = images.find((img) => img.isMain) ?? images[0];
   const otrPrice = current.otrPrice ?? null;
   const targetPrice = current.targetPrice ?? null;
-  const marginBase = targetPrice ?? otrPrice;
   const hpp = current.pricingCostBasis ?? null;
-  const margin = hpp && marginBase && marginBase > hpp ? marginBase - hpp : null;
-  const canFinalizePricing = !current.pricingFinalizedAt && can('UNIT_PRICING_FINALIZE');
+  const margin = hpp !== null && otrPrice !== null ? otrPrice - hpp : null;
+  const canFinalizePricing = current.statusUnit === 'INVENTORY' && !current.pricingFinalizedAt && can('UNIT_PRICING_FINALIZE');
   const funding = current.fundingAgreement;
   const isFixedMonthlyInvestor = funding?.fundingSource === 'INVESTOR' && funding.scheme === 'FIXED_MONTHLY';
   const canEditCyclePolicy = isFixedMonthlyInvestor && funding.status === 'DRAFT' && can('UNIT_FUNDING_MANAGE');
   const selectedCyclePolicy = cyclePolicy || funding?.finalCyclePolicy || '';
+  const previewData = pricingPreview.data?.data;
+  const effectiveTargetValue = targetValue ?? previewData?.suggestedPricing.targetMarkupPercent ?? 0;
+  const effectiveOtrValue = otrValue ?? previewData?.suggestedPricing.otrMarkupPercent ?? 0;
+  const previewPrice = (mode: PricingInputMode, value: number) => !previewData ? 0 : mode === 'AMOUNT'
+    ? value
+    : Math.round(previewData.pricingCostBasis * (1 + value / 100) * 100) / 100;
+  const pricingValid = !!previewData && previewPrice(otrMode, effectiveOtrValue) >= previewPrice(targetMode, effectiveTargetValue) && previewPrice(targetMode, effectiveTargetValue) >= previewData.pricingCostBasis;
+  const reconditioningReady = !!previewData && (selectedReconditioningIds.length > 0 || confirmNoRekondisi);
 
   const handleFinalizePricing = () => {
     finalizePricing.mutate(
-      { id: current.id, data: { confirmNoInitialReconditioning: confirmNoRekondisi } },
+      {
+        id: current.id,
+        headers: current.branchId ? { 'X-Branch-Id': current.branchId } : undefined,
+        data: {
+          confirmNoInitialReconditioning: confirmNoRekondisi,
+          selectedReconditioningIds,
+          target: { mode: targetMode, value: effectiveTargetValue },
+          otr: { mode: otrMode, value: effectiveOtrValue },
+        },
+      },
       {
         onSuccess: () => { setConfirmFinalize(false); setConfirmNoRekondisi(false); },
         onError: (err) => notifyApiError(err),
       },
+    );
+  };
+
+  const handleReopenPricing = () => {
+    reopenPricing.mutate(
+      { id: current.id, data: { reason: reopenReason.trim() }, headers: current.branchId ? { 'X-Branch-Id': current.branchId } : undefined },
+      { onSuccess: () => { setReopenDialog(false); setReopenReason(''); }, onError: (error) => notifyApiError(error) },
     );
   };
 
@@ -125,7 +160,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           >
             <Share2 size={15} /> Bagikan WhatsApp
           </button>
-          {!salesView && onEdit && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
+          {!salesView && onEdit && current.statusUnit === 'INVENTORY' && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
         </>
       }
     >
@@ -191,7 +226,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />
         {!salesView && current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost, { compact: true })} /> : null}
         {!salesView && hpp ? <Spec icon={TrendingUp} label="HPP" value={formatCurrency(hpp, { compact: true })} /> : null}
-        {!salesView && margin !== null ? <Spec icon={TrendingUp} label="Est. Margin" value={formatCurrency(margin, { compact: true })} /> : null}
+        {!salesView && margin !== null ? <Spec icon={TrendingUp} label="Estimasi Margin OTR" value={formatCurrency(margin, { compact: true })} /> : null}
       </div>
 
       {!salesView && <div className="mt-5 border-t border-divider pt-4">
@@ -206,10 +241,11 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
             </p>
           </div>
           {canFinalizePricing && (
-            <Button size="sm" icon={<BadgeCheck size={14} />} onClick={() => setConfirmFinalize(true)}>
+            <Button size="sm" icon={<BadgeCheck size={14} />} onClick={() => { setTargetMode('PERCENT'); setOtrMode('PERCENT'); setTargetValue(null); setOtrValue(null); setSelectedReconditioningIds([]); setConfirmNoRekondisi(false); setConfirmFinalize(true); }}>
               Finalisasi Harga
             </Button>
           )}
+          {current.statusUnit === 'INVENTORY' && current.pricingFinalizedAt && can('UNIT_PRICING_FINALIZE') && <Button size="sm" variant="secondary" onClick={() => setReopenDialog(true)} loading={reopenPricing.isPending}>Buka Finalisasi Harga</Button>}
         </div>
         {isFixedMonthlyInvestor && (
           <div className="rounded-2xl border border-border bg-surface-soft p-3.5">
@@ -228,7 +264,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
                   icon={<Save size={14} />}
                   loading={updateFunding.isPending}
                   disabled={!selectedCyclePolicy || selectedCyclePolicy === funding.finalCyclePolicy}
-                  onClick={() => updateFunding.mutate({ id: current.id, data: { finalCyclePolicy: selectedCyclePolicy as FinalCyclePolicy }, headers: current.branchId ? { 'X-Branch-Id': current.branchId } : undefined }, { onSuccess: () => setCyclePolicy(''), onError: (error) => { if (getApiErrorCode(error) === 'UNIT_FUNDING_NOT_EDITABLE') { setCyclePolicy(''); void refetchUnit(); } notifyApiError(error); } })}
+                  onClick={() => updateFunding.mutate({ id: current.id, data: { fundingSource: 'INVESTOR', investorId: funding.investorId ?? undefined, finalCyclePolicy: selectedCyclePolicy as FinalCyclePolicy }, headers: current.branchId ? { 'X-Branch-Id': current.branchId } : undefined }, { onSuccess: () => setCyclePolicy(''), onError: (error) => { if (getApiErrorCode(error) === 'UNIT_FUNDING_NOT_EDITABLE') { setCyclePolicy(''); void refetchUnit(); } notifyApiError(error); } })}
                 >Simpan Tipe</Button>
               )}
             </div>
@@ -238,6 +274,46 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           </div>
         )}
       </div>}
+
+      {!salesView && (current.pricingRevisions?.length ?? 0) > 0 && (
+        <div className="mt-5 border-t border-divider pt-4">
+          <button
+            type="button"
+            onClick={() => setShowPricingHistory((value) => !value)}
+            className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface-soft px-3.5 py-3 text-left transition hover:border-primary/40 hover:bg-primary-light/30"
+          >
+            <span>
+              <span className="block text-[13px] font-extrabold text-ink">Riwayat Harga</span>
+              <span className="mt-0.5 block text-[11px] font-semibold text-muted">{current.pricingRevisions?.length} revisi harga, HPP, dan rekondisi.</span>
+            </span>
+            <span className="rounded-lg bg-surface px-2.5 py-1 text-[11px] font-extrabold text-primary">{showPricingHistory ? 'Tutup' : 'Lihat'}</span>
+          </button>
+
+          {showPricingHistory && <div className="mt-3 space-y-3">
+            {current.pricingRevisions?.map((revision, index) => {
+              const active = !revision.reopenedAt && index === 0;
+              return <div key={revision.id} className="relative rounded-2xl border border-border bg-surface p-3.5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[12px] font-extrabold text-ink">Revisi #{revision.revisionNumber}</p>
+                    <p className="mt-0.5 text-[10px] font-semibold text-muted">Difinalisasi {new Date(revision.finalizedAt).toLocaleString('id-ID')}</p>
+                  </div>
+                  <span className={`rounded-lg px-2 py-1 text-[10px] font-extrabold ${active ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>{active ? 'Aktif' : 'Digantikan'}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="rounded-lg bg-surface-soft p-2"><p className="text-[9px] font-bold uppercase text-muted">Harga Beli</p><p className="mt-0.5 text-[11px] font-extrabold text-ink">{formatCurrency(revision.purchaseCost)}</p></div>
+                  <div className="rounded-lg bg-surface-soft p-2"><p className="text-[9px] font-bold uppercase text-muted">Rekondisi</p><p className="mt-0.5 text-[11px] font-extrabold text-ink">{formatCurrency(revision.reconditioningCost)}</p></div>
+                  <div className="rounded-lg bg-surface-soft p-2"><p className="text-[9px] font-bold uppercase text-muted">HPP</p><p className="mt-0.5 text-[11px] font-extrabold text-ink">{formatCurrency(revision.pricingCostBasis)}</p></div>
+                  <div className="rounded-lg bg-primary-light p-2"><p className="text-[9px] font-bold uppercase text-primary">Margin OTR</p><p className="mt-0.5 text-[11px] font-extrabold text-primary">{formatCurrency(revision.otrPrice - revision.pricingCostBasis)}</p></div>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] font-semibold"><span className="rounded-lg border border-border px-2 py-1.5 text-ink">Target: {formatCurrency(revision.targetPrice)}</span><span className="rounded-lg border border-border px-2 py-1.5 text-ink">OTR: {formatCurrency(revision.otrPrice)}</span></div>
+                {revision.selections.length > 0 && <p className="mt-2 text-[10px] font-semibold text-muted">HPP mencakup: {revision.selections.map((item) => `Rekondisi #${item.sequence} (${formatCurrency(item.amountSnapshot)})`).join(' · ')}</p>}
+                {revision.reopenReason && <div className="mt-2 rounded-lg border border-accent-amber/20 bg-accent-amber/10 px-2.5 py-2 text-[10px] font-semibold text-ink-soft"><span className="font-extrabold text-accent-amber">Alasan reopen:</span> {revision.reopenReason}</div>}
+              </div>;
+            })}
+          </div>}
+        </div>
+      )}
 
       {!salesView && can('UNIT_FUNDING_READ') && (
         <InvestorFundingPanel
@@ -306,7 +382,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
         </div>
         <UnitGalleryManager
           images={images}
-          readOnly={salesView}
+          readOnly={salesView || current.statusUnit !== 'INVENTORY'}
           uploading={imageMutations.uploadMany.isPending}
           reordering={imageMutations.reorder.isPending}
           deleting={imageMutations.remove.isPending}
@@ -324,13 +400,46 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
         onClose={() => setConfirmFinalize(false)}
         onConfirm={handleFinalizePricing}
         closeOnConfirm={false}
-        loading={finalizePricing.isPending}
+        loading={finalizePricing.isPending || pricingPreview.isLoading}
+        confirmDisabled={!pricingValid || !reconditioningReady}
         tone="primary"
         icon={CheckCircle}
         title="Finalisasi Harga Awal"
         confirmLabel="Ya, Finalisasi"
-        message={`Harga beli Rp ${formatNumber(current.purchaseCost)} ditambah rekondisi pertama akan dikunci sebagai basis HPP, lalu target dan OTR dihitung dari pricing policy cabang. Tindakan ini tidak dapat dibatalkan.`}
+        message="Periksa harga Target dan OTR sebelum mengunci basis HPP. Tindakan ini tidak dapat dibatalkan."
       >
+        {pricingPreview.isLoading ? (
+          <p className="mt-3 text-[12px] font-semibold text-muted">Memuat preview harga…</p>
+        ) : pricingPreview.data?.data ? (() => {
+          const preview = pricingPreview.data.data;
+          const price = (mode: PricingInputMode, value: number) => mode === 'AMOUNT'
+            ? value
+            : Math.round(preview.pricingCostBasis * (1 + value / 100) * 100) / 100;
+          const resolvedTarget = price(targetMode, effectiveTargetValue);
+          const resolvedOtr = price(otrMode, effectiveOtrValue);
+          const valid = resolvedOtr >= resolvedTarget && resolvedTarget >= preview.pricingCostBasis;
+          return <div className="mt-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-border bg-surface-soft p-3">
+              <div><p className="text-[10px] font-bold uppercase text-muted">Basis HPP</p><p className="mt-0.5 text-[13px] font-extrabold text-ink">{formatCurrency(preview.pricingCostBasis)}</p></div>
+              <div><p className="text-[10px] font-bold uppercase text-muted">Rekondisi dipilih</p><p className="mt-0.5 text-[13px] font-extrabold text-ink">{formatCurrency(preview.selectedReconditioningCost ?? 0)}</p></div>
+            </div>
+            <p className="text-[11px] font-semibold text-muted">Default cabang: Target {preview.defaultPolicy.targetMarkupPercent}% · OTR {preview.defaultPolicy.otrMarkupPercent}%.</p>
+            {preview.completedReconditionings?.length > 0 && <div className="rounded-xl border border-border p-3"><p className="mb-2 text-[11px] font-extrabold text-ink">Rekondisi yang masuk HPP</p><div className="space-y-1.5">{preview.completedReconditionings.map((item) => <label key={item.id} className="flex items-center justify-between gap-2 text-[11px] font-semibold text-ink cursor-pointer"><span className="flex items-center gap-2"><input type="checkbox" checked={selectedReconditioningIds.includes(item.id)} onChange={(e) => setSelectedReconditioningIds((v) => e.target.checked ? [...v, item.id] : v.filter((id) => id !== item.id))} /> Rekondisi #{item.seq}</span><span>{formatCurrency(item.total)}</span></label>)}</div></div>}
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border p-3 space-y-2">
+                <SelectField label="Basis Target" value={targetMode} onChange={(e) => setTargetMode(e.target.value as PricingInputMode)} options={[{ value: 'PERCENT', label: 'Persentase HPP' }, { value: 'AMOUNT', label: 'Nominal' }]} />
+                <NumericField label={targetMode === 'PERCENT' ? 'Target (%)' : 'Target'} value={effectiveTargetValue} onChange={setTargetValue} decimal={targetMode === 'PERCENT'} thousands={targetMode === 'AMOUNT'} suffix={targetMode === 'PERCENT' ? '%' : undefined} prefix={targetMode === 'AMOUNT' ? 'Rp' : undefined} min={0} />
+                <p className="text-[12px] font-extrabold text-primary">{formatCurrency(resolvedTarget)}</p>
+              </div>
+              <div className="rounded-xl border border-border p-3 space-y-2">
+                <SelectField label="Basis OTR" value={otrMode} onChange={(e) => setOtrMode(e.target.value as PricingInputMode)} options={[{ value: 'PERCENT', label: 'Persentase HPP' }, { value: 'AMOUNT', label: 'Nominal' }]} />
+                <NumericField label={otrMode === 'PERCENT' ? 'OTR (%)' : 'OTR'} value={effectiveOtrValue} onChange={setOtrValue} decimal={otrMode === 'PERCENT'} thousands={otrMode === 'AMOUNT'} suffix={otrMode === 'PERCENT' ? '%' : undefined} prefix={otrMode === 'AMOUNT' ? 'Rp' : undefined} min={0} />
+                <p className="text-[12px] font-extrabold text-primary">{formatCurrency(resolvedOtr)}</p>
+              </div>
+            </div>
+            <div className={`rounded-xl px-3 py-2 text-[11px] font-bold ${valid ? 'bg-accent-green/10 text-accent-green' : 'bg-semantic-error/10 text-semantic-error'}`}>{valid ? `Estimasi margin OTR: ${formatCurrency(resolvedOtr - preview.pricingCostBasis)}` : 'Harga harus memenuhi OTR ≥ Target ≥ HPP.'}</div>
+          </div>;
+        })() : <p className="mt-3 text-[12px] font-semibold text-semantic-error">Preview harga tidak tersedia. Coba muat ulang detail unit.</p>}
         <label className="mt-3 flex items-start gap-2.5 text-[12px] font-semibold text-ink-soft cursor-pointer">
           <input
             type="checkbox"
@@ -339,6 +448,36 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
             className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
           />
           Unit ini tidak memiliki rekondisi pertama — lanjutkan tanpa rekondisi.
+        </label>
+      </ConfirmDialog>}
+
+      {!salesView && <ConfirmDialog
+        open={reopenDialog}
+        onClose={() => { if (!reopenPricing.isPending) { setReopenDialog(false); setReopenReason(''); } }}
+        onConfirm={handleReopenPricing}
+        closeOnConfirm={false}
+        loading={reopenPricing.isPending}
+        confirmDisabled={reopenReason.trim().length < 5}
+        tone="warning"
+        icon={AlertTriangle}
+        title="Buka Kembali Finalisasi Harga"
+        confirmLabel="Buka Harga"
+        message="Harga final akan dibuka kembali agar HPP, Target, OTR, dan pendanaan dapat dikoreksi. Unit harus difinalisasi lagi sebelum Ready Stock."
+      >
+        <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/10 p-3 text-[11px] font-semibold text-ink-soft">
+          Katalog publik dan status featured akan dicabut. Riwayat harga lama tetap tersimpan.
+        </div>
+        <label className="mt-3 block text-[12px] font-extrabold text-ink">
+          Alasan perubahan <span className="text-semantic-error">*</span>
+          <textarea
+            autoFocus
+            value={reopenReason}
+            onChange={(event) => setReopenReason(event.target.value)}
+            placeholder="Contoh: harga beli berubah setelah negosiasi"
+            rows={3}
+            className="mt-1.5 w-full resize-none rounded-xl border border-border bg-surface px-3 py-2.5 text-[12px] font-medium text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+          />
+          <span className={`mt-1 block text-[10px] ${reopenReason.trim().length >= 5 ? 'text-muted' : 'text-semantic-error'}`}>Minimal 5 karakter.</span>
         </label>
       </ConfirmDialog>}
     </Modal>

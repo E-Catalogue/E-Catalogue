@@ -45,6 +45,7 @@ import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog/$i
 import { Route as AdminMasterSumberLeadRouteImport } from './routes/_admin/master.sumber-lead'
 import { Route as AdminMasterPerlengkapanRouteImport } from './routes/_admin/master.perlengkapan'
 import { Route as AdminMasterPengecekanRouteImport } from './routes/_admin/master.pengecekan'
+import { Route as AdminMasterParameterHargaRouteImport } from './routes/_admin/master.parameter-harga'
 import { Route as AdminMasterMetodePembayaranRouteImport } from './routes/_admin/master.metode-pembayaran'
 import { Route as AdminMasterLeasingRouteImport } from './routes/_admin/master.leasing'
 import { Route as AdminMasterKategoriPengeluaranRouteImport } from './routes/_admin/master.kategori-pengeluaran'
@@ -247,6 +248,12 @@ const AdminMasterPengecekanRoute = AdminMasterPengecekanRouteImport.update({
   path: '/master/pengecekan',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMasterParameterHargaRoute =
+  AdminMasterParameterHargaRouteImport.update({
+    id: '/master/parameter-harga',
+    path: '/master/parameter-harga',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminMasterMetodePembayaranRoute =
   AdminMasterMetodePembayaranRouteImport.update({
     id: '/master/metode-pembayaran',
@@ -421,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/master/leasing': typeof AdminMasterLeasingRoute
   '/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
+  '/master/parameter-harga': typeof AdminMasterParameterHargaRoute
   '/master/pengecekan': typeof AdminMasterPengecekanRoute
   '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
@@ -480,6 +488,7 @@ export interface FileRoutesByTo {
   '/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/master/leasing': typeof AdminMasterLeasingRoute
   '/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
+  '/master/parameter-harga': typeof AdminMasterParameterHargaRoute
   '/master/pengecekan': typeof AdminMasterPengecekanRoute
   '/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/master/sumber-lead': typeof AdminMasterSumberLeadRoute
@@ -542,6 +551,7 @@ export interface FileRoutesById {
   '/_admin/master/kategori-pengeluaran': typeof AdminMasterKategoriPengeluaranRoute
   '/_admin/master/leasing': typeof AdminMasterLeasingRoute
   '/_admin/master/metode-pembayaran': typeof AdminMasterMetodePembayaranRoute
+  '/_admin/master/parameter-harga': typeof AdminMasterParameterHargaRoute
   '/_admin/master/pengecekan': typeof AdminMasterPengecekanRoute
   '/_admin/master/perlengkapan': typeof AdminMasterPerlengkapanRoute
   '/_admin/master/sumber-lead': typeof AdminMasterSumberLeadRoute
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/master/kategori-pengeluaran'
     | '/master/leasing'
     | '/master/metode-pembayaran'
+    | '/master/parameter-harga'
     | '/master/pengecekan'
     | '/master/perlengkapan'
     | '/master/sumber-lead'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/master/kategori-pengeluaran'
     | '/master/leasing'
     | '/master/metode-pembayaran'
+    | '/master/parameter-harga'
     | '/master/pengecekan'
     | '/master/perlengkapan'
     | '/master/sumber-lead'
@@ -723,6 +735,7 @@ export interface FileRouteTypes {
     | '/_admin/master/kategori-pengeluaran'
     | '/_admin/master/leasing'
     | '/_admin/master/metode-pembayaran'
+    | '/_admin/master/parameter-harga'
     | '/_admin/master/pengecekan'
     | '/_admin/master/perlengkapan'
     | '/_admin/master/sumber-lead'
@@ -990,6 +1003,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMasterPengecekanRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/master/parameter-harga': {
+      id: '/_admin/master/parameter-harga'
+      path: '/master/parameter-harga'
+      fullPath: '/master/parameter-harga'
+      preLoaderRoute: typeof AdminMasterParameterHargaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/master/metode-pembayaran': {
       id: '/_admin/master/metode-pembayaran'
       path: '/master/metode-pembayaran'
@@ -1202,6 +1222,7 @@ interface AdminRouteChildren {
   AdminMasterKategoriPengeluaranRoute: typeof AdminMasterKategoriPengeluaranRoute
   AdminMasterLeasingRoute: typeof AdminMasterLeasingRoute
   AdminMasterMetodePembayaranRoute: typeof AdminMasterMetodePembayaranRoute
+  AdminMasterParameterHargaRoute: typeof AdminMasterParameterHargaRoute
   AdminMasterPengecekanRoute: typeof AdminMasterPengecekanRoute
   AdminMasterPerlengkapanRoute: typeof AdminMasterPerlengkapanRoute
   AdminMasterSumberLeadRoute: typeof AdminMasterSumberLeadRoute
@@ -1255,6 +1276,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMasterKategoriPengeluaranRoute: AdminMasterKategoriPengeluaranRoute,
   AdminMasterLeasingRoute: AdminMasterLeasingRoute,
   AdminMasterMetodePembayaranRoute: AdminMasterMetodePembayaranRoute,
+  AdminMasterParameterHargaRoute: AdminMasterParameterHargaRoute,
   AdminMasterPengecekanRoute: AdminMasterPengecekanRoute,
   AdminMasterPerlengkapanRoute: AdminMasterPerlengkapanRoute,
   AdminMasterSumberLeadRoute: AdminMasterSumberLeadRoute,

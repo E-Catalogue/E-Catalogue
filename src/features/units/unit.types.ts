@@ -107,6 +107,7 @@ export interface Unit {
   merek?: { id: string; name: string };
   tipe?: { id: string; name: string; merekId: string };
   fundingAgreement?: FundingAgreement | null;
+  pricingRevisions?: UnitPricingRevision[];
   unitImages?: Array<{
     id: string;
     filename: string;
@@ -129,6 +130,28 @@ export interface Unit {
     dokumen?: { id: string; name: string; code: string };
   }>;
   leasingOffers?: UnitLeasingOffer[];
+}
+
+export interface UnitPricingRevision {
+  id: string;
+  revisionNumber: number;
+  purchaseCost: number;
+  reconditioningCost: number;
+  pricingCostBasis: number;
+  targetMarkupPercent: number;
+  otrMarkupPercent: number;
+  targetMode: PricingInputMode;
+  targetValue: number;
+  otrMode: PricingInputMode;
+  otrValue: number;
+  targetPrice: number;
+  otrPrice: number;
+  finalizedAt: string;
+  finalizedById?: string | null;
+  reopenReason?: string | null;
+  reopenedAt?: string | null;
+  reopenedById?: string | null;
+  selections: Array<{ id: string; rekondisiId: string; sequence: number; amountSnapshot: number }>;
 }
 
 export interface UnitLeasingOfferInput {
@@ -172,6 +195,7 @@ export interface UnitFormData {
 
 export interface UnitStatusUpdate {
   statusUnit: StatusUnit;
+  reason?: string;
 }
 
 export interface MasterKelengkapan {
@@ -276,7 +300,9 @@ export interface PricingPolicyUpdatePayload {
 // ── Funding (`GET/PATCH /units/:id/funding`) ────────────────────────────────
 
 export interface UnitFundingUpdatePayload {
-  finalCyclePolicy: FinalCyclePolicy;
+  fundingSource: FundingSource;
+  investorId?: string;
+  finalCyclePolicy?: FinalCyclePolicy;
 }
 
 // ── Finalisasi harga awal (`POST /units/:id/finalize-initial-pricing`) ─────
@@ -284,7 +310,35 @@ export interface UnitFundingUpdatePayload {
 export interface FinalizeInitialPricingPayload {
   /** Wajib true hanya bila unit belum pernah punya rekondisi pertama (seq 1). */
   confirmNoInitialReconditioning?: boolean;
+  selectedReconditioningIds?: string[];
+  target?: PricingOverride;
+  otr?: PricingOverride;
 }
+
+export type PricingInputMode = 'PERCENT' | 'AMOUNT';
+
+export interface PricingOverride {
+  mode: PricingInputMode;
+  value: number;
+}
+
+export interface PricingPreview {
+  purchaseCost: number;
+  completedReconditionings: Array<{ id: string; seq: number; total: number; completedAt?: string | null; paidAt?: string | null; selected: boolean }>;
+  selectedReconditioningCost: number;
+  pricingCostBasis: number;
+  totalActualUnitCost: number;
+  defaultPolicy: { targetMarkupPercent: number; otrMarkupPercent: number; effectiveAt: string };
+  suggestedPricing: {
+    targetMarkupPercent: number;
+    otrMarkupPercent: number;
+    targetPrice: number;
+    otrPrice: number;
+    margin: number;
+  };
+}
+
+export interface ReopenPricingPayload { reason: string; }
 
 // ── Transfer cabang (`POST /units/:id/transfer-branch`) ────────────────────
 

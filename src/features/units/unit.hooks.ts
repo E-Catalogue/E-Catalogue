@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unitApi } from './unit.api';
 import type {
   UnitFormData,
@@ -215,11 +215,35 @@ export function useFinalizeInitialPricing() {
     onSuccess: (_, { id }) => {
       store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Harga awal unit berhasil difinalisasi' }));
       qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['unit-pricing-preview', id] });
       qc.invalidateQueries({ queryKey: ['unit-funding', id] });
       qc.invalidateQueries({ queryKey: ['units'] });
       qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
       qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
       qc.invalidateQueries({ queryKey: ['lookup', 'cms-homepage', 'featured'] });
+    },
+  });
+}
+
+export function usePricingPreview(id?: string, data: Partial<FinalizeInitialPricingPayload> = {}, headers?: BranchHeaders) {
+  return useQuery({
+    queryKey: ['unit-pricing-preview', id, data, headers?.['X-Branch-Id']],
+    queryFn: () => unitApi.pricingPreview(id!, data, headers),
+    enabled: !!id,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useReopenPricing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data, headers }: { id: string; data: { reason: string }; headers?: BranchHeaders }) => unitApi.reopenPricing(id, data, headers),
+    onSuccess: (_, { id }) => {
+      store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Harga dibuka kembali', message: 'Unit kembali ke Inventory dan perlu difinalisasi ulang.' }));
+      qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['units'] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
     },
   });
 }

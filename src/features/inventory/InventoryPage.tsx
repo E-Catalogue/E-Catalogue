@@ -221,13 +221,14 @@ const FilterModal = ({
 /* ── Main Page ── */
 const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) => {
   const [draft, setDraft] = useState<StatusUnit>(unit.statusUnit);
+  const [reason, setReason] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const updateStatus = useUpdateUnitStatus();
   const isPending = updateStatus.isPending;
 
   const handleConfirm = () => {
     updateStatus.mutate(
-      { id: unit.id, data: { statusUnit: draft } },
+      { id: unit.id, data: { statusUnit: draft, ...(draft === 'INVENTORY' ? { reason } : {}) } },
       {
         onError: (err) => notifyApiError(err),
         onSuccess: () => {
@@ -250,7 +251,7 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
         footer={
           <>
             <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>
-            <Button onClick={() => setConfirmOpen(true)} disabled={isPending || draft === unit.statusUnit}>
+            <Button onClick={() => setConfirmOpen(true)} disabled={isPending || draft === unit.statusUnit || (unit.statusUnit === 'READY_STOCK' && draft === 'INVENTORY' && reason.trim().length < 5)}>
               Simpan Status
             </Button>
           </>
@@ -265,6 +266,7 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
             searchPlaceholder="Cari status..."
           />
           <p className="text-[11px] font-semibold text-muted">Status Ready Stock memerlukan harga, pendanaan, rekondisi, dan keterangan leasing yang lengkap. Status Terjual hanya berubah melalui proses penjualan.</p>
+          {unit.statusUnit === 'READY_STOCK' && draft === 'INVENTORY' && <label className="block text-[12px] font-bold text-ink">Alasan buka kembali harga<textarea value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1.5 min-h-20 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium outline-none focus:border-primary" placeholder="Contoh: koreksi harga beli atau rekondisi" /></label>}
         </div>
       </Modal>
       <ConfirmDialog

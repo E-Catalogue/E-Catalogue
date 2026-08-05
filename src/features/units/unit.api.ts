@@ -11,6 +11,8 @@ import type {
   FundingAgreement,
   UnitFundingUpdatePayload,
   FinalizeInitialPricingPayload,
+  PricingPreview,
+  ReopenPricingPayload,
   PricingPolicy,
   PricingPolicyUpdatePayload,
   UnitTransferBranchPayload,
@@ -129,6 +131,16 @@ export const unitApi = {
   /** Sukses mengembalikan `FundingAgreement`, BUKAN detail unit — caller wajib re-fetch `GET /units/:id`. */
   finalizeInitialPricing: async (id: string, data: FinalizeInitialPricingPayload, headers?: BranchHeaders) => {
     const res = await apiClient.post<ApiResponse<FundingAgreement>>(`/units/${id}/finalize-initial-pricing`, data, { headers });
+    return res.data;
+  },
+
+  pricingPreview: async (id: string, data: Partial<FinalizeInitialPricingPayload> = {}, headers?: BranchHeaders) => {
+    const res = await apiClient.post<ApiResponse<PricingPreview>>(`/units/${id}/pricing-preview`, data, { headers });
+    return res.data;
+  },
+
+  reopenPricing: async (id: string, data: ReopenPricingPayload, headers?: BranchHeaders) => {
+    const res = await apiClient.post<ApiResponse<Unit>>(`/units/${id}/reopen-pricing`, data, { headers });
     return res.data;
   },
 

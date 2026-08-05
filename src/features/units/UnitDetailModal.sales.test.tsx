@@ -14,6 +14,8 @@ vi.mock('./unit.hooks', () => ({
     setMain: { isPending: false, mutate: mocks.mutate },
   }),
   useFinalizeInitialPricing: () => ({ isPending: false, mutate: mocks.mutate }),
+  useReopenPricing: () => ({ isPending: false, mutate: mocks.mutate }),
+  usePricingPreview: () => ({ data: undefined, isLoading: false }),
   useUpdateUnitFunding: () => ({ isPending: false, mutate: mocks.mutate }),
 }));
 vi.mock('@/features/auth/usePermissions', () => ({ usePermissions: () => ({ can: () => true }) }));
@@ -78,7 +80,7 @@ describe('UnitDetailModal mode Sales dari kartu', () => {
     expect(screen.queryByText('Inventory')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit Unit' })).not.toBeInTheDocument();
 
-    expect(screen.getByText('Status Unit')).toBeInTheDocument();
+    expect(screen.getByText('Status & Cabang')).toBeInTheDocument();
     expect(screen.getByText('Coming Soon')).toBeInTheDocument();
     expect(screen.getAllByText('OTR').length).toBeGreaterThan(0);
     expect(screen.getByText('Penawaran Leasing')).toBeInTheDocument();

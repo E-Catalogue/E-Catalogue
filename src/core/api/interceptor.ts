@@ -34,7 +34,11 @@ const isPersistentMutation = (config: InternalAxiosRequestConfig) => {
   const method = config.method?.toUpperCase();
   if (!method || !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return false;
   const url = config.url ?? '';
-  return !url.includes('/auth/') && !url.includes('/public/credit-simulation/calculate');
+  // POST preview dipakai hanya untuk menghitung simulasi dari payload dan tidak
+  // menyimpan data; jangan munculkan konfirmasi "Simpan Perubahan".
+  return !url.includes('/auth/')
+    && !url.includes('/public/credit-simulation/calculate')
+    && !url.includes('/pricing-preview');
 };
 
 const mutationLabel = (method?: string) => method?.toUpperCase() === 'DELETE' ? 'Hapus Data' : 'Simpan Perubahan';

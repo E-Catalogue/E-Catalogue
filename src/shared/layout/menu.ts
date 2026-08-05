@@ -67,6 +67,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/merek', label: 'Merek & Tipe', icon: Tag, group: 'master', code: 'MEREK' },
   { path: '/vendor', label: 'Vendor', icon: Wrench, group: 'master', code: 'VENDOR' },
   { path: '/branch', label: 'Cabang', icon: Building2, group: 'master', code: 'BRANCH' },
+  { path: '/master/parameter-harga', label: 'Parameter Harga', icon: Settings, group: 'master', code: 'PARAMETER_HARGA' },
   { path: '/master/leasing', label: 'Leasing', icon: Landmark, group: 'master', code: 'LEASING' },
   { path: '/master/sumber-lead', label: 'Sumber Lead', icon: Megaphone, group: 'master', code: 'SUMBER_LEAD' },
   { path: '/master/pengecekan', label: 'Pengecekan', icon: ClipboardCheck, group: 'master', code: 'PENGECEKAN' },

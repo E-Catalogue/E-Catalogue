@@ -8,7 +8,7 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { notifyApiError } from '@/core/api/notify';
 import { getApiErrorCode } from '@/core/api/apiError';
-import { useCreateUnit, useUnit, useUnitImageMutations, useUnitLookups, useUpdateUnit } from './unit.hooks';
+import { useCreateUnit, useUnit, useUnitImageMutations, useUnitLookups, useUpdateUnit, useUpdateUnitFunding } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
 import { UnitGalleryManager } from './UnitGalleryManager';
 import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type BahanBakar, type FinalCyclePolicy, type FundingSource, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
@@ -225,6 +225,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const [createdUnit, setCreatedUnit] = useState<Unit | null>(null);
   const createUnit = useCreateUnit();
   const updateUnit = useUpdateUnit();
+  const updateFunding = useUpdateUnitFunding();
   // `.prd/update_module_owned_lookup_20260721.md` §4.8 — SELURUH pilihan form Unit (merek/tipe,
   // dokumen, perlengkapan, akun kas, investor+modal, pricing) diambil dari SATU endpoint
   // `/units/lookups`. Tidak lagi menggabung CRUD master (`/mereks`, `/dokumens`, dst) + finance lookup.
@@ -259,11 +260,10 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const dokumenLoading = lookupsLoading;
   const selectedInvestor = useMemo(() => investors.find((i) => i.id === form.investorId), [investors, form.investorId]);
   const selectedCapitalAccount = selectedInvestor?.capitalAccounts?.[0];
-  // Harga beli boleh diedit selama harga awal belum difinalisasi. Terkunci bila sudah finalisasi,
-  // atau unit berpendanaan investor yang modalnya sudah dialokasikan.
-  const purchaseLocked = !!unit?.pricingFinalizedAt
-    || (unit?.fundingAgreement?.fundingSource === 'INVESTOR' && !!unit?.purchaseCashTransactionId);
-  const isPending = createUnit.isPending || updateUnit.isPending;
+  // Unit Inventory yang belum final tetap dapat mengoreksi harga beli dan sumber dana.
+  const purchaseLocked = !!unit?.pricingFinalizedAt;
+  const fundingEditable = !unit || (unit.statusUnit === 'INVENTORY' && !unit.pricingFinalizedAt);
+  const isPending = createUnit.isPending || updateUnit.isPending || updateFunding.isPending;
   const fieldsLocked = !isEdit && !!createdUnit; // data unit sudah tersimpan, step 1-3 jadi baca-saja
 
   const set = <K extends keyof UnitFormState>(key: K, value: UnitFormState[K]) =>
@@ -301,10 +301,10 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   // Sumber dana hanya berlaku saat CREATE — backend tidak menerima `funding` pada PUT /units/:id.
   const fundingRequiresInvestor = form.fundingSource === 'INVESTOR';
   const fundingRequiresFinalCycle = fundingRequiresInvestor && selectedInvestor?.scheme === 'FIXED_MONTHLY';
+  const fundingInvestorChanged = !unit || unit.fundingAgreement?.fundingSource !== 'INVESTOR' || unit.fundingAgreement?.investorId !== form.investorId;
   const insufficientCapital =
-    fundingRequiresInvestor && !!selectedCapitalAccount && selectedCapitalAccount.availableBalance < form.purchaseCost;
+    fundingRequiresInvestor && fundingInvestorChanged && !!selectedCapitalAccount && selectedCapitalAccount.availableBalance < form.purchaseCost;
   const fundingIncomplete =
-    !unit &&
     fundingRequiresInvestor &&
     (!form.investorId || (fundingRequiresFinalCycle && !form.finalCyclePolicy) || insufficientCapital);
   const goJump = (i: number) => { if (i <= maxReachableStep) setStep(i); };
@@ -332,7 +332,18 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     if (unit) {
       const unitPayload: Partial<UnitFormData> = { ...payload };
       delete unitPayload.leasingOffers;
-      updateUnit.mutate({ id: unit.id, data: unitPayload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
+      const fundingChanged = unit.fundingAgreement?.fundingSource !== form.fundingSource
+        || (form.fundingSource === 'INVESTOR' && (unit.fundingAgreement?.investorId !== form.investorId || unit.fundingAgreement?.finalCyclePolicy !== form.finalCyclePolicy));
+      const saveUnit = () => updateUnit.mutate({ id: unit.id, data: unitPayload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
+      if (fundingChanged) {
+        updateFunding.mutate({
+          id: unit.id,
+          data: form.fundingSource === 'INVESTOR'
+            ? { fundingSource: 'INVESTOR', investorId: form.investorId, finalCyclePolicy: fundingRequiresFinalCycle ? form.finalCyclePolicy || undefined : undefined }
+            : { fundingSource: 'COMPANY_OWNED' },
+          headers: unit.branchId ? { 'X-Branch-Id': unit.branchId } : undefined,
+        }, { onError: (err) => notifyApiError(err), onSuccess: saveUnit });
+      } else saveUnit();
     } else {
       createUnit.mutate(payload, {
         onError: (err) => {
@@ -457,24 +468,24 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
         {step === 1 && (
           <>
-            <NumericField label="Harga Beli" required disabled={fieldsLocked} value={form.purchaseCost} onChange={(v) => set('purchaseCost', v)} prefix="Rp" placeholder="0" min={0} className={purchaseLocked ? 'opacity-70 pointer-events-none' : ''} />
+            <NumericField label="Harga Beli" required disabled={fieldsLocked || purchaseLocked} value={form.purchaseCost} onChange={(v) => set('purchaseCost', v)} prefix="Rp" placeholder="0" min={0} />
             <DateField label="Tanggal Pembelian" required disabled={fieldsLocked || purchaseLocked} value={form.tanggalPembelian} onChange={(v) => set('tanggalPembelian', v)} />
             {!unit && <CashAccountSelect label="Akun Kas Pembelian" required disabled={fieldsLocked} value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={lookupsLoading} />}
             {purchaseLocked && (
               <p className="sm:col-span-2 text-[12px] font-semibold text-muted">
                 {unit?.pricingFinalizedAt
                   ? 'Harga beli & tanggal pembelian dikunci karena harga awal unit sudah difinalisasi.'
-                  : 'Harga beli & tanggal pembelian dikunci karena unit ini didanai investor (modal sudah dialokasikan).'}
+                  : 'Harga beli & tanggal pembelian dikunci karena harga unit telah difinalisasi.'}
               </p>
             )}
 
-            {!unit && (
+            {fundingEditable && (
               <div className="sm:col-span-2 rounded-2xl border border-border bg-surface-soft p-3.5 space-y-3.5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <SelectField
                     label="Sumber Dana"
                     required
-                    disabled={fieldsLocked}
+                    disabled={fieldsLocked || !fundingEditable}
                     value={form.fundingSource}
                     onChange={(e) => {
                       const fundingSource = e.target.value as FundingSource;
@@ -494,7 +505,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                     <SearchableSelect
                       label="Investor"
                       required
-                      disabled={fieldsLocked}
+                      disabled={fieldsLocked || !fundingEditable}
                       value={form.investorId}
                       onChange={(v) => {
                         const investor = investors.find((item) => item.id === v);
@@ -524,7 +535,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                     <SelectField
                       label="Tipe Pembayaran Investor"
                       required
-                      disabled={fieldsLocked}
+                      disabled={fieldsLocked || !fundingEditable}
                       value={form.finalCyclePolicy}
                       onChange={(e) => { set('finalCyclePolicy', e.target.value as FinalCyclePolicy); setCyclePolicyError(''); }}
                       options={[
@@ -534,7 +545,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {(['FULL', 'PRORATA', 'NONE'] as FinalCyclePolicy[]).map((value) => (
-                        <button type="button" key={value} disabled={fieldsLocked} onClick={() => { set('finalCyclePolicy', value); setCyclePolicyError(''); }} className={`rounded-xl border p-3 text-left transition-colors ${form.finalCyclePolicy === value ? 'border-primary bg-primary-light' : 'border-border bg-surface hover:border-primary/50'}`}>
+                        <button type="button" key={value} disabled={fieldsLocked || !fundingEditable} onClick={() => { set('finalCyclePolicy', value); setCyclePolicyError(''); }} className={`rounded-xl border p-3 text-left transition-colors ${form.finalCyclePolicy === value ? 'border-primary bg-primary-light' : 'border-border bg-surface hover:border-primary/50'}`}>
                           <p className="text-[11px] font-extrabold text-ink">{FINAL_CYCLE_POLICY_LABEL[value]}</p>
                           <p className="mt-1 text-[10px] font-medium leading-relaxed text-muted">{FINAL_CYCLE_POLICY_DESCRIPTION[value]}</p>
                         </button>
