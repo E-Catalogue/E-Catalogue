@@ -22,6 +22,7 @@ import { unitDisplayName } from '@/features/units/unit.display';
 import { notifyApiError } from '@/core/api/notify';
 import { UnitCard } from '@/shared/components/ui/UnitCard';
 import { unitApi } from '@/features/units/unit.api';
+import { resolveInventoryView, type InventoryView } from './inventory.view';
 import { buildUnitCopyText, buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
@@ -360,11 +361,10 @@ const CreateRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => vo
 
 const InventoryPageInner = () => {
   const { can } = usePermissions();
-  const [view, setView] = useState<'table' | 'card'>(() => {
-    const stored = localStorage.getItem('inventory-view');
-    if (stored === 'table' || stored === 'card') return stored;
-    return window.matchMedia('(max-width: 639px)').matches ? 'card' : 'table';
-  });
+  const cardOnly = can('UNIT_CARD_READ') && !can('UNIT_READ');
+  const [view, setView] = useState<InventoryView>(() =>
+    resolveInventoryView(cardOnly, localStorage.getItem('inventory-view'), window.matchMedia('(max-width: 639px)').matches),
+  );
   const [query, setQuery]       = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter]     = useState<FilterState>(FILTER_DEFAULT);
@@ -372,14 +372,18 @@ const InventoryPageInner = () => {
   const [rekondisiTarget, setRekondisiTarget] = useState<Unit | null>(null);
   const debounced               = useDebouncedValue(query, 400);
 
-  useEffect(() => localStorage.setItem('inventory-view', view), [view]);
+  useEffect(() => {
+    if (!cardOnly) localStorage.setItem('inventory-view', view);
+  }, [cardOnly, view]);
+
+  const activeView = cardOnly ? 'card' : view;
 
   const { data, isLoading, isError } = useUnits({ page: 1, limit: 100, search: debounced || undefined });
 
   const all: Unit[] = data?.data ?? [];
   const merkList = [...new Set(all.map((u) => u.merek?.name).filter(Boolean))].sort() as string[];
 
-  let rows = filter.statuses.length ? all.filter((u) => filter.statuses.includes(view === 'card' ? cardStatus(u.statusUnit) : u.statusUnit)) : [...all];
+  let rows = filter.statuses.length ? all.filter((u) => filter.statuses.includes(activeView === 'card' ? cardStatus(u.statusUnit) : u.statusUnit)) : [...all];
   if (filter.tx !== 'ALL') rows = rows.filter((u) => u.transmisi === filter.tx);
   if (filter.merek)        rows = rows.filter((u) => u.merek?.name === filter.merek);
   if (filter.tahunMin)     rows = rows.filter((u) => u.tahun >= Number(filter.tahunMin));
@@ -522,10 +526,12 @@ const InventoryPageInner = () => {
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
-        <div className="inline-flex self-start rounded-xl border border-border bg-surface p-1">
-          <button type="button" onClick={() => setView('table')} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold transition-colors ${view === 'table' ? 'bg-primary text-white shadow-glow' : 'text-muted hover:text-primary'}`}><Table2 size={15} /> Tabel</button>
-          <button type="button" onClick={() => setView('card')} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold transition-colors ${view === 'card' ? 'bg-primary text-white shadow-glow' : 'text-muted hover:text-primary'}`}><LayoutGrid size={15} /> Kartu</button>
-        </div>
+        {!cardOnly && (
+          <div className="inline-flex self-start rounded-xl border border-border bg-surface p-1">
+            <button type="button" onClick={() => setView('table')} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold transition-colors ${activeView === 'table' ? 'bg-primary text-white shadow-glow' : 'text-muted hover:text-primary'}`}><Table2 size={15} /> Tabel</button>
+            <button type="button" onClick={() => setView('card')} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold transition-colors ${activeView === 'card' ? 'bg-primary text-white shadow-glow' : 'text-muted hover:text-primary'}`}><LayoutGrid size={15} /> Kartu</button>
+          </div>
+        )}
 
         {/* Search + filter */}
         <div className="flex items-center gap-2.5 sm:ml-auto w-full sm:w-auto">
@@ -559,8 +565,8 @@ const InventoryPageInner = () => {
 
       <SectionCard
         title={`Daftar Unit (${rows.length})`}
-        icon={view === 'table' ? <Table2 size={16} /> : <LayoutGrid size={16} />}
-        bodyClassName={view === 'table' ? 'p-0 md:p-0' : 'p-4 md:p-5'}
+        icon={activeView === 'table' ? <Table2 size={16} /> : <LayoutGrid size={16} />}
+        bodyClassName={activeView === 'table' ? 'p-0 md:p-0' : 'p-4 md:p-5'}
         action={activeFilters > 0 ? (
           <button onClick={() => setFilter(FILTER_DEFAULT)} className="text-[11px] font-bold text-primary hover:underline">
             Reset Filter
@@ -577,7 +583,7 @@ const InventoryPageInner = () => {
             <p className="font-bold text-ink text-[14px]">Tidak ada unit yang cocok</p>
             <p className="text-muted text-[12px] font-medium mt-1">Coba ubah filter atau tambahkan unit baru.</p>
           </div>
-        ) : view === 'table' ? (
+        ) : activeView === 'table' ? (
           <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -629,13 +635,13 @@ const InventoryPageInner = () => {
       )}
 
       {filterOpen && <FilterModal open onClose={() => setFilterOpen(false)}
-        value={filter} onApply={setFilter} merkList={merkList} view={view} />}
+        value={filter} onApply={setFilter} merkList={merkList} view={activeView} />}
     </div>
   );
 };
 
 export const InventoryPage = () => (
-  <RequirePermission code="UNIT_READ">
+  <RequirePermission any={['UNIT_READ', 'UNIT_CARD_READ']}>
     <InventoryPageInner />
   </RequirePermission>
 );

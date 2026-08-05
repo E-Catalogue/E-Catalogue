@@ -20,12 +20,10 @@ import { Route as AdminVendorRouteImport } from './routes/_admin/vendor'
 import { Route as AdminTestDriveRouteImport } from './routes/_admin/test-drive'
 import { Route as AdminTargetsRouteImport } from './routes/_admin/targets'
 import { Route as AdminRekondisiRouteImport } from './routes/_admin/rekondisi'
-import { Route as AdminReadyStockRouteImport } from './routes/_admin/ready-stock'
 import { Route as AdminPenjualanRouteImport } from './routes/_admin/penjualan'
 import { Route as AdminPengeluaranRouteImport } from './routes/_admin/pengeluaran'
 import { Route as AdminPengaturanRouteImport } from './routes/_admin/pengaturan'
 import { Route as AdminPembukuanRouteImport } from './routes/_admin/pembukuan'
-import { Route as AdminPembelianRouteImport } from './routes/_admin/pembelian'
 import { Route as AdminPembayaranRouteImport } from './routes/_admin/pembayaran'
 import { Route as AdminPayrollRouteImport } from './routes/_admin/payroll'
 import { Route as AdminMerekRouteImport } from './routes/_admin/merek'
@@ -123,11 +121,6 @@ const AdminRekondisiRoute = AdminRekondisiRouteImport.update({
   path: '/rekondisi',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReadyStockRoute = AdminReadyStockRouteImport.update({
-  id: '/ready-stock',
-  path: '/ready-stock',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminPenjualanRoute = AdminPenjualanRouteImport.update({
   id: '/penjualan',
   path: '/penjualan',
@@ -146,11 +139,6 @@ const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
 const AdminPembukuanRoute = AdminPembukuanRouteImport.update({
   id: '/pembukuan',
   path: '/pembukuan',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPembelianRoute = AdminPembelianRouteImport.update({
-  id: '/pembelian',
-  path: '/pembelian',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPembayaranRoute = AdminPembayaranRouteImport.update({
@@ -392,12 +380,10 @@ export interface FileRoutesByFullPath {
   '/merek': typeof AdminMerekRoute
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
-  '/pembelian': typeof AdminPembelianRoute
   '/pembukuan': typeof AdminPembukuanRoute
   '/pengaturan': typeof AdminPengaturanRoute
   '/pengeluaran': typeof AdminPengeluaranRoute
   '/penjualan': typeof AdminPenjualanRoute
-  '/ready-stock': typeof AdminReadyStockRoute
   '/rekondisi': typeof AdminRekondisiRoute
   '/targets': typeof AdminTargetsRoute
   '/test-drive': typeof AdminTestDriveRoute
@@ -452,12 +438,10 @@ export interface FileRoutesByTo {
   '/merek': typeof AdminMerekRoute
   '/payroll': typeof AdminPayrollRoute
   '/pembayaran': typeof AdminPembayaranRoute
-  '/pembelian': typeof AdminPembelianRoute
   '/pembukuan': typeof AdminPembukuanRoute
   '/pengaturan': typeof AdminPengaturanRoute
   '/pengeluaran': typeof AdminPengeluaranRoute
   '/penjualan': typeof AdminPenjualanRoute
-  '/ready-stock': typeof AdminReadyStockRoute
   '/rekondisi': typeof AdminRekondisiRoute
   '/targets': typeof AdminTargetsRoute
   '/test-drive': typeof AdminTestDriveRoute
@@ -514,12 +498,10 @@ export interface FileRoutesById {
   '/_admin/merek': typeof AdminMerekRoute
   '/_admin/payroll': typeof AdminPayrollRoute
   '/_admin/pembayaran': typeof AdminPembayaranRoute
-  '/_admin/pembelian': typeof AdminPembelianRoute
   '/_admin/pembukuan': typeof AdminPembukuanRoute
   '/_admin/pengaturan': typeof AdminPengaturanRoute
   '/_admin/pengeluaran': typeof AdminPengeluaranRoute
   '/_admin/penjualan': typeof AdminPenjualanRoute
-  '/_admin/ready-stock': typeof AdminReadyStockRoute
   '/_admin/rekondisi': typeof AdminRekondisiRoute
   '/_admin/targets': typeof AdminTargetsRoute
   '/_admin/test-drive': typeof AdminTestDriveRoute
@@ -577,12 +559,10 @@ export interface FileRouteTypes {
     | '/merek'
     | '/payroll'
     | '/pembayaran'
-    | '/pembelian'
     | '/pembukuan'
     | '/pengaturan'
     | '/pengeluaran'
     | '/penjualan'
-    | '/ready-stock'
     | '/rekondisi'
     | '/targets'
     | '/test-drive'
@@ -637,12 +617,10 @@ export interface FileRouteTypes {
     | '/merek'
     | '/payroll'
     | '/pembayaran'
-    | '/pembelian'
     | '/pembukuan'
     | '/pengaturan'
     | '/pengeluaran'
     | '/penjualan'
-    | '/ready-stock'
     | '/rekondisi'
     | '/targets'
     | '/test-drive'
@@ -698,12 +676,10 @@ export interface FileRouteTypes {
     | '/_admin/merek'
     | '/_admin/payroll'
     | '/_admin/pembayaran'
-    | '/_admin/pembelian'
     | '/_admin/pembukuan'
     | '/_admin/pengaturan'
     | '/_admin/pengeluaran'
     | '/_admin/penjualan'
-    | '/_admin/ready-stock'
     | '/_admin/rekondisi'
     | '/_admin/targets'
     | '/_admin/test-drive'
@@ -828,13 +804,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRekondisiRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/ready-stock': {
-      id: '/_admin/ready-stock'
-      path: '/ready-stock'
-      fullPath: '/ready-stock'
-      preLoaderRoute: typeof AdminReadyStockRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/_admin/penjualan': {
       id: '/_admin/penjualan'
       path: '/penjualan'
@@ -861,13 +830,6 @@ declare module '@tanstack/react-router' {
       path: '/pembukuan'
       fullPath: '/pembukuan'
       preLoaderRoute: typeof AdminPembukuanRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/pembelian': {
-      id: '/_admin/pembelian'
-      path: '/pembelian'
-      fullPath: '/pembelian'
-      preLoaderRoute: typeof AdminPembelianRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/pembayaran': {
@@ -1189,12 +1151,10 @@ interface AdminRouteChildren {
   AdminMerekRoute: typeof AdminMerekRoute
   AdminPayrollRoute: typeof AdminPayrollRoute
   AdminPembayaranRoute: typeof AdminPembayaranRoute
-  AdminPembelianRoute: typeof AdminPembelianRoute
   AdminPembukuanRoute: typeof AdminPembukuanRoute
   AdminPengaturanRoute: typeof AdminPengaturanRoute
   AdminPengeluaranRoute: typeof AdminPengeluaranRoute
   AdminPenjualanRoute: typeof AdminPenjualanRoute
-  AdminReadyStockRoute: typeof AdminReadyStockRoute
   AdminRekondisiRoute: typeof AdminRekondisiRoute
   AdminTargetsRoute: typeof AdminTargetsRoute
   AdminTestDriveRoute: typeof AdminTestDriveRoute
@@ -1243,12 +1203,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMerekRoute: AdminMerekRoute,
   AdminPayrollRoute: AdminPayrollRoute,
   AdminPembayaranRoute: AdminPembayaranRoute,
-  AdminPembelianRoute: AdminPembelianRoute,
   AdminPembukuanRoute: AdminPembukuanRoute,
   AdminPengaturanRoute: AdminPengaturanRoute,
   AdminPengeluaranRoute: AdminPengeluaranRoute,
   AdminPenjualanRoute: AdminPenjualanRoute,
-  AdminReadyStockRoute: AdminReadyStockRoute,
   AdminRekondisiRoute: AdminRekondisiRoute,
   AdminTargetsRoute: AdminTargetsRoute,
   AdminTestDriveRoute: AdminTestDriveRoute,

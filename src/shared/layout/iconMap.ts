@@ -29,7 +29,7 @@ const BY_KEY: Record<string, LucideIcon> = {
   // by path/code — menu items
   ROLE: ShieldCheck, MENU: SquareMenu, USER: UserCog,
   DASHBOARD: LayoutDashboard, INVENTORY: Car, INVENTORI: Car, PEMBELIAN: ShoppingCart,
-  REKONDISI: Wrench, READY_STOCK: BadgeCheck, CRM: Users, TEST_DRIVE: KeyRound,
+  REKONDISI: Wrench, CRM: Users, TEST_DRIVE: KeyRound,
   PENJUALAN: ReceiptText, PEMBAYARAN: Wallet, PENGELUARAN: TrendingDown,
   CASHFLOW: ArrowLeftRight, LAPORAN: BarChart3, LAPORAN_CASHFLOW: BarChart3, CASHFLOW_REPORT: BarChart3, PENGATURAN: Settings,
   MEREK: Tag, VENDOR: Wrench, BRANCH: Building2, INVESTOR: PiggyBank,
