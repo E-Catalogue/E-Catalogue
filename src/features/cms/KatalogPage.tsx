@@ -141,7 +141,7 @@ export const KatalogPage = () => {
   const featuredCount = rows.filter((u) => u.isFeatured).length;
 
   const isUnitPricingFinalized = (u: CmsCatalogRow) =>
-    Boolean(u.isPricingFinalized || u.pricingFinalizedAt || (u.harga && u.harga > 0) || u.statusUnit === 'READY_STOCK' || u.statusUnit === 'SOLD');
+    Boolean(u.isPricingFinalized || u.pricingFinalizedAt);
 
   const patch = (id: string, body: Parameters<typeof m.publish.mutate>[0]['body']) =>
     m.publish.mutate({ id, body }, { onError: (err) => notifyApiError(err) });

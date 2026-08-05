@@ -52,9 +52,9 @@ export const KatalogPage = () => {
   const debounced = useDebouncedValue(query, 400);
 
   const priceBounds = useMemo(() => {
-    const maxes = (pageData?.priceRanges ?? []).map((r) => r.max ?? 0);
+    const maxes = (pageData?.priceRanges ?? []).map((r) => r.max ?? 0).filter(Boolean);
     const hi = maxes.length ? Math.max(...maxes) : 0;
-    return { min: 0, max: hi > 0 ? hi : 1_000_000_000 };
+    return { min: 0, max: hi > 500_000_000 ? hi : 2_000_000_000 };
   }, [pageData]);
   const pMin = price?.min ?? priceBounds.min;
   const pMax = price?.max ?? priceBounds.max;

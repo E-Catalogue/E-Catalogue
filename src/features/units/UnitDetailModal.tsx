@@ -121,7 +121,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/25 hover:bg-[#25D366]/20"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-[#25D366] text-white hover:bg-[#20ba59] shadow-sm"
           >
             <Share2 size={15} /> Bagikan WhatsApp
           </button>
