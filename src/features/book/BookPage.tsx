@@ -29,6 +29,7 @@ import {
   type RetriedTaxSettlement, type TaxReadiness,
 } from './book.types';
 import { findBookSnapshot } from './book.summary';
+import { PendingDealFinalizationNotice } from '@/features/crm/PendingDealFinalizationNotice';
 
 type Tab = 'ringkasan' | 'laporan-tutup-buku' | 'ledger' | 'pajak';
 // Snapshot lama belum memiliki pemisahan bonus leasing. Nilainya sengaja boleh null
@@ -396,6 +397,7 @@ const BookPageInner = () => {
   return (
     <div className="max-w-[1600px] mx-auto space-y-5">
       <PageHeader title="Pembukuan Cabang" description="Ringkasan kas dan laba yang membedakan data berjalan dari snapshot periode final." />
+      <PendingDealFinalizationNotice branchKey={branchKey} headers={branchHeader} />
       <div className="grid grid-cols-1 sm:grid-cols-[220px] gap-3"><MonthField value={periodInput} onChange={setPeriodInput} /></div>
       <div className="flex items-center gap-2 flex-wrap">{tabs.map((item) => <button key={item.id} onClick={() => setTab(item.id)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border transition-colors ${tab === item.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border hover:border-primary'}`}>{item.label}</button>)}</div>
       {tab === 'ringkasan' && <RingkasanTab branchKey={branchKey} branchHeader={branchHeader} period={period} isOwner={isOwner} selectedBranchId={selectedBranchId} canClose={can('BOOK_CLOSE')} onClosed={() => setTab('laporan-tutup-buku')} onViewClosedReport={() => setTab('laporan-tutup-buku')} />}

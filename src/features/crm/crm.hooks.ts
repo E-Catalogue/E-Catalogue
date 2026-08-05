@@ -76,6 +76,12 @@ export const useLeadOrderFormLookup = (branchKey: string, headers: BranchHeaders
 export const useLeadOrders = (branchKey: string, params: OrderListParams, headers: BranchHeaders) =>
   useQuery({ queryKey: orderKeys.list(branchKey, params), queryFn: () => leadOrderApi.list(params, headers) });
 
+export const usePendingDealFinalizations = (branchKey: string, headers: BranchHeaders) =>
+  useQuery({
+    queryKey: ['pending-deal-finalizations', branchKey],
+    queryFn: () => leadOrderApi.pendingSettlementCount(headers),
+  });
+
 export const useLeadOrder = (branchKey: string, id: string | null, headers: BranchHeaders) =>
   useQuery({ queryKey: orderKeys.detail(branchKey, id), queryFn: () => leadOrderApi.get(id as string, headers), enabled: !!id });
 
@@ -104,6 +110,7 @@ export const useLeadOrderMutations = (branchKey: string) => {
     qc.invalidateQueries({ queryKey: ['target'] });
     qc.invalidateQueries({ queryKey: ['target-achievement'] });
     qc.invalidateQueries({ queryKey: ['lead-payments'] });
+    qc.invalidateQueries({ queryKey: ['pending-deal-finalizations'] });
     qc.invalidateQueries({ queryKey: ['cash-accounts'] });
     qc.invalidateQueries({ queryKey: ['cash-transactions'] });
     qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
@@ -171,6 +178,7 @@ export const useLeadPaymentMutations = (branchKey: string, orderId: string) => {
     qc.invalidateQueries({ queryKey: ['cash-accounts'] });
     qc.invalidateQueries({ queryKey: ['cash-transactions'] });
     qc.invalidateQueries({ queryKey: ['dashboard-overview'] });
+    qc.invalidateQueries({ queryKey: ['pending-deal-finalizations'] });
   };
 
   return {
@@ -208,6 +216,7 @@ export const useSaleSettlementMutations = (branchKey: string, orderId: string) =
     qc.invalidateQueries({ queryKey: ['lead-order', branchKey, orderId] });
     qc.invalidateQueries({ queryKey: ['lead-orders'] });
     qc.invalidateQueries({ queryKey: ['dashboard-overview'] });
+    qc.invalidateQueries({ queryKey: ['pending-deal-finalizations'] });
   };
   return {
     setIncentive: useMutation({

@@ -32,6 +32,7 @@ import { SalesChart } from './components/SalesChart';
 import { StatCard } from './components/StatCard';
 import { useClosingReport } from '@/features/reports/report.hooks';
 import { usePermissions } from '@/features/auth/usePermissions';
+import { PendingDealFinalizationNotice } from '@/features/crm/PendingDealFinalizationNotice';
 
 const MONTH_LABEL_LONG = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -81,6 +82,8 @@ const DashboardPageInner = () => {
           />
         </div>
       </div>
+
+      <PendingDealFinalizationNotice branchKey={branchKey} headers={branchHeader} />
 
       {isLoading && (
         <div className="space-y-8">

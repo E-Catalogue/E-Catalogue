@@ -19,7 +19,7 @@ interface Props {
   onClose: () => void;
   order: LeadOrder | null;
   submitting?: boolean;
-  onSubmit: (status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, cancellation?: LeadOrderCancellation) => void;
+  onSubmit: (status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, cancellation?: LeadOrderCancellation) => Promise<unknown>;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -73,13 +73,16 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
   };
   const togglePayment = (id: string) => setPaymentIds((current) =>
     current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const submitDeal = () => {
+    void onSubmit('DEAL').then(close).catch(() => undefined);
+  };
   const submitCancellation = () => {
     if (!refundValid) return;
-    onSubmit('CANCELLED', {
+    void onSubmit('CANCELLED', {
       cancellationReason,
       cancellationNote: cancellationNote.trim() || undefined,
       ...(refundEnabled ? { refund: { paymentIds, cashAccountId, transactionDate, description: description.trim() || undefined } } : {}),
-    });
+    }).then(close).catch(() => undefined);
   };
 
   return (
@@ -117,7 +120,7 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
         </div>
       </Modal>
 
-      <ConfirmDialog open={pending === 'DEAL'} onClose={() => setPending(null)} onConfirm={() => onSubmit('DEAL')}
+      <ConfirmDialog open={pending === 'DEAL'} onClose={() => setPending(null)} onConfirm={submitDeal}
         closeOnConfirm={false} loading={submitting} tone="primary" icon={CheckCircle2} title="Tandai Order DEAL"
         message="Unit akan ditandai SOLD, lead menjadi WON, dan settlement penjualan dibuat. Tindakan ini tidak dapat dibatalkan."
         confirmLabel="Ya, Tandai DEAL" />

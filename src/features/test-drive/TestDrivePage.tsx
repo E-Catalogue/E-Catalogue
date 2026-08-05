@@ -36,7 +36,9 @@ const PrivateMediaLink = ({ url, label }: { url: string; label: string }) => {
   const open = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get(url, { responseType: 'blob' });
+      // URL dari API sudah mencantumkan `/api/v1`; apiClient juga memiliki base URL
+      // yang sama sehingga prefix perlu dilepas agar tidak menjadi `/api/v1/api/v1/...`.
+      const response = await apiClient.get(url.replace(/^\/api\/v1(?=\/)/, ''), { responseType: 'blob' });
       const blobUrl = URL.createObjectURL(response.data as Blob);
       window.open(blobUrl, '_blank', 'noopener,noreferrer');
       window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
