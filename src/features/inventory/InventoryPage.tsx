@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench, LayoutGrid, Table2, Share2, X, Landmark, Copy } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -11,6 +11,7 @@ import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { SelectField } from '@/shared/components/ui/Field';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { Pagination } from '@/shared/components/ui/Pagination';
 import { useUnitModals } from '@/features/units/useUnitModals';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -370,6 +371,8 @@ const InventoryPageInner = () => {
   const [filter, setFilter]     = useState<FilterState>(FILTER_DEFAULT);
   const [statusUnit, setStatusUnit] = useState<Unit | null>(null);
   const [rekondisiTarget, setRekondisiTarget] = useState<Unit | null>(null);
+  const [page, setPage]         = useState(1);
+  const [limit, setLimit]       = useState(15);
   const debounced               = useDebouncedValue(query, 400);
 
   useEffect(() => {
@@ -390,6 +393,18 @@ const InventoryPageInner = () => {
   if (filter.tahunMax)     rows = rows.filter((u) => u.tahun <= Number(filter.tahunMax));
   if (filter.owner !== 'ALL') rows = rows.filter((u) => (u.fundingAgreement?.fundingSource ?? 'COMPANY_OWNED') === filter.owner);
   if (filter.stockAge !== 'ALL') rows = rows.filter((u) => matchStockAge(u.readyStockAt, filter.stockAge));
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * limit;
+    return rows.slice(start, start + limit);
+  }, [rows, page, limit]);
+
+  const meta = useMemo(() => ({
+    page,
+    limit,
+    total: rows.length,
+    totalPages: Math.max(1, Math.ceil(rows.length / limit)),
+  }), [page, limit, rows.length]);
 
   const activeFilters = [filter.statuses.length > 0, filter.tx !== 'ALL', !!filter.merek, !!(filter.tahunMin || filter.tahunMax), filter.owner !== 'ALL', filter.stockAge !== 'ALL'].filter(Boolean).length;
 
@@ -537,7 +552,7 @@ const InventoryPageInner = () => {
         <div className="flex items-center gap-2.5 sm:ml-auto w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)}
+            <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }}
               placeholder="Cari plat nomor, merek..."
               className="w-full sm:w-64 h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
             />
@@ -559,7 +574,7 @@ const InventoryPageInner = () => {
 
       {filter.statuses.length > 0 && <div className="flex items-center gap-2 flex-wrap -mt-2">
         <span className="text-[11px] font-bold text-muted">Status:</span>
-        {filter.statuses.map((status) => <button key={status} type="button" onClick={() => setFilter((current) => ({ ...current, statuses: current.statuses.filter((item) => item !== status) }))}
+        {filter.statuses.map((status) => <button key={status} type="button" onClick={() => { setFilter((current) => ({ ...current, statuses: current.statuses.filter((item) => item !== status) })); setPage(1); }}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary-light px-2.5 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/15">{STATUS_LABEL[status]} <X size={12} /></button>)}
       </div>}
 
@@ -568,7 +583,7 @@ const InventoryPageInner = () => {
         icon={activeView === 'table' ? <Table2 size={16} /> : <LayoutGrid size={16} />}
         bodyClassName={activeView === 'table' ? 'p-0 md:p-0' : 'p-4 md:p-5'}
         action={activeFilters > 0 ? (
-          <button onClick={() => setFilter(FILTER_DEFAULT)} className="text-[11px] font-bold text-primary hover:underline">
+          <button onClick={() => { setFilter(FILTER_DEFAULT); setPage(1); }} className="text-[11px] font-bold text-primary hover:underline">
             Reset Filter
           </button>
         ) : undefined}
@@ -584,36 +599,62 @@ const InventoryPageInner = () => {
             <p className="text-muted text-[12px] font-medium mt-1">Coba ubah filter atau tambahkan unit baru.</p>
           </div>
         ) : activeView === 'table' ? (
-          <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-            {rows.map((unit) => (
-              <UnitCard
-                key={unit.id}
-                unit={unit}
-                onView={m.openCardDetail}
-                statusOverride={cardStatus(unit.statusUnit)}
-                statusLabelOverride={cardStatusLabel(unit.statusUnit)}
-                actions={(
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => copyUnit(unit)}
-                      className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-accent-blue/10 text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/20"
-                    >
-                      <Copy size={13} /> Salin
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => shareUnit(unit)}
-                      className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/25 hover:bg-[#25D366]/20"
-                    >
-                      <Share2 size={13} /> Bagikan WA
-                    </button>
-                  </div>
-                )}
+          <>
+            <DataTable columns={columns} data={paginatedRows} rowKey={(u) => u.id} />
+            <div className="px-4 pb-4 pt-2">
+              <Pagination
+                meta={meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                limitOptions={[10, 15, 25, 50, 100]}
+                itemLabel="unit"
               />
-            ))}
+            </div>
+          </>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+              {paginatedRows.map((unit) => (
+                <UnitCard
+                  key={unit.id}
+                  unit={unit}
+                  onView={m.openCardDetail}
+                  statusOverride={cardStatus(unit.statusUnit)}
+                  statusLabelOverride={cardStatusLabel(unit.statusUnit)}
+                  actions={(
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyUnit(unit)}
+                        className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-accent-blue/10 text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/20"
+                      >
+                        <Copy size={13} /> Salin
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => shareUnit(unit)}
+                        className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all active:scale-[0.97] bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/25 hover:bg-[#25D366]/20"
+                      >
+                        <Share2 size={13} /> Bagikan WA
+                      </button>
+                    </div>
+                  )}
+                />
+              ))}
+            </div>
+            <div className="pt-2">
+              <Pagination
+                meta={meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                limitOptions={[10, 15, 25, 50, 100]}
+                itemLabel="unit"
+              />
+            </div>
           </div>
         )}
       </SectionCard>
@@ -635,7 +676,7 @@ const InventoryPageInner = () => {
       )}
 
       {filterOpen && <FilterModal open onClose={() => setFilterOpen(false)}
-        value={filter} onApply={setFilter} merkList={merkList} view={activeView} />}
+        value={filter} onApply={(f) => { setFilter(f); setPage(1); }} merkList={merkList} view={activeView} />}
     </div>
   );
 };

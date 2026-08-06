@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ChevronDown, Save, Plus, AlertTriangle,
+  BookOpen, Car, Eye, EyeOff, Globe, Filter, Image as ImageIcon, ExternalLink, Sparkles, Star, Tag, Images, Trash2, ChevronDown, Save, Plus, AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -10,6 +10,8 @@ import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { NumericField, TextField } from '@/shared/components/ui/Field';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
@@ -119,12 +121,15 @@ const GalleryModal = ({ row, onClose }: { row: CmsCatalogRow; onClose: () => voi
 };
 
 export const KatalogPage = () => {
+  const [page, setPage]             = useState(1);
+  const [limit, setLimit]           = useState(15);
   const [search, setSearch]         = useState('');
   const [viewFilter, setViewFilter] = useState<ViewFilter>('all');
   const debounced = useDebouncedValue(search, 400);
 
   const params = {
-    page: 1, limit: 100,
+    page,
+    limit,
     search: debounced || undefined,
     isPublished: viewFilter === 'published' ? true : viewFilter === 'hidden' ? false : undefined,
     isFeatured: viewFilter === 'featured' ? true : undefined,
@@ -297,7 +302,7 @@ export const KatalogPage = () => {
   ];
 
   return (
-    <div className="max-w-[1400px] mx-auto  space-y-5">
+    <div className="max-w-[1400px] mx-auto space-y-5">
       <PageHeader
         title="Katalog Publik"
         description="Kelola visibilitas unit yang ditampilkan ke halaman katalog pelanggan."
@@ -315,7 +320,7 @@ export const KatalogPage = () => {
         {[
           { icon: <Car size={18} className="text-primary" />, bg: 'bg-primary/10', label: 'Total Unit', value: total },
           { icon: <Globe size={18} className="text-accent-green" />, bg: 'bg-accent-green/10', label: 'Tayang di Katalog', value: publishedCount, color: 'text-accent-green' },
-          { icon: <EyeOff size={18} className="text-muted" />, bg: 'bg-muted/10', label: 'Disembunyikan', value: rows.length - publishedCount, color: 'text-muted' },
+          { icon: <EyeOff size={18} className="text-muted" />, bg: 'bg-muted/10', label: 'Disembunyikan', value: Math.max(0, total - publishedCount), color: 'text-muted' },
           { icon: <Star size={18} className="text-accent-amber fill-accent-amber" />, bg: 'bg-accent-amber/10', label: 'Unit Unggulan', value: featuredCount, color: 'text-accent-amber' },
         ].map((s) => (
           <div key={s.label} className="bg-surface rounded-2xl border border-border p-4 flex items-center gap-4">
@@ -334,7 +339,10 @@ export const KatalogPage = () => {
           {VIEW_FILTERS.map((f) => (
             <button
               key={f.key}
-              onClick={() => setViewFilter(f.key)}
+              onClick={() => {
+                setViewFilter(f.key);
+                setPage(1);
+              }}
               className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[12px] font-bold transition-all ${
                 viewFilter === f.key ? 'bg-primary text-white shadow-glow' : 'bg-surface border border-border text-ink-soft hover:border-primary'
               }`}
@@ -343,18 +351,20 @@ export const KatalogPage = () => {
             </button>
           ))}
         </div>
-        <div className="relative sm:ml-auto">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-          <input
-            value={search} onChange={(e) => setSearch(e.target.value)}
+        <div className="w-full sm:w-72 sm:ml-auto">
+          <SearchInput
             placeholder="Cari merek, tipe, plat..."
-            className="w-full sm:w-72 h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
           />
         </div>
       </div>
 
       {/* Table */}
-      <SectionCard title={`Daftar Unit (${rows.length})`} icon={<BookOpen size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard title={`Daftar Unit (${total})`} icon={<BookOpen size={16} />} bodyClassName="p-0 md:p-0">
         {isLoading ? (
           <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
@@ -366,7 +376,22 @@ export const KatalogPage = () => {
             <p className="text-muted text-[12px] font-medium mt-1">Coba ubah filter atau kata kunci pencarian.</p>
           </div>
         ) : (
-          <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
+          <>
+            <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="unit"
+              />
+            </div>
+          </>
         )}
       </SectionCard>
 

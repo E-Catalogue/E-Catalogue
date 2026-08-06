@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Target, Plus, PlayCircle, Lock } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -8,6 +8,8 @@ import { Button } from '@/shared/components/ui/Button';
 import { MonthField } from '@/shared/components/ui/MonthField';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
@@ -29,11 +31,37 @@ const TargetPageInner = () => {
   const { isOwner, userBranchId, selectedBranchId, branchHeader, branchKey } = useBranchScope();
   const effectiveBranchId = selectedBranchId ?? userBranchId ?? '';
   const [periodInput, setPeriodInput] = useState(currentPeriod());
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const period = PERIOD_RE.test(periodInput) ? periodInput : undefined;
 
   const query = useTargetBranches({ period }, branchKey, branchHeader);
   const { data } = query;
   const rows: BranchTarget[] = data?.data ?? [];
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r) => {
+      const branchName = (r.branch?.nama ?? r.branchId ?? '').toLowerCase();
+      const p = (r.period ?? '').toLowerCase();
+      const status = (TARGET_STATUS_LABEL[r.status] ?? '').toLowerCase();
+      return branchName.includes(q) || p.includes(q) || status.includes(q);
+    });
+  }, [rows, search]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredRows.slice(start, start + limit);
+  }, [filteredRows, page, limit]);
+
+  const meta = useMemo(() => ({
+    page,
+    limit,
+    total: filteredRows.length,
+    totalPages: Math.max(1, Math.ceil(filteredRows.length / limit)),
+  }), [page, limit, filteredRows.length]);
 
   // Sejak update_target: pilihan cabang diambil dari `/targets/lookups/branches` (bukan diturunkan
   // dari data target). Owner/Admin dapat semua cabang aktif; role lain hanya cabangnya.
@@ -128,10 +156,26 @@ const TargetPageInner = () => {
         <MonthField value={periodInput} onChange={setPeriodInput} />
       </div>
 
-      <SectionCard title={`Daftar Target (${rows.length})`} icon={<Target size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard
+        title={`Daftar Target (${filteredRows.length})`}
+        icon={<Target size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={
+          <div className="w-56">
+            <SearchInput
+              placeholder="Cari target..."
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
+          </div>
+        }
+      >
         <DataTable
           columns={columns}
-          data={rows}
+          data={paginatedRows}
           rowKey={(r) => r.id}
           loading={query.isLoading}
           refreshing={query.isFetching && !query.isLoading}
@@ -145,6 +189,21 @@ const TargetPageInner = () => {
               : 'Buat target cabang untuk mulai memantau pencapaian.',
           }}
         />
+        {!query.isLoading && !query.isError && filteredRows.length > 0 && (
+          <div className="px-4 pb-4">
+            <Pagination
+              meta={meta}
+              page={page}
+              onChange={setPage}
+              limit={limit}
+              onLimitChange={(l) => {
+                setLimit(l);
+                setPage(1);
+              }}
+              itemLabel="target"
+            />
+          </div>
+        )}
       </SectionCard>
 
       <TargetFormModal

@@ -22,6 +22,8 @@ import { useCashTransactionCashAccounts } from '@/features/finance/lookup';
 import { useCashAccountMutations, useCashAccounts, useCashDashboard, useCashTransactionMutations, useCashTransactions } from '@/features/finance/finance.hooks';
 import { toIsoDate } from '@/features/finance/finance.utils';
 import { isConsolidatedCashDashboard, type CashAccount, type CashAccountType, type CashTransaction } from '@/features/finance/types';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 
 type Tab = 'dashboard' | 'accounts' | 'ledger';
 type TxModal = 'manual-in' | 'manual-out' | 'transfer' | 'adjustment' | 'inter-branch-transfer';
@@ -195,11 +197,23 @@ const CashFlowPageInner = () => {
   const [toReverse, setToReverse] = useState<CashTransaction | null>(null);
   const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', type: '', cashAccountId: '' });
 
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [ledgerLimit, setLedgerLimit] = useState(15);
+  const [ledgerSearch, setLedgerSearch] = useState('');
+
+  const [accountPage, setAccountPage] = useState(1);
+  const [accountLimit, setAccountLimit] = useState(15);
+  const [accountSearch, setAccountSearch] = useState('');
+
+  const [dashboardPage, setDashboardPage] = useState(1);
+  const [dashboardLimit, setDashboardLimit] = useState(15);
+  const [dashboardSearch, setDashboardSearch] = useState('');
+
   const dashboardParams = { dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined };
   const dashboard = useCashDashboard(branchKey, dashboardParams, branchHeader);
-  const accounts = useCashAccounts(branchKey, { page: 1, limit: 100 }, branchHeader, { enabled: can('CASH_ACCOUNT_READ') });
+  const accounts = useCashAccounts(branchKey, { page: accountPage, limit: accountLimit }, branchHeader, { enabled: can('CASH_ACCOUNT_READ') });
   const { data: filterAccounts = [], isLoading: filterAccountsLoading } = useCashTransactionCashAccounts(branchKey, { headers: branchHeader });
-  const ledger = useCashTransactions(branchKey, { page: 1, limit: 50, type: filters.type || undefined, cashAccountId: filters.cashAccountId || undefined, dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined }, branchHeader);
+  const ledger = useCashTransactions(branchKey, { page: ledgerPage, limit: ledgerLimit, type: filters.type || undefined, cashAccountId: filters.cashAccountId || undefined, dateFrom: filters.dateFrom ? toIsoDate(filters.dateFrom) : undefined, dateTo: filters.dateTo ? toIsoDate(filters.dateTo) : undefined }, branchHeader);
   const accountMutations = useCashAccountMutations();
   const txMutations = useCashTransactionMutations();
 
@@ -207,6 +221,53 @@ const CashFlowPageInner = () => {
   const isConsolidated = dashboardData ? isConsolidatedCashDashboard(dashboardData) : false;
   const summary = dashboardData ? (isConsolidatedCashDashboard(dashboardData) ? dashboardData.consolidated : dashboardData.summary) : undefined;
   const dashboardAccounts = dashboardData?.accounts ?? [];
+
+  const filteredDashboardAccounts = useMemo(() => {
+    const list = dashboardAccounts;
+    if (!dashboardSearch.trim()) return list;
+    const q = dashboardSearch.toLowerCase();
+    return list.filter((a) =>
+      (a.name?.toLowerCase().includes(q)) ||
+      (a.code?.toLowerCase().includes(q)) ||
+      (a.type?.toLowerCase().includes(q)) ||
+      (a.branch?.nama?.toLowerCase().includes(q))
+    );
+  }, [dashboardAccounts, dashboardSearch]);
+
+  const paginatedDashboardAccounts = useMemo(() => {
+    const start = (dashboardPage - 1) * dashboardLimit;
+    return filteredDashboardAccounts.slice(start, start + dashboardLimit);
+  }, [filteredDashboardAccounts, dashboardPage, dashboardLimit]);
+
+  const dashboardMeta = useMemo(() => ({
+    page: dashboardPage,
+    limit: dashboardLimit,
+    total: filteredDashboardAccounts.length,
+    totalPages: Math.max(1, Math.ceil(filteredDashboardAccounts.length / dashboardLimit)),
+  }), [dashboardPage, dashboardLimit, filteredDashboardAccounts.length]);
+
+  const ledgerData = useMemo(() => {
+    const list = ledger.data?.data ?? [];
+    if (!ledgerSearch.trim()) return list;
+    const q = ledgerSearch.toLowerCase();
+    return list.filter((t) =>
+      (t.description?.toLowerCase().includes(q)) ||
+      (t.cashAccount?.name?.toLowerCase().includes(q)) ||
+      (t.sourceType?.toLowerCase().includes(q))
+    );
+  }, [ledger.data?.data, ledgerSearch]);
+
+  const accountsData = useMemo(() => {
+    const list = accounts.data?.data ?? [];
+    if (!accountSearch.trim()) return list;
+    const q = accountSearch.toLowerCase();
+    return list.filter((a) =>
+      (a.name?.toLowerCase().includes(q)) ||
+      (a.code?.toLowerCase().includes(q)) ||
+      (a.bankName?.toLowerCase().includes(q)) ||
+      (a.accountNumber?.toLowerCase().includes(q))
+    );
+  }, [accounts.data?.data, accountSearch]);
 
   const accountColumns: Column<CashAccount>[] = [
     { header: 'Nama', cell: (a) => <span className="font-bold text-ink">{a.name}</span> },
@@ -266,10 +327,10 @@ const CashFlowPageInner = () => {
         ))}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <DateField label="Dari Tanggal" value={filters.dateFrom} onChange={(v) => setFilters((f) => ({ ...f, dateFrom: v }))} />
-        <DateField label="Sampai Tanggal" value={filters.dateTo} onChange={(v) => setFilters((f) => ({ ...f, dateTo: v }))} />
-        <SelectField label="Tipe Ledger" value={filters.type} onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))} options={[{ value: '', label: 'Semua' }, { value: 'IN', label: 'IN' }, { value: 'OUT', label: 'OUT' }, { value: 'TRANSFER', label: 'TRANSFER' }]} />
-        <CashAccountSelect label="Filter Akun" accounts={filterAccounts} loading={filterAccountsLoading} value={filters.cashAccountId} onChange={(v) => setFilters((f) => ({ ...f, cashAccountId: v }))} />
+        <DateField label="Dari Tanggal" value={filters.dateFrom} onChange={(v) => { setFilters((f) => ({ ...f, dateFrom: v })); setLedgerPage(1); }} />
+        <DateField label="Sampai Tanggal" value={filters.dateTo} onChange={(v) => { setFilters((f) => ({ ...f, dateTo: v })); setLedgerPage(1); }} />
+        <SelectField label="Tipe Ledger" value={filters.type} onChange={(e) => { setFilters((f) => ({ ...f, type: e.target.value })); setLedgerPage(1); }} options={[{ value: '', label: 'Semua' }, { value: 'IN', label: 'IN' }, { value: 'OUT', label: 'OUT' }, { value: 'TRANSFER', label: 'TRANSFER' }]} />
+        <CashAccountSelect label="Filter Akun" accounts={filterAccounts} loading={filterAccountsLoading} value={filters.cashAccountId} onChange={(v) => { setFilters((f) => ({ ...f, cashAccountId: v })); setLedgerPage(1); }} />
       </div>
       {tab === 'dashboard' && (
         <>
@@ -284,23 +345,158 @@ const CashFlowPageInner = () => {
               return <div key={c.label} className="bg-surface rounded-2xl border border-border shadow-card p-5"><div className={`w-11 h-11 rounded-xl ${c.color} text-white flex items-center justify-center mb-3`}><Icon size={21} /></div><p className="text-[10px] font-bold uppercase tracking-wide text-muted">{c.label}</p><p className="text-xl font-extrabold text-ink mt-1">{formatCurrency(c.value, { compact: true })}</p></div>;
             })}
           </div>
-          <SectionCard title="Saldo per Akun Kas" icon={<Landmark size={16} />} bodyClassName="p-0 md:p-0">
-            <DataTable columns={[
-              { header: 'Akun', cell: (a) => <span className="font-bold text-ink">{a.name}</span> },
-              { header: 'Kode', cell: (a) => a.code },
-              { header: 'Tipe', cell: (a) => a.type },
-              ...(isConsolidated ? [{ header: 'Cabang', cell: (a: (typeof dashboardAccounts)[number]) => a.branch?.nama ?? '-' }] : []),
-              { header: 'Default', align: 'center' as const, cell: (a) => a.defaultPayment ? <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Penjualan</span> : '-' },
-              { header: 'Masuk', align: 'right' as const, cell: (a) => formatCurrency(a.totalIn) },
-              { header: 'Keluar', align: 'right' as const, cell: (a) => formatCurrency(a.totalOut) },
-              { header: 'Saldo Akhir', align: 'right' as const, cell: (a) => <span className="font-bold">{formatCurrency(a.endingBalance)}</span> },
-            ]} data={dashboardAccounts} rowKey={(a) => a.id} loading={dashboard.isLoading} refreshing={dashboard.isFetching && !dashboard.isLoading}
-              error={dashboard.isError} onRetry={() => dashboard.refetch()} emptyState={{ title: 'Belum ada saldo akun', description: 'Akun kas dan saldo periode terpilih akan tampil di sini.' }} />
+          <SectionCard
+            title="Saldo per Akun Kas"
+            icon={<Landmark size={16} />}
+            bodyClassName="p-0 md:p-0"
+            action={
+              <div className="w-56">
+                <SearchInput
+                  placeholder="Cari akun kas..."
+                  value={dashboardSearch}
+                  onChange={(v) => {
+                    setDashboardSearch(v);
+                    setDashboardPage(1);
+                  }}
+                />
+              </div>
+            }
+          >
+            <DataTable
+              columns={[
+                { header: 'Akun', cell: (a) => <span className="font-bold text-ink">{a.name}</span> },
+                { header: 'Kode', cell: (a) => a.code },
+                { header: 'Tipe', cell: (a) => a.type },
+                ...(isConsolidated ? [{ header: 'Cabang', cell: (a: (typeof dashboardAccounts)[number]) => a.branch?.nama ?? '-' }] : []),
+                { header: 'Default', align: 'center' as const, cell: (a) => a.defaultPayment ? <span className="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold bg-accent-green/10 text-accent-green">Penjualan</span> : '-' },
+                { header: 'Masuk', align: 'right' as const, cell: (a) => formatCurrency(a.totalIn) },
+                { header: 'Keluar', align: 'right' as const, cell: (a) => formatCurrency(a.totalOut) },
+                { header: 'Saldo Akhir', align: 'right' as const, cell: (a) => <span className="font-bold">{formatCurrency(a.endingBalance)}</span> },
+              ]}
+              data={paginatedDashboardAccounts}
+              rowKey={(a) => a.id}
+              loading={dashboard.isLoading}
+              refreshing={dashboard.isFetching && !dashboard.isLoading}
+              error={dashboard.isError}
+              onRetry={() => dashboard.refetch()}
+              emptyState={{ title: 'Belum ada saldo akun', description: 'Akun kas dan saldo periode terpilih akan tampil di sini.' }}
+            />
+            {filteredDashboardAccounts.length > 0 && (
+              <div className="px-4 pb-4">
+                <Pagination
+                  meta={dashboardMeta}
+                  page={dashboardPage}
+                  onChange={setDashboardPage}
+                  limit={dashboardLimit}
+                  onLimitChange={(l) => {
+                    setDashboardLimit(l);
+                    setDashboardPage(1);
+                  }}
+                  itemLabel="akun"
+                />
+              </div>
+            )}
           </SectionCard>
         </>
       )}
-      {tab === 'ledger' && <SectionCard title="Buku Kas / Ledger" icon={<Wallet size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={ledgerColumns} data={ledger.data?.data ?? []} rowKey={(t) => t.id} loading={ledger.isLoading} refreshing={ledger.isFetching && !ledger.isLoading} error={ledger.isError} onRetry={() => ledger.refetch()} emptyState={{ title: 'Belum ada transaksi kas', description: 'Transaksi sesuai cabang dan filter terpilih akan tampil di sini.' }} /></SectionCard>}
-      {tab === 'accounts' && <SectionCard title="Akun Kas" icon={<Landmark size={16} />} action={<Can code="CASH_ACCOUNT_CREATE"><Button icon={<Plus size={16} />} onClick={() => setAccountForm(null)} disabled={mutationBlocked} title={mutationBlocked ? 'Pilih cabang terlebih dahulu' : undefined}>Tambah Akun</Button></Can>} bodyClassName="p-0 md:p-0"><DataTable columns={accountColumns} data={accounts.data?.data ?? []} rowKey={(a) => a.id} loading={accounts.isLoading} refreshing={accounts.isFetching && !accounts.isLoading} error={accounts.isError} onRetry={() => accounts.refetch()} emptyState={{ title: 'Belum ada akun kas', description: 'Tambahkan akun kas untuk mencatat transaksi pada cabang ini.' }} /></SectionCard>}
+      {tab === 'ledger' && (
+        <SectionCard
+          title="Buku Kas / Ledger"
+          icon={<Wallet size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="w-64">
+              <SearchInput
+                placeholder="Cari transaksi / keterangan..."
+                value={ledgerSearch}
+                onChange={setLedgerSearch}
+              />
+            </div>
+          }
+        >
+          <DataTable
+            columns={ledgerColumns}
+            data={ledgerData}
+            rowKey={(t) => t.id}
+            loading={ledger.isLoading}
+            refreshing={ledger.isFetching && !ledger.isLoading}
+            error={ledger.isError}
+            onRetry={() => ledger.refetch()}
+            emptyState={{
+              title: 'Belum ada transaksi kas',
+              description: 'Transaksi sesuai cabang dan filter terpilih akan tampil di sini.',
+            }}
+          />
+          <div className="px-4 pb-4">
+            <Pagination
+              meta={ledger.data?.meta}
+              page={ledgerPage}
+              onChange={setLedgerPage}
+              limit={ledgerLimit}
+              onLimitChange={(l) => {
+                setLedgerLimit(l);
+                setLedgerPage(1);
+              }}
+              itemLabel="transaksi"
+            />
+          </div>
+        </SectionCard>
+      )}
+      {tab === 'accounts' && (
+        <SectionCard
+          title="Akun Kas"
+          icon={<Landmark size={16} />}
+          action={
+            <div className="flex items-center gap-2">
+              <div className="w-56">
+                <SearchInput
+                  placeholder="Cari akun..."
+                  value={accountSearch}
+                  onChange={setAccountSearch}
+                />
+              </div>
+              <Can code="CASH_ACCOUNT_CREATE">
+                <Button
+                  icon={<Plus size={16} />}
+                  onClick={() => setAccountForm(null)}
+                  disabled={mutationBlocked}
+                  title={mutationBlocked ? 'Pilih cabang terlebih dahulu' : undefined}
+                >
+                  Tambah Akun
+                </Button>
+              </Can>
+            </div>
+          }
+          bodyClassName="p-0 md:p-0"
+        >
+          <DataTable
+            columns={accountColumns}
+            data={accountsData}
+            rowKey={(a) => a.id}
+            loading={accounts.isLoading}
+            refreshing={accounts.isFetching && !accounts.isLoading}
+            error={accounts.isError}
+            onRetry={() => accounts.refetch()}
+            emptyState={{
+              title: 'Belum ada akun kas',
+              description: 'Tambahkan akun kas untuk mencatat transaksi pada cabang ini.',
+            }}
+          />
+          <div className="px-4 pb-4">
+            <Pagination
+              meta={accounts.data?.meta}
+              page={accountPage}
+              onChange={setAccountPage}
+              limit={accountLimit}
+              onLimitChange={(l) => {
+                setAccountLimit(l);
+                setAccountPage(1);
+              }}
+              itemLabel="akun"
+            />
+          </div>
+        </SectionCard>
+      )}
       {accountForm !== undefined && <AccountForm item={accountForm} onClose={() => setAccountForm(undefined)} headers={branchHeader} mutationBlocked={mutationBlocked} />}
       {txForm && <TransactionForm mode={txForm} onClose={() => setTxForm(null)} branchKey={branchKey} headers={branchHeader} mutationBlocked={mutationBlocked} />}
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && accountMutations.remove.mutate({ id: toDelete.id, headers: branchHeader }, { onError: (e) => notifyApiError(e), onSuccess: () => setToDelete(null) })} loading={accountMutations.remove.isPending} closeOnConfirm={false} title="Nonaktifkan Akun Kas" message={toDelete ? `Nonaktifkan akun kas "${toDelete.name}"?` : ''} />

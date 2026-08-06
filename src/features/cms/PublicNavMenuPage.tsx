@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  Plus, Search, Pencil, Trash2, Eye, EyeOff, Save, Link2, ExternalLink, ArrowUp, ArrowDown
+  Plus, Pencil, Trash2, Eye, EyeOff, Save, Link2, ExternalLink, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -12,6 +12,8 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { resolveIcon } from '@/shared/layout/iconMap';
@@ -24,6 +26,8 @@ const emptyForm: PublicNavMenuForm = {
 
 export const PublicNavMenuPage = () => {
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [form, setForm] = useState<{ item?: PublicNavMenu } | null>(null);
   const [formData, setFormData] = useState<PublicNavMenuForm>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<PublicNavMenu | null>(null);
@@ -33,9 +37,23 @@ export const PublicNavMenuPage = () => {
   const { data: rows = [], isLoading, isError } = usePublicNavMenus();
   const m = usePublicNavMenuMutations();
 
-  const filteredRows = rows
-    .filter((r) => r.label.toLowerCase().includes(debounced.toLowerCase()) || r.path.toLowerCase().includes(debounced.toLowerCase()))
-    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const filteredRows = useMemo(() => {
+    return rows
+      .filter((r) => r.label.toLowerCase().includes(debounced.toLowerCase()) || r.path.toLowerCase().includes(debounced.toLowerCase()))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [rows, debounced]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredRows.slice(start, start + limit);
+  }, [filteredRows, page, limit]);
+
+  const meta = useMemo(() => ({
+    page,
+    limit,
+    total: filteredRows.length,
+    totalPages: Math.max(1, Math.ceil(filteredRows.length / limit)),
+  }), [page, limit, filteredRows.length]);
 
   const activeCount = rows.filter((t) => t.isActive).length;
 
@@ -191,18 +209,24 @@ export const PublicNavMenuPage = () => {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-        <input
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari menu..."
-          className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
-        />
-      </div>
-
       {/* List */}
-      <SectionCard title="Daftar Menu" icon={<Link2 size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard
+        title="Daftar Menu"
+        icon={<Link2 size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={
+          <div className="w-56">
+            <SearchInput
+              placeholder="Cari menu..."
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
+          </div>
+        }
+      >
         {isLoading ? (
           <TableSkeleton rows={6} cols={4} />
         ) : isError ? (
@@ -210,7 +234,22 @@ export const PublicNavMenuPage = () => {
         ) : filteredRows.length === 0 ? (
           <EmptyState icon={Link2} title="Menu tidak ditemukan" description="Tambahkan menu baru atau ubah filter pencarian." />
         ) : (
-          <DataTable columns={columns} data={filteredRows} rowKey={(r) => r.id} />
+          <>
+            <DataTable columns={columns} data={paginatedRows} rowKey={(r) => r.id} />
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="menu"
+              />
+            </div>
+          </>
         )}
       </SectionCard>
 

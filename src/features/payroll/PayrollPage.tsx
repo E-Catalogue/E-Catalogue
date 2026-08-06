@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Banknote, CalendarDays, Plus, ReceiptText, Users } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
@@ -208,11 +210,61 @@ const PayrollPageInner = () => {
   const [generate, setGenerate] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const { branchKey, branchHeader } = useBranchScope();
-  const base = usePayrollBaseSalaries(branchKey, { page: 1, limit: 50 }, branchHeader);
-  const incentives = useSalesIncentives(branchKey, { page: 1, limit: 50 }, branchHeader);
-  const runs = usePayrollRuns(branchKey, { page: 1, limit: 50 }, branchHeader);
+
+  // Tab 1: Base Salary
+  const [pageBase, setPageBase] = useState(1);
+  const [limitBase, setLimitBase] = useState(15);
+  const [searchBase, setSearchBase] = useState('');
+  const base = usePayrollBaseSalaries(branchKey, { page: pageBase, limit: limitBase }, branchHeader);
+
+  const filteredBase = useMemo(() => {
+    const rows = base.data?.data ?? [];
+    if (!searchBase.trim()) return rows;
+    const q = searchBase.toLowerCase();
+    return rows.filter((x) =>
+      (showName(x.user)?.toLowerCase().includes(q)) ||
+      (x.userId?.toLowerCase().includes(q))
+    );
+  }, [base.data?.data, searchBase]);
+
+  // Tab 2: Incentives
+  const [pageIncentive, setPageIncentive] = useState(1);
+  const [limitIncentive, setLimitIncentive] = useState(15);
+  const [searchIncentive, setSearchIncentive] = useState('');
+  const incentives = useSalesIncentives(branchKey, { page: pageIncentive, limit: limitIncentive }, branchHeader);
+
+  const filteredIncentives = useMemo(() => {
+    const rows = incentives.data?.data ?? [];
+    if (!searchIncentive.trim()) return rows;
+    const q = searchIncentive.toLowerCase();
+    return rows.filter((x) =>
+      (showName(x.sales)?.toLowerCase().includes(q)) ||
+      (x.salesId?.toLowerCase().includes(q)) ||
+      (x.leadOrder?.nomorOrder?.toLowerCase().includes(q)) ||
+      (x.period?.toLowerCase().includes(q)) ||
+      (x.status?.toLowerCase().includes(q))
+    );
+  }, [incentives.data?.data, searchIncentive]);
+
+  // Tab 3: Runs
+  const [pageRun, setPageRun] = useState(1);
+  const [limitRun, setLimitRun] = useState(15);
+  const [searchRun, setSearchRun] = useState('');
+  const runs = usePayrollRuns(branchKey, { page: pageRun, limit: limitRun }, branchHeader);
+
+  const filteredRuns = useMemo(() => {
+    const rows = runs.data?.data ?? [];
+    if (!searchRun.trim()) return rows;
+    const q = searchRun.toLowerCase();
+    return rows.filter((x) =>
+      (x.period?.toLowerCase().includes(q)) ||
+      (x.status?.toLowerCase().includes(q))
+    );
+  }, [runs.data?.data, searchRun]);
+
   const baseMutations = usePayrollBaseSalaryMutations();
   const { can } = usePermissions();
+
   const baseColumns: Column<PayrollBaseSalary>[] = [
     { header: 'User', cell: (x) => <span className="font-bold text-ink">{showName(x.user) || x.userId}</span> },
     { header: 'Gapok', align: 'right', cell: (x) => formatCurrency(x.amount) },
@@ -221,6 +273,7 @@ const PayrollPageInner = () => {
     { header: 'Status', cell: (x) => x.isActive ? 'Aktif' : 'Nonaktif' },
     { header: '', align: 'right', cell: (x) => <RowActions onEdit={() => setBaseForm(x)} onDelete={() => setBaseDelete(x)} /> },
   ];
+
   const incentiveColumns: Column<SalesIncentive>[] = [
     { header: 'Sales', cell: (x) => <span className="font-bold text-ink">{showName(x.sales) || x.salesId}</span> },
     { header: 'Order', cell: (x) => x.leadOrder?.nomorOrder ?? x.leadOrderId },
@@ -229,6 +282,7 @@ const PayrollPageInner = () => {
     { header: 'Nominal', align: 'right', cell: (x) => formatCurrency(x.amount) },
     { header: '', align: 'right', cell: (x) => <RowActions onEdit={can('SALE_SETTLEMENT_FINALIZE') && ['DRAFT', 'EARNED'].includes(x.status) ? () => setIncentiveForm(x) : undefined} extra={can('PAYROLL_PAY') && x.status === 'EARNED' && !x.payrollRunItemId ? [{ label: 'Bayar Langsung', icon: <Banknote size={13} />, onClick: () => setIncentivePayment(x), variant: 'primary' }] : undefined} /> },
   ];
+
   const runColumns: Column<PayrollRun>[] = [
     { header: 'Periode', cell: (x) => <span className="font-bold text-ink">{x.period}</span> },
     { header: 'Status', cell: (x) => <FinanceStatusBadge status={x.status} /> },
@@ -237,13 +291,114 @@ const PayrollPageInner = () => {
     { header: 'Total Dibayar', align: 'right', cell: (x) => <span className="font-bold">{formatCurrency(x.totalPaid)}</span> },
     { header: '', align: 'right', cell: (x) => <RowActions onView={() => setDetailId(x.id)} /> },
   ];
+
   return (
-    <div className="max-w-[1600px] mx-auto  space-y-5">
+    <div className="max-w-[1600px] mx-auto space-y-5">
       <PageHeader title="Payroll" description="Master gapok, insentif sales, dan pembayaran payroll" action={tab === 'base' ? <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setBaseForm(null)}>Tambah Gapok</Button></Can> : tab === 'incentives' ? <Can code="SALE_SETTLEMENT_FINALIZE"><Button icon={<Plus size={17} />} onClick={() => setIncentiveForm(null)}>Tambah Insentif</Button></Can> : <Can code="PAYROLL_CREATE"><Button icon={<Plus size={17} />} onClick={() => setGenerate(true)}>Generate Payroll</Button></Can>} />
       <div className="flex flex-wrap gap-2">{[{ id: 'base', label: 'Master Gapok' }, { id: 'incentives', label: 'Insentif Sales' }, { id: 'runs', label: 'Pembayaran Payroll' }].map((x) => <button key={x.id} onClick={() => setTab(x.id as Tab)} className={`px-4 py-2 rounded-xl text-[13px] font-bold border ${tab === x.id ? 'bg-primary text-white border-primary' : 'bg-surface text-ink-soft border-border'}`}>{x.label}</button>)}</div>
-      {tab === 'base' && <SectionCard title="Master Gapok" icon={<Users size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={baseColumns} data={base.data?.data ?? []} rowKey={(x) => x.id} loading={base.isLoading} refreshing={base.isFetching && !base.isLoading} error={base.isError} onRetry={() => base.refetch()} emptyState={{ title: 'Belum ada master gapok', description: 'Tambahkan gaji pokok untuk user payroll pada cabang ini.' }} /></SectionCard>}
-      {tab === 'incentives' && <SectionCard title="Insentif Sales" icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={incentiveColumns} data={incentives.data?.data ?? []} rowKey={(x) => x.id} loading={incentives.isLoading} refreshing={incentives.isFetching && !incentives.isLoading} error={incentives.isError} onRetry={() => incentives.refetch()} emptyState={{ title: 'Belum ada insentif sales', description: 'Insentif sales yang dicatat akan tampil di sini.' }} /></SectionCard>}
-      {tab === 'runs' && <SectionCard title="Pembayaran Payroll" icon={<Banknote size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={runColumns} data={runs.data?.data ?? []} rowKey={(x) => x.id} loading={runs.isLoading} refreshing={runs.isFetching && !runs.isLoading} error={runs.isError} onRetry={() => runs.refetch()} emptyState={{ title: 'Belum ada payroll', description: 'Generate payroll untuk periode yang ingin diproses.' }} /></SectionCard>}
+      
+      {tab === 'base' && (
+        <SectionCard
+          title="Master Gapok"
+          icon={<Users size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="w-56">
+              <SearchInput
+                placeholder="Cari user / gapok..."
+                value={searchBase}
+                onChange={setSearchBase}
+              />
+            </div>
+          }
+        >
+          <DataTable columns={baseColumns} data={filteredBase} rowKey={(x) => x.id} loading={base.isLoading} refreshing={base.isFetching && !base.isLoading} error={base.isError} onRetry={() => base.refetch()} emptyState={{ title: 'Belum ada master gapok', description: 'Tambahkan gaji pokok untuk user payroll pada cabang ini.' }} />
+          {(base.data?.data ?? []).length > 0 && (
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={base.data?.meta}
+                page={pageBase}
+                onChange={setPageBase}
+                limit={limitBase}
+                onLimitChange={(l) => {
+                  setLimitBase(l);
+                  setPageBase(1);
+                }}
+                itemLabel="gapok"
+              />
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {tab === 'incentives' && (
+        <SectionCard
+          title="Insentif Sales"
+          icon={<ReceiptText size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="w-56">
+              <SearchInput
+                placeholder="Cari sales / order / periode..."
+                value={searchIncentive}
+                onChange={setSearchIncentive}
+              />
+            </div>
+          }
+        >
+          <DataTable columns={incentiveColumns} data={filteredIncentives} rowKey={(x) => x.id} loading={incentives.isLoading} refreshing={incentives.isFetching && !incentives.isLoading} error={incentives.isError} onRetry={() => incentives.refetch()} emptyState={{ title: 'Belum ada insentif sales', description: 'Insentif sales yang dicatat akan tampil di sini.' }} />
+          {(incentives.data?.data ?? []).length > 0 && (
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={incentives.data?.meta}
+                page={pageIncentive}
+                onChange={setPageIncentive}
+                limit={limitIncentive}
+                onLimitChange={(l) => {
+                  setLimitIncentive(l);
+                  setPageIncentive(1);
+                }}
+                itemLabel="insentif"
+              />
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {tab === 'runs' && (
+        <SectionCard
+          title="Pembayaran Payroll"
+          icon={<Banknote size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="w-56">
+              <SearchInput
+                placeholder="Cari periode..."
+                value={searchRun}
+                onChange={setSearchRun}
+              />
+            </div>
+          }
+        >
+          <DataTable columns={runColumns} data={filteredRuns} rowKey={(x) => x.id} loading={runs.isLoading} refreshing={runs.isFetching && !runs.isLoading} error={runs.isError} onRetry={() => runs.refetch()} emptyState={{ title: 'Belum ada payroll', description: 'Generate payroll untuk periode yang ingin diproses.' }} />
+          {(runs.data?.data ?? []).length > 0 && (
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={runs.data?.meta}
+                page={pageRun}
+                onChange={setPageRun}
+                limit={limitRun}
+                onLimitChange={(l) => {
+                  setLimitRun(l);
+                  setPageRun(1);
+                }}
+                itemLabel="payroll"
+              />
+            </div>
+          )}
+        </SectionCard>
+      )}
+
       {baseForm !== undefined && <BaseSalaryForm item={baseForm} onClose={() => setBaseForm(undefined)} />}
       {incentiveForm !== undefined && <IncentiveForm item={incentiveForm} onClose={() => setIncentiveForm(undefined)} />}
       {incentivePayment && <PayIncentiveForm item={incentivePayment} onClose={() => setIncentivePayment(null)} />}

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { PiggyBank, Search, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { PiggyBank, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { SelectField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
 import { RequirePermission } from '@/features/auth/permissions';
@@ -105,21 +106,34 @@ export const InvestorObligationPage = () => {
   const investors = investorsRes?.data ?? [];
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [search, setSearch] = useState('');
   const [investorId, setInvestorId] = useState('');
   const [status, setStatus] = useState<InvestorObligationStatus | ''>('');
   const [type, setType] = useState<InvestorObligationType | ''>('');
-  const [dueBefore, setDueBefore] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const params = {
-    page, limit: 10,
+    page,
+    limit,
     investorId: investorId || undefined,
     status: status || undefined,
     type: type || undefined,
-    dueBefore: dueBefore || undefined,
   };
   const { data, isLoading, isError } = useInvestorObligations(branchKey, params, branchHeader);
   const obligations = data?.data ?? [];
+
+  const filteredObligations = useMemo(() => {
+    if (!search.trim()) return obligations;
+    const q = search.toLowerCase();
+    return obligations.filter((r) =>
+      (r.investor?.name?.toLowerCase().includes(q)) ||
+      (r.investor?.code?.toLowerCase().includes(q)) ||
+      (r.branch?.nama?.toLowerCase().includes(q)) ||
+      (r.cycleKey?.toLowerCase().includes(q)) ||
+      (OBLIGATION_TYPE_LABEL[r.type]?.toLowerCase().includes(q))
+    );
+  }, [obligations, search]);
 
   const mutationBlocked = isOwner && !selectedBranchId;
 
@@ -207,45 +221,68 @@ export const InvestorObligationPage = () => {
 
         <SummaryCards branchKey={branchKey} headers={branchHeader} investorId={investorId || undefined} />
 
-        <SectionCard title="Filter" icon={<Search size={16} />}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <SelectField
-              label="Investor"
-              value={investorId}
-              onChange={(e) => { setInvestorId(e.target.value); setPage(1); }}
-              options={[{ value: '', label: 'Semua Investor' }, ...investors.map((i) => ({ value: i.id, label: i.name }))]}
-            />
-            <SelectField
-              label="Status"
-              value={status}
-              onChange={(e) => { setStatus(e.target.value as InvestorObligationStatus | ''); setPage(1); }}
-              options={[{ value: '', label: 'Semua Status' }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: OBLIGATION_STATUS_LABEL[s] }))]}
-            />
-            <SelectField
-              label="Tipe"
-              value={type}
-              onChange={(e) => { setType(e.target.value as InvestorObligationType | ''); setPage(1); }}
-              options={[{ value: '', label: 'Semua Tipe' }, ...TYPE_OPTIONS.map((t) => ({ value: t, label: OBLIGATION_TYPE_LABEL[t] }))]}
-            />
-            <DateField
-              label="Jatuh Tempo Sebelum"
-              value={dueBefore}
-              onChange={(v) => { setDueBefore(v); setPage(1); }}
-            />
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Daftar Kewajiban" icon={<PiggyBank size={16} />} bodyClassName="p-0 md:p-0">
+        <SectionCard
+          title="Daftar Kewajiban"
+          icon={<PiggyBank size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="w-52">
+                <SearchInput
+                  placeholder="Cari kewajiban..."
+                  value={search}
+                  onChange={setSearch}
+                />
+              </div>
+              <div className="w-44">
+                <SelectField
+                  label=""
+                  value={investorId}
+                  onChange={(e) => { setInvestorId(e.target.value); setPage(1); }}
+                  options={[{ value: '', label: 'Semua Investor' }, ...investors.map((i) => ({ value: i.id, label: i.name }))]}
+                />
+              </div>
+              <div className="w-40">
+                <SelectField
+                  label=""
+                  value={status}
+                  onChange={(e) => { setStatus(e.target.value as InvestorObligationStatus | ''); setPage(1); }}
+                  options={[{ value: '', label: 'Semua Status' }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: OBLIGATION_STATUS_LABEL[s] }))]}
+                />
+              </div>
+              <div className="w-36">
+                <SelectField
+                  label=""
+                  value={type}
+                  onChange={(e) => { setType(e.target.value as InvestorObligationType | ''); setPage(1); }}
+                  options={[{ value: '', label: 'Semua Tipe' }, ...TYPE_OPTIONS.map((t) => ({ value: t, label: OBLIGATION_TYPE_LABEL[t] }))]}
+                />
+              </div>
+            </div>
+          }
+        >
           {isLoading ? (
             <TableSkeleton rows={6} cols={6} />
           ) : isError ? (
             <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-          ) : obligations.length === 0 ? (
+          ) : filteredObligations.length === 0 ? (
             <EmptyState icon={PiggyBank} title="Belum ada kewajiban investor" description="Kewajiban akan tampil setelah proses generate atau transaksi terkait membentuk kewajiban." />
           ) : (
             <>
-              <DataTable columns={columns} data={obligations} rowKey={(r) => r.id} />
-              <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+              <DataTable columns={columns} data={filteredObligations} rowKey={(r) => r.id} />
+              <div className="px-4 pb-4">
+                <Pagination
+                  meta={data?.meta}
+                  page={page}
+                  onChange={setPage}
+                  limit={limit}
+                  onLimitChange={(l) => {
+                    setLimit(l);
+                    setPage(1);
+                  }}
+                  itemLabel="kewajiban"
+                />
+              </div>
             </>
           )}
         </SectionCard>

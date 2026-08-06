@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, Wallet, AlertTriangle,
+  Wallet, AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -8,6 +8,7 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { SelectField } from '@/shared/components/ui/Field';
 import { RequirePermission } from '@/features/auth/permissions';
 import { useBranchScope } from '@/features/auth/useBranchScope';
@@ -20,22 +21,36 @@ const idr = (n?: number | null) =>
   n == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
 const PAID_OPTIONS = [
-  { value: '', label: 'Semua' },
+  { value: '', label: 'Semua Status Bayar' },
   { value: 'false', label: 'Belum Lunas' },
   { value: 'true', label: 'Lunas' },
 ];
+
+const SummaryCard = ({ label, value, color, icon }: { label: string; value: string; color: string; icon: string }) => (
+  <div className="rounded-2xl border border-border bg-surface p-4 flex items-center gap-3">
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${icon}`}>
+      <Wallet size={18} />
+    </div>
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-muted">{label}</p>
+      <p className={`text-lg font-extrabold ${color}`}>{value}</p>
+    </div>
+  </div>
+);
 
 export const PembayaranPage = () => {
   const { isOwner, selectedBranchId, branchHeader, branchKey } = useBranchScope();
   const mutationBlocked = isOwner && !selectedBranchId;
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const [filterPaid, setFilterPaid] = useState('');
   const debounced = useDebouncedValue(search, 350);
 
-  const { data, isLoading, isError } = useLeadOrders(branchKey, {
-    page, limit: 15,
+  const { data, isLoading, isError, refetch } = useLeadOrders(branchKey, {
+    page,
+    limit,
     search: debounced || undefined,
     isPaid: filterPaid === '' ? undefined : filterPaid === 'true',
   }, branchHeader);
@@ -80,18 +95,18 @@ export const PembayaranPage = () => {
     {
       header: 'Terbayar',
       align: 'right',
-      cell: (r) => <span className="font-semibold text-green-600">{idr(r.totalPaid)}</span>,
+      cell: (r) => <span className="font-semibold text-accent-green">{idr(r.totalPaid)}</span>,
     },
     {
       header: 'Sisa',
       align: 'right',
-      cell: (r) => <span className="font-semibold text-red-500">{idr(r.remainingPayment)}</span>,
+      cell: (r) => <span className="font-semibold text-semantic-error">{idr(r.remainingPayment)}</span>,
     },
     {
       header: 'Status Bayar',
       align: 'center',
       cell: (r) => (
-        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${r.isPaid ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${r.isPaid ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-amber/10 text-accent-amber'}`}>
           {r.isPaid ? 'Lunas' : 'Belum Lunas'}
         </span>
       ),
@@ -105,7 +120,7 @@ export const PembayaranPage = () => {
 
   return (
     <RequirePermission code="LEAD_PAYMENT_READ">
-      <div className="max-w-[1600px] mx-auto  space-y-5">
+      <div className="max-w-[1600px] mx-auto space-y-5">
         <PageHeader
           title="Pembayaran"
           description="Riwayat pembayaran per sales order"
@@ -119,19 +134,17 @@ export const PembayaranPage = () => {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <SummaryCard label="Total Terbayar (halaman ini)" value={idr(totalTerbayar)} color="text-green-600" icon="text-white bg-green-500" />
-          <SummaryCard label="Total Sisa Tagihan" value={idr(totalSisa)} color="text-red-600" icon="text-white bg-red-400" />
+          <SummaryCard label="Total Terbayar (halaman ini)" value={idr(totalTerbayar)} color="text-accent-green" icon="text-white bg-accent-green" />
+          <SummaryCard label="Total Sisa Tagihan" value={idr(totalSisa)} color="text-semantic-error" icon="text-white bg-semantic-error" />
           <SummaryCard label="Sudah Lunas" value={`${lunas} dari ${orders.length} order`} color="text-ink" icon="text-white bg-primary" />
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[220px] max-w-xs">
-            <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-            <input
+          <div className="flex-1 min-w-[220px] max-w-xs">
+            <SearchInput
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(val) => { setSearch(val); setPage(1); }}
               placeholder="Cari no. order / customer..."
-              className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
             />
           </div>
           <SelectField
@@ -139,7 +152,7 @@ export const PembayaranPage = () => {
             value={filterPaid}
             onChange={(e) => { setFilterPaid(e.target.value); setPage(1); }}
             options={PAID_OPTIONS}
-            wrapClass="min-w-[160px]"
+            wrapClass="min-w-[180px]"
           />
         </div>
 
@@ -152,8 +165,17 @@ export const PembayaranPage = () => {
             <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada data pembayaran.</div>
           ) : (
             <>
-              <DataTable columns={columns} data={orders} rowKey={(r) => r.id} />
-              <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+              <DataTable columns={columns} data={orders} rowKey={(r) => r.id} error={isError} onRetry={() => refetch()} />
+              <div className="p-4">
+                <Pagination
+                  meta={data?.meta}
+                  page={page}
+                  onChange={setPage}
+                  limit={limit}
+                  onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                  itemLabel="pembayaran"
+                />
+              </div>
             </>
           )}
         </SectionCard>
@@ -170,15 +192,3 @@ export const PembayaranPage = () => {
     </RequirePermission>
   );
 };
-
-const SummaryCard = ({ label, value, color, icon }: { label: string; value: string; color: string; icon: string }) => (
-  <div className="bg-surface rounded-2xl border border-border shadow-card p-5 flex items-center gap-4">
-    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${icon}`}>
-      <Wallet size={22} />
-    </div>
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p>
-      <p className={`text-lg font-extrabold mt-0.5 ${color}`}>{value}</p>
-    </div>
-  </div>
-);

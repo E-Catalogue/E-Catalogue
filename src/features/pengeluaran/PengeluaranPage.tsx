@@ -3,6 +3,8 @@ import { CalendarClock, Plus, ReceiptText, Wallet } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
@@ -198,6 +200,14 @@ const PengeluaranPageInner = () => {
   const { can } = usePermissions();
   const [tab, setTab] = useState<Tab>('expenses');
   const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [search, setSearch] = useState('');
+
+  const [recurringPage, setRecurringPage] = useState(1);
+  const [recurringLimit, setRecurringLimit] = useState(15);
+  const [recurringSearch, setRecurringSearch] = useState('');
+
   const [expenseForm, setExpenseForm] = useState<OperationalExpense | null | undefined>();
   const [payExpense, setPayExpense] = useState<OperationalExpense | null>(null);
   const [cancelExpense, setCancelExpense] = useState<OperationalExpense | null>(null);
@@ -205,13 +215,35 @@ const PengeluaranPageInner = () => {
   const [removeRecurring, setRemoveRecurring] = useState<RecurringExpense | null>(null);
   const [generate, setGenerate] = useState(false);
   const { branchKey, branchHeader } = useBranchScope();
-  const expenses = useOperationalExpenses(branchKey, { page: 1, limit: 50, status: status || undefined }, branchHeader);
-  const recurring = useRecurringExpenses(branchKey, { page: 1, limit: 100 }, branchHeader);
+  const expenses = useOperationalExpenses(branchKey, { page, limit, status: status || undefined }, branchHeader);
+  const recurring = useRecurringExpenses(branchKey, { page: recurringPage, limit: recurringLimit }, branchHeader);
   const expenseMutations = useOperationalExpenseMutations();
   const recurringMutations = useRecurringExpenseMutations();
   const totalDraft = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.status === 'DRAFT').reduce((s, x) => s + x.amount, 0), [expenses.data]);
   const recurringPaid = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.recurringExpenseId && x.status === 'PAID').reduce((s, x) => s + x.amount, 0), [expenses.data]);
   const recurringUnpaid = useMemo(() => (expenses.data?.data ?? []).filter((x) => x.recurringExpenseId && x.status === 'DRAFT').reduce((s, x) => s + x.amount, 0), [expenses.data]);
+
+  const expenseData = useMemo(() => {
+    const list = expenses.data?.data ?? [];
+    if (!search.trim()) return list;
+    const q = search.toLowerCase();
+    return list.filter((e) =>
+      (e.title?.toLowerCase().includes(q)) ||
+      (e.kategoriPengeluaran?.name?.toLowerCase().includes(q)) ||
+      (e.description?.toLowerCase().includes(q))
+    );
+  }, [expenses.data?.data, search]);
+
+  const recurringData = useMemo(() => {
+    const list = recurring.data?.data ?? [];
+    if (!recurringSearch.trim()) return list;
+    const q = recurringSearch.toLowerCase();
+    return list.filter((r) =>
+      (r.name?.toLowerCase().includes(q)) ||
+      (r.kategoriPengeluaran?.name?.toLowerCase().includes(q))
+    );
+  }, [recurring.data?.data, recurringSearch]);
+
   const expenseColumns: Column<OperationalExpense>[] = [
     { header: 'Tanggal', cell: (e) => formatDate(e.expenseDate) },
     { header: 'Judul', cell: (e) => <span className="font-bold text-ink">{e.title}</span> },
@@ -238,12 +270,111 @@ const PengeluaranPageInner = () => {
             <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Draft Belum Dibayar</p><p className="text-xl font-extrabold text-semantic-error mt-1">{formatCurrency(totalDraft, { compact: true })}</p></div>
             <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Rutin Sudah Dibayar</p><p className="text-xl font-extrabold text-accent-green mt-1">{formatCurrency(recurringPaid, { compact: true })}</p><p className="text-[10px] text-muted mt-1">Pada data halaman aktif</p></div>
             <div className="bg-surface rounded-2xl border border-border shadow-card p-5"><p className="text-[10px] font-bold uppercase text-muted">Rutin Belum Dibayar</p><p className="text-xl font-extrabold text-accent-amber mt-1">{formatCurrency(recurringUnpaid, { compact: true })}</p><p className="text-[10px] text-muted mt-1">Pada data halaman aktif</p></div>
-            <SelectField label="Filter Status" value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: '', label: 'Semua' }, { value: 'DRAFT', label: 'Draft' }, { value: 'PAID', label: 'Sudah Dibayar' }, { value: 'CANCELLED', label: 'Dibatalkan' }]} />
           </div>
-          <SectionCard title="Daftar Pengeluaran" icon={<ReceiptText size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={expenseColumns} data={expenses.data?.data ?? []} rowKey={(e) => e.id} loading={expenses.isLoading} refreshing={expenses.isFetching && !expenses.isLoading} error={expenses.isError} onRetry={() => expenses.refetch()} emptyState={{ title: 'Belum ada pengeluaran', description: status ? 'Tidak ada pengeluaran dengan status yang dipilih.' : 'Catat pengeluaran operasional agar tampil di sini.' }} /></SectionCard>
+          <SectionCard
+            title="Daftar Pengeluaran"
+            icon={<ReceiptText size={16} />}
+            bodyClassName="p-0 md:p-0"
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-56">
+                  <SearchInput
+                    placeholder="Cari pengeluaran..."
+                    value={search}
+                    onChange={setSearch}
+                  />
+                </div>
+                <div className="w-44">
+                  <SelectField
+                    label=""
+                    value={status}
+                    onChange={(e) => {
+                      setStatus(e.target.value);
+                      setPage(1);
+                    }}
+                    options={[
+                      { value: '', label: 'Semua Status' },
+                      { value: 'DRAFT', label: 'Draft' },
+                      { value: 'PAID', label: 'Sudah Dibayar' },
+                      { value: 'CANCELLED', label: 'Dibatalkan' },
+                    ]}
+                  />
+                </div>
+              </div>
+            }
+          >
+            <DataTable
+              columns={expenseColumns}
+              data={expenseData}
+              rowKey={(e) => e.id}
+              loading={expenses.isLoading}
+              refreshing={expenses.isFetching && !expenses.isLoading}
+              error={expenses.isError}
+              onRetry={() => expenses.refetch()}
+              emptyState={{
+                title: 'Belum ada pengeluaran',
+                description: status ? 'Tidak ada pengeluaran dengan status yang dipilih.' : 'Catat pengeluaran operasional agar tampil di sini.',
+              }}
+            />
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={expenses.data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="pengeluaran"
+              />
+            </div>
+          </SectionCard>
         </>
       )}
-      {tab === 'recurring' && <SectionCard title="Template Pengeluaran Rutin" icon={<CalendarClock size={16} />} bodyClassName="p-0 md:p-0"><DataTable columns={recurringColumns} data={recurring.data?.data ?? []} rowKey={(r) => r.id} loading={recurring.isLoading} refreshing={recurring.isFetching && !recurring.isLoading} error={recurring.isError} onRetry={() => recurring.refetch()} emptyState={{ title: 'Belum ada template rutin', description: 'Tambahkan template untuk mempercepat pencatatan pengeluaran berkala.' }} /></SectionCard>}
+      {tab === 'recurring' && (
+        <SectionCard
+          title="Template Pengeluaran Rutin"
+          icon={<CalendarClock size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="w-56">
+              <SearchInput
+                placeholder="Cari template..."
+                value={recurringSearch}
+                onChange={setRecurringSearch}
+              />
+            </div>
+          }
+        >
+          <DataTable
+            columns={recurringColumns}
+            data={recurringData}
+            rowKey={(r) => r.id}
+            loading={recurring.isLoading}
+            refreshing={recurring.isFetching && !recurring.isLoading}
+            error={recurring.isError}
+            onRetry={() => recurring.refetch()}
+            emptyState={{
+              title: 'Belum ada template rutin',
+              description: 'Tambahkan template untuk mempercepat pencatatan pengeluaran berkala.',
+            }}
+          />
+          <div className="px-4 pb-4">
+            <Pagination
+              meta={recurring.data?.meta}
+              page={recurringPage}
+              onChange={setRecurringPage}
+              limit={recurringLimit}
+              onLimitChange={(l) => {
+                setRecurringLimit(l);
+                setRecurringPage(1);
+              }}
+              itemLabel="template"
+            />
+          </div>
+        </SectionCard>
+      )}
       {expenseForm !== undefined && <ExpenseForm item={expenseForm} onClose={() => setExpenseForm(undefined)} />}
       {payExpense && <PayExpenseForm item={payExpense} onClose={() => setPayExpense(null)} />}
       {recurringForm !== undefined && <RecurringForm item={recurringForm} onClose={() => setRecurringForm(undefined)} />}

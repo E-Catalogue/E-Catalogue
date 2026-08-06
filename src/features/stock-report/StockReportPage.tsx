@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   PackageSearch, Boxes, Wallet, TrendingUp, Timer, AlertTriangle, Layers,
   ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, RefreshCw,
@@ -8,6 +8,7 @@ import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SelectField } from '@/shared/components/ui/Field';
 import { formatCurrency, formatNumber, formatDate } from '@/core/utils/format';
@@ -60,14 +61,49 @@ export const StockReportPage = () => {
   const [status, setStatus] = useState('');
   const [tab, setTab] = useState<Tab>('aging');
   const [unitPage, setUnitPage] = useState(1);
+  const [unitLimit, setUnitLimit] = useState(15);
+  const [unitSearch, setUnitSearch] = useState('');
   const [movePage, setMovePage] = useState(1);
+  const [moveLimit, setMoveLimit] = useState(20);
+  const [moveSearch, setMoveSearch] = useState('');
 
   const baseParams = { asOf, statusUnit: status || undefined };
   const { data: overview, isLoading: ovLoading } = useStockOverview(baseParams);
-  const { data: unitsRes, isLoading: unitsLoading } = useStockUnits({ ...baseParams, view: tab, page: unitPage, limit: 15 });
-  const { data: movesRes, isLoading: movesLoading } = useStockMovements({ asOf, page: movePage, limit: 20 }, tab === 'valuation');
+  const { data: unitsRes, isLoading: unitsLoading } = useStockUnits({ ...baseParams, view: tab, page: unitPage, limit: unitLimit });
+  const { data: movesRes, isLoading: movesLoading } = useStockMovements({ asOf, page: movePage, limit: moveLimit }, tab === 'valuation');
 
-  const rows = unitsRes?.data ?? [];
+  const rawRows = unitsRes?.data ?? [];
+  const filteredRows = useMemo(() => {
+    if (!unitSearch.trim()) return rawRows;
+    const q = unitSearch.toLowerCase();
+    return rawRows.filter((u) => {
+      return (
+        u.name?.toLowerCase().includes(q) ||
+        u.platNomor?.toLowerCase().includes(q) ||
+        u.merek?.toLowerCase().includes(q) ||
+        u.tipe?.toLowerCase().includes(q) ||
+        u.branch?.nama?.toLowerCase().includes(q) ||
+        u.statusUnit?.toLowerCase().includes(q) ||
+        u.badge?.toLowerCase().includes(q)
+      );
+    });
+  }, [rawRows, unitSearch]);
+
+  const rawMoves = movesRes?.data ?? [];
+  const filteredMoves = useMemo(() => {
+    if (!moveSearch.trim()) return rawMoves;
+    const q = moveSearch.toLowerCase();
+    return rawMoves.filter((m) => {
+      return (
+        m.unitName?.toLowerCase().includes(q) ||
+        m.platNomor?.toLowerCase().includes(q) ||
+        m.label?.toLowerCase().includes(q) ||
+        m.detail?.toLowerCase().includes(q) ||
+        m.type?.toLowerCase().includes(q)
+      );
+    });
+  }, [rawMoves, moveSearch]);
+
   const maxBucket = Math.max(1, ...(overview?.aging.map((a) => a.count) ?? [1]));
 
   const unitColumns: Column<StockUnitRow>[] = [
@@ -90,7 +126,7 @@ export const StockReportPage = () => {
   ];
 
   return (
-    <div className="max-w-[1280px] mx-auto animate-float-up space-y-5">
+    <div className="max-w-[1280px] mx-auto animate-float-up space-y-5 pb-12">
       <PageHeader title="Laporan Stok" description="Gambaran stok aktif, aging, slow moving, valuasi, dan pergerakan unit."
         action={
           <div className="flex items-end gap-2">
@@ -119,7 +155,7 @@ export const StockReportPage = () => {
       {/* Tabs */}
       <div className="flex items-center gap-1 rounded-2xl border border-border bg-surface p-1.5 w-fit">
         {TABS.map((t) => (
-          <button key={t.key} onClick={() => { setTab(t.key); setUnitPage(1); }}
+          <button key={t.key} onClick={() => { setTab(t.key); setUnitPage(1); setUnitSearch(''); }}
             className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-xl text-[12px] font-bold transition-all ${tab === t.key ? 'bg-primary text-white shadow-glow' : 'text-ink-soft hover:bg-surface-soft'}`}>
             {t.label}
           </button>
@@ -155,11 +191,52 @@ export const StockReportPage = () => {
 
       {/* Units table */}
       {tab !== 'valuation' && (
-        <SectionCard title={tab === 'aging' ? 'Daftar Unit (Aging)' : 'Daftar Unit Slow Moving'} icon={<PackageSearch size={16} />} bodyClassName="p-0 md:p-0">
-          {unitsLoading ? <TableSkeleton rows={6} cols={8} /> : rows.length === 0 ? (
-            <EmptyState icon={PackageSearch} title={tab === 'slow_moving' ? 'Tidak ada unit slow moving' : 'Tidak ada unit'} description="Sesuaikan filter atau tanggal." />
+        <SectionCard
+          title={tab === 'aging' ? 'Daftar Unit (Aging)' : 'Daftar Unit Slow Moving'}
+          icon={<PackageSearch size={16} />}
+          bodyClassName="p-0 md:p-0"
+          action={
+            <div className="w-64">
+              <SearchInput
+                size="sm"
+                value={unitSearch}
+                onChange={setUnitSearch}
+                placeholder="Cari unit, plat, cabang..."
+              />
+            </div>
+          }
+        >
+          {unitsLoading ? (
+            <TableSkeleton rows={6} cols={8} />
+          ) : rawRows.length === 0 ? (
+            <EmptyState
+              icon={PackageSearch}
+              title={tab === 'slow_moving' ? 'Tidak ada unit slow moving' : 'Tidak ada unit'}
+              description="Sesuaikan filter atau tanggal."
+            />
+          ) : filteredRows.length === 0 ? (
+            <EmptyState
+              icon={PackageSearch}
+              title="Tidak ada data yang cocok"
+              description={`Tidak ditemukan unit dengan kata kunci "${unitSearch}".`}
+            />
           ) : (
-            <><DataTable columns={unitColumns} data={rows} rowKey={(r) => r.id} /><div className="px-4 pb-4"><Pagination meta={unitsRes?.meta} page={unitPage} onChange={setUnitPage} /></div></>
+            <>
+              <DataTable columns={unitColumns} data={filteredRows} rowKey={(r) => r.id} />
+              <div className="p-4">
+                <Pagination
+                  meta={unitsRes?.meta}
+                  page={unitPage}
+                  onChange={setUnitPage}
+                  limit={unitLimit}
+                  onLimitChange={(l) => {
+                    setUnitLimit(l);
+                    setUnitPage(1);
+                  }}
+                  itemLabel="unit"
+                />
+              </div>
+            </>
           )}
         </SectionCard>
       )}
@@ -173,7 +250,21 @@ export const StockReportPage = () => {
             ) : <DataTable columns={branchColumns} data={overview.branches} rowKey={(b) => b.id} />}
           </SectionCard>
 
-          <SectionCard title="Pergerakan Stok" icon={<ArrowLeftRight size={16} />} bodyClassName="p-0 md:p-0">
+          <SectionCard
+            title="Pergerakan Stok"
+            icon={<ArrowLeftRight size={16} />}
+            bodyClassName="p-0 md:p-0"
+            action={
+              <div className="w-64">
+                <SearchInput
+                  size="sm"
+                  value={moveSearch}
+                  onChange={setMoveSearch}
+                  placeholder="Cari pergerakan..."
+                />
+              </div>
+            }
+          >
             {overview && (
               <div className="px-4 py-3 grid grid-cols-3 gap-3 border-b border-divider">
                 <div className="text-center"><p className="text-[11px] font-bold text-muted">Masuk</p><p className="text-lg font-extrabold text-accent-blue">{overview.movementSummary.masuk}</p></div>
@@ -181,12 +272,16 @@ export const StockReportPage = () => {
                 <div className="text-center"><p className="text-[11px] font-bold text-muted">Transfer</p><p className="text-lg font-extrabold text-primary">{overview.movementSummary.transfer}</p></div>
               </div>
             )}
-            {movesLoading ? <TableSkeleton rows={5} cols={3} /> : (movesRes?.data.length ?? 0) === 0 ? (
+            {movesLoading ? (
+              <TableSkeleton rows={5} cols={3} />
+            ) : rawMoves.length === 0 ? (
               <EmptyState icon={ArrowLeftRight} title="Belum ada pergerakan" description="Tidak ada aktivitas pada rentang ini." />
+            ) : filteredMoves.length === 0 ? (
+              <EmptyState icon={ArrowLeftRight} title="Tidak ada pergerakan yang cocok" description={`Tidak ditemukan data dengan kata kunci "${moveSearch}".`} />
             ) : (
               <>
                 <div className="divide-y divide-divider">
-                  {(movesRes?.data ?? []).map((m: StockMovement) => {
+                  {filteredMoves.map((m: StockMovement) => {
                     const meta = MOVE_META[m.type];
                     const Icon = meta.Icon;
                     return (
@@ -198,7 +293,19 @@ export const StockReportPage = () => {
                     );
                   })}
                 </div>
-                <div className="px-4 py-4"><Pagination meta={movesRes?.meta} page={movePage} onChange={setMovePage} /></div>
+                <div className="p-4">
+                  <Pagination
+                    meta={movesRes?.meta}
+                    page={movePage}
+                    onChange={setMovePage}
+                    limit={moveLimit}
+                    onLimitChange={(l) => {
+                      setMoveLimit(l);
+                      setMovePage(1);
+                    }}
+                    itemLabel="pergerakan"
+                  />
+                </div>
               </>
             )}
           </SectionCard>

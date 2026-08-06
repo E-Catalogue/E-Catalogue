@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Banknote, Undo2 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -6,6 +6,7 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { SelectField } from '@/shared/components/ui/Field';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { useInvestorPayments } from './investor-suite.hooks';
@@ -15,14 +16,28 @@ type StatusFilter = '' | 'POSTED' | 'REVERSED';
 
 export const InvestorPaymentLedgerPage = () => {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
   const { data, isLoading, isError } = useInvestorPayments({
-    page, limit: 15, status: status || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined,
+    page, limit, status: status || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined,
   });
   const rows = data?.data ?? [];
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r) =>
+      (r.obligation?.investor?.name?.toLowerCase().includes(q)) ||
+      (r.obligation?.investor?.code?.toLowerCase().includes(q)) ||
+      (r.obligation?.type?.toLowerCase().includes(q)) ||
+      (r.cashAccount?.name?.toLowerCase().includes(q)) ||
+      (r.branch?.nama?.toLowerCase().includes(q))
+    );
+  }, [rows, search]);
 
   const columns: Column<InvestorPaymentRow>[] = [
     { header: 'Tanggal', cell: (r) => <span className="text-[12px] font-semibold text-ink-soft">{formatDate(r.paidAt)}</span> },
@@ -49,7 +64,20 @@ export const InvestorPaymentLedgerPage = () => {
     <div className="max-w-[1200px] mx-auto animate-float-up space-y-5">
       <PageHeader title="Pembayaran Investor" description="Ledger seluruh pembayaran kewajiban investor (termasuk reversal). Aksi bayar/reversal dilakukan dari halaman Kewajiban Investor." />
 
-      <SectionCard title="Ledger Pembayaran" icon={<Banknote size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard
+        title="Ledger Pembayaran"
+        icon={<Banknote size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={
+          <div className="w-56">
+            <SearchInput
+              placeholder="Cari pembayaran..."
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
+        }
+      >
         <div className="p-4 grid grid-cols-1 sm:grid-cols-[auto_auto_auto_1fr] gap-3 border-b border-divider">
           <SelectField label="Status" wrapClass="w-40" value={status} onChange={(e) => { setStatus(e.target.value as StatusFilter); setPage(1); }}
             options={[{ value: '', label: 'Semua' }, { value: 'POSTED', label: 'Posted' }, { value: 'REVERSED', label: 'Reversed' }]} />
@@ -62,12 +90,24 @@ export const InvestorPaymentLedgerPage = () => {
           <TableSkeleton rows={6} cols={7} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat ledger pembayaran.</div>
-        ) : rows.length === 0 ? (
+        ) : filteredRows.length === 0 ? (
           <EmptyState icon={Banknote} title="Belum ada pembayaran" description="Pembayaran kewajiban investor akan tampil di sini." />
         ) : (
           <>
-            <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
-            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+            <DataTable columns={columns} data={filteredRows} rowKey={(r) => r.id} />
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="pembayaran"
+              />
+            </div>
           </>
         )}
       </SectionCard>

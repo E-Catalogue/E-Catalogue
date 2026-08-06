@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Plus, Search, Users, Phone, Mail, RefreshCw,
+  Plus, Users, Phone, Mail, RefreshCw,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -9,6 +9,7 @@ import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { Modal } from '@/shared/components/ui/Modal';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -33,9 +34,10 @@ const LEAD_STATUS_OPTIONS: LeadStatus[] = ['NEW', 'INTERESTED', 'FOLLOW_UP', 'TE
 const CrmPageInner = () => {
   const { can } = usePermissions();
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search, 350);
-  const { data, isLoading, isError } = useLeads({ page, limit: 15, search: debounced });
+  const { data, isLoading, isError, refetch } = useLeads({ page, limit, search: debounced });
   const m = useLeadMutations();
 
   const [form, setForm] = useState<{ item: Lead | null } | null>(null);
@@ -104,20 +106,18 @@ const CrmPageInner = () => {
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto  space-y-5">
+    <div className="max-w-[1200px] mx-auto space-y-5">
       <PageHeader
         title="CRM / Lead"
         description="Data customer & prospek penjualan"
         action={can('LEAD_CREATE') ? <Button icon={<Plus size={17} strokeWidth={2.5} />} onClick={() => setForm({ item: null })}>Tambah Lead</Button> : undefined}
       />
 
-      <div className="relative w-full sm:max-w-xs">
-        <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-        <input
+      <div className="w-full sm:max-w-xs">
+        <SearchInput
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(val) => { setSearch(val); setPage(1); }}
           placeholder="Cari nama, NIK, HP, email..."
-          className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
         />
       </div>
 
@@ -127,11 +127,20 @@ const CrmPageInner = () => {
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
         ) : leads.length === 0 ? (
-          <EmptyState icon={Users} title="Belum ada lead" description="Tambahkan lead untuk memulai proses CRM dan tindak lanjut penjualan." />
+          <EmptyState icon={Users} title="Belum ada lead" description={debounced ? 'Tidak ditemukan lead dengan kata kunci pencarian tersebut.' : 'Tambahkan lead untuk memulai proses CRM dan tindak lanjut penjualan.'} />
         ) : (
           <>
-            <DataTable columns={columns} data={leads} rowKey={(r) => r.id} />
-            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+            <DataTable columns={columns} data={leads} rowKey={(r) => r.id} error={isError} onRetry={() => refetch()} />
+            <div className="p-4">
+              <Pagination
+                meta={data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                itemLabel="lead"
+              />
+            </div>
           </>
         )}
       </SectionCard>
@@ -161,29 +170,36 @@ const CrmPageInner = () => {
             </>
           }
         >
-          <SelectField
-            label="Status"
-            value={statusValue}
-            onChange={(e) => setStatusValue(e.target.value as LeadStatus)}
-            options={LEAD_STATUS_OPTIONS.map((s) => ({ value: s, label: LEAD_STATUS_LABEL[s] }))}
-          />
+          <div className="space-y-4">
+            <p className="text-xs text-muted">
+              Ubah status interaksi dengan lead ini. Catatan: status <strong className="text-ink">WON</strong> dan <strong className="text-ink">BOOKING</strong> diatur otomatis melalui proses sales order.
+            </p>
+            <SelectField
+              label="Status Baru"
+              value={statusValue}
+              onChange={(e) => setStatusValue(e.target.value as LeadStatus)}
+              options={LEAD_STATUS_OPTIONS.map((s) => ({ value: s, label: LEAD_STATUS_LABEL[s] }))}
+            />
+          </div>
         </Modal>
       )}
 
       <ConfirmDialog
         open={confirmStatus}
         onClose={() => setConfirmStatus(false)}
-        onConfirm={() => statusTarget && m.updateStatus.mutate(
-          { id: statusTarget.id, status: statusValue },
-          { onSuccess: () => { setConfirmStatus(false); setStatusTarget(null); }, onError: (err) => notifyApiError(err) },
-        )}
-        closeOnConfirm={false}
+        onConfirm={() => {
+          if (!statusTarget) return;
+          m.updateStatus.mutate(
+            { id: statusTarget.id, status: statusValue },
+            {
+              onError: (e) => notifyApiError(e),
+              onSuccess: () => { setConfirmStatus(false); setStatusTarget(null); },
+            },
+          );
+        }}
         loading={m.updateStatus.isPending}
-        tone="primary"
-        icon={RefreshCw}
-        title="Ubah Status Lead"
-        message={`Ubah status lead "${statusTarget?.nama ?? ''}" menjadi "${LEAD_STATUS_LABEL[statusValue]}"?`}
-        confirmLabel="Ya, Ubah"
+        title="Konfirmasi Ubah Status"
+        message={`Ubah status ${statusTarget?.nama} menjadi "${LEAD_STATUS_LABEL[statusValue]}"?`}
       />
     </div>
   );

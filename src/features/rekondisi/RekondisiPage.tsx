@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   CheckCircle2, Eye, Plus, Wrench,
 } from 'lucide-react';
@@ -12,6 +12,8 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { SelectField } from '@/shared/components/ui/Field';
 import { MonthField } from '@/shared/components/ui/MonthField';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
+import { Pagination } from '@/shared/components/ui/Pagination';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateRekondisi, useUnits } from '@/features/units/unit.hooks';
@@ -128,6 +130,9 @@ const RekondisiPageInner = () => {
   const [unitId, setUnitId] = useState('');
   const [period, setPeriod] = useState('');
   const [dateBasis, setDateBasis] = useState<'COMPLETED' | 'PAID'>('COMPLETED');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [createOpen, setCreateOpen] = useState(false);
   const [detailUnit, setDetailUnit] = useState<{ id: string; label?: string } | null>(null);
 
@@ -141,6 +146,30 @@ const RekondisiPageInner = () => {
   const initialTotal = rows.filter((row) => row.seq === 1).reduce((sum, row) => sum + Number(row.total || 0), 0);
   const additionalTotal = rows.filter((row) => row.seq > 1).reduce((sum, row) => sum + Number(row.total || 0), 0);
   const paidTotal = rows.filter((row) => row.paidAt).reduce((sum, row) => sum + Number(row.total || 0), 0);
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r) => {
+      const unitName = r.unit ? unitDisplayName(r.unit).toLowerCase() : '';
+      const plat = (r.unit?.platNomor ?? '').toLowerCase();
+      const vendor = (r.vendor?.name ?? '').toLowerCase();
+      const ket = (r.keterangan ?? '').toLowerCase();
+      return unitName.includes(q) || plat.includes(q) || vendor.includes(q) || ket.includes(q);
+    });
+  }, [rows, search]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredRows.slice(start, start + limit);
+  }, [filteredRows, page, limit]);
+
+  const meta = useMemo(() => ({
+    page,
+    limit,
+    total: filteredRows.length,
+    totalPages: Math.max(1, Math.ceil(filteredRows.length / limit)),
+  }), [page, limit, filteredRows.length]);
 
   const columns: Column<Rekondisi>[] = [
     {
@@ -219,37 +248,62 @@ const RekondisiPageInner = () => {
         <SelectField
           label=""
           value={status}
-          onChange={(e) => setStatus(e.target.value as RekondisiStatus | '')}
+          onChange={(e) => { setStatus(e.target.value as RekondisiStatus | ''); setPage(1); }}
           options={STATUS_OPTIONS}
         />
         <SearchableSelect
           value={unitId}
-          onChange={setUnitId}
+          onChange={(v) => { setUnitId(v); setPage(1); }}
           clearable
           options={units.map((unit) => ({ value: unit.id, label: unitOptionLabel(unit), sublabel: [unit.merek?.name, unit.tipe?.name].filter(Boolean).join(' ') || undefined }))}
           placeholder="Semua Unit"
           searchPlaceholder="Cari unit..."
           emptyMessage="Tidak ada unit."
         />
-        <MonthField value={period} onChange={setPeriod} placeholder="Semua periode" />
-        <SelectField label="" value={dateBasis} onChange={(event) => setDateBasis(event.target.value as 'COMPLETED' | 'PAID')} options={[{ value: 'COMPLETED', label: 'Periode Selesai' }, { value: 'PAID', label: 'Periode Bayar' }]} />
+        <MonthField value={period} onChange={(v) => { setPeriod(v); setPage(1); }} placeholder="Semua periode" />
+        <SelectField label="" value={dateBasis} onChange={(event) => { setDateBasis(event.target.value as 'COMPLETED' | 'PAID'); setPage(1); }} options={[{ value: 'COMPLETED', label: 'Periode Selesai' }, { value: 'PAID', label: 'Periode Bayar' }]} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">{[['Rekondisi Awal (HPP)', initialTotal], ['Rekondisi Tambahan', additionalTotal], ['Sudah Dibayar', paidTotal]].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-[10px] uppercase font-bold text-muted">{label}</p><p className="text-lg font-extrabold text-ink mt-1">{idr(value as number)}</p></div>)}</div>
 
-      <SectionCard title={`Daftar Rekondisi (${rows.length})`} icon={<Wrench size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard
+        title={`Daftar Rekondisi (${filteredRows.length})`}
+        icon={<Wrench size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={(
+          <SearchInput
+            value={search}
+            onChange={(v) => { setSearch(v); setPage(1); }}
+            placeholder="Cari unit, plat, vendor..."
+            className="w-56 sm:w-64"
+          />
+        )}
+      >
         {isLoading ? (
           <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat rekondisi.</div>
-        ) : rows.length === 0 ? (
+        ) : filteredRows.length === 0 ? (
           <div className="text-center py-16">
             <Wrench size={32} className="text-muted mx-auto mb-3" />
             <p className="font-bold text-ink text-[14px]">Belum ada rekondisi.</p>
             <p className="text-muted text-[12px] font-medium mt-1">Buat rekondisi dari unit inventory untuk mulai mencatat pekerjaan.</p>
           </div>
         ) : (
-          <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
+          <>
+            <DataTable columns={columns} data={paginatedRows} rowKey={(r) => r.id} />
+            <div className="px-4 pb-4 pt-2">
+              <Pagination
+                meta={meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                limitOptions={[10, 15, 25, 50, 100]}
+                itemLabel="rekondisi"
+              />
+            </div>
+          </>
         )}
       </SectionCard>
 

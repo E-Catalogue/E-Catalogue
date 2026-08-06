@@ -12,6 +12,9 @@ import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
+import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { formatDate } from '@/core/utils/format';
 import { notifyApiError } from '@/core/api/notify';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
@@ -65,13 +68,23 @@ const HeaderEditor = () => {
 
 export const ContactInboxPage = () => {
   const [tab, setTab] = useState<ContactStatus | 'ALL'>('ALL');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [search, setSearch] = useState('');
   const [detail, setDetail] = useState<ContactMessage | null>(null);
   const [toDelete, setToDelete] = useState<ContactMessage | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<{ msg: ContactMessage; status: ContactStatus; label: string } | null>(null);
+  const debounced = useDebouncedValue(search, 400);
 
-  const { data, isLoading, isError } = useContactMessages({ page: 1, limit: 100, status: tab === 'ALL' ? undefined : tab });
+  const { data, isLoading, isError } = useContactMessages({
+    page,
+    limit,
+    status: tab === 'ALL' ? undefined : tab,
+    search: debounced || undefined,
+  });
   const { data: countNew } = useContactMessageCount();
   const rows = data?.data ?? [];
+  const total = data?.meta?.total ?? rows.length;
   const m = useContactMessageMutations();
 
   const setStatus = (id: string, status: ContactStatus) => m.setStatus.mutate({ id, status }, { onError: (e) => notifyApiError(e) });
@@ -112,7 +125,7 @@ export const ContactInboxPage = () => {
       {/* Inbox — filter status */}
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-slim rounded-2xl border border-border bg-surface p-1.5">
         {TABS.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
+          <button key={t.key} onClick={() => { setTab(t.key); setPage(1); }}
             className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-xl text-[12px] font-bold whitespace-nowrap transition-all shrink-0 ${
               tab === t.key ? 'bg-primary text-white shadow-glow' : 'text-ink-soft hover:bg-surface-soft'
             }`}>
@@ -124,7 +137,23 @@ export const ContactInboxPage = () => {
         ))}
       </div>
 
-      <SectionCard title={`Pesan Masuk (${rows.length})`} icon={<Inbox size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard
+        title={`Pesan Masuk (${total})`}
+        icon={<Inbox size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={
+          <div className="w-56">
+            <SearchInput
+              placeholder="Cari pesan..."
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
+          </div>
+        }
+      >
         {isLoading ? (
           <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
@@ -132,7 +161,22 @@ export const ContactInboxPage = () => {
         ) : rows.length === 0 ? (
           <EmptyState icon={Inbox} title="Belum ada pesan" description={tab === 'ALL' ? 'Pesan yang dikirim melalui formulir kontak akan tampil di sini.' : 'Tidak ada pesan dengan status yang dipilih.'} />
         ) : (
-          <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
+          <>
+            <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="pesan"
+              />
+            </div>
+          </>
         )}
       </SectionCard>
 

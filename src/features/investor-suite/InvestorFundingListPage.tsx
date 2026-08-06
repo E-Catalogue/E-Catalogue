@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { HandCoins, Search } from 'lucide-react';
+import { HandCoins } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { SelectField } from '@/shared/components/ui/Field';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
@@ -21,13 +22,14 @@ const STATUS_CLS: Record<FundingAgreementStatus, string> = {
 
 export const InvestorFundingListPage = () => {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const [scheme, setScheme] = useState<'' | InvestorScheme>('');
   const [status, setStatus] = useState<'' | FundingAgreementStatus>('');
   const debounced = useDebouncedValue(search, 400);
 
   const { data, isLoading, isError } = useInvestorFundings({
-    page, limit: 15, search: debounced || undefined, scheme: scheme || undefined, status: status || undefined,
+    page, limit, search: debounced || undefined, scheme: scheme || undefined, status: status || undefined,
   });
   const rows = data?.data ?? [];
 
@@ -55,11 +57,11 @@ export const InvestorFundingListPage = () => {
 
       <SectionCard title="Daftar Pendanaan" icon={<HandCoins size={16} />} bodyClassName="p-0 md:p-0">
         <div className="p-4 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 border-b border-divider">
-          <div className="relative">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari unit / plat / investor..."
-              className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={(v) => { setSearch(v); setPage(1); }}
+            placeholder="Cari unit / plat / investor..."
+          />
           <SelectField label="" wrapClass="w-40" value={scheme} onChange={(e) => { setScheme(e.target.value as InvestorScheme | ''); setPage(1); }}
             options={[{ value: '', label: 'Semua Skema' }, { value: 'FIXED_MONTHLY', label: 'Fixed Monthly' }, { value: 'PROFIT_SHARE', label: 'Profit Share' }]} />
           <SelectField label="" wrapClass="w-40" value={status} onChange={(e) => { setStatus(e.target.value as FundingAgreementStatus | ''); setPage(1); }}
@@ -74,7 +76,19 @@ export const InvestorFundingListPage = () => {
         ) : (
           <>
             <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
-            <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+            <div className="px-4 pb-4">
+              <Pagination
+                meta={data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="pendanaan"
+              />
+            </div>
           </>
         )}
       </SectionCard>

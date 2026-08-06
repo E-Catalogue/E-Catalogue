@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { FileImage, KeyRound, Loader2, Plus, Search } from 'lucide-react';
+import { FileImage, KeyRound, Loader2, Plus } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
+import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { unitDisplayName } from '@/features/units/unit.display';
@@ -65,12 +67,19 @@ const PrivateMediaLink = ({ url, label }: { url: string; label: string }) => {
 
 const TestDrivePageInner = () => {
   const { can } = usePermissions();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [salesId, setSalesId] = useState('');
-  const debounced = useDebouncedValue(search, 400);
-  const { data, isLoading, isFetching, isError, refetch } = useTestDrives({ page, limit: 10, search: debounced || undefined, status: status || undefined, salesId: salesId || undefined });
+  const debounced = useDebouncedValue(search, 350);
+  const { data, isLoading, isFetching, isError, refetch } = useTestDrives({
+    page,
+    limit,
+    search: debounced || undefined,
+    status: status || undefined,
+    salesId: salesId || undefined,
+  });
   const { data: lookup } = useTestDriveLookups();
   const mutations = useTestDriveMutations();
   const [form, setForm] = useState<{ item: TestDrive | null } | null>(null);
@@ -81,26 +90,33 @@ const TestDrivePageInner = () => {
   const columns: Column<TestDrive>[] = [
     { header: 'Jadwal', cell: (t) => <span className="font-bold text-ink">{formatDate(t.scheduledAt)}</span> },
     { header: 'Customer', cell: (t) => <span className="font-bold text-ink">{t.lead?.nama ?? t.leadId}</span> },
-    { header: 'Unit', cell: (t) => t.unit ? (
-      <div className="min-w-0">
-        <p className="font-semibold text-ink truncate" title={unitDisplayName(t.unit)}>{unitDisplayName(t.unit)}</p>
-        <p className="text-[11px] text-muted truncate">{[t.unit.merek?.name, t.unit.tipe?.name].filter(Boolean).join(' ')} · {t.unit.platNomor}</p>
-      </div>
-    ) : t.unitId },
+    {
+      header: 'Unit',
+      cell: (t) => t.unit ? (
+        <div className="min-w-0">
+          <p className="font-semibold text-ink truncate" title={unitDisplayName(t.unit)}>{unitDisplayName(t.unit)}</p>
+          <p className="text-[11px] text-muted truncate">{[t.unit.merek?.name, t.unit.tipe?.name].filter(Boolean).join(' ')} · {t.unit.platNomor}</p>
+        </div>
+      ) : t.unitId,
+    },
     { header: 'Sales', cell: (t) => t.sales?.name ?? '-' },
     { header: 'Status', align: 'center', cell: (t) => <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold ${STATUS_CLASS[t.status]}`}>{STATUS_LABEL[t.status]}</span> },
     { header: 'Foto KTP', align: 'center', cell: (t) => t.fotoKtpUrl ? <PrivateMediaLink url={t.fotoKtpUrl} label="Lihat foto KTP" /> : '-' },
     { header: 'Foto SIM', align: 'center', cell: (t) => t.fotoSimUrl ? <PrivateMediaLink url={t.fotoSimUrl} label="Lihat foto SIM" /> : '-' },
-    { header: '', align: 'right', cell: (t) => (
-      <RowActions
-        onEdit={can('TEST_DRIVE_UPDATE') ? () => setForm({ item: t }) : undefined}
-        onDelete={can('TEST_DRIVE_DELETE') ? () => setToDelete(t) : undefined}
-      />
-    ) },
+    {
+      header: '',
+      align: 'right',
+      cell: (t) => (
+        <RowActions
+          onEdit={can('TEST_DRIVE_UPDATE') ? () => setForm({ item: t }) : undefined}
+          onDelete={can('TEST_DRIVE_DELETE') ? () => setToDelete(t) : undefined}
+        />
+      ),
+    },
   ];
 
   return (
-    <div className="max-w-[1600px] mx-auto  space-y-5">
+    <div className="max-w-[1600px] mx-auto space-y-5">
       <PageHeader
         title="Test Drive"
         description="Jadwal dan riwayat test drive pelanggan"
@@ -108,13 +124,14 @@ const TestDrivePageInner = () => {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px_220px] gap-3">
-        <div className="relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari customer, unit, sales..." className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={(val) => { setSearch(val); setPage(1); }}
+          placeholder="Cari customer, unit, sales..."
+        />
         <SearchableSelect
           value={status}
-          onChange={setStatus}
+          onChange={(val) => { setStatus(val); setPage(1); }}
           options={[
             { value: '', label: 'Semua Status' },
             { value: 'SCHEDULED', label: 'Dijadwalkan' },
@@ -124,14 +141,35 @@ const TestDrivePageInner = () => {
         />
         <SearchableSelect
           value={salesId}
-          onChange={setSalesId}
+          onChange={(val) => { setSalesId(val); setPage(1); }}
           options={[{ value: '', label: 'Semua Sales' }, ...salesOptions.map((sales) => ({ value: sales.id, label: sales.name }))]}
         />
       </div>
 
       <SectionCard title="Jadwal Test Drive" icon={<KeyRound size={16} />} bodyClassName="p-0 md:p-0">
-        <DataTable columns={columns} data={rows} rowKey={(t) => t.id} loading={isLoading} refreshing={isFetching && !isLoading}
-          error={isError} onRetry={() => refetch()} emptyState={{ title: debounced || status || salesId ? 'Jadwal tidak ditemukan' : 'Belum ada test drive', description: debounced || status || salesId ? 'Ubah filter untuk melihat jadwal lainnya.' : 'Jadwalkan test drive untuk pelanggan dan unit yang tersedia.' }} />
+        <DataTable
+          columns={columns}
+          data={rows}
+          rowKey={(t) => t.id}
+          loading={isLoading}
+          refreshing={isFetching && !isLoading}
+          error={isError}
+          onRetry={() => refetch()}
+          emptyState={{
+            title: debounced || status || salesId ? 'Jadwal tidak ditemukan' : 'Belum ada test drive',
+            description: debounced || status || salesId ? 'Ubah filter untuk melihat jadwal lainnya.' : 'Jadwalkan test drive untuk pelanggan dan unit yang tersedia.',
+          }}
+        />
+        <div className="p-4">
+          <Pagination
+            meta={data?.meta}
+            page={page}
+            onChange={setPage}
+            limit={limit}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            itemLabel="jadwal"
+          />
+        </div>
       </SectionCard>
 
       <TestDriveFormModal open={!!form} item={form?.item} onClose={() => setForm(null)} />

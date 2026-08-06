@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Plus, Search, ReceiptText, RefreshCw, AlertTriangle, ClipboardCheck,
+  Plus, ReceiptText, RefreshCw, AlertTriangle, ClipboardCheck,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -9,6 +9,7 @@ import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Button } from '@/shared/components/ui/Button';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { SelectField } from '@/shared/components/ui/Field';
 import { RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -42,6 +43,7 @@ export const PenjualanPage = () => {
   const mutationBlocked = isOwner && !selectedBranchId;
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSales, setFilterSales] = useState('');
@@ -53,14 +55,18 @@ export const PenjualanPage = () => {
   const [dateTo, setDateTo] = useState('');
   const debounced = useDebouncedValue(search, 350);
 
-  const { data, isLoading, isError } = useLeadOrders(branchKey, {
-    page, limit: 15,
+  const { data, isLoading, isError, refetch } = useLeadOrders(branchKey, {
+    page,
+    limit,
     search: debounced || undefined,
     status: (filterStatus as OrderStatus) || undefined,
     salesId: isSales ? undefined : filterSales || undefined,
-    paymentType: paymentType || undefined, statusSlik: statusSlik || undefined,
-    surveyStatus: surveyStatus || undefined, statusApproval: statusApproval || undefined,
-    dateFrom: dateFrom || undefined, dateTo: dateTo || undefined,
+    paymentType: paymentType || undefined,
+    statusSlik: statusSlik || undefined,
+    surveyStatus: surveyStatus || undefined,
+    statusApproval: statusApproval || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   }, branchHeader);
   const { data: lookup } = useLeadOrderFormLookup(branchKey, branchHeader);
   const m = useLeadOrderMutations(branchKey);
@@ -164,7 +170,7 @@ export const PenjualanPage = () => {
 
   return (
     <RequirePermission code="LEAD_ORDER_READ">
-      <div className="max-w-[1600px] mx-auto  space-y-5">
+      <div className="max-w-[1600px] mx-auto space-y-5">
         <PageHeader
           title={isSales ? 'Penjualan Saya' : 'Penjualan'}
           description={isSales ? 'Riwayat aplikasi dan penjualan milik Anda' : 'Sales order & manajemen transaksi'}
@@ -190,13 +196,11 @@ export const PenjualanPage = () => {
         )}
 
         <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[220px] max-w-xs">
-            <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-            <input
+          <div className="flex-1 min-w-[220px] max-w-xs">
+            <SearchInput
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(val) => { setSearch(val); setPage(1); }}
               placeholder="Cari no. order / customer..."
-              className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
             />
           </div>
           <SelectField
@@ -230,8 +234,17 @@ export const PenjualanPage = () => {
             <div className="text-center py-16 text-muted font-semibold text-sm">Belum ada order.</div>
           ) : (
             <>
-              <DataTable columns={columns} data={orders} rowKey={(r) => r.id} />
-              <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>
+              <DataTable columns={columns} data={orders} rowKey={(r) => r.id} error={isError} onRetry={() => refetch()} />
+              <div className="p-4">
+                <Pagination
+                  meta={data?.meta}
+                  page={page}
+                  onChange={setPage}
+                  limit={limit}
+                  onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                  itemLabel="order"
+                />
+              </div>
             </>
           )}
         </SectionCard>

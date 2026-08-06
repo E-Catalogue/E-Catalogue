@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ArrowDownLeft, ArrowUpRight, BookOpen, Landmark, Loader2, Lock,
   Percent, RefreshCw, ShieldCheck, TrendingUp, Wallet,
@@ -7,6 +7,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { Button } from '@/shared/components/ui/Button';
 import { MonthField } from '@/shared/components/ui/MonthField';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
@@ -313,21 +314,71 @@ const ledgerColumns: Column<BookLedgerRow>[] = [
 
 const LedgerTab = ({ branchKey, branchHeader, period }: { branchKey: string; branchHeader: Record<string, string> | undefined; period: string }) => {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+  const [search, setSearch] = useState('');
   const [cashAccountId, setCashAccountId] = useState('');
-  const ledger = useBookLedger(branchKey, { period, page, limit: 20, cashAccountId: cashAccountId || undefined }, branchHeader);
+  const ledger = useBookLedger(branchKey, { period, page, limit, cashAccountId: cashAccountId || undefined }, branchHeader);
   const { data: cashAccounts = [], isLoading: cashLoading } = useBookCashAccounts(branchKey, { headers: branchHeader });
+
+  const ledgerData = useMemo(() => {
+    const list = ledger.data?.data ?? [];
+    if (!search.trim()) return list;
+    const q = search.toLowerCase();
+    return list.filter((t) =>
+      (t.description?.toLowerCase().includes(q)) ||
+      (t.cashAccount?.name?.toLowerCase().includes(q)) ||
+      (t.sourceType?.toLowerCase().includes(q))
+    );
+  }, [ledger.data?.data, search]);
+
   return (
     <SectionCard
       title="Arus Kas (Ledger)"
       icon={<BookOpen size={16} />}
       subtitle="Ledger mencatat arus kas, bukan laba rugi. Transfer internal bukan pendapatan atau beban."
-      action={<div className="w-64"><CashAccountSelect label="Filter Akun Kas" value={cashAccountId} onChange={(value) => { setCashAccountId(value); setPage(1); }} accounts={cashAccounts} loading={cashLoading} /></div>}
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="w-56">
+            <SearchInput
+              placeholder="Cari transaksi..."
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
+          <div className="w-56">
+            <CashAccountSelect
+              label=""
+              value={cashAccountId}
+              onChange={(value) => { setCashAccountId(value); setPage(1); }}
+              accounts={cashAccounts}
+              loading={cashLoading}
+            />
+          </div>
+        </div>
+      }
       bodyClassName="p-0 md:p-0"
     >
       {ledger.isLoading ? <div className="flex items-center justify-center py-16"><Loader2 size={22} className="animate-spin text-muted" /></div>
         : ledger.isError ? <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat ledger.</div>
           : (ledger.data?.data ?? []).length === 0 ? <div className="text-center py-16"><BookOpen size={32} className="text-muted mx-auto mb-3" /><p className="font-bold text-ink text-[14px]">Belum ada transaksi pada periode ini.</p></div>
-            : <><DataTable columns={ledgerColumns} data={ledger.data?.data ?? []} rowKey={(transaction) => transaction.id} /><div className="px-5 pb-4"><Pagination meta={ledger.data?.meta} page={page} onChange={setPage} /></div></>}
+            : (
+              <>
+                <DataTable columns={ledgerColumns} data={ledgerData} rowKey={(transaction) => transaction.id} />
+                <div className="px-4 pb-4">
+                  <Pagination
+                    meta={ledger.data?.meta}
+                    page={page}
+                    onChange={setPage}
+                    limit={limit}
+                    onLimitChange={(l) => {
+                      setLimit(l);
+                      setPage(1);
+                    }}
+                    itemLabel="transaksi"
+                  />
+                </div>
+              </>
+            )}
     </SectionCard>
   );
 };

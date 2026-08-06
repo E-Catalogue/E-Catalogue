@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2 } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { PublicHeader } from './PublicHeader';
 import { PriceRangeSlider } from './PriceRangeSlider';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
+import { Pagination } from '@/shared/components/ui/Pagination';
 import { CustomerServerError } from './CustomerStates';
 import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
@@ -48,6 +49,7 @@ export const KatalogPage = () => {
   const [price, setPrice] = useState<{ min: number; max: number } | null>(null);
   const [sort, setSort] = useState<SortKey>('newest');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
   const [showFilter, setShowFilter] = useState(false);
   const debounced = useDebouncedValue(query, 400);
 
@@ -61,7 +63,9 @@ export const KatalogPage = () => {
   const priceActive = price !== null && (pMin > priceBounds.min || pMax < priceBounds.max);
 
   const params: CatalogQuery = {
-    page, limit: 12, sort,
+    page,
+    limit,
+    sort,
     search: debounced || undefined,
     merek: brand || undefined,
     transmisi: trans || undefined,
@@ -72,7 +76,6 @@ export const KatalogPage = () => {
   const { data, isLoading, isError, refetch } = usePublicCatalog(params);
   const units = data?.data ?? [];
   const meta = data?.meta;
-  const totalPages = meta?.totalPages ?? 1;
 
   const openDetail = (u: CatalogCard) => navigate({ to: '/katalog/$id', params: { id: u.id } });
   const reset = () => { setBrand(''); setTrans(''); setFuel(''); setPrice(null); setQuery(''); setPage(1); };
@@ -141,7 +144,7 @@ export const KatalogPage = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <p className="text-[13px] font-semibold text-muted">
-                Menampilkan <span className="text-ink font-extrabold">{units.length}</span>{meta ? ` dari ${meta.total}` : ''} unit
+                Menampilkan <span className="text-ink font-extrabold">{units.length}</span>{meta ? ` dari ${meta.total}` : ''} unit mobil
               </p>
               {activeFilters.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
@@ -170,13 +173,24 @@ export const KatalogPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                   {units.map((u) => <PublicUnitCard key={u.id} card={u} onView={openDetail} />)}
                 </div>
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center disabled:opacity-40 hover:border-primary"><ChevronLeft size={18} /></button>
-                    <span className="text-[13px] font-bold text-ink-soft px-3">Halaman {page} / {totalPages}</span>
-                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center disabled:opacity-40 hover:border-primary"><ChevronRight size={18} /></button>
-                  </div>
-                )}
+                <div className="mt-8 bg-surface p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs">
+                  <Pagination
+                    meta={meta}
+                    page={page}
+                    onChange={(p) => {
+                      setPage(p);
+                      window.scrollTo({ top: 350, behavior: 'smooth' });
+                    }}
+                    limit={limit}
+                    onLimitChange={(l) => {
+                      setLimit(l);
+                      setPage(1);
+                    }}
+                    limitOptions={[6, 12, 18, 24, 36, 48]}
+                    itemLabel="mobil"
+                    className="border-t-0 pt-0"
+                  />
+                </div>
               </>
             )}
           </div>

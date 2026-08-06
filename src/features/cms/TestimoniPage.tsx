@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Plus, Search, Star, Quote, Pencil, Trash2, Eye, EyeOff, Save, ExternalLink,
+  Plus, Star, Quote, Pencil, Trash2, Eye, EyeOff, Save, ExternalLink,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -13,6 +13,7 @@ import { TextField } from '@/shared/components/ui/Field';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
 import { useTestimonials, useTestimonialMutations } from './cms.hooks';
@@ -26,6 +27,7 @@ const emptyForm: TestimonialForm = {
 
 export const TestimoniPage = () => {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState<{ item?: Testimonial } | null>(null);
   const [formData, setFormData] = useState<TestimonialForm>(emptyForm);
@@ -33,7 +35,7 @@ export const TestimoniPage = () => {
   const [publishTarget, setPublishTarget] = useState<Testimonial | null>(null);
   const debounced = useDebouncedValue(search, 400);
 
-  const { data, isLoading, isError } = useTestimonials({ page, limit: 10, search: debounced || undefined });
+  const { data, isLoading, isError } = useTestimonials({ page, limit, search: debounced || undefined });
   const rows = data?.data ?? [];
   const m = useTestimonialMutations();
 
@@ -174,18 +176,24 @@ export const TestimoniPage = () => {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-        <input
-          value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Cari testimoni..."
-          className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface border border-border text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
-        />
-      </div>
-
       {/* List */}
-      <SectionCard title="Daftar Testimoni" icon={<Quote size={16} />} bodyClassName="p-0 md:p-0">
+      <SectionCard
+        title="Daftar Testimoni"
+        icon={<Quote size={16} />}
+        bodyClassName="p-0 md:p-0"
+        action={
+          <div className="w-56">
+            <SearchInput
+              placeholder="Cari testimoni..."
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
+          </div>
+        }
+      >
         {isLoading ? (
           <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
@@ -196,7 +204,17 @@ export const TestimoniPage = () => {
           <>
             <DataTable columns={columns} data={rows} rowKey={(r) => r.id} />
             <div className="px-4 pb-4">
-              <Pagination meta={data?.meta} page={page} onChange={setPage} />
+              <Pagination
+                meta={data?.meta}
+                page={page}
+                onChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                  setLimit(l);
+                  setPage(1);
+                }}
+                itemLabel="testimoni"
+              />
             </div>
           </>
         )}
