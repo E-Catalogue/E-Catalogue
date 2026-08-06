@@ -42,6 +42,9 @@ const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: stri
 export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false }: UnitDetailModalProps) => {
   const { data: detailRes, refetch: refetchUnit } = useUnit(open ? unit?.id : undefined);
   const current = detailRes?.data ?? unit;
+  // Data dari daftar unit belum memuat `purchaseCashTransactionId`. Jangan
+  // menyimpulkan pembayaran belum ada sebelum detail unit selesai dimuat.
+  const paymentStatusKnown = detailRes?.data !== undefined;
   const imageMutations = useUnitImageMutations(current?.id ?? '');
   const finalizePricing = useFinalizeInitialPricing();
   const reopenPricing = useReopenPricing();
@@ -321,6 +324,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           resourceId={current.id}
           branchId={current.branchId}
           paid={!!current.purchaseCashTransactionId}
+          paymentStatusKnown={paymentStatusKnown}
           canAllocate={can('UNIT_FUNDING_MANAGE')}
           fundingSource={current.fundingAgreement?.fundingSource}
         />

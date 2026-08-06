@@ -58,6 +58,11 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
   const statusUnit = statusOverride ?? (isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit);
 
   const bahanBakarLabel = isMock ? '' : (unit as BackendUnit).bahanBakar ?? '';
+  const fundingLabel = isMock
+    ? null
+    : backendUnit.fundingAgreement?.fundingSource === 'INVESTOR'
+      ? [backendUnit.fundingAgreement.investor?.code, backendUnit.fundingAgreement.investor?.name].filter(Boolean).join(' — ') || 'Investor'
+      : 'Milik Perusahaan';
 
   return (
     <motion.div
@@ -152,6 +157,12 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
             </span>
           )}
         </div>
+        {!isMock && fundingLabel && (
+          <div className="mt-3 rounded-lg bg-surface-soft px-2.5 py-2">
+            <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Pendanaan</p>
+            <p className="mt-0.5 truncate text-[11px] font-bold text-ink" title={fundingLabel}>{fundingLabel}</p>
+          </div>
+        )}
         <div className="mt-3 pt-3 border-t border-divider">
           {isMock ? (
             <span className="font-extrabold text-primary text-[15px] truncate">{formatCurrency(displayPrice)}</span>

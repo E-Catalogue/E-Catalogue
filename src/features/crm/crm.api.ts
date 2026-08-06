@@ -133,6 +133,6 @@ export const settlementApi = {
 
 // ---- Unit (minimal — untuk dropdown pilih unit READY_STOCK di form order) ----
 export const unitApi = {
-  list: (params: { page?: number; limit?: number; search?: string; status?: string }) =>
+  list: (params: { page?: number; limit?: number; search?: string; statusUnit?: string }) =>
     apiClient.get<ApiResponse<UnitSummary[]>>('/units', { params }).then((r) => r.data),
 };

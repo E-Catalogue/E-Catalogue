@@ -566,6 +566,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
                   resourceId={rekondisi.id}
                   branchId={rekondisi.branchId}
                   paid={!!rekondisi.paidAt && !!rekondisi.cashTransactionId}
+                  paymentStatusKnown
                   canAllocate={can('REKONDISI_PAY')}
                 />
               )}

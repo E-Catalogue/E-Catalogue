@@ -23,13 +23,14 @@ interface Props {
   resourceId: string;
   branchId?: string;
   paid: boolean;
+  paymentStatusKnown: boolean;
   canAllocate: boolean;
   fundingSource?: string | null;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const InvestorFundingPanel = ({ resourceType, resourceId, branchId, paid, canAllocate, fundingSource }: Props) => {
+export const InvestorFundingPanel = ({ resourceType, resourceId, branchId, paid, paymentStatusKnown, canAllocate, fundingSource }: Props) => {
   const branchKey = branchId ?? 'resource';
   const headers: Headers = branchId ? { 'X-Branch-Id': branchId } : undefined;
   const usageQuery = useInvestorFundingUsages(resourceType, resourceId, branchKey, headers);
@@ -89,7 +90,7 @@ export const InvestorFundingPanel = ({ resourceType, resourceId, branchId, paid,
         {paid && canAllocate && outstanding > 0 && <Button size="sm" icon={<PlusCircle size={14} />} onClick={() => setFormOpen((value) => !value)}>Alokasikan Dana Investor</Button>}
       </div>
 
-      {!paid && <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-3.5 py-3 text-[11px] font-semibold text-ink-soft">Biaya perusahaan belum tercatat pada kas. Aksi alokasi akan tersedia setelah pembayaran dicatat.</div>}
+      {paymentStatusKnown && !paid && <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-3.5 py-3 text-[11px] font-semibold text-ink-soft">Biaya perusahaan belum tercatat pada kas. Aksi alokasi akan tersedia setelah pembayaran dicatat.</div>}
 
       {summary && (
         <div className="grid grid-cols-3 gap-2">

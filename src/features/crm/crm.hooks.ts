@@ -234,6 +234,6 @@ export const useSaleSettlementMutations = (branchKey: string, orderId: string) =
 export const useReadyStockUnits = (search: string, enabled = true) =>
   useQuery({
     queryKey: ['units-dropdown', search],
-    queryFn: () => unitApi.list({ page: 1, limit: 30, search, status: 'READY_STOCK' }),
+    queryFn: () => unitApi.list({ page: 1, limit: 30, search, statusUnit: 'READY_STOCK' }),
     enabled,
   });
