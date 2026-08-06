@@ -19,12 +19,16 @@ export const formatNumber = (value: number): string =>
 
 export const formatKm = (value: number): string => `${formatNumber(value)} KM`;
 
-export const formatDate = (date: string | Date): string =>
-  new Date(date).toLocaleDateString('id-ID', {
+export const formatDate = (date?: string | Date | null): string => {
+  if (!date) return '-';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
+};
 
 export const formatTransmisi = (value?: string | null): string => {
   if (!value) return '-';

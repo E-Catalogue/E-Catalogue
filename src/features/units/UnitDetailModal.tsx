@@ -8,7 +8,7 @@ import { usePermissions } from '@/features/auth/usePermissions';
 import { UnitGalleryManager } from './UnitGalleryManager';
 import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type FinalCyclePolicy, type PricingInputMode, type Unit } from '@/features/units/unit.types';
 import { unitDisplayName } from '@/features/units/unit.display';
-import { formatCurrency, formatNumber } from '@/core/utils/format';
+import { formatCurrency, formatDate, formatNumber } from '@/core/utils/format';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
 import { notifyApiError } from '@/core/api/notify';
@@ -224,7 +224,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
       {/* Spesifikasi & biaya lengkap */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 mt-4">
         <Spec icon={Building2} label="Cabang" value={current.branch?.nama || '-'} />
-        <Spec icon={Receipt} label="Pajak" value={current.tanggalPajak ? new Date(current.tanggalPajak).toLocaleDateString('id-ID') : '-'} />
+        <Spec icon={Receipt} label="Tanggal Pajak" value={formatDate(current.tanggalPajak)} />
         <Spec icon={Palette} label="Warna" value={current.warna || '-'} />
         <Spec icon={Hash} label="Plat" value={current.platNomor || '-'} />
         {!salesView && current.purchaseCost ? <Spec icon={TrendingUp} label="Harga Beli" value={formatCurrency(current.purchaseCost, { compact: true })} /> : null}
