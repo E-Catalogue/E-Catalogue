@@ -2,6 +2,8 @@ import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
   Unit,
+  UnitListParams,
+  InventoryFilterLookups,
   UnitFormData,
   UnitImageReorderItem,
   UnitStatusUpdate,
@@ -24,7 +26,7 @@ import type { Rekondisi } from '@/features/rekondisi/rekondisi.types';
 type BranchHeaders = Record<string, string> | undefined;
 
 export const unitApi = {
-  list: async (params?: Record<string, unknown>) => {
+  list: async (params?: UnitListParams) => {
     const res = await apiClient.get<ApiResponse<Unit[]>>('/units', { params });
     return res.data;
   },
@@ -36,6 +38,11 @@ export const unitApi = {
 
   getLookups: async (headers?: BranchHeaders) => {
     const res = await apiClient.get<ApiResponse<UnitLookups>>('/units/lookups', { headers });
+    return res.data;
+  },
+
+  getInventoryFilters: async (headers?: BranchHeaders) => {
+    const res = await apiClient.get<ApiResponse<InventoryFilterLookups>>('/units/lookups/inventory-filters', { headers });
     return res.data;
   },
 

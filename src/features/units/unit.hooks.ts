@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { unitApi } from './unit.api';
 import type {
   UnitFormData,
+  UnitListParams,
   UnitStatusUpdate,
   UnitFundingUpdatePayload,
   FinalizeInitialPricingPayload,
@@ -14,7 +15,7 @@ import { showToast } from '@/app/store/uiSlice';
 
 type BranchHeaders = Record<string, string> | undefined;
 
-export function useUnits(params?: Record<string, unknown>) {
+export function useUnits(params?: UnitListParams) {
   return useQuery({
     queryKey: ['units', params],
     queryFn: () => unitApi.list(params),
@@ -231,6 +232,14 @@ export function usePricingPreview(id?: string, data: Partial<FinalizeInitialPric
     queryFn: () => unitApi.pricingPreview(id!, data, headers),
     enabled: !!id,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useInventoryFilterLookups() {
+  return useQuery({
+    queryKey: ['unit-lookups', 'inventory-filters'],
+    queryFn: () => unitApi.getInventoryFilters(),
+    staleTime: 60_000,
   });
 }
 

@@ -13,6 +13,7 @@ export type FundingSource = 'COMPANY_OWNED' | 'INVESTOR';
 export type FundingScheme = 'FIXED_MONTHLY' | 'PROFIT_SHARE';
 export type FinalCyclePolicy = 'FULL' | 'NONE' | 'PRORATA';
 export type FundingStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED';
+export type StockAgeFilter = 'lt30' | '30to60' | '60to90' | 'gt90';
 
 export const FINAL_CYCLE_POLICY_LABEL: Record<FinalCyclePolicy, string> = {
   FULL: 'Full',
@@ -130,6 +131,27 @@ export interface Unit {
     dokumen?: { id: string; name: string; code: string };
   }>;
   leasingOffers?: UnitLeasingOffer[];
+}
+
+export interface UnitListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  statusUnit?: StatusUnit;
+  statusUnits?: string;
+  transmisi?: Transmisi;
+  tahunMin?: number;
+  tahunMax?: number;
+  merekId?: string;
+  fundingSource?: FundingSource;
+  investorId?: string;
+  stockAge?: StockAgeFilter;
+  isActive?: 'true' | 'false' | 'all';
+}
+
+export interface InventoryFilterLookups {
+  brands: Array<{ id: string; name: string }>;
+  investors: Array<{ id: string; name: string; code: string }>;
 }
 
 export interface UnitPricingRevision {
