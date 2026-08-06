@@ -307,12 +307,20 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const fundingIncomplete =
     fundingRequiresInvestor &&
     (!form.investorId || (fundingRequiresFinalCycle && !form.finalCyclePolicy) || insufficientCapital);
+  const fundingChanged = !!unit && (
+    unit.fundingAgreement?.fundingSource !== form.fundingSource
+    || (form.fundingSource === 'INVESTOR' && (
+      unit.fundingAgreement?.investorId !== form.investorId
+      || (unit.fundingAgreement?.finalCyclePolicy ?? '') !== form.finalCyclePolicy
+    ))
+  );
+  const fundingInvalid = fundingIncomplete && (!unit || fundingChanged);
   const goJump = (i: number) => { if (i <= maxReachableStep) setStep(i); };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (fundingIncomplete || nameError) return;
+    if (fundingInvalid || nameError) return;
     const payload: UnitFormData = {
       ...form,
       name: nameTrimmed,
@@ -332,8 +340,6 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     if (unit) {
       const unitPayload: Partial<UnitFormData> = { ...payload };
       delete unitPayload.leasingOffers;
-      const fundingChanged = unit.fundingAgreement?.fundingSource !== form.fundingSource
-        || (form.fundingSource === 'INVESTOR' && (unit.fundingAgreement?.investorId !== form.investorId || unit.fundingAgreement?.finalCyclePolicy !== form.finalCyclePolicy));
       const saveUnit = () => updateUnit.mutate({ id: unit.id, data: unitPayload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
       if (fundingChanged) {
         updateFunding.mutate({
@@ -373,7 +379,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       return (
         <>
           <Button variant="secondary" icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)}>{nextLabel}</Button>
-          <Button icon={<Save size={15} />} onClick={submitForm} loading={updateUnit.isPending} disabled={!!nameError}>Simpan Perubahan</Button>
+          <Button icon={<Save size={15} />} onClick={submitForm} loading={updateUnit.isPending} disabled={!!nameError || fundingInvalid}>Simpan Perubahan</Button>
         </>
       );
     }
@@ -461,8 +467,8 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
             <NumericField label="Kilometer" required disabled={fieldsLocked} value={form.kilometer} onChange={(v) => set('kilometer', v)} suffix="km" placeholder="0" min={0} />
             <TextField label="Plat Nomor" required disabled={fieldsLocked} value={form.platNomor} onChange={(e) => set('platNomor', e.target.value)} placeholder="B 1234 ABC" />
             <DateField label="Tanggal Pajak" required disabled={fieldsLocked} value={form.tanggalPajak} onChange={(v) => set('tanggalPajak', v)} />
-            <TextField label="No Rangka" required disabled={fieldsLocked} value={form.noRangka} onChange={(e) => set('noRangka', e.target.value)} />
-            <TextField label="No Mesin" required disabled={fieldsLocked} value={form.noMesin} onChange={(e) => set('noMesin', e.target.value)} />
+            <TextField label="No Rangka" required={!unit} disabled={fieldsLocked} value={form.noRangka} onChange={(e) => set('noRangka', e.target.value)} />
+            <TextField label="No Mesin" required={!unit} disabled={fieldsLocked} value={form.noMesin} onChange={(e) => set('noMesin', e.target.value)} />
           </>
         )}
 
