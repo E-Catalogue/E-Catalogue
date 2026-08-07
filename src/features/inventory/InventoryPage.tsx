@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, Trash2, RefreshCw, Wrench, LayoutGrid, Table2, Share2, X, Landmark, Copy } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Loader2, SlidersHorizontal, Boxes, Eye, Pencil, RefreshCw, Wrench, LayoutGrid, Table2, Share2, X, Landmark, Copy, Archive } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -441,7 +441,12 @@ const InventoryPageInner = () => {
       ...(unit.statusUnit !== 'SOLD' ? [{ icon: <RefreshCw size={13} />, label: 'Ubah Status Unit', onClick: () => setStatusUnit(unit) }] : []),
     ] : []),
     ...(can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
-    ...(can('UNIT_DELETE') ? [{ icon: <Trash2 size={13} />, label: 'Hapus Unit', onClick: () => m.openDelete(unit), variant: 'danger' as const }] : []),
+    ...(can('UNIT_DELETE') ? [
+      { icon: <Archive size={13} />, label: 'Arsipkan Unit', onClick: () => m.openArchive(unit) },
+      ...(unit.statusUnit === 'INVENTORY'
+        ? [{ icon: <RefreshCw size={13} />, label: 'Batalkan Pembelian', onClick: () => m.openCancelPurchase(unit), variant: 'danger' as const }]
+        : []),
+    ] : []),
   ];
 
   const columns: Column<Unit>[] = [

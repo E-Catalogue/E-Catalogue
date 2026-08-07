@@ -311,7 +311,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     unit.fundingAgreement?.fundingSource !== form.fundingSource
     || (form.fundingSource === 'INVESTOR' && (
       unit.fundingAgreement?.investorId !== form.investorId
-      || (unit.fundingAgreement?.finalCyclePolicy ?? '') !== form.finalCyclePolicy
+          || (unit.fundingAgreement?.finalCyclePolicy ?? '') !== form.finalCyclePolicy
     ))
   );
   const fundingInvalid = fundingIncomplete && (!unit || fundingChanged);
@@ -327,29 +327,21 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       tanggalPajak: new Date(form.tanggalPajak).toISOString(),
       tanggalPembelian: new Date(form.tanggalPembelian).toISOString(),
       cashAccountId: form.cashAccountId || undefined,
-      funding: unit
-        ? undefined
-        : form.fundingSource === 'INVESTOR'
-          ? {
-              fundingSource: 'INVESTOR',
-              investorId: form.investorId,
-              finalCyclePolicy: fundingRequiresFinalCycle ? form.finalCyclePolicy || undefined : undefined,
-            }
-          : { fundingSource: 'COMPANY_OWNED' },
+      funding: form.fundingSource === 'INVESTOR'
+        ? {
+            fundingSource: 'INVESTOR',
+            investorId: form.investorId,
+            finalCyclePolicy: fundingRequiresFinalCycle ? form.finalCyclePolicy || undefined : undefined,
+          }
+        : { fundingSource: 'COMPANY_OWNED' },
     };
     if (unit) {
-      const unitPayload: Partial<UnitFormData> = { ...payload };
+      const unitPayload: Partial<UnitFormData> & { funding?: any } = { ...payload };
       delete unitPayload.leasingOffers;
-      const saveUnit = () => updateUnit.mutate({ id: unit.id, data: unitPayload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
-      if (fundingChanged) {
-        updateFunding.mutate({
-          id: unit.id,
-          data: form.fundingSource === 'INVESTOR'
-            ? { fundingSource: 'INVESTOR', investorId: form.investorId, finalCyclePolicy: fundingRequiresFinalCycle ? form.finalCyclePolicy || undefined : undefined }
-            : { fundingSource: 'COMPANY_OWNED' },
-          headers: unit.branchId ? { 'X-Branch-Id': unit.branchId } : undefined,
-        }, { onError: (err) => notifyApiError(err), onSuccess: saveUnit });
-      } else saveUnit();
+      if (!fundingChanged) {
+        delete unitPayload.funding;
+      }
+      updateUnit.mutate({ id: unit.id, data: unitPayload }, { onError: (err) => notifyApiError(err), onSuccess: onClose });
     } else {
       createUnit.mutate(payload, {
         onError: (err) => {

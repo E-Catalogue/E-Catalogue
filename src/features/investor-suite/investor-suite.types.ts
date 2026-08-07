@@ -1,4 +1,4 @@
-export type FundingAgreementStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED';
+export type FundingAgreementStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED' | 'CANCELLED';
 export type InvestorScheme = 'FIXED_MONTHLY' | 'PROFIT_SHARE';
 
 export interface InvestorFundingRow {
@@ -33,8 +33,14 @@ export interface InvestorPaymentRow {
 }
 
 export const FUNDING_STATUS_LABEL: Record<FundingAgreementStatus, string> = {
-  DRAFT: 'Draft', ACTIVE: 'Aktif', RELEASED: 'Lunas', ENDED: 'Berakhir',
+  DRAFT: 'Draft',
+  ACTIVE: 'Aktif',
+  RELEASED: 'Lunas',
+  ENDED: 'Berakhir',
+  CANCELLED: 'Batal (Dana Kembali)',
 };
+
 export const FUNDING_SCHEME_LABEL: Record<InvestorScheme, string> = {
-  FIXED_MONTHLY: 'Fixed Monthly', PROFIT_SHARE: 'Profit Share',
+  FIXED_MONTHLY: 'Fixed Monthly',
+  PROFIT_SHARE: 'Profit Share',
 };

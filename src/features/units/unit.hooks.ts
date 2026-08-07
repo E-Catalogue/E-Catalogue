@@ -56,11 +56,12 @@ export function useCreateUnit() {
 export function useUpdateUnit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<UnitFormData> }) => unitApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<UnitFormData> & { funding?: UnitFundingUpdatePayload } }) => unitApi.update(id, data),
     onSuccess: (_, { id }) => {
       store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Unit berhasil diperbarui' }));
       qc.invalidateQueries({ queryKey: ['units'] });
       qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['unit-funding', id] });
       qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
       qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
     },
@@ -82,12 +83,43 @@ export function useUpdateUnitStatus() {
   });
 }
 
+export function useArchiveUnit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => unitApi.archive(id, reason),
+    onSuccess: (_, { id }) => {
+      store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Unit Diarsipkan', message: 'Unit telah berhasil diarsipkan dari inventori.' }));
+      qc.invalidateQueries({ queryKey: ['units'] });
+      qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
+    },
+  });
+}
+
+export function useCancelPurchaseUnit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => unitApi.cancelPurchase(id, reason),
+    onSuccess: (_, { id }) => {
+      store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Pembelian Dibatalkan', message: 'Transaksi pembelian unit dan alokasi modal investor telah dibalik secara akuntabel.' }));
+      qc.invalidateQueries({ queryKey: ['units'] });
+      qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['investor-capital-accounts'] });
+      qc.invalidateQueries({ queryKey: ['investor-funding-usages'] });
+      qc.invalidateQueries({ queryKey: ['cash-transactions'] });
+      qc.invalidateQueries({ queryKey: ['cms', 'catalog'] });
+      qc.invalidateQueries({ queryKey: ['public', 'catalog'] });
+    },
+  });
+}
+
 export function useDeleteUnit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => unitApi.delete(id),
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => unitApi.delete(id, reason),
     onSuccess: () => {
-      store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Unit berhasil dihapus' }));
+      store.dispatch(showToast({ type: 'general', title: 'Berhasil', message: 'Unit berhasil diarsipkan' }));
       qc.invalidateQueries({ queryKey: ['units'] });
     },
   });
@@ -203,11 +235,6 @@ export function useUpdateUnitFunding() {
   });
 }
 
-/**
- * `POST /units/:id/finalize-initial-pricing` mengembalikan `FundingAgreement`, BUKAN detail unit
- * (README §16 "Finalisasi harga unit"). Setelah sukses: invalidate `unit/:id` lalu React Query akan
- * re-fetch `GET /units/:id` (bila query aktif) untuk mengambil pricingCostBasis/targetPrice/otrPrice terbaru.
- */
 export function useFinalizeInitialPricing() {
   const qc = useQueryClient();
   return useMutation({

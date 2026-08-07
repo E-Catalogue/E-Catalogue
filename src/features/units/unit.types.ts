@@ -12,7 +12,7 @@ export const BAHAN_BAKAR_LABEL: Record<BahanBakar, string> = {
 export type FundingSource = 'COMPANY_OWNED' | 'INVESTOR';
 export type FundingScheme = 'FIXED_MONTHLY' | 'PROFIT_SHARE';
 export type FinalCyclePolicy = 'FULL' | 'NONE' | 'PRORATA';
-export type FundingStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED';
+export type FundingStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED' | 'CANCELLED';
 export type StockAgeFilter = 'lt30' | '30to60' | '60to90' | 'gt90';
 
 export const FINAL_CYCLE_POLICY_LABEL: Record<FinalCyclePolicy, string> = {
@@ -93,6 +93,12 @@ export interface Unit {
   otrPrice?: number | null;
   pricingFinalizedAt?: string | null;
   readyStockAt?: string | null;
+  archivedAt?: string | null;
+  archivedById?: string | null;
+  archivedReason?: string | null;
+  cancelledAt?: string | null;
+  cancelledById?: string | null;
+  cancelledReason?: string | null;
   isNew?: boolean;
   isFeatured?: boolean;
   statusKatalog?: string | null;

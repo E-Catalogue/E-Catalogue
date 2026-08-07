@@ -51,7 +51,7 @@ export const unitApi = {
     return res.data;
   },
 
-  update: async (id: string, data: Partial<UnitFormData>) => {
+  update: async (id: string, data: Partial<UnitFormData> & { funding?: UnitFundingUpdatePayload }) => {
     const res = await apiClient.put<ApiResponse<Unit>>(`/units/${id}`, data);
     return res.data;
   },
@@ -61,8 +61,18 @@ export const unitApi = {
     return res.data;
   },
 
-  delete: async (id: string) => {
-    const res = await apiClient.delete<ApiResponse<Unit>>(`/units/${id}`);
+  archive: async (id: string, reason: string) => {
+    const res = await apiClient.post<ApiResponse<Unit>>(`/units/${id}/archive`, { reason });
+    return res.data;
+  },
+
+  cancelPurchase: async (id: string, reason: string) => {
+    const res = await apiClient.post<ApiResponse<Unit>>(`/units/${id}/cancel-purchase`, { reason });
+    return res.data;
+  },
+
+  delete: async (id: string, reason?: string) => {
+    const res = await apiClient.delete<ApiResponse<Unit>>(`/units/${id}`, { data: { reason } });
     return res.data;
   },
 
