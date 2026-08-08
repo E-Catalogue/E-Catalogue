@@ -20,7 +20,7 @@ interface UnitLeasingModalProps {
 
 export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps) => {
   const [offers, setOffers] = useState<UnitLeasingOfferInput[]>(() =>
-    unit.leasingOffers?.map(({ leasingId, tenorMonths, dpAmount }) => ({ leasingId, tenorMonths, dpAmount })) ?? [],
+    unit.leasingOffers?.map(({ leasingId, tenorMonths, dpAmount, monthlyInstallmentAmount }) => ({ leasingId, tenorMonths, dpAmount, monthlyInstallmentAmount })) ?? [],
   );
   const [showSuccess, setShowSuccess] = useState(false);
   const { data: lookupsData, isLoading } = useUnitLookups(open);
@@ -43,14 +43,14 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
   const save = () => {
     if (validationError) return;
     updateUnit.mutate(
-      { id: unit.id, data: { leasingOffers: offers } },
+      { id: unit.id, data: { leasingOffers: offers.map((offer) => ({ ...offer, monthlyInstallmentAmount: offer.monthlyInstallmentAmount || null })) } },
       {
         onSuccess: (res) => {
           store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Data leasing berhasil disimpan' }));
           setShowSuccess(true);
           setTimeout(() => setShowSuccess(false), 4000);
           if (res?.data?.leasingOffers) {
-            setOffers(res.data.leasingOffers.map(({ leasingId, tenorMonths, dpAmount }) => ({ leasingId, tenorMonths, dpAmount })));
+            setOffers(res.data.leasingOffers.map(({ leasingId, tenorMonths, dpAmount, monthlyInstallmentAmount }) => ({ leasingId, tenorMonths, dpAmount, monthlyInstallmentAmount })));
           }
         },
         onError: (error) => notifyApiError(error),
@@ -85,17 +85,17 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
         )}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <p className="text-[13px] font-extrabold text-ink">Daftar Pencairan Leasing</p>
-            <p className="text-[11px] font-semibold text-muted">Leasing yang sama boleh ditambahkan dengan tenor berbeda.</p>
+            <p className="text-[13px] font-extrabold text-ink">Daftar Skema Leasing</p>
+            <p className="text-[11px] font-semibold text-muted">Satu leasing dapat memiliki beberapa skema tenor. Kombinasi leasing dan tenor yang sama tidak boleh berulang.</p>
           </div>
           <Button
             type="button"
             size="sm"
             variant="secondary"
             icon={<Plus size={14} />}
-            onClick={() => setOffers((current) => [...current, { leasingId: '', tenorMonths: 12, dpAmount: 0 }])}
+            onClick={() => setOffers((current) => [...current, { leasingId: '', tenorMonths: 12, dpAmount: 0, monthlyInstallmentAmount: null }])}
           >
-            Tambah Leasing
+            Tambah Skema Tenor
           </Button>
         </div>
 
@@ -109,9 +109,9 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
           const disbursement = unit.otrPrice == null ? null : unit.otrPrice - offer.dpAmount;
           return (
             <div key={`${offer.leasingId}-${index}`} className="rounded-2xl border border-border bg-surface-soft p-3.5">
-              <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.7fr_1fr_auto] gap-3 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_.6fr_1fr_1fr_auto] gap-3 items-end">
                 <SearchableSelect
-                  label={`Leasing ${index + 1}`}
+                  label={`Skema ${index + 1} — Leasing`}
                   required
                   value={offer.leasingId}
                   onChange={(value) => updateOffer(index, { leasingId: value })}
@@ -122,6 +122,7 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
                 />
                 <NumericField label="Tenor" required thousands={false} value={offer.tenorMonths} onChange={(value) => updateOffer(index, { tenorMonths: value })} min={1} max={120} suffix="bulan" />
                 <NumericField label="DP" required value={offer.dpAmount} onChange={(value) => updateOffer(index, { dpAmount: value })} min={0} prefix="Rp" />
+                <NumericField label="Cicilan / Bulan" value={offer.monthlyInstallmentAmount ?? 0} onChange={(value) => updateOffer(index, { monthlyInstallmentAmount: value || null })} min={0} prefix="Rp" placeholder="Opsional" />
                 <button
                   type="button"
                   onClick={() => setOffers((current) => current.filter((_, offerIndex) => offerIndex !== index))}
@@ -131,7 +132,7 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
                   <Trash2 size={16} />
                 </button>
               </div>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="rounded-xl bg-surface border border-border px-3 py-2">
                   <p className="text-[10px] font-bold uppercase text-muted">Harga OTR Unit</p>
                   <p className="text-[12px] font-extrabold text-ink mt-0.5">{unit.otrPrice == null ? 'Menunggu finalisasi harga' : formatCurrency(unit.otrPrice)}</p>
@@ -141,6 +142,10 @@ export const UnitLeasingModal = ({ open, onClose, unit }: UnitLeasingModalProps)
                   <p className={`text-[12px] font-extrabold mt-0.5 ${disbursement != null && disbursement < 0 ? 'text-semantic-error' : 'text-primary'}`}>
                     {disbursement == null ? 'Menunggu finalisasi harga' : formatCurrency(disbursement)}
                   </p>
+                </div>
+                <div className="rounded-xl bg-surface border border-border px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase text-muted">Cicilan per Bulan</p>
+                  <p className="text-[12px] font-extrabold text-ink mt-0.5">{offer.monthlyInstallmentAmount ? formatCurrency(offer.monthlyInstallmentAmount) : 'Belum diisi'}</p>
                 </div>
               </div>
             </div>

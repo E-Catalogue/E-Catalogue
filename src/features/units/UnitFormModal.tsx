@@ -10,6 +10,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { getApiErrorCode } from '@/core/api/apiError';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateUnit, useUnit, useUnitImageMutations, useUnitLookups, useUpdateUnit, useUpdateUnitFunding } from './unit.hooks';
+import { businessToday } from '@/core/utils/businessDate';
 import { unitDisplayName } from './unit.display';
 import { UnitGalleryManager } from './UnitGalleryManager';
 import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type BahanBakar, type FinalCyclePolicy, type FundingSource, type HistoricalMode, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
@@ -34,7 +35,7 @@ type UnitFormState = UnitFormData & {
   historicalReadyStockAt: string;
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 const emptyUnitForm = (): UnitFormState => ({
   name: '',
@@ -90,7 +91,7 @@ const toForm = (unit?: Unit | null): UnitFormState => {
     historicalReadyStockAt: unit.readyStockAt?.slice(0, 10) ?? today(),
     kelengkapans: unit.unitKelengkapans?.map((x) => x.perlengkapanId) ?? [],
     dokumens: unit.unitDokumens?.map((x) => x.dokumenId) ?? [],
-    leasingOffers: unit.leasingOffers?.map((x) => ({ leasingId: x.leasingId, tenorMonths: x.tenorMonths, dpAmount: x.dpAmount })) ?? [],
+    leasingOffers: unit.leasingOffers?.map((x) => ({ leasingId: x.leasingId, tenorMonths: x.tenorMonths, dpAmount: x.dpAmount, monthlyInstallmentAmount: x.monthlyInstallmentAmount })) ?? [],
   };
 };
 
@@ -101,9 +102,10 @@ interface ChecklistSectionProps {
   selected: string[];
   onToggle: (id: string, checked: boolean) => void;
   onToggleAll?: (checked: boolean) => void;
+  disabled?: boolean;
 }
 
-const ChecklistSection = ({ title, loading, items, selected, onToggle, onToggleAll }: ChecklistSectionProps) => {
+const ChecklistSection = ({ title, loading, items, selected, onToggle, onToggleAll, disabled = false }: ChecklistSectionProps) => {
   const [search, setSearch] = useState('');
   const filtered = items.filter((item) => {
     const q = search.trim().toLowerCase();
@@ -122,7 +124,7 @@ const ChecklistSection = ({ title, loading, items, selected, onToggle, onToggleA
           {selected.length} / {items.length} dipilih
         </span>
       </div>
-      {!loading && items.length > 0 && onToggleAll && (
+      {!loading && items.length > 0 && onToggleAll && !disabled && (
         <button
           type="button"
           onClick={() => onToggleAll(!allSelected)}
@@ -141,6 +143,7 @@ const ChecklistSection = ({ title, loading, items, selected, onToggle, onToggleA
         <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
           value={search}
+          disabled={disabled}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={`Cari ${title.toLowerCase()}...`}
           className="w-full h-9 pl-8 pr-3 rounded-lg bg-surface border border-border text-[12px] font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
@@ -166,9 +169,10 @@ const ChecklistSection = ({ title, loading, items, selected, onToggle, onToggleA
             >
               <input
                 type="checkbox"
+                disabled={disabled}
                 checked={checked}
                 onChange={(e) => onToggle(item.id, e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary disabled:cursor-not-allowed"
               />
               <span className="min-w-0 flex-1 truncate">{item.name}</span>
               <span className="text-[10px] font-extrabold text-muted">{item.code}</span>
@@ -267,11 +271,12 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const selectedInvestor = useMemo(() => investors.find((i) => i.id === form.investorId), [investors, form.investorId]);
   const selectedCapitalAccount = selectedInvestor?.capitalAccounts?.[0];
   const referenceOnly = form.historicalMode === 'REFERENCE_ONLY';
+  const readyStockRestricted = unit?.statusUnit === 'READY_STOCK';
   // Unit Inventory yang belum final tetap dapat mengoreksi harga beli dan sumber dana.
   const purchaseLocked = !!unit?.pricingFinalizedAt;
   const fundingEditable = !unit || (unit.statusUnit === 'INVENTORY' && !unit.pricingFinalizedAt);
   const isPending = createUnit.isPending || updateUnit.isPending || updateFunding.isPending;
-  const fieldsLocked = !isEdit && !!createdUnit; // data unit sudah tersimpan, step 1-3 jadi baca-saja
+  const fieldsLocked = (!isEdit && !!createdUnit) || readyStockRestricted; // READY hanya kelengkapan dan foto yang editable
 
   const set = <K extends keyof UnitFormState>(key: K, value: UnitFormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -369,7 +374,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
       } } : {}),
     };
     if (unit) {
-      const unitPayload: Partial<UnitFormData> = { ...payload };
+      const unitPayload: Partial<UnitFormData> = readyStockRestricted ? { kelengkapans: form.kelengkapans } : { ...payload };
       delete unitPayload.leasingOffers;
       if (!fundingChanged) {
         delete unitPayload.funding;
@@ -401,6 +406,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     if (step === 3) return <Button onClick={onClose}>Selesai</Button>;
     if (isEdit) {
       const nextLabel = step === 2 ? 'Lanjut ke Foto' : 'Lanjut';
+      if (readyStockRestricted && step < 2) {
+        return <Button variant="secondary" icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)}>{nextLabel}</Button>;
+      }
       return (
         <>
           <Button variant="secondary" icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)}>{nextLabel}</Button>
@@ -618,7 +626,9 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
               selected={form.dokumens}
               onToggle={(id, checked) => toggleChecklist('dokumens', id, checked)}
               onToggleAll={(checked) => toggleAllChecklist('dokumens', dokumens, checked)}
+              disabled={readyStockRestricted}
             />
+            {readyStockRestricted && <p className="lg:col-span-2 text-[11px] font-semibold text-muted">Saat Unit Ready Stock, dokumen dikunci. Hanya kelengkapan, foto Unit, dan data leasing yang dapat diubah.</p>}
           </div>
         )}
       </form>
