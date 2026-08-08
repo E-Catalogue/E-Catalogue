@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, HandCoins, Star, Quote, MapPin, Clock3, ChevronDown } from 'lucide-react';
+import { ArrowRight, Search, HandCoins, MapPin, Clock3, ChevronDown } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
@@ -15,6 +15,7 @@ import { BranchCard, ShowroomMap } from './ShowroomMap';
 import { TestimonialDetailModal } from './TestimonialDetailModal';
 import { HeroUnitCarousel } from './HeroUnitCarousel';
 import { resolveHeroSliderUnits } from './heroSliderUnits';
+import { TestimonialCarousel } from './TestimonialCarousel';
 
 export const LandingPage = () => {
   const { data: hp, isLoading, isError, refetch } = usePublicHomepage();
@@ -215,29 +216,7 @@ export const LandingPage = () => {
             <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">{hp.testimonials.title}</h2>
             <p className="text-muted font-medium mt-2">{hp.testimonials.subtitle}</p>
           </Reveal>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {hp.testimonials.items.map((t) => (
-              <motion.button type="button" onClick={() => setTestimonialId(t.id)} key={t.id} variants={fadeUpItem} whileHover={{ y: -6 }} className="group bg-surface rounded-2xl border border-border p-6 hover:shadow-card hover:border-primary/30 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-primary">
-                <Quote size={28} className="text-primary/30 group-hover:text-primary/50 transition-colors" />
-                <div className="flex gap-0.5 mt-3">
-                  {Array.from({ length: t.rating }).map((_, i) => <Star key={i} size={15} className="fill-accent-amber text-accent-amber" />)}
-                </div>
-                <p className="text-[14px] text-ink-soft font-medium mt-3 leading-relaxed">“{t.text}”</p>
-                <div className="flex items-center gap-3 mt-5 pt-4 border-t border-divider">
-                  <div className="w-10 h-10 rounded-full bg-primary-light text-primary flex items-center justify-center font-extrabold text-sm overflow-hidden">
-                    {cmsImageUrl('testimoni', t.avatarFilename)
-                      ? <img src={cmsImageUrl('testimoni', t.avatarFilename)!} alt={t.name} className="w-full h-full object-cover" />
-                      : t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-extrabold text-ink">{t.name}</p>
-                    {t.role && <p className="text-[11px] text-muted font-semibold">{t.role}</p>}
-                  </div>
-                </div>
-                <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-extrabold text-primary">Baca cerita lengkap <ArrowRight size={13} /></span>
-              </motion.button>
-            ))}
-          </motion.div>
+          <motion.div variants={fadeUpItem} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }}><TestimonialCarousel testimonials={hp.testimonials.items} onView={setTestimonialId} /></motion.div>
         </section>
       ) : null}
 

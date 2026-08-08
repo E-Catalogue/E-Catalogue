@@ -168,6 +168,8 @@ export interface UnitListParams {
   investorId?: string;
   stockAge?: StockAgeFilter;
   isActive?: 'true' | 'false' | 'all';
+  /** Menyertakan unit staging REFERENCE_ONLY bersama unit aktif pada tampilan tabel. */
+  includeReferenceOnly?: 'true';
 }
 
 export interface InventoryFilterLookups {

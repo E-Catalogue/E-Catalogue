@@ -21,7 +21,7 @@ interface ImageUploadProps {
 
 export const ImageUpload = ({
   previewUrl, onFile, isUploading, onRemove,
-  label, hint = IMAGE_UPLOAD_NOTE, rounded, fit = 'cover', className = '',
+  label, hint = IMAGE_UPLOAD_NOTE, aspect, rounded, fit = 'cover', className = '',
 }: ImageUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export const ImageUpload = ({
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files?.[0]); }}
-        className={`group relative ${rounded ? 'h-36 w-36 rounded-full' : 'h-44 w-full rounded-2xl sm:h-48'} overflow-hidden border-2 border-dashed border-border bg-surface-soft cursor-pointer hover:border-primary transition-colors flex items-center justify-center`}
+        className={`group relative ${rounded ? 'h-36 w-36 rounded-full' : `${aspect ?? 'h-44 sm:h-48'} w-full rounded-2xl`} overflow-hidden border-2 border-dashed border-border bg-surface-soft cursor-pointer hover:border-primary transition-colors flex items-center justify-center`}
       >
         {shown ? (
           <>

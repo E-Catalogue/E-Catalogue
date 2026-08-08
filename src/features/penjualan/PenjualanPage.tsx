@@ -25,6 +25,7 @@ import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { useAppSelector } from '@/app/store';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, type LeadOrder, type OrderStatus } from '@/features/crm/crm.types';
 import { unitDisplayName } from '@/features/units/unit.display';
+import { HistoricalModeBadge } from '@/shared/components/ui/HistoricalModeBadge';
 
 const idr = (n?: number | null) =>
   n == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -90,7 +91,12 @@ export const PenjualanPage = () => {
   const columns: Column<LeadOrder>[] = [
     {
       header: 'No. Order',
-      cell: (r) => <span className="font-bold text-ink text-[13px]">{r.nomorOrder ?? '-'}</span>,
+      cell: (r) => (
+        <div className="flex min-w-0 flex-col items-start gap-1">
+          <span className="font-bold text-ink text-[13px]">{r.nomorOrder ?? '-'}</span>
+          <HistoricalModeBadge mode={r.historicalMode} />
+        </div>
+      ),
     },
     {
       header: 'Customer',
@@ -158,8 +164,8 @@ export const PenjualanPage = () => {
       cell: (r) => (
         <RowActions
           onView={() => setDetail(r.id)}
-          onEdit={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? () => setForm({ item: r }) : undefined}
-          extra={r.status === 'BOOKING' && can('LEAD_ORDER_UPDATE') ? [
+          onEdit={r.status === 'BOOKING' && r.historicalMode !== 'REFERENCE_ONLY' && can('LEAD_ORDER_UPDATE') ? () => setForm({ item: r }) : undefined}
+          extra={r.status === 'BOOKING' && r.historicalMode !== 'REFERENCE_ONLY' && can('LEAD_ORDER_UPDATE') ? [
             ...(r.paymentType === 'KREDIT' ? [{ label: 'Proses Kredit', icon: <ClipboardCheck size={13} />, onClick: () => setCreditModal(r) }] : []),
             { label: 'Ubah Status', icon: <RefreshCw size={13} />, onClick: () => setStatusModal(r) },
           ] : []}

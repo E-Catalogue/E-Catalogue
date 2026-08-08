@@ -7,6 +7,7 @@ import { formatCurrency, formatNumber, formatTransmisi } from '@/core/utils/form
 import { StatusBadge } from './StatusBadge';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
+import { HistoricalModeBadge } from './HistoricalModeBadge';
 
 type UnitCardUnit = BackendUnit | MockUnit;
 
@@ -128,6 +129,9 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
             </h3>
             {subtitleText && (
               <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitleText}</p>
+            )}
+            {!isMock && backendUnit.historicalMode && (
+              <HistoricalModeBadge mode={backendUnit.historicalMode} className="mt-1.5" />
             )}
           </div>
         </div>

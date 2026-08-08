@@ -8,10 +8,10 @@ import { formatTransmisi } from '@/core/utils/format';
 export const TestimonialDetailModal = ({ id, onClose }: { id: string | null; onClose: () => void }) => {
   const { data, isLoading } = usePublicTestimonial(id ?? undefined);
   return (
-    <Modal open={!!id} onClose={onClose} title="Cerita Pelanggan" icon={<Quote size={19} />} size="lg">
+    <Modal open={!!id} onClose={onClose} title="Cerita Pelanggan" icon={<Quote size={19} />} size="xl">
       {isLoading || !data ? <CustomerLoader /> : (
         <div className="space-y-5">
-          {data.imageFilename && <img src={cmsImageUrl('testimoni', data.imageFilename) ?? ''} alt={`Serah terima ${data.name}`} className="aspect-[16/9] w-full rounded-2xl object-cover" />}
+          {data.imageFilename && <div className="flex w-full items-center justify-center overflow-hidden rounded-2xl bg-ink/[.035] p-2 sm:p-3"><img src={cmsImageUrl('testimoni', data.imageFilename) ?? ''} alt={`Serah terima ${data.name}`} className="max-h-[58vh] w-full rounded-xl object-contain sm:max-h-[68vh]" /></div>}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 overflow-hidden rounded-full bg-primary-light text-primary grid place-items-center font-extrabold">

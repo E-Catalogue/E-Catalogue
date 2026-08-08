@@ -28,6 +28,7 @@ import { resolveInventoryView, type InventoryView } from './inventory.view';
 import { buildUnitCopyText, buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
+import { HistoricalModeBadge } from '@/shared/components/ui/HistoricalModeBadge';
 
 const STATUS_LABEL: Record<StatusUnit, string> = { INVENTORY: 'Inventory', READY_STOCK: 'Ready Stock', HOLD: 'Hold', SOLD: 'Terjual' };
 const cardStatus = (status: StatusUnit): Exclude<StatusUnit, 'HOLD'> => ['READY_STOCK', 'SOLD'].includes(status) ? status as 'READY_STOCK' | 'SOLD' : 'INVENTORY';
@@ -407,9 +408,15 @@ const InventoryPageInner = () => {
     fundingSource: filter.fundingSource === 'ALL' ? undefined : filter.fundingSource,
     investorId: filter.investorId || undefined,
     stockAge: filter.stockAge === 'ALL' ? undefined : filter.stockAge,
+    includeReferenceOnly: activeView === 'table' ? 'true' : undefined,
   });
   const { data: filterLookups } = useInventoryFilterLookups();
   const rows: Unit[] = data?.data ?? [];
+  // Guard UI tetap mencegah record staging tampil sebagai kartu meskipun API lama
+  // belum mengenali parameter includeReferenceOnly.
+  const visibleRows = activeView === 'card'
+    ? rows.filter((unit) => unit.historicalMode !== 'REFERENCE_ONLY')
+    : rows;
   const total = data?.meta?.total ?? 0;
   const activeFilters = [filter.statuses.length > 0, filter.tx !== 'ALL', !!filter.merekId, !!(filter.tahunMin || filter.tahunMax), filter.fundingSource !== 'ALL' || !!filter.investorId, filter.stockAge !== 'ALL'].filter(Boolean).length;
 
@@ -443,13 +450,13 @@ const InventoryPageInner = () => {
   const actionItems = (unit: Unit) => [
     { icon: <Eye size={13} />, label: 'Lihat Detail', onClick: () => m.openDetail(unit) },
     { icon: <Share2 size={13} />, label: 'Bagikan WhatsApp', onClick: () => shareUnit(unit), variant: 'primary' as const },
-    ...(can('UNIT_UPDATE') ? [
+    ...(unit.historicalMode !== 'REFERENCE_ONLY' && can('UNIT_UPDATE') ? [
       { icon: <Pencil size={13} />, label: 'Edit Unit', onClick: () => m.openEdit(unit) },
       { icon: <Landmark size={13} />, label: 'Data Leasing', onClick: () => m.openLeasing(unit) },
       ...(unit.statusUnit !== 'SOLD' ? [{ icon: <RefreshCw size={13} />, label: 'Ubah Status Unit', onClick: () => setStatusUnit(unit) }] : []),
     ] : []),
-    ...(can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
-    ...(can('UNIT_DELETE') ? [
+    ...(unit.historicalMode !== 'REFERENCE_ONLY' && can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
+    ...(unit.historicalMode !== 'REFERENCE_ONLY' && can('UNIT_DELETE') ? [
       { icon: <Archive size={13} />, label: 'Arsipkan Unit', onClick: () => m.openArchive(unit) },
       ...(unit.statusUnit === 'INVENTORY'
         ? [{ icon: <RefreshCw size={13} />, label: 'Batalkan Pembelian', onClick: () => m.openCancelPurchase(unit), variant: 'danger' as const }]
@@ -469,6 +476,7 @@ const InventoryPageInner = () => {
             <span className={`inline-flex mt-1 items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide ${investor ? 'bg-accent-amber/10 text-accent-amber' : 'bg-accent-blue/10 text-accent-blue'}`}>
               {investor ? (u.fundingAgreement?.investor?.name ?? 'Investor') : 'Milik Perusahaan'}
             </span>
+            <HistoricalModeBadge mode={u.historicalMode} className="ml-1" />
           </div>
         );
       },
@@ -557,7 +565,7 @@ const InventoryPageInner = () => {
     <div className="max-w-[1600px] mx-auto  space-y-5">
       <PageHeader
         title="Inventori"
-        description={`${rows.length} dari ${total} unit`}
+        description={`${visibleRows.length} dari ${total} unit`}
         action={can('UNIT_CREATE') ? <Button icon={<Plus size={16} strokeWidth={2.5} />} onClick={m.openCreate}>Tambah Unit</Button> : undefined}
       />
 
@@ -614,7 +622,7 @@ const InventoryPageInner = () => {
           <TableSkeleton rows={6} cols={5} />
         ) : isError ? (
           <div className="text-center py-16 text-muted font-semibold text-sm">Gagal memuat data.</div>
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <div className="text-center py-16">
             <Boxes size={32} className="text-muted mx-auto mb-3" />
             <p className="font-bold text-ink text-[14px]">Tidak ada unit yang cocok</p>
@@ -623,10 +631,10 @@ const InventoryPageInner = () => {
         ) : (
           <>
             {activeView === 'table' ? (
-              <DataTable columns={columns} data={rows} rowKey={(u) => u.id} />
+              <DataTable columns={columns} data={visibleRows} rowKey={(u) => u.id} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                {rows.map((unit) => (
+                {visibleRows.map((unit) => (
                   <UnitCard
                     key={unit.id}
                     unit={unit}

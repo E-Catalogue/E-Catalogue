@@ -15,6 +15,7 @@ import {
   ORDER_STATUS_LABEL, ORDER_STATUS_COLOR,
   type LeadOrder, type LeadOrderCancellation, type OrderCancellationReason, type OrderStatus,
 } from '@/features/crm/crm.types';
+import { BackdateReasonHint } from '@/shared/components/ui/BackdateReasonHint';
 
 interface Props {
   open: boolean;
@@ -156,7 +157,7 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
             {dealImpact.blockers.length > 0 && <div className="mt-3 space-y-1 rounded-lg bg-semantic-error/10 p-2 text-[11px] font-semibold text-semantic-error">{dealImpact.blockers.map((blocker) => <p key={`${blocker.code}:${blocker.paymentId ?? blocker.orderId}`}>{blocker.message}</p>)}</div>}
           </div>}
           <DateField label="Tanggal DEAL" required value={dealDate} onChange={setDealDate} />
-          {backdateRequired && <TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} />}
+          {backdateRequired && <div><TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} /><BackdateReasonHint value={backdateReason} /></div>}
         </div>
       </ConfirmDialog>
 
@@ -171,7 +172,7 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
             { value: 'DUPLICATE_ORDER', label: 'Order Duplikat' }, { value: 'OTHER', label: 'Lainnya' },
           ]} />
           <DateField label="Tanggal Pembatalan" required value={cancelledAt} onChange={setCancelledAt} />
-          {backdateRequired && <TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} />}
+          {backdateRequired && <div><TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} /><BackdateReasonHint value={backdateReason} /></div>}
           <TextField label={cancellationReason === 'OTHER' ? 'Catatan Pembatalan *' : 'Catatan Pembatalan'} value={cancellationNote} onChange={(event) => setCancellationNote(event.target.value)} maxLength={2000} />
           <label className="flex items-center gap-2.5 rounded-xl border border-border bg-surface-soft p-3 cursor-pointer">
             <input type="checkbox" checked={refundEnabled} onChange={(event) => { setRefundEnabled(event.target.checked); if (!event.target.checked) setPaymentIds([]); }} className="h-4 w-4 accent-[color:var(--color-primary)]" />

@@ -25,6 +25,8 @@ import {
   JENIS_PEMBAYARAN_LABEL, SETTLEMENT_STATUS_LABEL, SETTLEMENT_STATUS_COLOR,
   type LeadOrder, type LeadPayment, type JenisPembayaran, type SaleSettlement,
 } from '@/features/crm/crm.types';
+import { HistoricalModeBadge } from '@/shared/components/ui/HistoricalModeBadge';
+import { BackdateReasonHint } from '@/shared/components/ui/BackdateReasonHint';
 
 type BranchHeaders = Record<string, string> | undefined;
 
@@ -198,7 +200,7 @@ export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabled
         <DateField label="Tanggal Bayar" required value={form.paymentDate} onChange={(v) => set('paymentDate', v)} />
         <SelectField label="Jenis Pembayaran" required value={form.jenisPembayaran} onChange={(e) => set('jenisPembayaran', e.target.value as JenisPembayaran)} options={paymentOptions} />
         <CashAccountSelect required value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={cashLoading} />
-        {isBackdated && can('TRANSACTION_BACKDATE') && <TextField label="Alasan backdate *" wrapClass="sm:col-span-2" value={form.backdateReason} onChange={(e) => set('backdateReason', e.target.value, false)} maxLength={2000} />}
+        {isBackdated && can('TRANSACTION_BACKDATE') && <div className="sm:col-span-2"><TextField label="Alasan backdate *" value={form.backdateReason} onChange={(e) => set('backdateReason', e.target.value, false)} maxLength={2000} /><BackdateReasonHint value={form.backdateReason} /></div>}
         {isBackdated && !can('TRANSACTION_BACKDATE') && <p className="sm:col-span-2 text-[11px] font-semibold text-semantic-error">Anda tidak memiliki izin input transaksi lampau.</p>}
         {form.jenisPembayaran === 'REFUND_LEASING' && <div className="sm:col-span-2 rounded-xl border border-primary/20 bg-primary-light px-3 py-2.5 text-[12px] font-semibold text-ink-soft"><p className="font-extrabold text-ink">Bonus Leasing adalah kas masuk dari leasing.</p><p className="mt-1">Menutup sisa pelunasan: <strong>{idr(leasingApplied)}</strong> · Bonus perusahaan: <strong>{idr(leasingBonus)}</strong>. Perhitungan final ditentukan server saat disimpan.</p></div>}
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={form.description} onChange={(e) => set('description', e.target.value, false)} />
@@ -447,6 +449,8 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
           {/* Order info */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <InfoItem label="Status" value={<span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${statusColor}`}>{statusLabel}</span>} />
+            {o.historicalMode && <InfoItem label="Mode Histori" value={<HistoricalModeBadge mode={o.historicalMode} />} />}
+            {o.historicalReason && <InfoItem label="Alasan Data Histori" value={o.historicalReason} wrapClass="col-span-2 md:col-span-3" />}
             <InfoItem label="Tipe Bayar" value={o.paymentType} />
             <InfoItem label="Tanggal Order" value={o.tanggalOrder ? new Date(o.tanggalOrder).toLocaleDateString('id-ID') : '-'} />
             <InfoItem label="Lead" value={o.lead?.nama ?? '-'} />
@@ -509,7 +513,7 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
                 ))}
               </div>
             )}
-            {can('LEAD_PAYMENT_CREATE') && o.status !== 'CANCELLED' && (
+            {can('LEAD_PAYMENT_CREATE') && o.status !== 'CANCELLED' && o.historicalMode !== 'REFERENCE_ONLY' && (
               <PayForm
                 orderId={o.id}
                 branchKey={branchKey}

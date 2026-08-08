@@ -20,6 +20,7 @@ import { DateField } from '@/shared/components/ui/DateField';
 import { InvestorFundingPanel } from '@/features/investor-funding/InvestorFundingPanel';
 import { buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
 import { FundingCorrectionModal } from './FundingCorrectionModal';
+import { HistoricalModeBadge } from '@/shared/components/ui/HistoricalModeBadge';
 
 interface UnitDetailModalProps {
   open: boolean;
@@ -173,7 +174,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           >
             <Share2 size={15} /> Bagikan WhatsApp
           </button>
-          {!salesView && onEdit && current.statusUnit === 'INVENTORY' && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
+          {!salesView && onEdit && current.statusUnit === 'INVENTORY' && current.historicalMode !== 'REFERENCE_ONLY' && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
           {!salesView && canCorrectFunding && <Button variant="secondary" icon={<Repeat2 size={15} />} onClick={() => setFundingCorrectionOpen(true)}>Koreksi Investor</Button>}
         </>
       }
@@ -191,8 +192,17 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
             )}
           </p>
         </div>
-        <StatusBadge status={visibleStatus} label={visibleStatusLabel} />
+        <div className="flex items-center gap-2">
+          <HistoricalModeBadge mode={current.historicalMode} />
+          <StatusBadge status={visibleStatus} label={visibleStatusLabel} />
+        </div>
       </div>
+      {current.historicalMode && current.historicalReason && (
+        <div className="mb-4 rounded-xl border border-border bg-surface-soft px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Alasan Data Histori</p>
+          <p className="mt-1 text-[12px] font-semibold leading-relaxed text-ink-soft">{current.historicalReason}</p>
+        </div>
+      )}
 
       {/* Ringkasan: hero + info harga & spesifikasi utama */}
       <div className="grid lg:grid-cols-2 gap-5">

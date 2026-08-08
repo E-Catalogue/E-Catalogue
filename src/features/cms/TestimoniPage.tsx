@@ -256,7 +256,7 @@ export const TestimoniPage = () => {
             <SearchableSelect label="Sales yang Menangani" required value={formData.salesId} onChange={(salesId) => setFormData({ ...formData, salesId })} options={salesOptions} loading={lookupsLoading} disabled={!formData.leadId} placeholder={formData.leadId ? 'Pilih sales' : 'Pilih pelanggan dahulu'} searchPlaceholder="Cari sales..." />
           </div>
           <div className="grid sm:grid-cols-3 gap-4"><TextField label="Judul Cerita" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Pelayanan jelas dari awal" /><TextField label="Kota" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Tangerang" /><DateField label="Tanggal Serah Terima" required value={toBusinessDate(formData.handoverDate)} onChange={(value) => setFormData({ ...formData, handoverDate: value })} /></div>
-          <ImageUpload label="Foto Bukti Serah Terima" aspect="aspect-video" previewUrl={cmsImageUrl('testimoni', formData.imageFilename)} isUploading={upload.isPending} onFile={setPendingImage} />
+          <ImageUpload label="Foto Bukti Serah Terima" aspect="aspect-[4/3]" fit="contain" previewUrl={cmsImageUrl('testimoni', formData.imageFilename)} isUploading={upload.isPending} onFile={setPendingImage} />
           {pendingImage && <p className="-mt-3 text-[10px] font-semibold text-primary">Dipilih: {pendingImage.name}</p>}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Testimoni</label>
