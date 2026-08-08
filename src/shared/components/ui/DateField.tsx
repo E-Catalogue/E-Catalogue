@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { FieldWrap } from './Field';
 import { useAnchoredOverlay } from '@/shared/hooks/useAnchoredOverlay';
+import { businessToday } from '@/core/utils/businessDate';
 
 const DAY_LABELS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const MONTH_LABELS = [
@@ -149,7 +150,7 @@ export const DateField = ({ label, required, value, onChange, disabled, min, max
           </div>
           <button
             type="button"
-            onClick={() => { onChange(toIso(new Date())); setOpen(false); }}
+            onClick={() => { onChange(businessToday()); setOpen(false); }}
             className="w-full mt-2.5 h-8 rounded-lg text-[11px] font-bold text-primary hover:bg-primary-light transition-colors"
           >
             Hari Ini

@@ -8,6 +8,7 @@ import { DateField } from '@/shared/components/ui/DateField';
 import { useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { unitOptionLabel } from '@/features/units/unit.display';
+import { toBusinessDate } from '@/core/utils/businessDate';
 import type { HistoricalMode, JenisPembayaran, LeadOrder, OrderCancellationReason, OrderStatus, PaymentType } from '@/features/crm/crm.types';
 
 type BranchHeaders = Record<string, string> | undefined;
@@ -50,10 +51,10 @@ const toForm = (o: LeadOrder): FormState => ({
   salesId: o.salesId ?? '',
   leasingId: o.leasingId ?? '',
   diskonShowroom: String(o.diskonShowroom ?? 0),
-  tanggalOrder: o.tanggalOrder ? o.tanggalOrder.slice(0, 10) : '',
+  tanggalOrder: toBusinessDate(o.tanggalOrder),
   catatan: o.catatan ?? '',
   historicalMode: o.historicalMode ?? '', historicalReason: o.historicalReason ?? '', finalStatus: o.status === 'CANCELLED' ? 'CANCELLED' : 'DEAL',
-  terminalDate: (o.status === 'CANCELLED' ? o.cancelledAt : o.dealAt)?.slice(0, 10) ?? '',
+  terminalDate: toBusinessDate(o.status === 'CANCELLED' ? o.cancelledAt : o.dealAt),
   hargaPenawaran: String(o.hargaPenawaran ?? ''), hargaFinal: String(o.hargaFinal ?? ''),
   referencePayments: [], cancellationReason: o.cancellationReason ?? 'CUSTOMER_REQUEST',
 });

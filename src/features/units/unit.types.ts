@@ -201,6 +201,7 @@ export interface UnitLeasingOfferInput {
   leasingId: string;
   tenorMonths: number;
   dpAmount: number;
+  monthlyInstallmentAmount?: number | null;
 }
 
 export interface UnitLeasingOffer extends UnitLeasingOfferInput {

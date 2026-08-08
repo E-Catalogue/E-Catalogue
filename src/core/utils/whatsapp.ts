@@ -24,6 +24,13 @@ export function buildUnitCopyText(unit: Unit): string {
   const equipment = unit.unitKelengkapans?.map((item) => item.perlengkapan?.name).filter(Boolean) ?? [];
   const documents = unit.unitDokumens?.map((item) => item.dokumen?.name).filter(Boolean) ?? [];
   const offers = unit.leasingOffers ?? [];
+  const offersByLeasing = offers.reduce((groups, offer) => {
+    const key = offer.leasingId || offer.leasing?.name || 'leasing';
+    const group = groups.get(key);
+    if (group) group.offers.push(offer);
+    else groups.set(key, { name: offer.leasing?.name ?? 'Leasing', offers: [offer] });
+    return groups;
+  }, new Map<string, { name: string; offers: typeof offers }>());
   const status = unit.statusUnit === 'INVENTORY' || unit.statusUnit === 'HOLD'
     ? 'Coming Soon'
     : unit.statusUnit === 'READY_STOCK' ? 'Ready Stock' : 'Terjual';
@@ -54,9 +61,12 @@ export function buildUnitCopyText(unit: Unit): string {
     `Deskripsi: ${value(unit.deskripsi)}`,
     '',
     '*PENAWARAN LEASING*',
-    ...(offers.length ? offers.flatMap((offer, index) => [
-      `${index + 1}. ${offer.leasing?.name ?? 'Leasing'} - ${offer.tenorMonths} bulan`,
-      `   DP: ${money(offer.dpAmount)} | OTR: ${money(offer.otrPrice)} | Pencairan: ${money(offer.disbursementAmount)}`,
+    ...(offers.length ? [...offersByLeasing.values()].flatMap((group, leasingIndex) => [
+      `${leasingIndex + 1}. ${group.name}`,
+      ...group.offers.map((offer) =>
+        `   - DP: ${money(offer.dpAmount)}${offer.monthlyInstallmentAmount != null && offer.monthlyInstallmentAmount > 0
+          ? ` | Cicilan ${offer.tenorMonths} Bulan x ${money(offer.monthlyInstallmentAmount)}`
+          : ` | Tenor ${offer.tenorMonths} Bulan`}`),
     ]) : ['Belum tersedia']),
   ];
   if (unit.isPublished) lines.push('', `Katalog: ${WEBSITE_URL}/katalog/${unit.id}`);

@@ -384,6 +384,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {current.leasingOffers.map((offer) => <div key={offer.id} className="rounded-xl border border-border bg-surface-soft p-3">
               <div className="flex items-center justify-between gap-2"><p className="text-[12px] font-extrabold text-ink">{offer.leasing.name}</p><span className="text-[10px] font-bold text-primary bg-primary-light px-2 py-1 rounded-lg">{offer.tenorMonths} bulan</span></div>
+              {offer.monthlyInstallmentAmount != null && Number(offer.monthlyInstallmentAmount) > 0 && <p className="mt-2 text-[11px] font-semibold text-muted">Cicilan per bulan: <span className="font-extrabold text-ink">{formatCurrency(offer.monthlyInstallmentAmount)}</span></p>}
               <div className="mt-2 grid grid-cols-3 gap-2 text-[10px]"><div><p className="font-bold uppercase text-muted">DP</p><p className="mt-0.5 font-extrabold text-ink">{formatCurrency(offer.dpAmount)}</p></div><div><p className="font-bold uppercase text-muted">OTR</p><p className="mt-0.5 font-extrabold text-ink">{offer.otrPrice == null ? 'Menunggu finalisasi' : formatCurrency(offer.otrPrice)}</p></div><div><p className="font-bold uppercase text-muted">Pencairan</p><p className="mt-0.5 font-extrabold text-primary">{offer.disbursementAmount == null ? 'Menunggu finalisasi' : formatCurrency(offer.disbursementAmount)}</p></div></div>
             </div>)}
           </div>

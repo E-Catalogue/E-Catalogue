@@ -23,6 +23,7 @@ import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
 import { getApiErrorCode, getApiErrorMessage } from '@/core/api/apiError';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { useCapitalAccounts, useCapitalMutations, useCapitalTransactions } from './master.hooks';
+import { businessToday } from '@/core/utils/businessDate';
 import {
   CAPITAL_TX_TYPE_LABEL, INVESTOR_SCHEME_LABEL,
   type CapitalAccount, type CapitalAccountsConsolidated, type CapitalTransaction,
@@ -31,7 +32,7 @@ import {
 
 type BranchHeaders = Record<string, string> | undefined;
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 /** Pesan banner inline per error code finansial (README §17) — sama pola dengan InvestorObligationDetailModal. */
 const ERROR_BANNER: Record<string, { title: string; message: string }> = {

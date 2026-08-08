@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildUnitCopyText, buildUnitShareMessage, buildWhatsAppShareUrl } from './whatsapp';
 import { waMessages } from './whatsapp';
+import { formatCurrency } from './format';
 import type { Unit } from '@/features/units/unit.types';
 
 const unit = {
@@ -11,7 +12,10 @@ const unit = {
   createdAt: '2026-08-03', updatedAt: '2026-08-03', isPublished: true,
   branch: { id: 'branch-1', nama: 'Jakarta', code: 'JKT' }, merek: { id: 'merek-1', name: 'Toyota' },
   tipe: { id: 'tipe-1', name: 'Avanza', merekId: 'merek-1' },
-  leasingOffers: [{ id: 'offer-1', leasingId: 'adira', tenorMonths: 24, dpAmount: 20000000, otrPrice: 150000000, disbursementAmount: 130000000, leasing: { id: 'adira', name: 'Adira Finance', code: 'ADIRA', isActive: true } }],
+  leasingOffers: [
+    { id: 'offer-1', leasingId: 'adira', tenorMonths: 24, dpAmount: 20000000, monthlyInstallmentAmount: 5500000, otrPrice: 150000000, disbursementAmount: 130000000, leasing: { id: 'adira', name: 'Adira Finance', code: 'ADIRA', isActive: true } },
+    { id: 'offer-2', leasingId: 'adira', tenorMonths: 36, dpAmount: 25000000, monthlyInstallmentAmount: 4250000, otrPrice: 150000000, disbursementAmount: 125000000, leasing: { id: 'adira', name: 'Adira Finance', code: 'ADIRA', isActive: true } },
+  ],
 } satisfies Unit;
 
 describe('template share WhatsApp unit', () => {
@@ -25,7 +29,12 @@ describe('template share WhatsApp unit', () => {
     });
     expect(message).toContain('*INFORMASI UNIT*');
     expect(message).toContain('Harga OTR:');
-    expect(message).toContain('Adira Finance - 24 bulan');
+    expect(message).toContain('1. Adira Finance');
+    expect(message).toContain(`- DP: ${formatCurrency(20_000_000)} | Cicilan 24 Bulan x ${formatCurrency(5_500_000)}`);
+    expect(message).toContain(`- DP: ${formatCurrency(25_000_000)} | Cicilan 36 Bulan x ${formatCurrency(4_250_000)}`);
+    expect(message.match(/Adira Finance/g)).toHaveLength(1);
+    expect(message).not.toContain('Pencairan:');
+    expect(message).not.toContain('| OTR:');
     expect(message).toContain('/katalog/unit-1');
     expect(message).not.toContain('Tanggal pembelian');
     expect(message).not.toContain('Harga beli');
@@ -40,6 +49,19 @@ describe('template share WhatsApp unit', () => {
     expect(message).not.toContain('Dipublikasikan');
     expect(message).not.toContain('Status katalog');
     expect(message).not.toContain('Unit unggulan');
+  });
+
+  it('tidak menampilkan cicilan leasing jika belum diisi', () => {
+    const message = buildUnitShareMessage({
+      ...unit,
+      leasingOffers: [{ ...unit.leasingOffers[0], monthlyInstallmentAmount: null }],
+    });
+
+    expect(message).toContain(`DP: ${formatCurrency(20_000_000)}`);
+    expect(message).not.toContain('Cicilan 24 Bulan x');
+    expect(message).toContain('Tenor 24 Bulan');
+    expect(message).not.toContain('Pencairan:');
+    expect(message).not.toContain('| OTR:');
   });
 
   it('membuka pemilih kontak tanpa nomor tujuan dan meng-encode pesan', () => {
@@ -60,7 +82,7 @@ describe('template share WhatsApp unit', () => {
     expect(text).toContain('Nama: Avanza G');
     expect(text).toContain('Harga OTR:');
     expect(text).toContain('Status unit: Coming Soon');
-    expect(text).toContain('Adira Finance - 24 bulan');
+    expect(text).toContain('1. Adira Finance');
     expect(text).toBe(buildUnitShareMessage({
       ...unit,
       targetPrice: 140000000,

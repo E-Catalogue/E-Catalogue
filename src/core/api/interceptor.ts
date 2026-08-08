@@ -1,13 +1,14 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { apiClient, API_BASE_URL } from './client';
-import { getAccessToken, getRefreshToken, setTokens } from './token';
+import { ACCESS_TOKEN_STORAGE_KEY, getAccessToken, getRefreshToken, setTokens } from './token';
+import { coordinateTokenRefresh } from './refreshCoordinator';
 import { store } from '@/app/store';
 import { queryClient } from '@/app/queryClient';
-import { setCredentials, clearCredentials } from '@/app/store/authSlice';
+import { setCredentials, setSession, clearCredentials } from '@/app/store/authSlice';
 import { showToast } from '@/app/store/uiSlice';
 import { classifyAxiosError } from './errorHandler';
 import type { ApiResponse, ApiErrorBody } from './types';
-import type { AuthPayload } from '@/features/auth/types';
+import type { AuthPayload, MePayload } from '@/features/auth/types';
 import {
   consumeMutationConfirmationLease,
   requestTransportConfirmation,
@@ -21,7 +22,9 @@ const SESSION_ENDED_CODES = new Set([
   'INVALID_REFRESH_TOKEN',
   'SESSION_REVOKED',
   'SESSION_EXPIRED',
+  'SESSION_BRANCH_MISMATCH',
   'USER_INACTIVE',
+  'ROLE_INACTIVE',
 ]);
 
 const errorCode = (error: AxiosError) =>
@@ -107,6 +110,35 @@ const forceLogout = (error: unknown) => {
   return Promise.reject(error);
 };
 
+const isEndedSessionError = (error: unknown) => {
+  if (!axios.isAxiosError(error)) return false;
+  return SESSION_ENDED_CODES.has(errorCode(error) ?? '');
+};
+
+// Sinkronkan logout dan login baru antartab. Event access token menjadi penanda
+// bahwa pasangan access/refresh token sudah selesai ditulis.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', async (event) => {
+    if (event.key !== ACCESS_TOKEN_STORAGE_KEY) return;
+    if (!event.newValue) {
+      store.dispatch(clearCredentials());
+      queryClient.clear();
+      if (!window.location.pathname.startsWith('/login')) window.location.href = '/login';
+      return;
+    }
+    if (store.getState().auth.isAuthenticated) return;
+    try {
+      const response = await axios.get<ApiResponse<MePayload>>(`${API_BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${event.newValue}` },
+      });
+      if (getAccessToken() === event.newValue) store.dispatch(setSession(response.data.data));
+    } catch {
+      // Request normal berikutnya akan menentukan apakah token perlu di-refresh
+      // atau session memang sudah berakhir.
+    }
+  });
+}
+
 // Satu pintu: semua error response melewati handler ini.
 apiClient.interceptors.response.use(
   (res) => res,
@@ -137,18 +169,33 @@ apiClient.interceptors.response.use(
 
       original._retry = true;
       isRefreshing = true;
+      const failedAccessToken = getAccessToken();
       try {
-        // Pakai axios polos agar tidak kena interceptor (hindari rekursi).
-        const res = await axios.post<ApiResponse<AuthPayload>>(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-        const data = res.data.data;
-        setTokens(data.accessToken, data.refreshToken);
-        store.dispatch(setCredentials(data));
-        flushQueue(null, data.accessToken);
-        if (original.headers) original.headers.Authorization = `Bearer ${data.accessToken}`;
+        const accessToken = await coordinateTokenRefresh(failedAccessToken, async () => {
+          const latestRefreshToken = getRefreshToken();
+          if (!latestRefreshToken) throw new Error('Refresh token tidak tersedia');
+          // Pakai axios polos agar tidak kena interceptor (hindari rekursi).
+          const res = await axios.post<ApiResponse<AuthPayload>>(`${API_BASE_URL}/auth/refresh`, { refreshToken: latestRefreshToken });
+          const data = res.data.data;
+          setTokens(data.accessToken, data.refreshToken);
+          store.dispatch(setCredentials(data));
+          return data.accessToken;
+        });
+        flushQueue(null, accessToken);
+        if (original.headers) original.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(original);
       } catch (e) {
+        const latestAccessToken = getAccessToken();
+        if (latestAccessToken && latestAccessToken !== failedAccessToken) {
+          flushQueue(null, latestAccessToken);
+          if (original.headers) original.headers.Authorization = `Bearer ${latestAccessToken}`;
+          return apiClient(original);
+        }
         flushQueue(e, null);
-        return forceLogout(e);
+        if (isEndedSessionError(e) || !getRefreshToken()) return forceLogout(e);
+        const classified = axios.isAxiosError(e) ? classifyAxiosError(e) : null;
+        if (classified) store.dispatch(showToast(classified));
+        return Promise.reject(e);
       } finally {
         isRefreshing = false;
       }

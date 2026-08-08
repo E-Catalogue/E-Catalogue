@@ -10,6 +10,7 @@ import { useLeadOrderCashAccounts } from '@/features/finance/lookup';
 import { useLeadOrderDealImpact, useLeadPayments } from '@/features/crm/crm.hooks';
 import { formatCurrency } from '@/core/utils/format';
 import { usePermissions } from '@/features/auth/usePermissions';
+import { businessToday } from '@/core/utils/businessDate';
 import {
   ORDER_STATUS_LABEL, ORDER_STATUS_COLOR,
   type LeadOrder, type LeadOrderCancellation, type OrderCancellationReason, type OrderStatus,
@@ -23,7 +24,7 @@ interface Props {
   onSubmit: (status: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>, cancellation?: LeadOrderCancellation) => Promise<unknown>;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }: Props) => {
   const { can } = usePermissions();
