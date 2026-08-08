@@ -5,7 +5,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 8 Agustus 2026 (rev 27 — Live Showroom, CMS konten Beranda/Tentang/Kontak, cabang publik + peta OSM, testimoni serah-terima, katalog tiga status, 404 publik, template WhatsApp umum, dan standardisasi lifecycle form. Implementasi mengikuti `.prd/backend_public_cms_content_revamp_20260808.md`; QA E2E menunggu backend di laptop tujuan.)
+> **Terakhir diperbarui:** 8 Agustus 2026 (rev 28 — crosscheck CMS/publik: spacing form Pengaturan Situs dan Kontak diseragamkan, section Standar/CTA Tentang dirapikan, halaman Kontak memiliki loading/error state sendiri, dan API publik tetap responsif selama migration cabang/testimoni belum diterapkan. Implementasi mengikuti `.prd/backend_public_cms_content_revamp_20260808.md`; QA E2E menunggu backend di laptop tujuan.)
 >
 > rev 24 — **revamp CMS/Public terimplementasi end-to-end**: CRUD/toggle/reorder menu publik, Unit Unggulan, logo rounded, dan ikon submenu selesai.
 >
@@ -32,11 +32,14 @@
 - [x] Tentang dan Kontak diperkaya; konten bisnis dan repeatable arrays dikelola per section melalui CMS.
 - [x] Peta multi-cabang memakai Leaflet + OpenStreetMap tanpa API key atau perubahan env.
 - [x] Testimoni terhubung ke unit SOLD, memiliki metadata/foto serah-terima, draft/publish gate, dan detail publik dengan plat tersamarkan.
+- [x] Testimoni memilih unit SOLD, pelanggan, dan sales dari sales order `DEAL` yang sama; nama/profesi pelanggan terisi otomatis dan video ditunda dari form.
 - [x] Katalog publik menerima unit aktif-terpublikasi berstatus Ready Stock, Hold, atau Sold.
 - [x] URL publik tidak dikenal memakai halaman 404 publik tanpa redirect/petunjuk login.
 - [x] Template direct WhatsApp publik hanya berisi konsultasi umum/unit tanpa hasil simulasi kredit.
 - [x] Lifecycle modal create/edit diaudit: open-cycle baru bersih, error mempertahankan input, dan wizard Unit bertahan sampai flow selesai.
 - [x] Test backend/frontend terkait kontrak konten, testimoni, katalog, lifecycle form, dan WhatsApp ditambahkan.
+- [x] Crosscheck rev 28: spacing input Pengaturan Situs/Kontak, FAQ editor, section Standar/CTA Tentang, dan state error Kontak publik diperbaiki.
+- [x] Crosscheck rev 28: Beranda/Kontak tidak lagi 500 selama rollout migration cabang; Beranda memakai fallback testimoni legacy dan lookup editor CMS tetap dapat dibuka sampai kolom baru tersedia.
 - [ ] Migration/generate/restart backend serta QA browser E2E dijalankan pada laptop backend tujuan.
 
 ### ✅ Revamp Inventori, Leasing Unit, dan WhatsApp (rev 26)
@@ -497,7 +500,7 @@ Pendukung: `ImageUpload` (preview + validasi), `useSectionForm`/`useCmsSection` 
 | Detail (`KatalogDetailPage`) | `GET /public/catalog/:id`, `/related`, config | ✅ |
 | Simulasi (`SimulasiPage`) | `GET /public/credit-simulation/config` + `POST /calculate` | ✅ `usePublicCreditConfig`/`useCalculateCredit` |
 | Tentang (`TentangPage`) | `GET /public/about` | ✅ |
-| Kontak (`KontakPage`) | `GET /public/contact-page` + `POST /public/contact-messages` | ✅ |
+| Kontak (`KontakPage`) | `GET /public/contact` + `POST /public/contact-messages` | ✅ |
 
 > Tabel di atas sempat basi (ditulis rev 1 Jul saat migrasi baru direncanakan) — migrasi situs publik sudah tuntas sejak rev 8 (lihat section F "CMS + Situs Publik — SELESAI" tepat di bawah). Dummy Redux `s.data.*` yang jadi alasan ⬜ di tabel lama sudah dihapus total di rev 16.
 

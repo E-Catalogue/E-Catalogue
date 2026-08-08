@@ -185,19 +185,30 @@ export interface Testimonial {
   rating: number;
   avatarFilename: string | null;
   imageFilename: string | null;
-  videoUrl: string | null;
   handoverDate: string | null;
   unitId: string | null;
+  leadId: string | null;
+  salesId: string | null;
   unit?: TestimonialUnit | null;
+  lead?: TestimonialCustomer | null;
+  sales?: TestimonialSales | null;
   isPublished: boolean;
   sortOrder: number;
 }
+export interface TestimonialCustomer { id: string; nama: string; nik: string; noHp: string | null; pekerjaan: string | null; branch?: { id: string; nama: string; code: string } | null }
+export interface TestimonialSales { id: string; name: string; username: string; branch?: { id: string; nama: string; code: string } | null }
 export interface TestimonialUnit {
   id: string; name: string; platNomor: string; tahun: number; warna: string; transmisi: string;
   merek?: { id?: string; name: string } | string | null; tipe?: { id?: string; name: string } | string | null;
   imageFilename?: string | null; branch?: { id: string; nama?: string; name?: string; code: string } | null;
 }
-export type TestimonialForm = Omit<Testimonial, 'id'>;
+export interface TestimonialLookupDeal { id: string; nomorOrder: string; dealAt: string | null; unit: TestimonialUnit; customer: TestimonialCustomer; sales: TestimonialSales }
+export interface TestimonialLookups { deals: TestimonialLookupDeal[] }
+export interface TestimonialForm {
+  title: string; city: string; text: string; rating: number; imageFilename: string | null;
+  handoverDate: string | null; unitId: string; leadId: string; salesId: string;
+  isPublished: boolean; sortOrder: number;
+}
 
 /* ── Pesan Kontak (inbox) ── */
 export type ContactStatus = 'NEW' | 'READ' | 'REPLIED' | 'ARCHIVED';

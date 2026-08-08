@@ -79,7 +79,9 @@ export interface SalesContact {
 /* ── Homepage aggregat ── */
 export interface PublicTestimonial {
   id: string; name: string; role: string | null; title: string | null; city: string | null; text: string; rating: number;
-  avatarFilename: string | null; imageFilename: string | null; videoUrl: string | null; handoverDate: string | null;
+  avatarFilename: string | null; imageFilename: string | null; handoverDate: string | null;
+  customer: { id: string; name: string; occupation: string | null } | null;
+  sales: { id: string; name: string } | null;
   unit: { id: string; name: string; platNomor: string; tahun: number; warna: string; transmisi: string; merek: string | null; tipe: string | null; imageFilename: string | null; branch?: { id: string; name: string; code: string } | null } | null;
 }
 export interface PublicBranch { id: string; nama: string; code: string; lokasi: string; kontak: string; publicDescription: string | null; businessHours: string | null; mapLat: number; mapLng: number; publicSortOrder: number; images: { id: string; filename: string; url?: string }[]; }

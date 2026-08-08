@@ -85,7 +85,7 @@ export const SiteSettingsPage = () => {
       />
 
       {/* Identitas */}
-      <SectionCard title="Identitas" icon={<Building2 size={16} />}>
+      <SectionCard title="Identitas" icon={<Building2 size={16} />} bodyClassName="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <ImageUpload label="Logo" aspect="aspect-video" hint={pendingLogo ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.logoFilename)} isUploading={uploadLogo.isPending}
             onFile={setPendingLogo} />
@@ -101,7 +101,7 @@ export const SiteSettingsPage = () => {
       </SectionCard>
 
       {/* Kontak */}
-      <SectionCard title="Kontak" icon={<Phone size={16} />}>
+      <SectionCard title="Kontak" icon={<Phone size={16} />} bodyClassName="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TextField label="Nomor WhatsApp (tanpa +)" value={f.whatsappNumber ?? ''} onChange={(e) => set('whatsappNumber', e.target.value)} placeholder="628xxx" />
           <TextField label="Telepon" value={f.phone ?? ''} onChange={(e) => set('phone', e.target.value)} placeholder="021-xxx" />

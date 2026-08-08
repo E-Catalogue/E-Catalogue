@@ -18,14 +18,14 @@ import { Pagination } from '@/shared/components/ui/Pagination';
 import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
-import { useTestimonials, useTestimonialMutations, useTestimonialSoldUnits, useUploadCmsImage } from './cms.hooks';
+import { useTestimonials, useTestimonialMutations, useTestimonialLookups, useUploadCmsImage } from './cms.hooks';
 import { cmsImageUrl } from './cms.api';
 import { ImageUpload } from './ImageUpload';
 import type { Testimonial, TestimonialForm } from './cms.types';
 
 const emptyForm: TestimonialForm = {
-  name: '', role: '', title: '', city: '', text: '', rating: 5, avatarFilename: null, imageFilename: null,
-  videoUrl: '', handoverDate: null, unitId: null, isPublished: false, sortOrder: 0,
+  title: '', city: '', text: '', rating: 5, imageFilename: null,
+  handoverDate: null, unitId: '', leadId: '', salesId: '', isPublished: false, sortOrder: 0,
 };
 
 export const TestimoniPage = () => {
@@ -36,7 +36,6 @@ export const TestimoniPage = () => {
   const [formData, setFormData] = useState<TestimonialForm>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<Testimonial | null>(null);
   const [publishTarget, setPublishTarget] = useState<Testimonial | null>(null);
-  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const debounced = useDebouncedValue(search, 400);
 
@@ -44,16 +43,16 @@ export const TestimoniPage = () => {
   const rows = data?.data ?? [];
   const m = useTestimonialMutations();
   const upload = useUploadCmsImage('testimoni');
-  const { data: soldUnits = [], isLoading: unitsLoading } = useTestimonialSoldUnits(!!form);
+  const { data: lookups, isLoading: lookupsLoading } = useTestimonialLookups(!!form);
 
   const activeCount = rows.filter((t) => t.isPublished).length;
   const avgRating = rows.length ? (rows.reduce((a, t) => a + t.rating, 0) / rows.length).toFixed(1) : '—';
 
-  const clearFiles = () => { setPendingAvatar(null); setPendingImage(null); };
+  const clearFiles = () => setPendingImage(null);
   const closeForm = () => { setForm(null); setFormData(emptyForm); clearFiles(); };
   const openCreate = () => { setFormData({ ...emptyForm }); clearFiles(); setForm({}); };
   const openEdit = (t: Testimonial) => {
-    setFormData({ name: t.name, role: t.role ?? '', title: t.title ?? '', city: t.city ?? '', text: t.text, rating: t.rating, avatarFilename: t.avatarFilename, imageFilename: t.imageFilename, videoUrl: t.videoUrl ?? '', handoverDate: t.handoverDate, unitId: t.unitId, isPublished: t.isPublished, sortOrder: t.sortOrder });
+    setFormData({ title: t.title ?? '', city: t.city ?? '', text: t.text, rating: t.rating, imageFilename: t.imageFilename, handoverDate: t.handoverDate, unitId: t.unitId ?? '', leadId: t.leadId ?? '', salesId: t.salesId ?? '', isPublished: t.isPublished, sortOrder: t.sortOrder });
     clearFiles();
     setForm({ item: t });
   };
@@ -62,7 +61,6 @@ export const TestimoniPage = () => {
     e.preventDefault();
     try {
       let body = { ...formData };
-      if (pendingAvatar) body = { ...body, avatarFilename: (await upload.mutateAsync(pendingAvatar)).filename };
       if (pendingImage) body = { ...body, imageFilename: (await upload.mutateAsync(pendingImage)).filename };
       if (form?.item) await m.update.mutateAsync({ id: form.item.id, body });
       else await m.create.mutateAsync(body);
@@ -84,7 +82,16 @@ export const TestimoniPage = () => {
   };
 
   const saving = m.create.isPending || m.update.isPending;
-  const unitOptions = soldUnits.map((unit) => ({ value: unit.id, label: unit.name, sublabel: `${unit.tahun} · ${unit.platNomor}` }));
+  const deals = lookups?.deals ?? [];
+  const uniqueById = <T extends { id: string }>(items: T[]) => [...new Map(items.map((item) => [item.id, item])).values()];
+  const units = uniqueById(deals.map((deal) => deal.unit));
+  const unitDeals = deals.filter((deal) => deal.unit.id === formData.unitId);
+  const customers = uniqueById(unitDeals.map((deal) => deal.customer));
+  const customerDeals = unitDeals.filter((deal) => deal.customer.id === formData.leadId);
+  const sales = uniqueById(customerDeals.map((deal) => deal.sales));
+  const unitOptions = units.map((unit) => ({ value: unit.id, label: unit.name, sublabel: `${unit.tahun} · ${unit.platNomor}` }));
+  const customerOptions = customers.map((customer) => ({ value: customer.id, label: customer.nama, sublabel: `${customer.noHp ?? 'Tanpa nomor HP'} · NIK ${customer.nik}` }));
+  const salesOptions = sales.map((salesperson) => ({ value: salesperson.id, label: salesperson.name, sublabel: salesperson.username }));
 
   const columns: Column<Testimonial>[] = [
     {
@@ -112,6 +119,7 @@ export const TestimoniPage = () => {
       ),
     },
     { header: 'Unit Terjual', cell: (r) => <span className="text-[12px] font-semibold text-ink-soft">{r.unit?.name ?? 'Belum dipilih'}</span> },
+    { header: 'Sales', cell: (r) => <span className="text-[12px] font-semibold text-ink-soft">{r.sales?.name ?? 'Belum dipilih'}</span> },
     {
       header: 'Testimoni',
       cell: (r) => <p className="text-[12px] font-medium text-ink-soft max-w-xs truncate" title={r.text}>"{r.text}"</p>,
@@ -240,22 +248,15 @@ export const TestimoniPage = () => {
       {/* Form Modal */}
       <Modal open={!!form} onClose={closeForm} title={form?.item ? 'Edit Testimoni' : 'Tambah Testimoni'} icon={<Quote size={20} />} size="lg">
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-32 shrink-0">
-              <ImageUpload label="Avatar (opsional)" aspect="aspect-square" previewUrl={cmsImageUrl('testimoni', formData.avatarFilename)} isUploading={upload.isPending} onFile={setPendingAvatar} />
-              {pendingAvatar && <p className="mt-1 text-[10px] font-semibold text-primary">Dipilih: {pendingAvatar.name}</p>}
-            </div>
-            <div className="flex-1 grid grid-cols-1 gap-4">
-              <TextField label="Nama" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Andre P." />
-              <TextField label="Profesi / Role" value={formData.role ?? ''} onChange={(e) => setFormData({ ...formData, role: e.target.value })} placeholder="Karyawan Swasta" />
-              <TextField label="Kota" value={formData.city ?? ''} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Tangerang" />
-            </div>
+          <div className="rounded-2xl border border-primary/15 bg-primary-light/40 p-4"><p className="text-[11px] font-extrabold uppercase tracking-wide text-primary">Data transaksi penjualan</p><p className="mt-1 text-[12px] font-medium text-muted">Pelanggan dan sales hanya tersedia dari transaksi berstatus Deal dengan unit yang sudah terjual.</p></div>
+          <SearchableSelect label="Unit yang Dibeli" required value={formData.unitId} onChange={(unitId) => setFormData({ ...formData, unitId, leadId: '', salesId: '' })} options={unitOptions} loading={lookupsLoading} placeholder="Pilih unit terjual" searchPlaceholder="Cari nama / plat unit..." />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <SearchableSelect label="Pelanggan" required value={formData.leadId} onChange={(leadId) => setFormData({ ...formData, leadId, salesId: '' })} options={customerOptions} loading={lookupsLoading} disabled={!formData.unitId} placeholder={formData.unitId ? 'Pilih pelanggan' : 'Pilih unit dahulu'} searchPlaceholder="Cari nama / NIK pelanggan..." />
+            <SearchableSelect label="Sales yang Menangani" required value={formData.salesId} onChange={(salesId) => setFormData({ ...formData, salesId })} options={salesOptions} loading={lookupsLoading} disabled={!formData.leadId} placeholder={formData.leadId ? 'Pilih sales' : 'Pilih pelanggan dahulu'} searchPlaceholder="Cari sales..." />
           </div>
-          <SearchableSelect label="Unit yang Dibeli" required value={formData.unitId ?? ''} onChange={(unitId) => setFormData({ ...formData, unitId })} options={unitOptions} loading={unitsLoading} placeholder="Pilih unit terjual" searchPlaceholder="Cari nama / plat unit..." />
-          <div className="grid sm:grid-cols-2 gap-4"><TextField label="Judul Cerita" value={formData.title ?? ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Pelayanan jelas dari awal" /><DateField label="Tanggal Serah Terima" required value={formData.handoverDate?.slice(0, 10) ?? ''} onChange={(value) => setFormData({ ...formData, handoverDate: value })} /></div>
+          <div className="grid sm:grid-cols-3 gap-4"><TextField label="Judul Cerita" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Pelayanan jelas dari awal" /><TextField label="Kota" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Tangerang" /><DateField label="Tanggal Serah Terima" required value={formData.handoverDate?.slice(0, 10) ?? ''} onChange={(value) => setFormData({ ...formData, handoverDate: value })} /></div>
           <ImageUpload label="Foto Bukti Serah Terima" aspect="aspect-video" previewUrl={cmsImageUrl('testimoni', formData.imageFilename)} isUploading={upload.isPending} onFile={setPendingImage} />
           {pendingImage && <p className="-mt-3 text-[10px] font-semibold text-primary">Dipilih: {pendingImage.name}</p>}
-          <TextField label="URL Video (opsional)" type="url" value={formData.videoUrl ?? ''} onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} placeholder="https://youtube.com/..." />
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Testimoni</label>
             <textarea required value={formData.text} onChange={(e) => setFormData({ ...formData, text: e.target.value })} rows={4}
