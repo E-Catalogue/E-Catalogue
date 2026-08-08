@@ -10,7 +10,7 @@ import { notifyApiError } from '@/core/api/notify';
 import { getApiErrorCode } from '@/core/api/apiError';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateUnit, useUnit, useUnitImageMutations, useUnitLookups, useUpdateUnit, useUpdateUnitFunding } from './unit.hooks';
-import { businessToday } from '@/core/utils/businessDate';
+import { businessToday, toBusinessDate } from '@/core/utils/businessDate';
 import { unitDisplayName } from './unit.display';
 import { UnitGalleryManager } from './UnitGalleryManager';
 import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type BahanBakar, type FinalCyclePolicy, type FundingSource, type HistoricalMode, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
@@ -77,9 +77,9 @@ const toForm = (unit?: Unit | null): UnitFormState => {
     noRangka: unit.noRangka ?? '',
     noMesin: unit.noMesin ?? '',
     kilometer: unit.kilometer ?? 0,
-    tanggalPajak: unit.tanggalPajak?.slice(0, 10) ?? today(),
+    tanggalPajak: toBusinessDate(unit.tanggalPajak) || today(),
     purchaseCost: unit.purchaseCost ?? 0,
-    tanggalPembelian: unit.tanggalPembelian?.slice(0, 10) ?? today(),
+    tanggalPembelian: toBusinessDate(unit.tanggalPembelian) || today(),
     cashAccountId: unit.cashAccountId ?? '',
     // Pendanaan hanya diisi saat create — pada edit funding sudah terkunci (dikelola lewat tab Pendanaan terpisah).
     fundingSource: unit.fundingAgreement?.fundingSource ?? 'COMPANY_OWNED',

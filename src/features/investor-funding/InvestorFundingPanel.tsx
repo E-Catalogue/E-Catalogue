@@ -3,6 +3,7 @@ import { AlertTriangle, HandCoins, Landmark, PlusCircle } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DateField } from '@/shared/components/ui/DateField';
+import { businessToday } from '@/core/utils/businessDate';
 import { NumericField, TextField } from '@/shared/components/ui/Field';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
@@ -28,7 +29,7 @@ interface Props {
   fundingSource?: string | null;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 export const InvestorFundingPanel = ({ resourceType, resourceId, branchId, paid, paymentStatusKnown, canAllocate, fundingSource }: Props) => {
   const branchKey = branchId ?? 'resource';

@@ -12,10 +12,11 @@ import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SelectField } from '@/shared/components/ui/Field';
 import { formatCurrency, formatNumber, formatDate } from '@/core/utils/format';
+import { businessToday } from '@/core/utils/businessDate';
 import { useStockOverview, useStockUnits, useStockMovements } from './stock-report.hooks';
 import type { StockUnitRow, StockMovement, BranchComparison } from './stock-report.types';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 const BADGE_CLS: Record<string, string> = {
   Normal: 'bg-accent-green/10 text-accent-green',

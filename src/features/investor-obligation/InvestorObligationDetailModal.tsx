@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TextField, NumericField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
+import { businessToday } from '@/core/utils/businessDate';
 import { CashAccountSelect } from '@/features/finance/components';
 import { useInvestorObligationCashAccounts } from '@/features/finance/lookup';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -25,7 +26,7 @@ import {
 
 type BranchHeaders = Record<string, string> | undefined;
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 /** Pesan banner inline per error code finansial (README §17: jangan hanya toast). */
 const ERROR_BANNER: Record<string, { title: string; message: string }> = {

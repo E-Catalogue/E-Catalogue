@@ -9,6 +9,7 @@ const formatter = new Intl.DateTimeFormat('en-CA', {
 
 /** Tanggal kalender bisnis YYYY-MM-DD, tidak bergeser karena UTC browser. */
 export const businessToday = () => formatter.format(new Date());
+export const businessMonth = () => businessToday().slice(0, 7);
 
 /** Ubah ISO/Date API menjadi tanggal kalender bisnis Asia/Bangkok. */
 export const toBusinessDate = (value?: string | Date | null) => {

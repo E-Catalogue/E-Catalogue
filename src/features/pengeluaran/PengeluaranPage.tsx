@@ -17,6 +17,7 @@ import { usePermissions } from '@/features/auth/usePermissions';
 // import { kategoriPengeluaranApi } from '@/features/master/simpleMaster.api';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
+import { businessMonth, businessToday } from '@/core/utils/businessDate';
 import { CashAccountSelect, CurrencyField, ExpenseCategorySelect, FinanceStatusBadge } from '@/features/finance/components';
 import { useOperationalExpenseCashAccounts, useOperationalExpenseCategories, useRecurringExpenseCategories, useRecurringExpenseTemplates, type RecurringTemplateOption } from '@/features/finance/lookup';
 import { useBranchScope } from '@/features/auth/useBranchScope';
@@ -26,8 +27,8 @@ import type { OperationalExpense, OperationalExpenseType, RecurringExpense } fro
 
 type Tab = 'expenses' | 'recurring';
 
-const today = () => new Date().toISOString().slice(0, 10);
-const month = () => new Date().toISOString().slice(0, 7);
+const today = businessToday;
+const month = businessMonth;
 
 const ExpenseForm = ({ item, onClose }: { item: OperationalExpense | null; onClose: () => void }) => {
   const mutations = useOperationalExpenseMutations();

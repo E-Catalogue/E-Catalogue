@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TextField, NumericField, SelectField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
+import { businessToday } from '@/core/utils/businessDate';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { usePermissions } from '@/features/auth/usePermissions';
@@ -48,7 +49,7 @@ const MiniCurrencyInput = ({ value, onChange, className = '', placeholder = 'Nom
   );
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 const mediaUrl = (url?: string | null) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;

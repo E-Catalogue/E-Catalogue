@@ -7,6 +7,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { TextField, SelectField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
+import { businessToday, toBusinessDate } from '@/core/utils/businessDate';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { RowActions } from '@/shared/components/ui/RowActions';
 import { Can, RequirePermission } from '@/features/auth/permissions';
@@ -29,7 +30,7 @@ type Tab = 'dashboard' | 'accounts' | 'ledger';
 type TxModal = 'manual-in' | 'manual-out' | 'transfer' | 'adjustment' | 'inter-branch-transfer';
 type BranchHeaders = Record<string, string> | undefined;
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 
 const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAccount | null; onClose: () => void; headers: BranchHeaders; mutationBlocked: boolean }) => {
   const mutations = useCashAccountMutations();
@@ -40,7 +41,7 @@ const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAc
     accountNumber: item?.accountNumber ?? '',
     bankName: item?.bankName ?? '',
     openingBalance: String(item?.openingBalance ?? 0),
-    openingBalanceAt: item?.openingBalanceAt ? item.openingBalanceAt.slice(0, 10) : '',
+    openingBalanceAt: toBusinessDate(item?.openingBalanceAt),
     defaultPayment: item?.defaultPayment ?? false,
     isActive: item?.isActive ?? true,
   });

@@ -12,6 +12,7 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { TextField } from '@/shared/components/ui/Field';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { DateField } from '@/shared/components/ui/DateField';
+import { toBusinessDate } from '@/core/utils/businessDate';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -254,7 +255,7 @@ export const TestimoniPage = () => {
             <SearchableSelect label="Pelanggan" required value={formData.leadId} onChange={(leadId) => setFormData({ ...formData, leadId, salesId: '' })} options={customerOptions} loading={lookupsLoading} disabled={!formData.unitId} placeholder={formData.unitId ? 'Pilih pelanggan' : 'Pilih unit dahulu'} searchPlaceholder="Cari nama / NIK pelanggan..." />
             <SearchableSelect label="Sales yang Menangani" required value={formData.salesId} onChange={(salesId) => setFormData({ ...formData, salesId })} options={salesOptions} loading={lookupsLoading} disabled={!formData.leadId} placeholder={formData.leadId ? 'Pilih sales' : 'Pilih pelanggan dahulu'} searchPlaceholder="Cari sales..." />
           </div>
-          <div className="grid sm:grid-cols-3 gap-4"><TextField label="Judul Cerita" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Pelayanan jelas dari awal" /><TextField label="Kota" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Tangerang" /><DateField label="Tanggal Serah Terima" required value={formData.handoverDate?.slice(0, 10) ?? ''} onChange={(value) => setFormData({ ...formData, handoverDate: value })} /></div>
+          <div className="grid sm:grid-cols-3 gap-4"><TextField label="Judul Cerita" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Pelayanan jelas dari awal" /><TextField label="Kota" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Tangerang" /><DateField label="Tanggal Serah Terima" required value={toBusinessDate(formData.handoverDate)} onChange={(value) => setFormData({ ...formData, handoverDate: value })} /></div>
           <ImageUpload label="Foto Bukti Serah Terima" aspect="aspect-video" previewUrl={cmsImageUrl('testimoni', formData.imageFilename)} isUploading={upload.isPending} onFile={setPendingImage} />
           {pendingImage && <p className="-mt-3 text-[10px] font-semibold text-primary">Dipilih: {pendingImage.name}</p>}
           <div>

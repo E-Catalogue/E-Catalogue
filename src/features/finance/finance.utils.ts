@@ -11,8 +11,10 @@ export const resolveApiError = (err: unknown) => {
   };
 };
 
-export const toIsoDate = (value: string) => (value ? new Date(value).toISOString() : '');
-export const fromIsoDate = (value?: string | null) => (value ? value.slice(0, 10) : '');
+import { toBusinessDate } from '@/core/utils/businessDate';
+
+export const toIsoDate = (value: string) => (value ? `${value}T00:00:00.000Z` : '');
+export const fromIsoDate = (value?: string | null) => toBusinessDate(value);
 
 export const showName = (user?: { name?: string | null; username?: string | null }) =>
   user?.name || user?.username || '-';

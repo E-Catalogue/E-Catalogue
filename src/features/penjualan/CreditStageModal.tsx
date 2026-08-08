@@ -4,9 +4,10 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { SelectField, TextField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
+import { businessToday } from '@/core/utils/businessDate';
 import type { CreditProcessStage, CreditStagePayload, LeadOrder } from '@/features/crm/crm.types';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = businessToday;
 const OPTIONS: Record<CreditProcessStage, Array<{ value: string; label: string }>> = {
   SLIK: [{ value: 'BI_CHECKING', label: 'BI Checking' }, { value: 'LOLOS', label: 'Lolos' }, { value: 'REJECT', label: 'Ditolak' }],
   SURVEY: [{ value: 'PENDING', label: 'Menunggu' }, { value: 'SCHEDULED', label: 'Terjadwal' }, { value: 'PASSED', label: 'Lolos' }, { value: 'REJECTED', label: 'Ditolak' }],

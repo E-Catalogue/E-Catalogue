@@ -16,6 +16,7 @@ import { Can, RequirePermission } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { notifyApiError } from '@/core/api/notify';
 import { formatCurrency, formatDate } from '@/core/utils/format';
+import { businessMonth, businessToday } from '@/core/utils/businessDate';
 import { CashAccountSelect, CurrencyField, DealOrderSelect, FinanceStatusBadge, PayrollUserSelect } from '@/features/finance/components';
 import { usePayrollCashAccounts, usePayrollDealOrderLookup, usePayrollUserLookup } from '@/features/finance/lookup';
 import { useBranchScope } from '@/features/auth/useBranchScope';
@@ -25,8 +26,8 @@ import type { PayrollBaseSalary, PayrollItem, PayrollRun, SalesIncentive } from 
 
 type Tab = 'base' | 'incentives' | 'runs';
 
-const today = () => new Date().toISOString().slice(0, 10);
-const month = () => new Date().toISOString().slice(0, 7);
+const today = businessToday;
+const month = businessMonth;
 
 const BaseSalaryForm = ({ item, onClose }: { item: PayrollBaseSalary | null; onClose: () => void }) => {
   const mutations = usePayrollBaseSalaryMutations();
