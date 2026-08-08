@@ -25,4 +25,13 @@ describe('unitApi daftar inventori', () => {
 
     expect(mocks.get).toHaveBeenCalledWith('/units/lookups/inventory-filters', { headers: undefined });
   });
+
+  it('mengirim koreksi investor ke endpoint khusus dengan alasan audit', async () => {
+    mocks.post.mockResolvedValue({ data: { success: true, data: { id: 'agreement-1' } } });
+    const payload = { fundingSource: 'INVESTOR' as const, investorId: 'investor-2', finalCyclePolicy: 'FULL' as const, reason: 'Koreksi dokumen investor' };
+
+    await unitApi.correctFunding('unit-1', payload, { 'X-Branch-Id': 'branch-1' });
+
+    expect(mocks.post).toHaveBeenCalledWith('/units/unit-1/funding-correction', payload, { headers: { 'X-Branch-Id': 'branch-1' } });
+  });
 });

@@ -9,6 +9,7 @@ import { CashAccountSelect } from '@/features/finance/components';
 import { useLeadOrderCashAccounts } from '@/features/finance/lookup';
 import { useLeadPayments } from '@/features/crm/crm.hooks';
 import { formatCurrency } from '@/core/utils/format';
+import { usePermissions } from '@/features/auth/usePermissions';
 import {
   ORDER_STATUS_LABEL, ORDER_STATUS_COLOR,
   type LeadOrder, type LeadOrderCancellation, type OrderCancellationReason, type OrderStatus,
@@ -25,6 +26,7 @@ interface Props {
 const today = () => new Date().toISOString().slice(0, 10);
 
 export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }: Props) => {
+  const { can } = usePermissions();
   const [pending, setPending] = useState<Extract<OrderStatus, 'DEAL' | 'CANCELLED'> | null>(null);
   const [refundEnabled, setRefundEnabled] = useState(false);
   const [paymentIds, setPaymentIds] = useState<string[]>([]);
@@ -33,6 +35,9 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
   const [description, setDescription] = useState('Refund pembatalan booking');
   const [cancellationReason, setCancellationReason] = useState<OrderCancellationReason>('CUSTOMER_REQUEST');
   const [cancellationNote, setCancellationNote] = useState('');
+  const [dealDate, setDealDate] = useState(today());
+  const [cancelledAt, setCancelledAt] = useState(today());
+  const [backdateReason, setBackdateReason] = useState('');
 
   const resourceKey = order?.branchId ?? 'order';
   const resourceHeaders = order?.branchId ? { 'X-Branch-Id': order.branchId } : undefined;
@@ -59,6 +64,10 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
     && (cancellationReason !== 'OTHER' || !!cancellationNote.trim());
   const canTransition = order?.status === 'BOOKING';
   const isPaid = order?.isPaid === true;
+  const isPast = (value: string) => value < today();
+  const backdateRequired = can('TRANSACTION_BACKDATE') && ((pending === 'DEAL' && isPast(dealDate)) || (pending === 'CANCELLED' && isPast(cancelledAt)));
+  const backdateValid = !backdateRequired || backdateReason.trim().length >= 5;
+  const bangkokIso = (value: string) => `${value}T00:00:00+07:00`;
 
   const close = () => {
     setPending(null);
@@ -69,19 +78,25 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
     setDescription('Refund pembatalan booking');
     setCancellationReason('CUSTOMER_REQUEST');
     setCancellationNote('');
+    setDealDate(today());
+    setCancelledAt(today());
+    setBackdateReason('');
     onClose();
   };
   const togglePayment = (id: string) => setPaymentIds((current) =>
     current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const submitDeal = () => {
-    void onSubmit('DEAL').then(close).catch(() => undefined);
+    if (!backdateValid) return;
+    void onSubmit('DEAL', { dealDate: bangkokIso(dealDate), ...(backdateRequired ? { backdateReason: backdateReason.trim() } : {}) }).then(close).catch(() => undefined);
   };
   const submitCancellation = () => {
-    if (!refundValid) return;
+    if (!refundValid || !backdateValid) return;
     void onSubmit('CANCELLED', {
       cancellationReason,
       cancellationNote: cancellationNote.trim() || undefined,
-      ...(refundEnabled ? { refund: { paymentIds, cashAccountId, transactionDate, description: description.trim() || undefined } } : {}),
+      cancelledAt: bangkokIso(cancelledAt),
+      ...(backdateRequired ? { backdateReason: backdateReason.trim() } : {}),
+      ...(refundEnabled ? { refund: { paymentIds, cashAccountId, transactionDate: bangkokIso(transactionDate), description: description.trim() || undefined } } : {}),
     }).then(close).catch(() => undefined);
   };
 
@@ -121,12 +136,12 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
       </Modal>
 
       <ConfirmDialog open={pending === 'DEAL'} onClose={() => setPending(null)} onConfirm={submitDeal}
-        closeOnConfirm={false} loading={submitting} tone="primary" icon={CheckCircle2} title="Tandai Order DEAL"
+        closeOnConfirm={false} loading={submitting} confirmDisabled={!backdateValid} tone="primary" icon={CheckCircle2} title="Tandai Order DEAL"
         message="Unit akan ditandai SOLD, lead menjadi WON, dan settlement penjualan dibuat. Tindakan ini tidak dapat dibatalkan."
-        confirmLabel="Ya, Tandai DEAL" />
+        confirmLabel="Ya, Tandai DEAL"><div className="mt-3 space-y-2"><DateField label="Tanggal DEAL" required value={dealDate} onChange={setDealDate} />{backdateRequired && <TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} />}</div></ConfirmDialog>
 
       <ConfirmDialog open={pending === 'CANCELLED'} onClose={() => setPending(null)} onConfirm={submitCancellation}
-        closeOnConfirm={false} loading={submitting} confirmDisabled={!refundValid} tone="danger" icon={XCircle} title="Batalkan Order"
+        closeOnConfirm={false} loading={submitting} confirmDisabled={!refundValid || !backdateValid} tone="danger" icon={XCircle} title="Batalkan Order"
         message="Order dan refund yang dipilih diproses atomik dalam satu request; tidak ada reversal terpisah."
         confirmLabel="Ya, Batalkan">
         <div className="mt-4 space-y-3 text-left">
@@ -135,6 +150,8 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
             { value: 'UNIT_ISSUE', label: 'Masalah Unit' }, { value: 'PRICE_DISAGREEMENT', label: 'Harga Tidak Sepakat' },
             { value: 'DUPLICATE_ORDER', label: 'Order Duplikat' }, { value: 'OTHER', label: 'Lainnya' },
           ]} />
+          <DateField label="Tanggal Pembatalan" required value={cancelledAt} onChange={setCancelledAt} />
+          {backdateRequired && <TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} />}
           <TextField label={cancellationReason === 'OTHER' ? 'Catatan Pembatalan *' : 'Catatan Pembatalan'} value={cancellationNote} onChange={(event) => setCancellationNote(event.target.value)} maxLength={2000} />
           <label className="flex items-center gap-2.5 rounded-xl border border-border bg-surface-soft p-3 cursor-pointer">
             <input type="checkbox" checked={refundEnabled} onChange={(event) => { setRefundEnabled(event.target.checked); if (!event.target.checked) setPaymentIds([]); }} className="h-4 w-4 accent-[color:var(--color-primary)]" />

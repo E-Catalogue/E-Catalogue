@@ -13,6 +13,7 @@ export type FundingSource = 'COMPANY_OWNED' | 'INVESTOR';
 export type FundingScheme = 'FIXED_MONTHLY' | 'PROFIT_SHARE';
 export type FinalCyclePolicy = 'FULL' | 'NONE' | 'PRORATA';
 export type FundingStatus = 'DRAFT' | 'ACTIVE' | 'RELEASED' | 'ENDED' | 'CANCELLED';
+export type HistoricalMode = 'POST_LEDGER' | 'REFERENCE_ONLY';
 export type StockAgeFilter = 'lt30' | '30to60' | '60to90' | 'gt90';
 
 export const FINAL_CYCLE_POLICY_LABEL: Record<FinalCyclePolicy, string> = {
@@ -61,6 +62,18 @@ export interface UnitFundingInput {
   finalCyclePolicy?: FinalCyclePolicy;
 }
 
+export interface HistoricalUnitInput {
+  mode: HistoricalMode;
+  reason: string;
+  pricingSnapshot?: {
+    pricingCostBasis: number;
+    targetPrice: number;
+    otrPrice: number;
+    finalizedAt: string;
+    readyStockAt?: string;
+  };
+}
+
 export interface Unit {
   id: string;
   /** Nama bisnis/display name Unit yang ditentukan pengguna (mis. "Avanza G AT Putih 2023"). */
@@ -99,6 +112,8 @@ export interface Unit {
   cancelledAt?: string | null;
   cancelledById?: string | null;
   cancelledReason?: string | null;
+  historicalMode?: HistoricalMode | null;
+  historicalReason?: string | null;
   isNew?: boolean;
   isFeatured?: boolean;
   statusKatalog?: string | null;
@@ -216,6 +231,7 @@ export interface UnitFormData {
   bahanBakar?: BahanBakar | null;
   /** Wajib pada create (`POST /units`); tidak dikirim/diterima pada update. */
   funding?: UnitFundingInput;
+  historical?: HistoricalUnitInput;
   kelengkapans: string[];
   dokumens: string[];
   leasingOffers: UnitLeasingOfferInput[];
@@ -224,6 +240,8 @@ export interface UnitFormData {
 export interface UnitStatusUpdate {
   statusUnit: StatusUnit;
   reason?: string;
+  readyStockDate?: string;
+  backdateReason?: string;
 }
 
 export interface MasterKelengkapan {
@@ -333,6 +351,10 @@ export interface UnitFundingUpdatePayload {
   finalCyclePolicy?: FinalCyclePolicy;
 }
 
+export interface UnitFundingCorrectionPayload extends UnitFundingUpdatePayload {
+  reason: string;
+}
+
 // ── Finalisasi harga awal (`POST /units/:id/finalize-initial-pricing`) ─────
 
 export interface FinalizeInitialPricingPayload {
@@ -341,6 +363,8 @@ export interface FinalizeInitialPricingPayload {
   selectedReconditioningIds?: string[];
   target?: PricingOverride;
   otr?: PricingOverride;
+  finalizedAt?: string;
+  backdateReason?: string;
 }
 
 export type PricingInputMode = 'PERCENT' | 'AMOUNT';

@@ -13,6 +13,7 @@ export type StatusSlik = 'LOLOS' | 'REJECT' | 'BI_CHECKING';
 export type SurveyStatus = 'PENDING' | 'SCHEDULED' | 'PASSED' | 'REJECTED';
 export type CreditProcessStage = 'SLIK' | 'SURVEY' | 'APPROVAL';
 export type OrderCancellationReason = 'CUSTOMER_REQUEST' | 'CREDIT_REJECTED' | 'UNIT_ISSUE' | 'PRICE_DISAGREEMENT' | 'DUPLICATE_ORDER' | 'OTHER';
+export type HistoricalMode = 'POST_LEDGER' | 'REFERENCE_ONLY';
 
 export type JenisPembayaran =
   | 'BOOKING_FEE' | 'DP' | 'TAMBAHAN_DP' | 'PELUNASAN'
@@ -179,6 +180,28 @@ export interface LeadOrder {
   statusApproval?: StatusApproval | null;
   statusApprovalChangedAt?: string | null;
   status: OrderStatus;
+  historicalMode?: HistoricalMode | null;
+  historicalReason?: string | null;
+  historical?: {
+    mode: HistoricalMode;
+    reason: string;
+    nomorOrder?: string;
+    finalStatus?: Extract<OrderStatus, 'DEAL' | 'CANCELLED'>;
+    dealDate?: string;
+    cancelledAt?: string;
+    hargaPenawaran?: number;
+    diskonShowroom?: number;
+    hargaFinal?: number;
+    cancellationReason?: OrderCancellationReason;
+    cancellationNote?: string;
+    payments?: Array<{
+      amount: number;
+      paymentDate: string;
+      jenisPembayaran: JenisPembayaran;
+      description?: string;
+      idempotencyKey?: string;
+    }>;
+  };
   tanggalOrder?: string | null;
   /** Diisi backend saat transisi ke DEAL — dipakai sebagai tanggal penjualan (README §24: jangan pakai `updatedAt`). */
   dealAt?: string | null;
@@ -217,6 +240,7 @@ export interface LeadPayment {
   branchId?: string;
   amount: number;
   paymentDate: string;
+  backdateReason?: string;
   description?: string | null;
   jenisPembayaran: JenisPembayaran;
   /** URL private (`/api/v1/private-media/payment/:id/proof`) — akses via authenticated fetch/blob, bukan `<img src>` langsung. */
@@ -242,8 +266,11 @@ export interface LeadOrderCancellationRefund {
 }
 
 export interface LeadOrderCancellation {
-  cancellationReason: OrderCancellationReason;
+  cancellationReason?: OrderCancellationReason;
   cancellationNote?: string;
+  dealDate?: string;
+  cancelledAt?: string;
+  backdateReason?: string;
   refund?: LeadOrderCancellationRefund;
 }
 

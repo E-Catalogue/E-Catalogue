@@ -40,6 +40,7 @@ const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAc
     accountNumber: item?.accountNumber ?? '',
     bankName: item?.bankName ?? '',
     openingBalance: String(item?.openingBalance ?? 0),
+    openingBalanceAt: item?.openingBalanceAt ? item.openingBalanceAt.slice(0, 10) : '',
     defaultPayment: item?.defaultPayment ?? false,
     isActive: item?.isActive ?? true,
   });
@@ -48,7 +49,12 @@ const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAc
   const pending = mutations.create.isPending || mutations.update.isPending;
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const body = { ...form, code: form.code.toUpperCase(), openingBalance: Number(form.openingBalance || 0) };
+    const body = {
+      ...form,
+      code: form.code.toUpperCase(),
+      openingBalance: Number(form.openingBalance || 0),
+      openingBalanceAt: form.openingBalanceAt || null,
+    };
     const opts = {
       onSuccess: () => onClose(),
       onError: (err: unknown) => setError({ code: getApiErrorCode(err), message: getApiErrorMessage(err) }),
@@ -70,6 +76,7 @@ const AccountForm = ({ item, onClose, headers, mutationBlocked }: { item: CashAc
           <TextField label="Kode" required disabled={mutationBlocked} value={form.code} onChange={(e) => set('code', e.target.value)} />
           <SelectField label="Tipe" disabled={mutationBlocked} value={form.type} onChange={(e) => set('type', e.target.value as CashAccountType)} options={[{ value: 'CASH', label: 'Cash' }, { value: 'BANK', label: 'Bank' }, { value: 'OTHER', label: 'Lainnya' }]} />
           <CurrencyField label="Saldo Awal" disabled={mutationBlocked} value={form.openingBalance} onChange={(e) => set('openingBalance', e.target.value)} />
+          <DateField label="Tanggal Saldo Awal (Konfigurasi Backdate)" disabled={mutationBlocked} value={form.openingBalanceAt} onChange={(v) => set('openingBalanceAt', v)} />
           <TextField label="Nomor Rekening" disabled={mutationBlocked} value={form.accountNumber} onChange={(e) => set('accountNumber', e.target.value)} />
           <TextField label="Nama Bank" disabled={mutationBlocked} value={form.bankName} onChange={(e) => set('bankName', e.target.value)} />
           <label className="sm:col-span-2 flex items-center gap-2.5 text-[13px] font-semibold text-ink-soft">

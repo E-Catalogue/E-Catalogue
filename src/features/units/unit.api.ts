@@ -12,6 +12,7 @@ import type {
   UnitLookups,
   FundingAgreement,
   UnitFundingUpdatePayload,
+  UnitFundingCorrectionPayload,
   FinalizeInitialPricingPayload,
   PricingPreview,
   ReopenPricingPayload,
@@ -142,6 +143,11 @@ export const unitApi = {
 
   updateFunding: async (id: string, data: UnitFundingUpdatePayload, headers?: BranchHeaders) => {
     const res = await apiClient.patch<ApiResponse<FundingAgreement>>(`/units/${id}/funding`, data, { headers });
+    return res.data;
+  },
+
+  correctFunding: async (id: string, data: UnitFundingCorrectionPayload, headers?: BranchHeaders) => {
+    const res = await apiClient.post<ApiResponse<FundingAgreement>>(`/units/${id}/funding-correction`, data, { headers });
     return res.data;
   },
 

@@ -9,6 +9,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { SelectField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
@@ -215,15 +216,21 @@ const FilterModal = ({
 
 /* ── Main Page ── */
 const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) => {
+  const { can } = usePermissions();
   const [draft, setDraft] = useState<StatusUnit>(unit.statusUnit);
   const [reason, setReason] = useState('');
+  const todayBangkok = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
+  const [readyStockDate, setReadyStockDate] = useState(todayBangkok());
+  const [backdateReason, setBackdateReason] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const updateStatus = useUpdateUnitStatus();
   const isPending = updateStatus.isPending;
+  const readyBackdated = draft === 'READY_STOCK' && readyStockDate < todayBangkok();
+  const backdateInvalid = readyBackdated && (!can('TRANSACTION_BACKDATE') || backdateReason.trim().length < 5);
 
   const handleConfirm = () => {
     updateStatus.mutate(
-      { id: unit.id, data: { statusUnit: draft, ...(draft === 'INVENTORY' ? { reason } : {}) } },
+      { id: unit.id, data: { statusUnit: draft, ...(draft === 'INVENTORY' ? { reason } : {}), ...(draft === 'READY_STOCK' ? { readyStockDate: `${readyStockDate}T00:00:00+07:00`, ...(readyBackdated ? { backdateReason: backdateReason.trim() } : {}) } : {}) } },
       {
         onError: (err) => notifyApiError(err),
         onSuccess: () => {
@@ -246,7 +253,7 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
         footer={
           <>
             <Button variant="secondary" onClick={onClose} disabled={isPending}>Batal</Button>
-            <Button onClick={() => setConfirmOpen(true)} disabled={isPending || draft === unit.statusUnit || (unit.statusUnit === 'READY_STOCK' && draft === 'INVENTORY' && reason.trim().length < 5)}>
+            <Button onClick={() => setConfirmOpen(true)} disabled={isPending || draft === unit.statusUnit || backdateInvalid || (unit.statusUnit === 'READY_STOCK' && draft === 'INVENTORY' && reason.trim().length < 5)}>
               Simpan Status
             </Button>
           </>
@@ -261,6 +268,7 @@ const StatusChangeModal = ({ unit, onClose }: { unit: Unit; onClose: () => void 
             searchPlaceholder="Cari status..."
           />
           <p className="text-[11px] font-semibold text-muted">Status Ready Stock memerlukan harga, pendanaan, rekondisi, dan keterangan leasing yang lengkap. Status Terjual hanya berubah melalui proses penjualan.</p>
+          {draft === 'READY_STOCK' && <><DateField label="Tanggal Ready Stock" required value={readyStockDate} onChange={setReadyStockDate} />{readyBackdated && can('TRANSACTION_BACKDATE') && <label className="block text-[12px] font-bold text-ink">Alasan backdate<textarea value={backdateReason} onChange={(e) => setBackdateReason(e.target.value)} className="mt-1.5 min-h-20 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium" placeholder="Minimal 5 karakter" /></label>}{readyBackdated && !can('TRANSACTION_BACKDATE') && <p className="text-[11px] font-semibold text-semantic-error">Anda tidak memiliki izin input tanggal lampau.</p>}</>}
           {unit.statusUnit === 'READY_STOCK' && draft === 'INVENTORY' && <label className="block text-[12px] font-bold text-ink">Alasan buka kembali harga<textarea value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1.5 min-h-20 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium outline-none focus:border-primary" placeholder="Contoh: koreksi harga beli atau rekondisi" /></label>}
         </div>
       </Modal>

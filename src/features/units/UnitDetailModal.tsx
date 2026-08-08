@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, BadgeCheck, Building2, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, MapPin, Palette, Pencil, Receipt, Save, Share2, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Building2, Calendar, Car, CheckCircle, Cog, Fuel, Gauge, Hash, MapPin, Palette, Pencil, Receipt, Repeat2, Save, Share2, TrendingUp } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
@@ -16,8 +16,10 @@ import { getApiErrorCode } from '@/core/api/apiError';
 import { useFinalizeInitialPricing, usePricingPreview, useReopenPricing, useUnit, useUnitImageMutations, useUpdateUnitFunding } from './unit.hooks';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
 import { NumericField, SelectField } from '@/shared/components/ui/Field';
+import { DateField } from '@/shared/components/ui/DateField';
 import { InvestorFundingPanel } from '@/features/investor-funding/InvestorFundingPanel';
 import { buildUnitShareMessage, buildWhatsAppShareUrl } from '@/core/utils/whatsapp';
+import { FundingCorrectionModal } from './FundingCorrectionModal';
 
 interface UnitDetailModalProps {
   open: boolean;
@@ -61,7 +63,11 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
   const [selectedReconditioningIds, setSelectedReconditioningIds] = useState<string[]>([]);
   const [reopenDialog, setReopenDialog] = useState(false);
   const [reopenReason, setReopenReason] = useState('');
+  const todayBangkok = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
+  const [pricingFinalizedDate, setPricingFinalizedDate] = useState(todayBangkok());
+  const [pricingBackdateReason, setPricingBackdateReason] = useState('');
   const [showPricingHistory, setShowPricingHistory] = useState(false);
+  const [fundingCorrectionOpen, setFundingCorrectionOpen] = useState(false);
   // HPP berubah saat pilihan rekondisi berubah. Nilai Target/OTR dihitung lokal
   // agar mengetik nominal/persentase tidak memicu request, warning, atau flicker modal.
   const pricingPreview = usePricingPreview(confirmFinalize ? unit?.id : undefined, { selectedReconditioningIds }, unit?.branchId ? { 'X-Branch-Id': unit.branchId } : undefined);
@@ -80,6 +86,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
   const funding = current.fundingAgreement;
   const isFixedMonthlyInvestor = funding?.fundingSource === 'INVESTOR' && funding.scheme === 'FIXED_MONTHLY';
   const canEditCyclePolicy = isFixedMonthlyInvestor && funding.status === 'DRAFT' && can('UNIT_FUNDING_MANAGE');
+  const canCorrectFunding = can('UNIT_FUNDING_CORRECT') && current.historicalMode !== 'REFERENCE_ONLY' && current.statusUnit !== 'SOLD' && ['INVENTORY', 'READY_STOCK', 'HOLD'].includes(current.statusUnit);
   const selectedCyclePolicy = cyclePolicy || funding?.finalCyclePolicy || '';
   const previewData = pricingPreview.data?.data;
   const effectiveTargetValue = targetValue ?? previewData?.suggestedPricing.targetMarkupPercent ?? 0;
@@ -89,6 +96,8 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
     : Math.round(previewData.pricingCostBasis * (1 + value / 100) * 100) / 100;
   const pricingValid = !!previewData && previewPrice(otrMode, effectiveOtrValue) >= previewPrice(targetMode, effectiveTargetValue) && previewPrice(targetMode, effectiveTargetValue) >= previewData.pricingCostBasis;
   const reconditioningReady = !!previewData && (selectedReconditioningIds.length > 0 || confirmNoRekondisi);
+  const pricingBackdated = pricingFinalizedDate < todayBangkok();
+  const pricingDateValid = !pricingBackdated || (can('TRANSACTION_BACKDATE') && (current.historicalMode === 'POST_LEDGER' || pricingBackdateReason.trim().length >= 5));
 
   const handleFinalizePricing = () => {
     finalizePricing.mutate(
@@ -100,6 +109,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           selectedReconditioningIds,
           target: { mode: targetMode, value: effectiveTargetValue },
           otr: { mode: otrMode, value: effectiveOtrValue },
+          ...(can('TRANSACTION_BACKDATE') ? { finalizedAt: `${pricingFinalizedDate}T00:00:00+07:00`, ...(pricingBackdated && pricingBackdateReason.trim() ? { backdateReason: pricingBackdateReason.trim() } : {}) } : {}),
         },
       },
       {
@@ -164,6 +174,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
             <Share2 size={15} /> Bagikan WhatsApp
           </button>
           {!salesView && onEdit && current.statusUnit === 'INVENTORY' && <Button icon={<Pencil size={15} />} onClick={() => onEdit(current)}>Edit Unit</Button>}
+          {!salesView && canCorrectFunding && <Button variant="secondary" icon={<Repeat2 size={15} />} onClick={() => setFundingCorrectionOpen(true)}>Koreksi Investor</Button>}
         </>
       }
     >
@@ -399,13 +410,15 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
         />
       </div>
 
+      {!salesView && <FundingCorrectionModal open={fundingCorrectionOpen} onClose={() => setFundingCorrectionOpen(false)} unit={current} />}
+
       {!salesView && <ConfirmDialog
         open={confirmFinalize}
         onClose={() => setConfirmFinalize(false)}
         onConfirm={handleFinalizePricing}
         closeOnConfirm={false}
         loading={finalizePricing.isPending || pricingPreview.isLoading}
-        confirmDisabled={!pricingValid || !reconditioningReady}
+        confirmDisabled={!pricingValid || !reconditioningReady || !pricingDateValid}
         tone="primary"
         icon={CheckCircle}
         title="Finalisasi Harga Awal"
@@ -453,6 +466,7 @@ export const UnitDetailModal = ({ open, onClose, unit, onEdit, salesView = false
           />
           Unit ini tidak memiliki rekondisi pertama — lanjutkan tanpa rekondisi.
         </label>
+        {can('TRANSACTION_BACKDATE') && <div className="mt-3 space-y-2 rounded-xl border border-border bg-surface-soft p-3"><DateField label="Tanggal finalisasi harga" required value={pricingFinalizedDate} onChange={setPricingFinalizedDate} />{pricingBackdated && current.historicalMode !== 'POST_LEDGER' && <label className="block text-[11px] font-bold text-ink">Alasan backdate<textarea value={pricingBackdateReason} onChange={(event) => setPricingBackdateReason(event.target.value)} rows={2} className="mt-1.5 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm" placeholder="Minimal 5 karakter" /></label>}</div>}
       </ConfirmDialog>}
 
       {!salesView && <ConfirmDialog
