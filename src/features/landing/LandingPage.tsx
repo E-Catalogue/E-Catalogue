@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, HandCoins, MapPin, Clock3, ChevronDown } from 'lucide-react';
+import { ArrowRight, Search, HandCoins, ChevronDown } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
@@ -88,7 +88,6 @@ export const LandingPage = () => {
                 })}
               </motion.h1>
               <motion.p variants={fadeUpItem} className="text-muted font-medium mt-4 text-[15px] leading-relaxed max-w-md">{hero.subtitle}</motion.p>
-              {hero.primaryBranch && <motion.div variants={fadeUpItem} className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-bold text-ink-soft"><span className="inline-flex items-center gap-1.5"><MapPin size={14} className="text-primary" />{hero.primaryBranch.nama} · {hero.primaryBranch.lokasi}</span>{hero.primaryBranch.businessHours && <span className="inline-flex items-center gap-1.5"><Clock3 size={14} className="text-primary" />{hero.primaryBranch.businessHours}</span>}</motion.div>}
               <motion.form variants={fadeUpItem} onSubmit={submitHeroSearch} className="mt-6 flex max-w-xl gap-2 rounded-2xl border border-border bg-surface p-2 shadow-card">
                 <div className="relative flex-1"><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input value={heroSearch} onChange={(e) => setHeroSearch(e.target.value)} placeholder={hero.searchPlaceholder || 'Cari unit yang Anda inginkan'} className="h-11 w-full bg-transparent pl-10 pr-3 text-[13px] font-semibold text-ink outline-none" /></div>
                 <button className="rounded-xl bg-primary px-4 text-[12px] font-extrabold text-white transition-transform hover:scale-[1.02]">{hero.searchButtonLabel || 'Cari Unit'}</button>
