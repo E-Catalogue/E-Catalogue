@@ -1,4 +1,19 @@
 // Tipe data modul CMS v2 (per-section) — sesuai docs/frontend/cms_frontend_integration.md.
+import type { BranchOperatingHour } from '@/features/master/types';
+
+export interface SiteSettingsPrimaryBranch {
+  id: string;
+  nama: string;
+  code: string;
+  lokasi: string;
+  phone: string | null;
+  whatsappNumber: string | null;
+  businessHours: string | null;
+  operatingHours: BranchOperatingHour[] | null;
+  mapLat: number;
+  mapLng: number;
+  isMain: boolean;
+}
 
 export interface CmsIconItem {
   icon: string;   // nama lucide-react, mis. "shield-check"
@@ -45,6 +60,8 @@ export interface SiteSettings {
   email: string | null;
   address: string | null;
   businessHours: string | null;
+  operatingHours: BranchOperatingHour[] | null;
+  primaryBranch: SiteSettingsPrimaryBranch | null;
   mapEmbedUrl: string | null;
   mapLat: number | null;
   mapLng: number | null;
@@ -74,6 +91,7 @@ export interface SiteSettingsRaw {
   socialTiktok: string | null;
   socialWebsite: string | null;
   copyrightText: string | null;
+  primaryBranch?: SiteSettingsPrimaryBranch | null;
 }
 
 export interface SiteSettingsUpdate {

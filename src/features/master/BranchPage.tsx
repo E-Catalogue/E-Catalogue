@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Building2, Images } from 'lucide-react';
+import { Plus, Search, Building2, Images, Star } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
@@ -38,7 +38,7 @@ export const BranchPage = () => {
 
   const columns: Column<Branch>[] = [
     { header: 'Kode', cell: (r) => <span className="font-bold text-ink">{r.code}</span> },
-    { header: 'Nama Cabang', cell: (r) => r.nama },
+    { header: 'Nama Cabang', cell: (r) => <div className="flex items-center gap-2"><span>{r.nama}</span>{r.isMain && <span className="inline-flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-primary"><Star size={10} fill="currentColor" /> Utama</span>}</div> },
     { header: 'Lokasi', cell: (r) => r.lokasi || '-' },
     { header: 'Kontak', cell: (r) => r.kontak || '-' },
     { header: 'Website', align: 'center', cell: (r) => <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${r.isPublic ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>{r.isPublic ? 'Tampil' : 'Tersembunyi'}</span> },

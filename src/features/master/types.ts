@@ -39,6 +39,14 @@ export interface BranchImage {
   url?: string | null;
 }
 
+export type BranchDay = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+export interface BranchOperatingHour {
+  day: BranchDay;
+  isOpen: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+}
+
 export interface Branch {
   id: string;
   nama: string;
@@ -46,10 +54,14 @@ export interface Branch {
   lokasi?: string | null;
   longlat?: string | null;
   kontak?: string | null;
+  isMain?: boolean;
   isPublic?: boolean;
   publicSortOrder?: number;
   publicDescription?: string | null;
   businessHours?: string | null;
+  phone?: string | null;
+  whatsappNumber?: string | null;
+  operatingHours?: BranchOperatingHour[] | null;
   mapLat?: number | null;
   mapLng?: number | null;
   picId?: string | null;

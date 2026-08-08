@@ -13,6 +13,17 @@ export const usePublicNavMenus = () =>
 export const usePublicHomepage = () =>
   useQuery({ queryKey: ['public', 'homepage'], queryFn: landingApi.getHomepage, staleTime: FIVE_MIN });
 
+/**
+ * Compatibility source for the hero carousel while older backend deployments
+ * do not yet include `hero.sliderUnits` in the homepage aggregate.
+ */
+export const usePublicHeroCatalog = () =>
+  useQuery({
+    queryKey: ['public', 'catalog', 'hero'],
+    queryFn: () => landingApi.getCatalog({ page: 1, limit: 5, sort: 'newest' }),
+    staleTime: FIVE_MIN,
+  });
+
 export const usePublicAbout = () =>
   useQuery({ queryKey: ['public', 'about'], queryFn: landingApi.getAbout, staleTime: FIVE_MIN });
 

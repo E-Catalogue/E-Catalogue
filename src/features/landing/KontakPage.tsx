@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Send, CheckCircle2, MessageCircle, Loader2, ChevronDown } from 'lucide-react';
+import { Send, CheckCircle2, MessageCircle, Loader2, ChevronDown, PhoneCall, MapPin, Clock3 } from 'lucide-react';
 import { PublicHeader } from './PublicHeader';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicSiteSettings, usePublicContactPage, useSubmitContact } from './landing.hooks';
@@ -26,6 +26,10 @@ export const KontakPage = () => {
   const waUrl = buildWhatsAppUrl(settings?.whatsappNumber, waMessages.generalContact(settings?.companyName));
   const branches = page?.locations?.items ?? [];
   const faq = page?.faq;
+  const primaryBranch = page?.primaryBranch ?? branches.find((branch) => branch.isMain) ?? settings?.primaryBranch ?? branches[0];
+  const primaryPhone = primaryBranch?.phone || settings?.phone;
+  const primaryWhatsapp = primaryBranch?.whatsappNumber || settings?.whatsappNumber;
+  const primaryWaUrl = buildWhatsAppUrl(primaryWhatsapp, waMessages.generalContact(settings?.companyName));
 
   if (isLoading) return <CustomerLoader />;
   if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;
@@ -33,7 +37,30 @@ export const KontakPage = () => {
   return <>
     <PublicHeader eyebrow={page?.hero?.eyebrow ?? 'Kontak'} title={page?.hero?.title ?? 'Temukan Showroom dan Hubungi Kami'} subtitle={page?.hero?.subtitle ?? ''} breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Kontak' }]} />
 
-    {page?.locations?.isVisible !== false && branches.length > 0 && <section className="max-w-7xl mx-auto px-4 md:px-6 py-10"><Reveal className="max-w-2xl mb-7"><p className="text-[12px] font-extrabold uppercase tracking-[.16em] text-primary">{page?.locations?.eyebrow}</p><h2 className="mt-2 text-2xl font-extrabold text-ink">{page?.locations?.title}</h2><p className="mt-2 text-sm font-medium text-muted">{page?.locations?.subtitle}</p></Reveal><ShowroomMap branches={branches} className="h-[420px]" /><div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{branches.map((branch) => <BranchCard key={branch.id} branch={branch} />)}</div></section>}
+    <section className="max-w-7xl mx-auto px-4 md:px-6 pt-10">
+      <Reveal className="grid gap-4 md:grid-cols-3">
+        <a href={primaryWaUrl} target="_blank" rel="noreferrer" className="group rounded-2xl border border-border bg-surface p-5 transition-all hover:-translate-y-1 hover:border-accent-green/40 hover:shadow-card focus:outline-none focus:ring-2 focus:ring-accent-green/30">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent-green/10 text-accent-green"><MessageCircle size={21} /></div>
+          <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.15em] text-muted">WhatsApp</p>
+          <p className="mt-1 text-[15px] font-extrabold text-ink">{primaryWhatsapp || 'Belum diatur'}</p>
+          <p className="mt-1 text-[12px] font-medium text-muted">Tanyakan ketersediaan unit langsung ke tim showroom.</p>
+        </a>
+        <a href={primaryPhone ? `tel:${primaryPhone.replace(/[^+\d]/g, '')}` : undefined} className="group rounded-2xl border border-border bg-surface p-5 transition-all hover:-translate-y-1 hover:border-primary/35 hover:shadow-card focus:outline-none focus:ring-2 focus:ring-primary/30">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary-light text-primary"><PhoneCall size={21} /></div>
+          <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.15em] text-muted">Telepon showroom</p>
+          <p className="mt-1 text-[15px] font-extrabold text-ink">{primaryPhone || 'Belum diatur'}</p>
+          <p className="mt-1 text-[12px] font-medium text-muted">Hubungi pada jam operasional untuk bantuan langsung.</p>
+        </a>
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="flex items-start justify-between gap-3"><div className="grid h-11 w-11 place-items-center rounded-xl bg-primary-light text-primary"><MapPin size={21} /></div>{settings?.businessHours && <span className="inline-flex items-center gap-1 rounded-full bg-surface-soft px-2.5 py-1 text-[10px] font-bold text-muted"><Clock3 size={11} /> {settings.businessHours}</span>}</div>
+          <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.15em] text-muted">Alamat utama</p>
+          <p className="mt-1 text-[15px] font-extrabold leading-snug text-ink">{primaryBranch?.lokasi || settings?.address || 'Belum diatur'}</p>
+          <p className="mt-1 text-[12px] font-medium text-muted">{branches.length > 1 ? `${branches.length} titik showroom tersedia pada peta.` : 'Lihat titik showroom pada peta di bawah.'}</p>
+        </div>
+      </Reveal>
+    </section>
+
+    {page?.locations?.isVisible !== false && branches.length > 0 && <section className="max-w-7xl mx-auto px-4 md:px-6 py-12"><Reveal className="max-w-2xl mb-7"><p className="text-[12px] font-extrabold uppercase tracking-[.16em] text-primary">{page?.locations?.eyebrow}</p><h2 className="mt-2 text-2xl font-extrabold text-ink">{page?.locations?.title}</h2><p className="mt-2 text-sm font-medium text-muted">{page?.locations?.subtitle}</p></Reveal><ShowroomMap branches={branches} className="h-[360px] sm:h-[460px]" /><div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{branches.map((branch) => <BranchCard key={branch.id} branch={branch} />)}</div></section>}
 
     <section className="max-w-7xl mx-auto px-4 md:px-6 py-10 grid lg:grid-cols-[.75fr_1.25fr] gap-8 items-start">
       <Reveal className="rounded-[2rem] bg-ink p-7 text-white sticky top-24"><span className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold">Respons cepat melalui WhatsApp</span><h2 className="mt-5 text-2xl font-extrabold">{page?.cta?.title ?? 'Butuh jawaban lebih cepat?'}</h2><p className="mt-2 text-sm font-medium leading-6 text-white/70">{page?.cta?.subtitle}</p><a href={waUrl} target="_blank" rel="noreferrer" className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-accent-green px-5 py-3.5 text-sm font-extrabold text-white"><MessageCircle size={18} />{page?.cta?.label ?? 'Konsultasi via WhatsApp'}</a></Reveal>

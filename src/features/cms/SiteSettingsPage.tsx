@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { Save, Building2, Phone, Share2, Loader2, ExternalLink, Palette, RotateCcw } from 'lucide-react';
+import { Save, Building2, Phone, Share2, Loader2, ExternalLink, Palette, RotateCcw, Star } from 'lucide-react';
 import { applyPrimaryColor, isValidHex, DEFAULT_PRIMARY } from '@/core/utils/theme';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -14,6 +14,9 @@ import { useSiteSettings, useSiteSettingsMutations } from './cms.hooks';
 import { ImageUpload } from './ImageUpload';
 import { TextArea } from './CmsKit';
 import type { SiteSettingsRaw, SiteSettingsUpdate } from './cms.types';
+import { Link } from '@tanstack/react-router';
+import { BranchOperatingHoursEditor } from '@/features/master/BranchOperatingHoursEditor';
+import { defaultOperatingHours } from '@/features/master/branchHours';
 
 const empty: SiteSettingsRaw = {
   companyName: '', tagline: '', logoFilename: null, faviconFilename: null, footerDescription: '',
@@ -46,8 +49,7 @@ export const SiteSettingsPage = () => {
     const body: SiteSettingsUpdate = {
       companyName: f.companyName ?? '', tagline: f.tagline ?? '', footerDescription: f.footerDescription ?? '',
       navContactLabel: f.navContactLabel ?? '',
-      whatsappNumber: f.whatsappNumber ?? '', phone: f.phone ?? '', email: f.email ?? '', address: f.address ?? '',
-      businessHours: f.businessHours ?? '', mapEmbedUrl: f.mapEmbedUrl || null,
+      email: f.email ?? '', mapEmbedUrl: null,
       primaryColor: isValidHex(f.primaryColor ?? '') ? f.primaryColor : null,
       socialInstagram: f.socialInstagram || null, socialFacebook: f.socialFacebook || null,
       socialTiktok: f.socialTiktok || null, socialWebsite: f.socialWebsite || null,
@@ -87,9 +89,9 @@ export const SiteSettingsPage = () => {
       {/* Identitas */}
       <SectionCard title="Identitas" icon={<Building2 size={16} />} bodyClassName="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <ImageUpload label="Logo" aspect="aspect-video" hint={pendingLogo ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.logoFilename)} isUploading={uploadLogo.isPending}
+          <ImageUpload label="Logo" hint={pendingLogo ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.logoFilename)} isUploading={uploadLogo.isPending}
             onFile={setPendingLogo} />
-          <ImageUpload label="Favicon" aspect="aspect-square" hint={pendingFavicon ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.faviconFilename)} isUploading={uploadFavicon.isPending}
+          <ImageUpload label="Favicon" hint={pendingFavicon ? 'Siap disimpan · JPG/PNG · maksimal 2 MB per gambar' : 'JPG/PNG · maksimal 2 MB per gambar'} previewUrl={cmsImageUrl('site', f.faviconFilename)} isUploading={uploadFavicon.isPending}
             onFile={setPendingFavicon} />
           <div className="space-y-3">
             <TextField label="Nama Perusahaan" value={f.companyName ?? ''} onChange={(e) => set('companyName', e.target.value)} placeholder="GM Mobilindo" />
@@ -102,15 +104,24 @@ export const SiteSettingsPage = () => {
 
       {/* Kontak */}
       <SectionCard title="Kontak" icon={<Phone size={16} />} bodyClassName="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextField label="Nomor WhatsApp (tanpa +)" value={f.whatsappNumber ?? ''} onChange={(e) => set('whatsappNumber', e.target.value)} placeholder="628xxx" />
-          <TextField label="Telepon" value={f.phone ?? ''} onChange={(e) => set('phone', e.target.value)} placeholder="021-xxx" />
-          <TextField label="Email" value={f.email ?? ''} onChange={(e) => set('email', e.target.value)} placeholder="halo@domain.com" />
-          <TextField label="Jam Operasional" value={f.businessHours ?? ''} onChange={(e) => set('businessHours', e.target.value)} placeholder="Senin–Sabtu, 09.00–18.00" />
-          <TextField label="Label Tombol Navbar" value={f.navContactLabel ?? ''} onChange={(e) => set('navContactLabel', e.target.value)} placeholder="Hubungi Kami" />
-          <TextField label="Alamat" wrapClass="md:col-span-1" value={f.address ?? ''} onChange={(e) => set('address', e.target.value)} placeholder="Jl. Raya..." />
+        <div className="flex flex-col gap-3 rounded-2xl border border-primary/15 bg-primary-light/45 p-4 text-[12px] font-medium text-ink-soft sm:flex-row sm:items-center sm:justify-between">
+          <span>Nomor, alamat, koordinat, foto, dan jadwal website tersinkron otomatis dari Cabang Utama.</span>
+          <Link to="/branch" className="shrink-0 font-extrabold text-primary hover:underline">Buka Master Cabang</Link>
         </div>
-        <TextField label="URL Embed Peta" value={f.mapEmbedUrl ?? ''} onChange={(e) => set('mapEmbedUrl', e.target.value)} placeholder="https://..." />
+        {f.primaryBranch ? <>
+        <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-surface p-4 shadow-sm">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-white"><Star size={17} fill="currentColor" /></span>
+          <div><p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-primary">Cabang utama aktif</p><p className="text-sm font-extrabold text-ink">{f.primaryBranch.nama}</p></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextField disabled label="Nomor WhatsApp (dari cabang utama)" value={f.primaryBranch.whatsappNumber ?? ''} onChange={() => undefined} />
+          <TextField disabled label="Telepon (dari cabang utama)" value={f.primaryBranch.phone ?? ''} onChange={() => undefined} />
+          <TextField label="Email" value={f.email ?? ''} onChange={(e) => set('email', e.target.value)} placeholder="halo@domain.com" />
+          <TextField label="Label Tombol Navbar" value={f.navContactLabel ?? ''} onChange={(e) => set('navContactLabel', e.target.value)} placeholder="Hubungi Kami" />
+          <TextField disabled label="Alamat (dari cabang utama)" wrapClass="md:col-span-2" value={f.primaryBranch.lokasi} onChange={() => undefined} />
+        </div>
+        <BranchOperatingHoursEditor value={f.primaryBranch.operatingHours ?? defaultOperatingHours()} onChange={() => undefined} readOnly />
+        </> : <div className="rounded-2xl border border-dashed border-primary/30 bg-primary-light/30 p-5 text-center"><p className="text-sm font-extrabold text-ink">Cabang utama belum ditetapkan</p><p className="mt-1 text-[12px] font-medium text-muted">Buka Master Cabang, pilih satu cabang, lalu aktifkan “Tetapkan sebagai cabang utama”.</p></div>}
       </SectionCard>
 
       {/* Tema Warna */}

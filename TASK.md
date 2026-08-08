@@ -5,7 +5,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 8 Agustus 2026 (rev 28 — crosscheck CMS/publik: spacing form Pengaturan Situs dan Kontak diseragamkan, section Standar/CTA Tentang dirapikan, halaman Kontak memiliki loading/error state sendiri, dan API publik tetap responsif selama migration cabang/testimoni belum diterapkan. Implementasi mengikuti `.prd/backend_public_cms_content_revamp_20260808.md`; QA E2E menunggu backend di laptop tujuan.)
+> **Terakhir diperbarui:** 8 Agustus 2026 (rev 29 — hero Live Showroom memakai carousel modern dari Unit Unggulan dengan autoplay 5 detik, kontrol manual, pause interaksi dan reduced-motion; halaman Kontak dilengkapi WhatsApp, telepon, alamat, jam buka, serta peta Leaflet multi-cabang. Setup koordinat dipertegas di Master Cabang. Implementasi mengikuti `.prd/backend_public_cms_content_revamp_20260808.md`; QA E2E menunggu backend di laptop tujuan.)
 >
 > rev 24 — **revamp CMS/Public terimplementasi end-to-end**: CRUD/toggle/reorder menu publik, Unit Unggulan, logo rounded, dan ikon submenu selesai.
 >
@@ -40,6 +40,16 @@
 - [x] Test backend/frontend terkait kontrak konten, testimoni, katalog, lifecycle form, dan WhatsApp ditambahkan.
 - [x] Crosscheck rev 28: spacing input Pengaturan Situs/Kontak, FAQ editor, section Standar/CTA Tentang, dan state error Kontak publik diperbaiki.
 - [x] Crosscheck rev 28: Beranda/Kontak tidak lagi 500 selama rollout migration cabang; Beranda memakai fallback testimoni legacy dan lookup editor CMS tetap dapat dibuka sampai kolom baru tersedia.
+- [x] Rev 29: sisi kanan hero memakai carousel Unit Unggulan responsif, autoplay 5 detik, kontrol panah/dot, pause hover/fokus, dan reduced-motion; section Unit Unggulan utama tetap dipertahankan.
+- [x] Rev 29: Kontak menampilkan WhatsApp, telepon, alamat utama, jam buka, peta Leaflet, serta kartu seluruh cabang publik; Pengaturan Situs menautkan admin ke Master Cabang untuk setup koordinat.
+- [x] Rev 29: input koordinat duplikat di form Cabang dihapus; admin hanya mengisi latitude/longitude dan backend menyinkronkan field `longlat` legacy secara otomatis.
+- [x] Rev 30: Cabang menyimpan telepon dan WhatsApp format `62...`, jadwal terstruktur Senin–Minggu, bulk checklist + timepicker, serta snapshot legacy otomatis.
+- [x] Rev 30: picker Leaflet pada form Cabang sinkron dua arah dengan latitude/longitude; marker dapat dipilih, digeser, atau memakai lokasi perangkat.
+- [x] Rev 30: URL embed peta dihapus dari Pengaturan Situs; semua upload CMS memakai tinggi/lebarnya yang konsisten dan tidak lagi membesar mengikuti rasio gambar.
+- [x] Rev 30: state kosong carousel hero memakai ilustrasi showroom lokal/CMS tanpa panel teks yang terpotong; Unit Unggulan tetap menjadi sumber slide ketika tersedia.
+- [x] Rev 31: slider hero mengambil maksimum 5 unit yang tayang di katalog, menampilkan satu kartu utama + preview kartu berikutnya yang pudar, autoplay 5 detik, navigasi, dan tombol detail.
+- [x] Rev 31: kartu floating “Garansi Mesin / Inspeksi 150+ titik” dihapus total dari hero.
+- [x] Rev 31: preview Logo/Favicon kembali memenuhi seluruh kotak upload dengan `object-cover`.
 - [ ] Migration/generate/restart backend serta QA browser E2E dijalankan pada laptop backend tujuan.
 
 ### ✅ Revamp Inventori, Leasing Unit, dan WhatsApp (rev 26)
@@ -507,6 +517,9 @@ Pendukung: `ImageUpload` (preview + validasi), `useSectionForm`/`useCmsSection` 
 ### F. CMS + Situs Publik — SELESAI ✅
 - [x] Panel admin CMS: Site Settings, Beranda (7 section), Tentang (5 section), Testimoni, Katalog (publish+galeri+header), Kontak & Pesan (inbox), Simulasi Kredit
 - [x] **Situs publik consume `/public/*`** — 7 halaman (`landing/*`) sudah dinamis dari API (site-settings, homepage, about, catalog+detail+related, credit config+calculate, contact submit). Data dummy Redux tidak lagi dipakai di situs publik.
+- [x] **Hero unit carousel kompatibel lintas versi backend** — prioritas memakai `hero.sliderUnits`, lalu otomatis mengambil 5 unit terbaru yang sudah tayang dari `GET /public/catalog`, dengan unit unggulan sebagai fallback terakhir.
+- [x] **Cabang Utama sebagai sumber kontak website** — Master Cabang memiliki flag tunggal utama; Pengaturan Situs menampilkan jadwal tujuh hari secara read-only dan halaman Kontak/footer memakai nomor, alamat, serta jam dari cabang tersebut.
+- [x] **Motion carousel dan fallback foto unit** — next/autoplay menggeser kartu secara eksplisit; unit katalog tanpa foto memakai gambar default produk.
 - [ ] 🟢 Verifikasi end-to-end dengan backend aktif (uji render nyata + submit form).
 
 ### Z. Perbaikan build (bukan CMS/publik — pekerjaan paralel) 🟠

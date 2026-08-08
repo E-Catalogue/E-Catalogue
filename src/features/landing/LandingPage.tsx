@@ -1,22 +1,24 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, HandCoins, Star, Quote, MapPin, Clock3, ShieldCheck, ChevronDown } from 'lucide-react';
+import { ArrowRight, Search, HandCoins, Star, Quote, MapPin, Clock3, ChevronDown } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
 import { CustomerLoader, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
-import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
+import { usePublicHeroCatalog, usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
 import { heroContainer, fadeUpItem, staggerContainer } from './landing.motion';
 import type { CatalogCard } from './public.types';
 import { BranchCard, ShowroomMap } from './ShowroomMap';
 import { TestimonialDetailModal } from './TestimonialDetailModal';
-import { formatCurrency } from '@/core/utils/format';
+import { HeroUnitCarousel } from './HeroUnitCarousel';
+import { resolveHeroSliderUnits } from './heroSliderUnits';
 
 export const LandingPage = () => {
   const { data: hp, isLoading, isError, refetch } = usePublicHomepage();
+  const { data: heroCatalog } = usePublicHeroCatalog();
   const { data: site } = usePublicSiteSettings();
   const navigate = useNavigate();
   const [heroSearch, setHeroSearch] = useState('');
@@ -55,8 +57,11 @@ export const LandingPage = () => {
   }
 
   const hero = hp?.hero;
-  const heroImg = hero?.spotlightUnit?.image?.filename ? cmsImageUrl('unit', hero.spotlightUnit.image.filename) : cmsImageUrl('page', hero?.imageFilename);
-  const fc = hero?.floatingCard;
+  const heroSliderUnits = resolveHeroSliderUnits(
+    hero?.sliderUnits,
+    heroCatalog?.data,
+    hp?.featured?.units,
+  );
 
   return (
     <>
@@ -73,7 +78,7 @@ export const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-20 grid lg:grid-cols-2 gap-10 items-center relative">
             <motion.div variants={heroContainer} initial="hidden" animate="show">
               <motion.span variants={fadeUpItem} className="inline-flex items-center gap-2 rounded-full bg-primary-light text-primary text-[12px] font-bold px-3 py-1.5">
-                <Ic name={fc?.icon ?? 'badge-check'} size={14} /> {hero.badgeText}
+                <Ic name={hero.floatingCard?.icon ?? 'badge-check'} size={14} /> {hero.badgeText}
               </motion.span>
               <motion.h1 variants={fadeUpItem} className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-ink leading-[1.1] mt-4">
                 {hero.titleHtml.split(/(<em>.*?<\/em>)/g).filter(Boolean).map((part, i) => {
@@ -108,25 +113,12 @@ export const LandingPage = () => {
               className="relative"
             >
               <div className="absolute -inset-4 bg-gradient-to-tr from-primary/25 to-transparent rounded-[3rem] blur-2xl animate-breathe" />
-              <div className="animate-bob-slow relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-ink shadow-card-hover aspect-[4/3]">
-                {heroImg ? <img src={heroImg} alt={hero.spotlightUnit?.name || hero.badgeText} className="h-full w-full object-cover opacity-90" /> : <div className="grid h-full place-items-center bg-gradient-to-br from-ink to-ink-soft text-white"><ShieldCheck size={64} className="opacity-30" /></div>}
-                {hero.spotlightUnit && <button onClick={() => openDetail(hero.spotlightUnit!)} className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-ink/70 p-4 text-left text-white backdrop-blur-md transition-colors hover:bg-ink/85"><span className="text-[10px] font-extrabold uppercase tracking-[.18em] text-white/65">Sorotan showroom</span><span className="mt-1 flex items-end justify-between gap-3"><span><strong className="block text-base">{hero.spotlightUnit.name}</strong><span className="text-[11px] text-white/70">{hero.spotlightUnit.tahun} · {hero.spotlightUnit.warna}</span></span><strong className="text-sm">{formatCurrency(hero.spotlightUnit.harga)}</strong></span></button>}
-              </div>
-              {fc && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ delay: 0.55, type: 'spring', stiffness: 110, damping: 15 }}
-                  whileHover={{ y: -4, scale: 1.03 }}
-                  className="absolute -bottom-5 left-2 sm:left-6 bg-surface rounded-2xl shadow-card-hover border border-border p-4 flex items-center gap-3"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-accent-green/10 text-accent-green flex items-center justify-center"><Ic name={fc.icon} size={22} /></div>
-                  <div>
-                    <p className="text-[13px] font-extrabold text-ink leading-none">{fc.title}</p>
-                    <p className="text-[11px] text-muted font-semibold mt-1">{fc.subtitle}</p>
-                  </div>
-                </motion.div>
-              )}
+              <HeroUnitCarousel
+                units={heroSliderUnits}
+                fallbackImage={cmsImageUrl('page', hero.imageFilename) ?? '/images/default-showroom-hero.svg'}
+                fallbackAlt={hero.badgeText}
+                onView={openDetail}
+              />
             </motion.div>
           </div>
 

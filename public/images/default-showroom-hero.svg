@@ -1,0 +1,13 @@
+<svg width="1440" height="1080" viewBox="0 0 1440 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="240" y1="20" x2="1180" y2="1040" gradientUnits="userSpaceOnUse"><stop stop-color="#E9EEF2"/><stop offset=".55" stop-color="#C9D3D9"/><stop offset="1" stop-color="#83939D"/></linearGradient>
+    <linearGradient id="glass" x1="430" y1="280" x2="1030" y2="680" gradientUnits="userSpaceOnUse"><stop stop-color="#26343E"/><stop offset="1" stop-color="#101820"/></linearGradient>
+    <linearGradient id="car" x1="320" y1="620" x2="1120" y2="920" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F6F7"/><stop offset=".55" stop-color="#B8C0C5"/><stop offset="1" stop-color="#737E85"/></linearGradient>
+  </defs>
+  <rect width="1440" height="1080" fill="url(#sky)"/><circle cx="1190" cy="180" r="220" fill="#D97757" fill-opacity=".13"/>
+  <path d="M150 350L360 210H1180L1320 350V760H150V350Z" fill="#E7EAEC"/><rect x="245" y="315" width="950" height="410" rx="10" fill="url(#glass)"/><path d="M560 315V725M875 315V725" stroke="#FFFFFF" stroke-opacity=".18" stroke-width="8"/><rect x="150" y="725" width="1170" height="35" fill="#D97757"/>
+  <ellipse cx="720" cy="895" rx="480" ry="70" fill="#17222A" fill-opacity=".28"/><path d="M265 810C285 735 344 680 430 655L560 617C612 601 828 598 884 614L1035 660C1104 681 1154 731 1170 797L1188 865C1198 902 1171 938 1133 938H297C255 938 228 897 242 858L265 810Z" fill="url(#car)"/>
+  <path d="M444 664L568 628C616 614 815 612 865 627L989 665L936 732H493L444 664Z" fill="#1C2A34"/><path d="M493 732L444 664M936 732L989 665M715 620V732" stroke="#E9EEF1" stroke-opacity=".55" stroke-width="6"/><path d="M273 821C412 794 1025 794 1154 821" stroke="#818D94" stroke-width="10"/>
+  <rect x="584" y="816" width="272" height="66" rx="24" fill="#303B42"/><path d="M620 840H820M638 860H802" stroke="#D3D9DC" stroke-width="7" stroke-linecap="round"/><ellipse cx="375" cy="885" rx="108" ry="80" fill="#1D272E"/><ellipse cx="375" cy="885" rx="58" ry="45" fill="#AEB7BC"/><ellipse cx="1060" cy="885" rx="108" ry="80" fill="#1D272E"/><ellipse cx="1060" cy="885" rx="58" ry="45" fill="#AEB7BC"/>
+  <rect x="278" y="770" width="148" height="58" rx="24" fill="#F8D9C9"/><rect x="1010" y="770" width="130" height="58" rx="24" fill="#F8D9C9"/><text x="720" y="170" text-anchor="middle" fill="#1B2730" font-family="Arial, sans-serif" font-size="42" font-weight="800" letter-spacing="8">LIVE SHOWROOM</text><text x="720" y="220" text-anchor="middle" fill="#53636D" font-family="Arial, sans-serif" font-size="20" font-weight="600" letter-spacing="3">UNIT PILIHAN · TERINSPEKSI · SIAP DILIHAT</text>
+</svg>

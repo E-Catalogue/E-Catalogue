@@ -1,10 +1,18 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Navigation, Clock3, Phone } from 'lucide-react';
+import { MapPin, Navigation, Clock3, Phone, MessageCircle } from 'lucide-react';
 import type { PublicBranch } from './public.types';
 
 const directionsUrl = (branch: PublicBranch) => `https://www.google.com/maps/dir/?api=1&destination=${branch.mapLat},${branch.mapLng}`;
+const DAY_BY_INDEX = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+const todayHours = (branch: PublicBranch) => {
+  const schedule = branch.operatingHours?.find((item) => item.day === DAY_BY_INDEX[new Date().getDay()]);
+  if (!schedule) return branch.businessHours;
+  if (!schedule.isOpen) return 'Tutup hari ini';
+  return `Hari ini · ${schedule.openTime}–${schedule.closeTime}`;
+};
+const waUrl = (number: string) => `https://wa.me/${number.replace(/\D/g, '')}`;
 
 export const ShowroomMap = ({ branches, className = '' }: { branches: PublicBranch[]; className?: string }) => {
   const elementRef = useRef<HTMLDivElement>(null);
@@ -57,9 +65,9 @@ export const BranchCard = ({ branch, compact = false }: { branch: PublicBranch; 
     {!compact && branch.publicDescription && <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted">{branch.publicDescription}</p>}
     <div className="mt-4 space-y-2 text-[12px] font-semibold text-ink-soft">
       <p className="flex items-start gap-2"><MapPin size={14} className="mt-0.5 shrink-0 text-primary" />{branch.lokasi}</p>
-      {branch.businessHours && <p className="flex items-start gap-2"><Clock3 size={14} className="mt-0.5 shrink-0 text-primary" />{branch.businessHours}</p>}
-      {branch.kontak && <p className="flex items-start gap-2"><Phone size={14} className="mt-0.5 shrink-0 text-primary" />{branch.kontak}</p>}
+      {todayHours(branch) && <p className="flex items-start gap-2"><Clock3 size={14} className="mt-0.5 shrink-0 text-primary" />{todayHours(branch)}</p>}
+      {(branch.phone || branch.kontak) && <a href={`tel:${(branch.phone || branch.kontak).replace(/\D/g, '')}`} className="flex items-start gap-2 hover:text-primary"><Phone size={14} className="mt-0.5 shrink-0 text-primary" />{branch.phone || branch.kontak}</a>}
     </div>
-    <a href={directionsUrl(branch)} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-[12px] font-extrabold text-primary hover:underline"><Navigation size={14} /> Petunjuk arah</a>
+    <div className="mt-5 flex flex-wrap gap-3"><a href={directionsUrl(branch)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[12px] font-extrabold text-primary hover:underline"><Navigation size={14} /> Petunjuk arah</a>{branch.whatsappNumber && <a href={waUrl(branch.whatsappNumber)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[12px] font-extrabold text-accent-green hover:underline"><MessageCircle size={14} /> WhatsApp</a>}</div>
   </article>
 );

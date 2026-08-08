@@ -6,6 +6,7 @@ import type {
   ContactPage, ContactFormContent, ContactLocations, ContactFaq, ContactCta,
   CreditSimConfig, PublicNavMenuItem,
 } from '@/features/cms/cms.types';
+import type { BranchOperatingHour } from '@/features/master/types';
 
 export type { SiteSettings, CreditSimConfig, PublicNavMenuItem };
 
@@ -84,9 +85,9 @@ export interface PublicTestimonial {
   sales: { id: string; name: string } | null;
   unit: { id: string; name: string; platNomor: string; tahun: number; warna: string; transmisi: string; merek: string | null; tipe: string | null; imageFilename: string | null; branch?: { id: string; name: string; code: string } | null } | null;
 }
-export interface PublicBranch { id: string; nama: string; code: string; lokasi: string; kontak: string; publicDescription: string | null; businessHours: string | null; mapLat: number; mapLng: number; publicSortOrder: number; images: { id: string; filename: string; url?: string }[]; }
+export interface PublicBranch { id: string; nama: string; code: string; lokasi: string; kontak: string; isMain: boolean; phone: string | null; whatsappNumber: string | null; operatingHours: BranchOperatingHour[] | null; publicDescription: string | null; businessHours: string | null; mapLat: number; mapLng: number; publicSortOrder: number; images: { id: string; filename: string; url?: string }[]; }
 export interface PublicHomepage {
-  hero: HomepageHero & { primaryBranch: PublicBranch | null; spotlightUnit: CatalogCard | null };
+  hero: HomepageHero & { primaryBranch: PublicBranch | null; spotlightUnit: CatalogCard | null; sliderUnits?: CatalogCard[] };
   brands: HomepageBrands & { items: { id: string; name: string }[] };
   whyUs: HomepageWhyUs;
   howItWorks: HomepageHowItWorks;
@@ -109,7 +110,7 @@ export interface PublicAbout {
   cta: AboutCta;
 }
 
-export interface PublicContact { hero: ContactPage; form: ContactFormContent; locations: ContactLocations & { items: PublicBranch[] }; faq: ContactFaq; cta: ContactCta; }
+export interface PublicContact { hero: ContactPage; form: ContactFormContent; locations: ContactLocations & { items: PublicBranch[] }; primaryBranch: PublicBranch | null; faq: ContactFaq; cta: ContactCta; }
 
 export interface ContactPageData { eyebrow: string; title: string; subtitle: string; isVisible?: boolean; }
 

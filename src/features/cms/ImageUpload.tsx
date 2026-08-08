@@ -14,13 +14,14 @@ interface ImageUploadProps {
   aspect?: string;
   /** Konten kustom (mis. avatar bulat). */
   rounded?: boolean;
+  fit?: 'cover' | 'contain';
   className?: string;
   children?: ReactNode;
 }
 
 export const ImageUpload = ({
   previewUrl, onFile, isUploading, onRemove,
-  label, hint = IMAGE_UPLOAD_NOTE, aspect = 'aspect-[16/10]', rounded, className = '',
+  label, hint = IMAGE_UPLOAD_NOTE, rounded, fit = 'cover', className = '',
 }: ImageUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
@@ -39,17 +40,17 @@ export const ImageUpload = ({
   const shown = localPreview ?? previewUrl;
 
   return (
-    <div className={className}>
+    <div className={`${rounded ? 'w-36' : 'w-full max-w-xl'} ${className}`}>
       {label && <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-2">{label}</label>}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files?.[0]); }}
-        className={`group relative ${aspect} ${rounded ? 'rounded-full' : 'rounded-2xl'} overflow-hidden border-2 border-dashed border-border bg-surface-soft cursor-pointer hover:border-primary transition-colors flex items-center justify-center`}
+        className={`group relative ${rounded ? 'h-36 w-36 rounded-full' : 'h-44 w-full rounded-2xl sm:h-48'} overflow-hidden border-2 border-dashed border-border bg-surface-soft cursor-pointer hover:border-primary transition-colors flex items-center justify-center`}
       >
         {shown ? (
           <>
-            <img src={shown} alt="preview" className="w-full h-full object-cover" />
+            <img src={shown} alt="preview" className={`h-full w-full ${fit === 'contain' ? 'object-contain p-3' : 'object-cover'}`} />
             <div className="absolute inset-0 bg-ink/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/90 text-ink text-[12px] font-bold px-3 py-1.5">
                 <Upload size={13} /> Ganti
