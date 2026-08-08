@@ -8,10 +8,11 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { notifyApiError } from '@/core/api/notify';
 import { getApiErrorCode } from '@/core/api/apiError';
+import { usePermissions } from '@/features/auth/usePermissions';
 import { useCreateUnit, useUnit, useUnitImageMutations, useUnitLookups, useUpdateUnit, useUpdateUnitFunding } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
 import { UnitGalleryManager } from './UnitGalleryManager';
-import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type BahanBakar, type FinalCyclePolicy, type FundingSource, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
+import { BAHAN_BAKAR_LABEL, FINAL_CYCLE_POLICY_DESCRIPTION, FINAL_CYCLE_POLICY_LABEL, type BahanBakar, type FinalCyclePolicy, type FundingSource, type HistoricalMode, type MasterDokumen, type MasterKelengkapan, type Transmisi, type Unit, type UnitFormData } from './unit.types';
 
 interface UnitFormModalProps {
   open: boolean;
@@ -24,6 +25,13 @@ type UnitFormState = UnitFormData & {
   fundingSource: FundingSource;
   investorId: string;
   finalCyclePolicy: FinalCyclePolicy | '';
+  historicalMode: '' | HistoricalMode;
+  historicalReason: string;
+  historicalPricingCostBasis: number;
+  historicalTargetPrice: number;
+  historicalOtrPrice: number;
+  historicalFinalizedAt: string;
+  historicalReadyStockAt: string;
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -47,6 +55,8 @@ const emptyUnitForm = (): UnitFormState => ({
   fundingSource: 'COMPANY_OWNED',
   investorId: '',
   finalCyclePolicy: '',
+  historicalMode: '', historicalReason: '', historicalPricingCostBasis: 0, historicalTargetPrice: 0,
+  historicalOtrPrice: 0, historicalFinalizedAt: today(), historicalReadyStockAt: today(),
   kelengkapans: [],
   dokumens: [],
   leasingOffers: [],
@@ -74,6 +84,10 @@ const toForm = (unit?: Unit | null): UnitFormState => {
     fundingSource: unit.fundingAgreement?.fundingSource ?? 'COMPANY_OWNED',
     investorId: unit.fundingAgreement?.investorId ?? '',
     finalCyclePolicy: unit.fundingAgreement?.finalCyclePolicy ?? '',
+    historicalMode: unit.historicalMode ?? '', historicalReason: unit.historicalReason ?? '',
+    historicalPricingCostBasis: unit.pricingCostBasis ?? 0, historicalTargetPrice: unit.targetPrice ?? 0,
+    historicalOtrPrice: unit.otrPrice ?? 0, historicalFinalizedAt: unit.pricingFinalizedAt?.slice(0, 10) ?? today(),
+    historicalReadyStockAt: unit.readyStockAt?.slice(0, 10) ?? today(),
     kelengkapans: unit.unitKelengkapans?.map((x) => x.perlengkapanId) ?? [],
     dokumens: unit.unitDokumens?.map((x) => x.dokumenId) ?? [],
     leasingOffers: unit.leasingOffers?.map((x) => ({ leasingId: x.leasingId, tenorMonths: x.tenorMonths, dpAmount: x.dpAmount })) ?? [],
@@ -218,6 +232,7 @@ const Locked = ({ text }: { text: string }) => (
 );
 
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
+  const { can } = usePermissions();
   const [form, setForm] = useState<UnitFormState>(() => toForm(unit));
   const [seedId, setSeedId] = useState<string | null | undefined>('init');
   const [cyclePolicyError, setCyclePolicyError] = useState('');
@@ -260,6 +275,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const dokumenLoading = lookupsLoading;
   const selectedInvestor = useMemo(() => investors.find((i) => i.id === form.investorId), [investors, form.investorId]);
   const selectedCapitalAccount = selectedInvestor?.capitalAccounts?.[0];
+  const referenceOnly = form.historicalMode === 'REFERENCE_ONLY';
   // Unit Inventory yang belum final tetap dapat mengoreksi harga beli dan sumber dana.
   const purchaseLocked = !!unit?.pricingFinalizedAt;
   const fundingEditable = !unit || (unit.statusUnit === 'INVENTORY' && !unit.pricingFinalizedAt);
@@ -303,7 +319,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const fundingRequiresFinalCycle = fundingRequiresInvestor && selectedInvestor?.scheme === 'FIXED_MONTHLY';
   const fundingInvestorChanged = !unit || unit.fundingAgreement?.fundingSource !== 'INVESTOR' || unit.fundingAgreement?.investorId !== form.investorId;
   const insufficientCapital =
-    fundingRequiresInvestor && fundingInvestorChanged && !!selectedCapitalAccount && selectedCapitalAccount.availableBalance < form.purchaseCost;
+    !referenceOnly && fundingRequiresInvestor && fundingInvestorChanged && !!selectedCapitalAccount && selectedCapitalAccount.availableBalance < form.purchaseCost;
   const fundingIncomplete =
     fundingRequiresInvestor &&
     (!form.investorId || (fundingRequiresFinalCycle && !form.finalCyclePolicy) || insufficientCapital);
@@ -315,18 +331,33 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     ))
   );
   const fundingInvalid = fundingIncomplete && (!unit || fundingChanged);
+  const historicalInvalid = !!form.historicalMode && (
+    form.historicalReason.trim().length < 5
+    || (referenceOnly && (
+      form.historicalPricingCostBasis <= 0
+      || form.historicalTargetPrice <= 0
+      || form.historicalOtrPrice <= 0
+      || !form.historicalFinalizedAt
+      || !form.historicalReadyStockAt
+    ))
+  );
+  const purchaseInvalid = form.purchaseCost <= 0 || !form.tanggalPembelian || (!referenceOnly && !unit && !form.cashAccountId);
   const goJump = (i: number) => { if (i <= maxReachableStep) setStep(i); };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (fundingInvalid || nameError) return;
+    if (fundingInvalid || historicalInvalid || purchaseInvalid || nameError) return;
     const payload: UnitFormData = {
-      ...form,
+      merekId: form.merekId, tipeId: form.tipeId, platNomor: form.platNomor,
+      tahun: form.tahun, warna: form.warna, transmisi: form.transmisi, bahanBakar: form.bahanBakar,
+      noRangka: form.noRangka, noMesin: form.noMesin, kilometer: form.kilometer,
+      purchaseCost: form.purchaseCost, kelengkapans: form.kelengkapans, dokumens: form.dokumens,
+      leasingOffers: form.leasingOffers,
       name: nameTrimmed,
-      tanggalPajak: new Date(form.tanggalPajak).toISOString(),
-      tanggalPembelian: new Date(form.tanggalPembelian).toISOString(),
-      cashAccountId: form.cashAccountId || undefined,
+      tanggalPajak: `${form.tanggalPajak}T00:00:00+07:00`,
+      tanggalPembelian: `${form.tanggalPembelian}T00:00:00+07:00`,
+      cashAccountId: referenceOnly ? undefined : form.cashAccountId || undefined,
       funding: form.fundingSource === 'INVESTOR'
         ? {
             fundingSource: 'INVESTOR',
@@ -334,9 +365,20 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
             finalCyclePolicy: fundingRequiresFinalCycle ? form.finalCyclePolicy || undefined : undefined,
           }
         : { fundingSource: 'COMPANY_OWNED' },
+      ...(form.historicalMode ? { historical: {
+        mode: form.historicalMode,
+        reason: form.historicalReason.trim(),
+        ...(referenceOnly ? { pricingSnapshot: {
+          pricingCostBasis: form.historicalPricingCostBasis,
+          targetPrice: form.historicalTargetPrice,
+          otrPrice: form.historicalOtrPrice,
+          finalizedAt: `${form.historicalFinalizedAt}T00:00:00+07:00`,
+          readyStockAt: `${form.historicalReadyStockAt}T00:00:00+07:00`,
+        } } : {}),
+      } } : {}),
     };
     if (unit) {
-      const unitPayload: Partial<UnitFormData> & { funding?: any } = { ...payload };
+      const unitPayload: Partial<UnitFormData> = { ...payload };
       delete unitPayload.leasingOffers;
       if (!fundingChanged) {
         delete unitPayload.funding;
@@ -348,7 +390,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
           if (getApiErrorCode(err) === 'FINAL_CYCLE_POLICY_REQUIRED') setCyclePolicyError('Tipe pembayaran investor wajib dipilih.');
           notifyApiError(err);
         },
-        onSuccess: (res) => { setCreatedUnit(res.data); setStep(3); },
+        onSuccess: (res) => { if (referenceOnly) onClose(); else { setCreatedUnit(res.data); setStep(3); } },
       });
     }
   };
@@ -377,10 +419,10 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
     }
     // Create
     if (step < 2) {
-      return <Button icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)} disabled={step === 0 ? !!nameError : fundingIncomplete}>Lanjut</Button>;
+      return <Button icon={<ArrowRight size={15} />} onClick={() => setStep(step + 1)} disabled={step === 0 ? !!nameError : fundingIncomplete || historicalInvalid || purchaseInvalid}>Lanjut</Button>;
     }
     // step === 2 (create)
-    return <Button icon={<Save size={15} />} onClick={submitForm} loading={isPending} disabled={isPending || fundingIncomplete || !!nameError}>Buat Unit &amp; Lanjut ke Foto</Button>;
+    return <Button icon={<Save size={15} />} onClick={submitForm} loading={isPending} disabled={isPending || fundingIncomplete || historicalInvalid || purchaseInvalid || !!nameError}>Buat Unit &amp; Lanjut ke Foto</Button>;
   };
 
   return (
@@ -466,9 +508,20 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
 
         {step === 1 && (
           <>
+            {!unit && can('TRANSACTION_BACKDATE') && <div className="sm:col-span-2 rounded-xl border border-accent-amber/30 bg-accent-amber/10 p-3 space-y-3">
+              <SelectField label="Input data lama" value={form.historicalMode} onChange={(e) => set('historicalMode', e.target.value as '' | HistoricalMode)} options={[{ value: '', label: 'Transaksi hari ini' }, { value: 'POST_LEDGER', label: 'POST_LEDGER — posting saldo normal' }, { value: 'REFERENCE_ONLY', label: 'REFERENCE_ONLY — laporan saja' }]} />
+              {form.historicalMode && <><p className="text-[11px] font-semibold text-ink-soft">{referenceOnly ? 'Unit dibuat nonaktif sebagai staging histori. Tidak ada kas, allocation, atau kewajiban baru.' : 'Pembelian dan pendanaan diposting ke ledger seperti transaksi normal.'}</p><textarea required minLength={5} value={form.historicalReason} onChange={(e) => set('historicalReason', e.target.value)} placeholder="Alasan input data lama (minimal 5 karakter)" rows={2} className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm" /></>}
+            </div>}
             <NumericField label="Harga Beli" required disabled={fieldsLocked || purchaseLocked} value={form.purchaseCost} onChange={(v) => set('purchaseCost', v)} prefix="Rp" placeholder="0" min={0} />
             <DateField label="Tanggal Pembelian" required disabled={fieldsLocked || purchaseLocked} value={form.tanggalPembelian} onChange={(v) => set('tanggalPembelian', v)} />
-            {!unit && <CashAccountSelect label="Akun Kas Pembelian" required disabled={fieldsLocked} value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={lookupsLoading} />}
+            {!unit && !referenceOnly && <CashAccountSelect label="Akun Kas Pembelian" required disabled={fieldsLocked} value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={lookupsLoading} />}
+            {referenceOnly && <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-border bg-surface p-3">
+              <NumericField label="HPP snapshot" required prefix="Rp" min={0} value={form.historicalPricingCostBasis} onChange={(v) => set('historicalPricingCostBasis', v)} />
+              <NumericField label="Harga target snapshot" required prefix="Rp" min={0} value={form.historicalTargetPrice} onChange={(v) => set('historicalTargetPrice', v)} />
+              <NumericField label="OTR snapshot" required prefix="Rp" min={0} value={form.historicalOtrPrice} onChange={(v) => set('historicalOtrPrice', v)} />
+              <DateField label="Tanggal finalisasi harga" required value={form.historicalFinalizedAt} onChange={(v) => set('historicalFinalizedAt', v)} />
+              <DateField label="Tanggal Ready Stock" required value={form.historicalReadyStockAt} onChange={(v) => set('historicalReadyStockAt', v)} />
+            </div>}
             {purchaseLocked && (
               <p className="sm:col-span-2 text-[12px] font-semibold text-muted">
                 {unit?.pricingFinalizedAt

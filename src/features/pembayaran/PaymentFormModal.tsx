@@ -33,7 +33,7 @@ export const PaymentFormModal = ({ open, onClose }: Props) => {
   const [picked, setPicked] = useState<LeadOrder | null>(null);
 
   const { data, isLoading } = useLeadOrders(branchKey, { page: 1, limit: 10, search: debounced || undefined }, branchHeader);
-  const orders = (data?.data ?? []).filter((o) => o.status !== 'CANCELLED');
+  const orders = (data?.data ?? []).filter((o) => o.status !== 'CANCELLED' && o.historicalMode !== 'REFERENCE_ONLY');
 
   const reset = () => { setPicked(null); setSearch(''); };
   const handleClose = () => { reset(); onClose(); };

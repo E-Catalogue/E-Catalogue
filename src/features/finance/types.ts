@@ -30,6 +30,7 @@ export interface CashAccount {
   accountNumber?: string | null;
   bankName?: string | null;
   openingBalance: number;
+  openingBalanceAt?: string | null;
   defaultPayment: boolean;
   isActive: boolean;
   createdAt?: string;

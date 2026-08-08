@@ -48,6 +48,10 @@ const ERROR_BANNER: Record<string, { title: string; message: string }> = {
   INVESTOR_NOT_FOUND: { title: 'Investor tidak ditemukan', message: 'Data mungkin sudah dihapus. Jendela ini akan ditutup.' },
   BRANCH_CONTEXT_REQUIRED: { title: 'Cabang belum dipilih', message: 'Pilih cabang konkret terlebih dahulu.' },
   BRANCH_SCOPE_FORBIDDEN: { title: 'Cabang tidak sesuai', message: 'Reset selector cabang lalu muat ulang data.' },
+  OPENING_BALANCE_DATE_NOT_CONFIGURED: { title: 'Tanggal Saldo Awal Belum Dikonfigurasi', message: 'Akun kas terpilih belum diset Tanggal Saldo Awal (openingBalanceAt). Silakan atur tanggal saldo awal pada menu Cash Flow > Edit Akun Kas sebelum melakukan transaksi backdate.' },
+  TRANSACTION_BEFORE_OPENING_BALANCE_DATE: { title: 'Tanggal Transaksi Lampau', message: 'Tanggal transaksi tidak boleh sebelum tanggal saldo awal akun kas.' },
+  HISTORICAL_CASH_BALANCE_INSUFFICIENT: { title: 'Saldo Kas Historis Tidak Mencukupi', message: 'Saldo kas pada tanggal historis tersebut tidak mencukupi untuk transaksi ini.' },
+  BACKDATE_REASON_REQUIRED: { title: 'Alasan Backdate Wajib Diisi', message: 'Berikan alasan penginputan transaksi bertanggal lama (minimal 5 karakter).' },
 };
 const FALLBACK_5XX_BANNER = { title: 'Permintaan gagal diproses', message: 'Kunci idempotency dipertahankan — transaksi mungkin sudah terposting di server. Coba lagi secara manual, jangan ulangi dengan kunci baru.' };
 

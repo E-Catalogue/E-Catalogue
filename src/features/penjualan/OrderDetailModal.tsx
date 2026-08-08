@@ -31,7 +31,7 @@ type BranchHeaders = Record<string, string> | undefined;
 const idr = (n?: number | null) =>
   n == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 
 /** Nilai yang benar-benar tersimpan di database — `LEASING` cuma alias input lama yang
  * dinormalisasi backend ke `PENCAIRAN_LEASING` (payment.service.js `normalizePayload`),
@@ -101,10 +101,11 @@ interface PaymentFormState {
   description: string;
   cashAccountId: string;
   bukti: File | null;
+  backdateReason: string;
 }
 
 const emptyPayment = (): PaymentFormState => ({
-  amount: 0, paymentDate: today(), jenisPembayaran: 'DP', description: '', cashAccountId: '', bukti: null,
+  amount: 0, paymentDate: today(), jenisPembayaran: 'DP', description: '', cashAccountId: '', bukti: null, backdateReason: '',
 });
 
 interface PayFormProps {
@@ -119,6 +120,7 @@ interface PayFormProps {
 /** Diekspor supaya bisa dipakai ulang di luar `OrderDetailModal` (mis. quick-input "Catat
  * Pembayaran") tanpa menduplikasi logic idempotency-key/error-banner/posting kas di atas. */
 export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabledReason }: PayFormProps) => {
+  const { can } = usePermissions();
   const [form, setForm] = useState<PaymentFormState>(emptyPayment());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<{ code?: string; message: string } | null>(null);
@@ -133,7 +135,9 @@ export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabled
     if (resetKey) idem.regenerate();
   };
 
-  const valid = form.amount > 0 && !!form.paymentDate && !!form.jenisPembayaran && !!form.cashAccountId;
+  const isBackdated = form.paymentDate < today();
+  const valid = form.amount > 0 && !!form.paymentDate && !!form.jenisPembayaran && !!form.cashAccountId
+    && (!isBackdated || (can('TRANSACTION_BACKDATE') && form.backdateReason.trim().length >= 5));
   const leasingBonusEnabled = order?.status === 'DEAL' && order.paymentType === 'KREDIT' && !!order.leasingId;
   const paymentOptions = JENIS_OPTIONS.filter((option) => option.value !== 'REFUND_LEASING' || leasingBonusEnabled);
   const leasingApplied = form.jenisPembayaran === 'REFUND_LEASING' ? Math.min(form.amount, order?.remainingPayment ?? 0) : 0;
@@ -148,6 +152,7 @@ export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabled
           fd.append('jenisPembayaran', form.jenisPembayaran);
           fd.append('cashAccountId', form.cashAccountId);
           if (form.description.trim()) fd.append('description', form.description.trim());
+          if (isBackdated) fd.append('backdateReason', form.backdateReason.trim());
           fd.append('bukti', form.bukti);
           return fd;
         })()
@@ -157,6 +162,7 @@ export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabled
           jenisPembayaran: form.jenisPembayaran,
           cashAccountId: form.cashAccountId,
           description: form.description.trim() || undefined,
+          ...(isBackdated ? { backdateReason: form.backdateReason.trim() } : {}),
         };
 
     m.create.mutate(
@@ -192,6 +198,8 @@ export const PayForm = ({ orderId, branchKey, headers, order, disabled, disabled
         <DateField label="Tanggal Bayar" required value={form.paymentDate} onChange={(v) => set('paymentDate', v)} />
         <SelectField label="Jenis Pembayaran" required value={form.jenisPembayaran} onChange={(e) => set('jenisPembayaran', e.target.value as JenisPembayaran)} options={paymentOptions} />
         <CashAccountSelect required value={form.cashAccountId} onChange={(v) => set('cashAccountId', v)} accounts={cashAccounts} loading={cashLoading} />
+        {isBackdated && can('TRANSACTION_BACKDATE') && <TextField label="Alasan backdate *" wrapClass="sm:col-span-2" value={form.backdateReason} onChange={(e) => set('backdateReason', e.target.value, false)} maxLength={2000} />}
+        {isBackdated && !can('TRANSACTION_BACKDATE') && <p className="sm:col-span-2 text-[11px] font-semibold text-semantic-error">Anda tidak memiliki izin input transaksi lampau.</p>}
         {form.jenisPembayaran === 'REFUND_LEASING' && <div className="sm:col-span-2 rounded-xl border border-primary/20 bg-primary-light px-3 py-2.5 text-[12px] font-semibold text-ink-soft"><p className="font-extrabold text-ink">Bonus Leasing adalah kas masuk dari leasing.</p><p className="mt-1">Menutup sisa pelunasan: <strong>{idr(leasingApplied)}</strong> · Bonus perusahaan: <strong>{idr(leasingBonus)}</strong>. Perhitungan final ditentukan server saat disimpan.</p></div>}
         <TextField label="Keterangan (opsional)" wrapClass="sm:col-span-2" value={form.description} onChange={(e) => set('description', e.target.value, false)} />
         <div className="sm:col-span-2">

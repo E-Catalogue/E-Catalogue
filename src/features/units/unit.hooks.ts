@@ -5,6 +5,7 @@ import type {
   UnitListParams,
   UnitStatusUpdate,
   UnitFundingUpdatePayload,
+  UnitFundingCorrectionPayload,
   FinalizeInitialPricingPayload,
   PricingPolicyUpdatePayload,
   UnitTransferBranchPayload,
@@ -231,6 +232,22 @@ export function useUpdateUnitFunding() {
       store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Aturan pendanaan unit diperbarui' }));
       qc.invalidateQueries({ queryKey: ['unit-funding', id] });
       qc.invalidateQueries({ queryKey: ['unit', id] });
+    },
+  });
+}
+
+export function useCorrectUnitFunding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data, headers }: { id: string; data: UnitFundingCorrectionPayload; headers?: BranchHeaders }) =>
+      unitApi.correctFunding(id, data, headers),
+    onSuccess: (_, { id }) => {
+      store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Koreksi investor dan pendanaan berhasil diproses' }));
+      qc.invalidateQueries({ queryKey: ['unit-funding', id] });
+      qc.invalidateQueries({ queryKey: ['unit', id] });
+      qc.invalidateQueries({ queryKey: ['units'] });
+      qc.invalidateQueries({ queryKey: ['investor-capital'] });
+      qc.invalidateQueries({ queryKey: ['investor-obligations'] });
     },
   });
 }
