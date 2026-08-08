@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildUnitCopyText, buildUnitShareMessage, buildWhatsAppShareUrl } from './whatsapp';
+import { waMessages } from './whatsapp';
 import type { Unit } from '@/features/units/unit.types';
 
 const unit = {
@@ -73,5 +74,16 @@ describe('template share WhatsApp unit', () => {
     expect(text).not.toContain('rahasia.jpg');
     expect(text).not.toContain('Harga beli');
     expect(text).not.toContain('HPP');
+  });
+
+  it('template WhatsApp publik selalu berupa konsultasi tanpa angka simulasi kredit', () => {
+    const messages = [
+      waMessages.generalContact('GM Mobilindo'),
+      waMessages.creditConsult('GM Mobilindo'),
+      waMessages.creditSimulation({ unitLabel: 'Avanza G', dpPercent: 30, tenor: 48, cicilan: 4_500_000 }),
+    ];
+    for (const message of messages) {
+      expect(message).not.toMatch(/DP|tenor|cicilan|simulasi/i);
+    }
   });
 });

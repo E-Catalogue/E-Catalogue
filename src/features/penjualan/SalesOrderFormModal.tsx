@@ -56,10 +56,6 @@ interface Props {
 
 export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUserId, branchKey = 'all', branchHeader, onSubmit }: Props) => {
   const [form, setForm] = useState<FormState>(item ? toForm(item) : emptyForm(currentUserId));
-  const [seedId, setSeedId] = useState<string | undefined>(item?.id);
-  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ? toForm(item) : emptyForm(currentUserId)); }
-  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(emptyForm(currentUserId)); }
-  if (open && !item && currentUserId && !form.salesId) { setForm((f) => ({ ...f, salesId: currentUserId })); }
 
   // Satu agregat lookup untuk seluruh dropdown form order (PRD §4.9). Pencarian jadi client-side
   // di dalam SearchableSelect, jadi tidak perlu query terpisah per keystroke lagi.

@@ -7,6 +7,7 @@ import { useCancelPurchaseUnit } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
 import { AlertOctagon, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/core/utils/format';
+import { getApiErrorMessage } from '@/core/api/apiError';
 
 interface CancelPurchaseModalProps {
   open: boolean;
@@ -35,8 +36,8 @@ export const CancelPurchaseModal: React.FC<CancelPurchaseModalProps> = ({ open, 
           setReason('');
           onClose();
         },
-        onError: (err: any) => {
-          setErrorMessage(err.response?.data?.message || err.message || 'Gagal membatalkan pembelian unit');
+        onError: (err: unknown) => {
+          setErrorMessage(getApiErrorMessage(err, 'Gagal membatalkan pembelian unit'));
         },
       }
     );

@@ -28,9 +28,6 @@ const RoleFormModal = ({ open, onClose, item, submitting, onSubmit }: {
   open: boolean; onClose: () => void; item?: Role | null; submitting?: boolean; onSubmit: (v: Partial<Role>) => void;
 }) => {
   const [form, setForm] = useState<Partial<Role>>(item ?? { name: '', code: '', description: '', isActive: true });
-  const [seedId, setSeedId] = useState<string | undefined>(item?.id);
-  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ?? { name: '', code: '', description: '', isActive: true }); }
-  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm({ name: '', code: '', description: '', isActive: true }); }
   const set = (k: keyof Role, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const submit = (e: FormEvent) => { e.preventDefault(); onSubmit({ ...form, name: (form.name ?? '').trim(), code: (form.code ?? '').trim().toUpperCase() }); };
 
@@ -71,11 +68,6 @@ const PermissionsModal = ({ open, onClose, role }: { open: boolean; onClose: () 
   const m = useRoleMutations();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
-  // Reset input pencarian saat modal dibuka untuk role berbeda (pola derived-state, bukan efek).
-  const [seedRoleId, setSeedRoleId] = useState<string | null>(null);
-  if (open && role && seedRoleId !== role.id) { setSeedRoleId(role.id); setSearch(''); }
-  if (!open && seedRoleId !== null) setSeedRoleId(null);
-
   useEffect(() => {
     if (open && role) {
       roleApi.get(role.id)
@@ -189,8 +181,8 @@ const RolePageInner = () => {
         {!isLoading && !isError && roles.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
-      <RoleFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} />
-      <PermissionsModal open={!!perms} onClose={() => setPerms(null)} role={perms} />
+      <RoleFormModal key={form ? form.item?.id ?? 'new' : 'closed'} open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} />
+      <PermissionsModal key={perms?.id ?? 'closed'} open={!!perms} onClose={() => setPerms(null)} role={perms} />
       <ConfirmDialog
         open={!!toDelete}
         onClose={() => setToDelete(null)}

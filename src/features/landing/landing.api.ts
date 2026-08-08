@@ -1,7 +1,7 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse, ApiMeta } from '@/core/api/types';
 import type {
-  SiteSettings, PublicHomepage, PublicAbout, ContactPageData,
+  SiteSettings, PublicHomepage, PublicAbout, PublicContact, PublicBranch, PublicTestimonial,
   CatalogCard, CatalogDetail, CatalogBrand, CatalogQuery,
   CreditSimConfig, CreditCalcInput, CreditCalcResult,
   PublicNavMenuItem, SalesContact,
@@ -61,7 +61,9 @@ export const landingApi = {
   getNavMenus: () => apiClient.get<ApiResponse<PublicNavMenuItem[]>>('/public/nav-menus').then((r) => r.data.data),
   getHomepage: () => apiClient.get<ApiResponse<PublicHomepage>>('/public/homepage').then((r) => r.data.data),
   getAbout: () => apiClient.get<ApiResponse<PublicAbout>>('/public/about').then((r) => r.data.data),
-  getContactPage: () => apiClient.get<ApiResponse<ContactPageData>>('/public/contact-page').then((r) => r.data.data),
+  getContactPage: () => apiClient.get<ApiResponse<PublicContact>>('/public/contact').then((r) => r.data.data),
+  getBranches: () => apiClient.get<ApiResponse<PublicBranch[]>>('/public/branches').then((r) => r.data.data),
+  getTestimonial: (id: string) => apiClient.get<ApiResponse<PublicTestimonial>>(`/public/testimonials/${id}`).then((r) => r.data.data),
 
   getCatalogPage: () => apiClient.get<ApiResponse<CatalogPagePublic>>('/public/catalog-page').then((r) => r.data.data),
   getCatalog: (params: CatalogQuery): Promise<CatalogListResponse> =>

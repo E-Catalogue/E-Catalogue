@@ -25,10 +25,10 @@ export const useHomepageLookup = (enabled = true) =>
   useQuery({ queryKey: ['lookup', 'cms-homepage', 'featured'], queryFn: () => homepageLookupApi.get(), enabled });
 
 /* ── Section generik homepage/about ── */
-export const useCmsSection = <T>(page: 'homepage' | 'about', section: string) =>
+export const useCmsSection = <T>(page: 'homepage' | 'about' | 'contact', section: string) =>
   useQuery({ queryKey: ['cms', page, section], queryFn: () => sectionApi.get<T>(page, section) });
 
-export const useUpdateCmsSection = <T>(page: 'homepage' | 'about', section: string) => {
+export const useUpdateCmsSection = <T>(page: 'homepage' | 'about' | 'contact', section: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<T>) => sectionApi.update<T>(page, section, body),
@@ -47,7 +47,7 @@ export const useUploadCmsImage = (folder: CmsUploadFolder) =>
  * Menyederhanakan editor per-section yang berulang.
  */
 export function useSectionForm<T extends { isVisible?: boolean }>(
-  page: 'homepage' | 'about',
+  page: 'homepage' | 'about' | 'contact',
   section: string,
   opts?: { onBeforeSave?: () => Promise<Partial<T> | void> },
 ) {
@@ -130,6 +130,8 @@ export const useUpdateCatalogPage = () => {
 /* ── Testimoni ── */
 export const useTestimonials = (params: CmsListParams) =>
   useQuery({ queryKey: ['cms', 'testimonials', params], queryFn: () => testimonialApi.list(params) });
+export const useTestimonialSoldUnits = (enabled = true) =>
+  useQuery({ queryKey: ['cms', 'testimonials', 'sold-units'], queryFn: () => testimonialApi.soldUnits(), enabled });
 
 export const useTestimonialMutations = () => {
   const qc = useQueryClient();
@@ -139,6 +141,7 @@ export const useTestimonialMutations = () => {
     update: useMutation({ mutationFn: (v: { id: string; body: Partial<TestimonialForm> }) => testimonialApi.update(v.id, v.body), onSuccess: () => { inval(); toastOk('Testimoni diperbarui'); } }),
     setPublish: useMutation({ mutationFn: (v: { id: string; isPublished: boolean }) => testimonialApi.setPublish(v.id, v.isPublished), onSuccess: (_d, v) => { inval(); toastOk(v.isPublished ? 'Testimoni dipublikasikan' : 'Testimoni disembunyikan'); } }),
     uploadAvatar: useMutation({ mutationFn: (v: { id: string; file: File }) => testimonialApi.uploadAvatar(v.id, v.file), onSuccess: () => { inval(); toastOk('Avatar diperbarui'); } }),
+    uploadImage: useMutation({ mutationFn: (v: { id: string; file: File }) => testimonialApi.uploadImage(v.id, v.file), onSuccess: () => { inval(); toastOk('Foto serah terima diperbarui'); } }),
     remove: useMutation({ mutationFn: (id: string) => testimonialApi.remove(id), onSuccess: () => { inval(); toastOk('Testimoni dihapus'); } }),
   };
 };

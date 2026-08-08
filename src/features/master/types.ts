@@ -46,6 +46,12 @@ export interface Branch {
   lokasi?: string | null;
   longlat?: string | null;
   kontak?: string | null;
+  isPublic?: boolean;
+  publicSortOrder?: number;
+  publicDescription?: string | null;
+  businessHours?: string | null;
+  mapLat?: number | null;
+  mapLng?: number | null;
   picId?: string | null;
   images?: BranchImage[];
 }

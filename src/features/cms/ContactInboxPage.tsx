@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Inbox, Save, Mail, Phone, Trash2, MailOpen, CornerUpLeft, Archive, ExternalLink,
+  Inbox, Save, Mail, Phone, Trash2, MailOpen, CornerUpLeft, Archive, ExternalLink, MapPin, CircleHelp, Megaphone, FileText, Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -18,12 +18,12 @@ import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { formatDate } from '@/core/utils/format';
 import { notifyApiError } from '@/core/api/notify';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
-import { TextArea } from './CmsKit';
+import { TextArea, CmsTabs, SectionBar, SectionCardShell } from './CmsKit';
 import {
-  useContactPage, useUpdateContactPage,
+  useContactPage, useUpdateContactPage, useSectionForm,
   useContactMessages, useContactMessageMutations, useContactMessageCount,
 } from './cms.hooks';
-import type { ContactPage, ContactMessage, ContactStatus } from './cms.types';
+import type { ContactPage, ContactFormContent, ContactLocations, ContactFaq, ContactCta, ContactMessage, ContactStatus } from './cms.types';
 
 const STATUS_META: Record<ContactStatus, { label: string; cls: string }> = {
   NEW: { label: 'Baru', cls: 'bg-primary/10 text-primary' },
@@ -56,17 +56,29 @@ const HeaderEditor = () => {
   });
   return (
     <SectionCard title="Header Halaman Kontak" icon={<Mail size={16} />}
-      action={<Button icon={<Save size={14} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button>}>
+      action={<div className="flex items-center gap-2">{draft && <span className="rounded-full bg-accent-amber/10 px-2.5 py-1 text-[10px] font-extrabold text-accent-amber">Belum disimpan</span>}<Button icon={<Save size={14} />} onClick={save} loading={update.isPending}>{update.isPending ? 'Menyimpan…' : 'Simpan'}</Button></div>}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="Eyebrow" value={f.eyebrow} onChange={(e) => setF({ ...f, eyebrow: e.target.value })} />
         <TextField label="Judul" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
       </div>
       <TextArea label="Subtitle" value={f.subtitle} onChange={(v) => setF({ ...f, subtitle: v })} rows={2} />
+      <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary-light to-surface p-5"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-primary">Preview hero Kontak</p><h4 className="mt-2 text-2xl font-extrabold text-ink">{f.title || 'Judul halaman Kontak'}</h4><p className="mt-2 text-[12px] font-medium leading-5 text-muted">{f.subtitle || 'Pengantar lokasi dan kontak showroom akan tampil di sini.'}</p></div>
     </SectionCard>
   );
 };
 
+const ContactSectionEditor = ({ section }: { section: 'form' | 'locations' | 'faq' | 'cta' }) => {
+  const state = useSectionForm<ContactFormContent & ContactLocations & ContactFaq & ContactCta>('contact', section);
+  const { form, patch, save, toggleVisible, saving, isLoading } = state; if (isLoading || !form) return null;
+  if (section === 'form') return <SectionCardShell><SectionBar title="Konten Form" icon={<FileText size={16} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} /><TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} /><TextArea label="Subtitle" value={form.subtitle} onChange={(subtitle) => patch({ subtitle })} /><div className="grid md:grid-cols-2 gap-4"><TextField label="Label Tombol" value={form.submitLabel} onChange={(e) => patch({ submitLabel: e.target.value })} /><TextField label="Judul Sukses" value={form.successTitle} onChange={(e) => patch({ successTitle: e.target.value })} /></div><TextArea label="Pesan Sukses" value={form.successText} onChange={(successText) => patch({ successText })} /></SectionCardShell>;
+  if (section === 'locations') return <SectionCardShell><SectionBar title="Lokasi Cabang" icon={<MapPin size={16} />} hint="Daftar dan marker berasal dari cabang bertanda publik" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} /><div className="grid md:grid-cols-2 gap-4"><TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} /><TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} /></div><TextArea label="Subtitle" value={form.subtitle} onChange={(subtitle) => patch({ subtitle })} /></SectionCardShell>;
+  if (section === 'cta') return <SectionCardShell><SectionBar title="CTA WhatsApp" icon={<Megaphone size={16} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} /><TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} /><TextArea label="Subtitle" value={form.subtitle} onChange={(subtitle) => patch({ subtitle })} /><TextField label="Label Tombol" value={form.label} onChange={(e) => patch({ label: e.target.value })} /></SectionCardShell>;
+  const items = form.items ?? [];
+  return <SectionCardShell><SectionBar title="FAQ Kontak" icon={<CircleHelp size={16} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} /><div className="grid md:grid-cols-2 gap-4"><TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} /><TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} /></div><div className="space-y-3">{items.map((item, index) => <div key={index} className="rounded-xl border border-border p-4"><TextField label="Pertanyaan" value={item.question} onChange={(e) => patch({ items: items.map((v, i) => i === index ? { ...v, question: e.target.value } : v) })} /><TextArea label="Jawaban" value={item.answer} onChange={(answer) => patch({ items: items.map((v, i) => i === index ? { ...v, answer } : v) })} /><button onClick={() => patch({ items: items.filter((_, i) => i !== index) })} className="text-xs font-bold text-semantic-error">Hapus</button></div>)}<Button variant="secondary" icon={<Plus size={14} />} onClick={() => patch({ items: [...items, { question: '', answer: '' }] })}>Tambah FAQ</Button></div></SectionCardShell>;
+};
+
 export const ContactInboxPage = () => {
+  const [cmsTab, setCmsTab] = useState<'hero' | 'form' | 'locations' | 'faq' | 'cta'>('hero');
   const [tab, setTab] = useState<ContactStatus | 'ALL'>('ALL');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(15);
@@ -120,7 +132,8 @@ export const ContactInboxPage = () => {
       <PageHeader title="Kontak & Pesan" description="Kelola header halaman kontak dan pesan masuk dari pengunjung."
         action={<a href="/kontak" target="_blank" rel="noopener noreferrer"><Button variant="secondary" icon={<ExternalLink size={16} />}>Preview</Button></a>} />
 
-      <HeaderEditor />
+      <CmsTabs tabs={[{ key: 'hero', label: 'Hero', icon: <Mail size={14} /> }, { key: 'form', label: 'Form', icon: <FileText size={14} /> }, { key: 'locations', label: 'Lokasi', icon: <MapPin size={14} /> }, { key: 'faq', label: 'FAQ', icon: <CircleHelp size={14} /> }, { key: 'cta', label: 'CTA', icon: <Megaphone size={14} /> }]} active={cmsTab} onChange={setCmsTab} />
+      {cmsTab === 'hero' ? <HeaderEditor /> : <ContactSectionEditor section={cmsTab} />}
 
       {/* Inbox — filter status */}
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-slim rounded-2xl border border-border bg-surface p-1.5">

@@ -172,7 +172,7 @@ const TestDrivePageInner = () => {
         </div>
       </SectionCard>
 
-      <TestDriveFormModal open={!!form} item={form?.item} onClose={() => setForm(null)} />
+      <TestDriveFormModal key={form ? form.item?.id ?? 'new' : 'closed'} open={!!form} item={form?.item} onClose={() => setForm(null)} />
       <ConfirmDialog
         open={!!toDelete}
         onClose={() => setToDelete(null)}

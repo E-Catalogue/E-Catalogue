@@ -106,6 +106,9 @@ export interface HomepageHero extends SectionMeta {
   primaryCtaLink: string;
   secondaryCtaLabel: string;
   secondaryCtaLink: string;
+  searchPlaceholder: string;
+  searchButtonLabel: string;
+  primaryBranchId: string | null;
   imageFilename: string | null;
   floatingCard: { icon: string; title: string; subtitle: string };
   stats: CmsStat[];
@@ -134,6 +137,9 @@ export interface HomepageFeatured extends SectionMeta {
 export interface HomepageTestimonialsHeader extends SectionMeta {
   eyebrow: string; title: string; subtitle: string; limit: number;
 }
+export interface CmsFaqItem { question: string; answer: string; }
+export interface HomepageLocations extends SectionMeta { eyebrow: string; title: string; subtitle: string; limit: number; }
+export interface HomepageFaq extends SectionMeta { eyebrow: string; title: string; items: CmsFaqItem[]; }
 export interface HomepageCta extends SectionMeta {
   title: string; subtitle: string;
   primaryLabel: string; primaryLink: string;
@@ -147,17 +153,24 @@ export interface AboutHero extends SectionMeta {
   ctaLabel: string; ctaLink: string;
 }
 export interface AboutStats extends SectionMeta { items: CmsStat[]; }
+export interface AboutStory extends SectionMeta { eyebrow: string; title: string; paragraphs: string[]; imageFilename: string | null; }
 export interface AboutVisiMisi extends SectionMeta {
-  visiTitle: string; visiIcon: string; visi: string;
-  misiTitle: string; misiIcon: string; misi: string;
+  visiTitle: string; visiIcon: string; visiItems: string[];
+  misiTitle: string; misiIcon: string; misiItems: string[];
 }
 export interface AboutValues extends SectionMeta {
   eyebrow: string; title: string; items: CmsIconItem[];
 }
 export type AboutCta = HomepageCta;
+export interface AboutJourneyItem { year: string; title: string; desc: string; }
+export interface AboutJourney extends SectionMeta { eyebrow: string; title: string; items: AboutJourneyItem[]; }
 
 /* ── Header halaman ── */
 export interface ContactPage extends SectionMeta { eyebrow: string; title: string; subtitle: string; }
+export interface ContactFormContent extends SectionMeta { title: string; subtitle: string; submitLabel: string; successTitle: string; successText: string; }
+export interface ContactLocations extends SectionMeta { eyebrow: string; title: string; subtitle: string; }
+export interface ContactFaq extends SectionMeta { eyebrow: string; title: string; items: CmsFaqItem[]; }
+export interface ContactCta extends SectionMeta { title: string; subtitle: string; label: string; }
 export interface PriceRange { label: string; min: number; max: number | null; }
 export interface CatalogPage extends SectionMeta { eyebrow: string; title: string; subtitle: string; priceRanges: PriceRange[]; }
 
@@ -166,11 +179,23 @@ export interface Testimonial {
   id: string;
   name: string;
   role: string | null;
+  title: string | null;
+  city: string | null;
   text: string;
   rating: number;
   avatarFilename: string | null;
+  imageFilename: string | null;
+  videoUrl: string | null;
+  handoverDate: string | null;
+  unitId: string | null;
+  unit?: TestimonialUnit | null;
   isPublished: boolean;
   sortOrder: number;
+}
+export interface TestimonialUnit {
+  id: string; name: string; platNomor: string; tahun: number; warna: string; transmisi: string;
+  merek?: { id?: string; name: string } | string | null; tipe?: { id?: string; name: string } | string | null;
+  imageFilename?: string | null; branch?: { id: string; nama?: string; name?: string; code: string } | null;
 }
 export type TestimonialForm = Omit<Testimonial, 'id'>;
 

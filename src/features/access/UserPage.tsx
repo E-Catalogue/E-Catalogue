@@ -34,12 +34,9 @@ const UserFormModal = ({ open, onClose, item, submitting, onSubmit, canRoleUpdat
   canRoleUpdate?: boolean; canBranchUpdate?: boolean;
 }) => {
   const { data: lookup } = useUserFormLookup(open);
-  const [form, setForm] = useState<FormState>(emptyForm());
-  const [seedId, setSeedId] = useState<string | undefined>('init');
-
   const seedFrom = (u?: AccessUser | null): FormState =>
     u ? { name: u.name, email: u.email, username: u.username, password: '', phone: u.phone ?? '', roleId: u.role?.id ?? '', branchId: u.branch?.id ?? '', isActive: u.isActive } : emptyForm();
-  if (open && (item?.id ?? 'new') !== seedId) { setSeedId(item?.id ?? 'new'); setForm(seedFrom(item)); }
+  const [form, setForm] = useState<FormState>(() => seedFrom(item));
 
   const set = (k: keyof FormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const submit = (e: FormEvent) => { e.preventDefault(); onSubmit({ ...form, roleId: roleIsCurrent ? form.roleId : '' }); };
@@ -136,7 +133,7 @@ const UserPageInner = () => {
         {!isLoading && !isError && users.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
-      <UserFormModal open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} canRoleUpdate={can('USER_ROLE_UPDATE')} canBranchUpdate={can('USER_BRANCH_UPDATE')} />
+      <UserFormModal key={form ? form.item?.id ?? 'new' : 'closed'} open={!!form} onClose={() => setForm(null)} item={form?.item} submitting={m.create.isPending || m.update.isPending} onSubmit={handleSubmit} canRoleUpdate={can('USER_ROLE_UPDATE')} canBranchUpdate={can('USER_BRANCH_UPDATE')} />
       <ConfirmDialog
         open={!!toDelete}
         onClose={() => setToDelete(null)}

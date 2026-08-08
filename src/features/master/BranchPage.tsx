@@ -41,6 +41,7 @@ export const BranchPage = () => {
     { header: 'Nama Cabang', cell: (r) => r.nama },
     { header: 'Lokasi', cell: (r) => r.lokasi || '-' },
     { header: 'Kontak', cell: (r) => r.kontak || '-' },
+    { header: 'Website', align: 'center', cell: (r) => <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${r.isPublic ? 'bg-accent-green/10 text-accent-green' : 'bg-muted/10 text-muted'}`}>{r.isPublic ? 'Tampil' : 'Tersembunyi'}</span> },
     { header: '', align: 'right', cell: (r) => (
       <RowActions
         onEdit={can('BRANCH_UPDATE') ? () => setForm({ item: r }) : undefined}
@@ -80,6 +81,7 @@ export const BranchPage = () => {
         </SectionCard>
 
         <BranchFormModal
+          key={form ? form.item?.id ?? 'new' : 'closed'}
           open={!!form}
           onClose={() => setForm(null)}
           item={form?.item}
@@ -100,4 +102,3 @@ export const BranchPage = () => {
     </RequirePermission>
   );
 };
-

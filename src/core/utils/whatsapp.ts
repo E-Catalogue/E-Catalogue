@@ -75,8 +75,8 @@ export const waMessages = {
     `Halo, saya tertarik dengan ${unit.title} (${unit.tahun}) seharga ${formatCurrency(unit.harga)} yang saya lihat di website ${WEBSITE_URL}${unit.unitId ? `/katalog/${unit.unitId}` : ''}. Apakah unit ini masih tersedia?`,
 
   creditConsult: (companyName?: string | null) =>
-    `Halo${companyName ? ` ${companyName}` : ''}, saya ingin konsultasi simulasi kredit untuk pembelian mobil. Saya mendapat informasi dari website ${WEBSITE_URL}.`,
+    `Halo${companyName ? ` ${companyName}` : ''}, saya sedang mencari mobil dan ingin berkonsultasi mengenai unit yang tersedia. Saya mendapat informasi dari website ${WEBSITE_URL}.`,
 
   creditSimulation: (v: { unitLabel?: string; dpPercent: number; tenor: number; cicilan: number }) =>
-    `Halo, saya tertarik mengajukan kredit${v.unitLabel ? ` untuk ${v.unitLabel}` : ''} dengan DP ${v.dpPercent}% tenor ${v.tenor} bulan (estimasi cicilan ${formatCurrency(v.cicilan)}/bulan). Info saya dapat dari website ${WEBSITE_URL}. Mohon info lebih lanjut.`,
+    `Halo, saya ingin berkonsultasi mengenai ketersediaan dan proses pembelian${v.unitLabel ? ` unit ${v.unitLabel}` : ' unit mobil'} yang saya lihat di website ${WEBSITE_URL}. Mohon dibantu informasi selengkapnya.`,
 };

@@ -58,10 +58,7 @@ const validateImage = (file: File | null) => file ? validateImageFile(file) : nu
 
 export const TestDriveFormModal = ({ open, onClose, item }: Props) => {
   const [form, setForm] = useState<FormState>(item ? toForm(item) : empty());
-  const [seedId, setSeedId] = useState<string | undefined>(item?.id);
   const [fileError, setFileError] = useState('');
-  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ? toForm(item) : empty()); setFileError(''); }
-  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(empty()); setFileError(''); }
 
   const { data: lookup, isLoading: lookupLoading } = useTestDriveLookups(open);
   const mutations = useTestDriveMutations();

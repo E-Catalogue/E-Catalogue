@@ -69,6 +69,7 @@ export const TipeModal = ({ open, onClose, merek }: Props) => {
       </Modal>
 
       <NameFormModal
+        key={form ? form.item?.id ?? 'new' : 'closed'}
         open={!!form}
         onClose={() => setForm(null)}
         title={form?.item ? 'Edit Tipe' : 'Tambah Tipe'}

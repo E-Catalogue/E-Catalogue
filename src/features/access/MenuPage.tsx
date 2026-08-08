@@ -25,8 +25,6 @@ const FieldsModal = ({ open, onClose, title, subtitle, fields, initial, submitti
 }) => {
   const blank = () => Object.fromEntries(fields.map((f) => [f.key, f.type === 'number' ? 0 : ''])) as Fields;
   const [form, setForm] = useState<Fields>(initial ?? blank());
-  const [seed, setSeed] = useState<Fields | null | undefined>(initial);
-  if (open && initial !== seed) { setSeed(initial); setForm(initial ?? blank()); }
   const submit = (e: FormEvent) => { e.preventDefault(); onSubmit(form); };
 
   return (
@@ -210,6 +208,7 @@ const MenuPageInner = () => {
 
       {/* ---- Modals ---- */}
       <FieldsModal
+        key={groupForm ? groupForm.item?.id ?? 'new-group' : 'closed-group'}
         open={!!groupForm}
         onClose={() => setGroupForm(null)}
         title={groupForm?.item ? 'Edit Group Menu' : 'Tambah Group Menu'}
@@ -232,6 +231,7 @@ const MenuPageInner = () => {
       />
 
       <FieldsModal
+        key={menuForm ? menuForm.item?.id ?? 'new-menu' : 'closed-menu'}
         open={!!menuForm}
         onClose={() => setMenuForm(null)}
         title={menuForm?.item ? 'Edit Menu' : 'Tambah Menu'}
@@ -254,6 +254,7 @@ const MenuPageInner = () => {
       />
 
       <FieldsModal
+        key={permForm ? permForm.item?.id ?? 'new-permission' : 'closed-permission'}
         open={!!permForm}
         onClose={() => setPermForm(null)}
         title={permForm?.item ? 'Edit Permission' : 'Tambah Permission'}

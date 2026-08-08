@@ -24,9 +24,6 @@ const empty = (): Partial<Investor> => ({
 
 export const InvestorFormModal = ({ open, onClose, item, submitting, onSubmit }: Props) => {
   const [form, setForm] = useState<Partial<Investor>>(item ?? empty());
-  const [seedId, setSeedId] = useState<string | undefined>(item?.id);
-  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ?? empty()); }
-  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(empty()); }
 
   const set = (k: keyof Investor, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const submit = (e: FormEvent) => {

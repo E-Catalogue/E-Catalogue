@@ -84,10 +84,11 @@ export const QuickInput = ({ expanded }: QuickInputProps) => {
         </div>
       </Modal>
 
-      <UnitFormModal open={active === 'unit'} onClose={() => setActive(null)} />
-      <LeadFormModal open={active === 'lead'} onClose={() => setActive(null)} submitting={leadM.create.isPending} onSubmit={handleLeadSubmit} />
-      <TestDriveFormModal open={active === 'testdrive'} onClose={() => setActive(null)} />
+      <UnitFormModal key={`unit-${active === 'unit'}`} open={active === 'unit'} onClose={() => setActive(null)} />
+      <LeadFormModal key={`lead-${active === 'lead'}`} open={active === 'lead'} onClose={() => setActive(null)} submitting={leadM.create.isPending} onSubmit={handleLeadSubmit} />
+      <TestDriveFormModal key={`testdrive-${active === 'testdrive'}`} open={active === 'testdrive'} onClose={() => setActive(null)} />
       <SalesOrderFormModal
+        key={`sale-${active === 'sale'}`}
         open={active === 'sale'}
         onClose={() => setActive(null)}
         submitting={orderM.create.isPending}

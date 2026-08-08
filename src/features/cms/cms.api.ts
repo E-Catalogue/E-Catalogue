@@ -20,9 +20,9 @@ const fileForm = (file: File) => { const fd = new FormData(); fd.append('image',
 
 /* ── Section generik (homepage/about) ── */
 export const sectionApi = {
-  get: <T>(page: 'homepage' | 'about', section: string) =>
+  get: <T>(page: 'homepage' | 'about' | 'contact', section: string) =>
     apiClient.get<ApiResponse<T>>(`/cms/${page}/${section}`).then((r) => r.data.data),
-  update: <T>(page: 'homepage' | 'about', section: string, body: Partial<T>) =>
+  update: <T>(page: 'homepage' | 'about' | 'contact', section: string, body: Partial<T>) =>
     apiClient.put<ApiResponse<T>>(`/cms/${page}/${section}`, body).then((r) => r.data.data),
   heroImage: (page: 'homepage' | 'about', file: File) =>
     apiClient.post<ApiResponse<{ filename: string }>>(`/cms/${page}/hero-image`, fileForm(file), uploadCfg).then((r) => r.data.data),
@@ -36,6 +36,7 @@ export const sectionApi = {
 export interface HomepageLookup {
   brands: { id: string; name: string }[];
   units: { id: string; name?: string | null; branchId?: string; platNomor: string; isPublished?: boolean; merek?: { name: string } | null; tipe?: { name: string } | null }[];
+  branches: { id: string; nama: string; lokasi: string; isPublic: boolean }[];
 }
 export const homepageLookupApi = {
   get: () => apiClient.get<ApiResponse<HomepageLookup>>('/cms/homepage/lookups').then((r) => r.data.data),
@@ -80,6 +81,8 @@ export const testimonialApi = {
   update: (id: string, body: Partial<TestimonialForm>) => apiClient.put<ApiResponse<Testimonial>>(`/cms/testimonials/${id}`, body).then((r) => r.data.data),
   setPublish: (id: string, isPublished: boolean) => apiClient.patch<ApiResponse<Testimonial>>(`/cms/testimonials/${id}/publish`, { isPublished }).then((r) => r.data.data),
   uploadAvatar: (id: string, file: File) => apiClient.post<ApiResponse<{ filename: string }>>(`/cms/testimonials/${id}/avatar`, fileForm(file), uploadCfg).then((r) => r.data.data),
+  uploadImage: (id: string, file: File) => apiClient.post<ApiResponse<{ filename: string }>>(`/cms/testimonials/${id}/image`, fileForm(file), uploadCfg).then((r) => r.data.data),
+  soldUnits: (search?: string) => apiClient.get<ApiResponse<NonNullable<Testimonial['unit']>[]>>('/cms/testimonials/unit-lookups', { params: { search } }).then((r) => r.data.data),
   remove: (id: string) => apiClient.delete(`/cms/testimonials/${id}`).then((r) => r.data),
 };
 

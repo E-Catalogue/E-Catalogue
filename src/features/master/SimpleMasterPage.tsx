@@ -33,8 +33,6 @@ const FormModal = ({ open, onClose, item, withCode, submitting, onSubmit }: {
 }) => {
   const seed = (i?: SimpleMaster | null): FormValues => ({ name: i?.name ?? '', code: i?.code ?? '', isActive: i?.isActive ?? true });
   const [form, setForm] = useState<FormValues>(seed(item));
-  const [seedId, setSeedId] = useState<string | undefined>('init');
-  if (open && (item?.id ?? 'new') !== seedId) { setSeedId(item?.id ?? 'new'); setForm(seed(item)); }
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -119,7 +117,7 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode, perm
         {!isLoading && !isError && rows.length > 0 && <div className="px-4 pb-4"><Pagination meta={data?.meta} page={page} onChange={setPage} /></div>}
       </SectionCard>
 
-      <FormModal open={!!form} onClose={() => setForm(null)} item={form?.item} withCode={withCode} submitting={create.isPending || update.isPending} onSubmit={handleSubmit} />
+      <FormModal key={form ? form.item?.id ?? 'new' : 'closed'} open={!!form} onClose={() => setForm(null)} item={form?.item} withCode={withCode} submitting={create.isPending || update.isPending} onSubmit={handleSubmit} />
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null), onError: (e) => notifyApiError(e) })} title={`Hapus ${title}`} message={toDelete ? `Hapus "${toDelete.name}"?` : ''} loading={remove.isPending} closeOnConfirm={false} />
     </div>
   );
@@ -130,4 +128,3 @@ export const SimpleMasterPage = ({ api, title, description, icon, withCode, perm
 
   return content;
 };
-

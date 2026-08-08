@@ -19,9 +19,6 @@ const empty = (): Partial<Lead> => ({ nama: '', nik: '', noHp: '', email: '', al
 
 export const LeadFormModal = ({ open, onClose, item, submitting, onSubmit }: Props) => {
   const [form, setForm] = useState<Partial<Lead>>(item ?? empty());
-  const [seedId, setSeedId] = useState<string | undefined>(item?.id);
-  if (open && item?.id !== seedId) { setSeedId(item?.id); setForm(item ?? empty()); }
-  if (open && !item && seedId !== undefined) { setSeedId(undefined); setForm(empty()); }
 
   const { data: sources = [], isLoading: sourcesLoading } = useLeadSourceLookup(open);
   const sumberOptions = sources.map((s) => ({ value: s.id, label: s.name, sublabel: s.code || undefined }));

@@ -80,6 +80,7 @@ const MerekPageInner = () => {
       </SectionCard>
 
       <NameFormModal
+        key={form ? form.item?.id ?? 'new' : 'closed'}
         open={!!form}
         onClose={() => setForm(null)}
         title={form?.item ? 'Edit Merek' : 'Tambah Merek'}

@@ -37,7 +37,6 @@ import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
 import { Route as AdminCrmRouteImport } from './routes/_admin/crm'
 import { Route as AdminCashflowRouteImport } from './routes/_admin/cashflow'
 import { Route as AdminBranchRouteImport } from './routes/_admin/branch'
-import { Route as AdminSplatRouteImport } from './routes/_admin/$'
 import { Route as PublicKatalogIndexRouteImport } from './routes/_public/katalog/index'
 import { Route as PublicKatalogIdRouteImport } from './routes/_public/katalog/$id'
 import { Route as AdminMasterSumberLeadRouteImport } from './routes/_admin/master.sumber-lead'
@@ -206,11 +205,6 @@ const AdminBranchRoute = AdminBranchRouteImport.update({
   path: '/branch',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSplatRoute = AdminSplatRouteImport.update({
-  id: '/$',
-  path: '/$',
-  getParentRoute: () => AdminRoute,
-} as any)
 const PublicKatalogIndexRoute = PublicKatalogIndexRouteImport.update({
   id: '/katalog/',
   path: '/katalog/',
@@ -366,7 +360,6 @@ const AdminAccessControlMenusRoute = AdminAccessControlMenusRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/login': typeof LoginRoute
-  '/$': typeof AdminSplatRoute
   '/branch': typeof AdminBranchRoute
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
@@ -424,7 +417,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/login': typeof LoginRoute
-  '/$': typeof AdminSplatRoute
   '/branch': typeof AdminBranchRoute
   '/cashflow': typeof AdminCashflowRoute
   '/crm': typeof AdminCrmRoute
@@ -484,7 +476,6 @@ export interface FileRoutesById {
   '/_admin': typeof AdminRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/login': typeof LoginRoute
-  '/_admin/$': typeof AdminSplatRoute
   '/_admin/branch': typeof AdminBranchRoute
   '/_admin/cashflow': typeof AdminCashflowRoute
   '/_admin/crm': typeof AdminCrmRoute
@@ -545,7 +536,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/$'
     | '/branch'
     | '/cashflow'
     | '/crm'
@@ -603,7 +593,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/$'
     | '/branch'
     | '/cashflow'
     | '/crm'
@@ -662,7 +651,6 @@ export interface FileRouteTypes {
     | '/_admin'
     | '/_public'
     | '/login'
-    | '/_admin/$'
     | '/_admin/branch'
     | '/_admin/cashflow'
     | '/_admin/crm'
@@ -923,13 +911,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBranchRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/$': {
-      id: '/_admin/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof AdminSplatRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/_public/katalog/': {
       id: '/_public/katalog/'
       path: '/katalog'
@@ -1137,7 +1118,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
-  AdminSplatRoute: typeof AdminSplatRoute
   AdminBranchRoute: typeof AdminBranchRoute
   AdminCashflowRoute: typeof AdminCashflowRoute
   AdminCrmRoute: typeof AdminCrmRoute
@@ -1189,7 +1169,6 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminSplatRoute: AdminSplatRoute,
   AdminBranchRoute: AdminBranchRoute,
   AdminCashflowRoute: AdminCashflowRoute,
   AdminCrmRoute: AdminCrmRoute,

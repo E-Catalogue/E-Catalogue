@@ -18,6 +18,10 @@ export const usePublicAbout = () =>
 
 export const usePublicContactPage = () =>
   useQuery({ queryKey: ['public', 'contact-page'], queryFn: landingApi.getContactPage, staleTime: FIVE_MIN });
+export const usePublicBranches = () =>
+  useQuery({ queryKey: ['public', 'branches'], queryFn: landingApi.getBranches, staleTime: FIVE_MIN });
+export const usePublicTestimonial = (id?: string) =>
+  useQuery({ queryKey: ['public', 'testimonials', id], queryFn: () => landingApi.getTestimonial(id as string), enabled: !!id });
 
 export const usePublicCatalogPage = () =>
   useQuery({ queryKey: ['public', 'catalog-page'], queryFn: landingApi.getCatalogPage, staleTime: FIVE_MIN });

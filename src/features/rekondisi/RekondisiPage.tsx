@@ -140,7 +140,7 @@ const RekondisiPageInner = () => {
   const { data: unitLookup } = useUnits({ page: 1, limit: 100 });
   const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined, period: period || undefined, dateBasis });
 
-  const rows: Rekondisi[] = data?.data ?? [];
+  const rows: Rekondisi[] = useMemo(() => data?.data ?? [], [data?.data]);
   const units = (unitLookup?.data ?? []).filter((u) => u.statusUnit === 'INVENTORY');
   const total = data?.meta?.total ?? rows.length;
   const initialTotal = rows.filter((row) => row.seq === 1).reduce((sum, row) => sum + Number(row.total || 0), 0);

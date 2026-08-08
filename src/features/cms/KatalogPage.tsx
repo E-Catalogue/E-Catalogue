@@ -15,6 +15,7 @@ import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { formatCurrency, formatNumber } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { notifyApiError } from '@/core/api/notify';
+import { getApiErrorCode } from '@/core/api/apiError';
 import { useCmsCatalog, useCmsCatalogMutations, useCatalogPage, useUpdateCatalogPage } from './cms.hooks';
 import { UnitGalleryManager } from '@/features/units/UnitGalleryManager';
 import { useConfirmedAction } from '@/shared/components/ui/ConfirmedActionProvider';
@@ -159,8 +160,8 @@ export const KatalogPage = () => {
     m.publish.mutate(
       { id: u.id, body: { isPublished: !u.isPublished } },
       {
-        onError: (error: any) => {
-          if (error?.response?.data?.error?.code === 'UNIT_PRICING_NOT_FINALIZED') {
+        onError: (error: unknown) => {
+          if (getApiErrorCode(error) === 'UNIT_PRICING_NOT_FINALIZED') {
             setUnfinalizedUnit(u);
           } else {
             notifyApiError(error);
@@ -178,8 +179,8 @@ export const KatalogPage = () => {
     m.patchFeatured.mutate(
       { id: u.id, isFeatured: !u.isFeatured },
       {
-        onError: (error: any) => {
-          if (error?.response?.data?.error?.code === 'UNIT_PRICING_NOT_FINALIZED') {
+        onError: (error: unknown) => {
+          if (getApiErrorCode(error) === 'UNIT_PRICING_NOT_FINALIZED') {
             setUnfinalizedUnit(u);
           } else {
             notifyApiError(error);

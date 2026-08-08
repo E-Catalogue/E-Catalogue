@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Search, SlidersHorizontal, X, Car, RotateCcw, Loader2 } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { PublicHeader } from './PublicHeader';
@@ -39,10 +39,11 @@ const FilterGroup = ({ label, children }: { label: string; children: React.React
 
 export const KatalogPage = () => {
   const navigate = useNavigate();
+  const routeSearch = useSearch({ from: '/_public/katalog/' });
   const { data: pageData } = usePublicCatalogPage();
   const { data: brands } = usePublicCatalogBrands();
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(routeSearch.q ?? '');
   const [brand, setBrand] = useState('');            // brand id, '' = semua
   const [trans, setTrans] = useState<PublicTransmisi | ''>('');
   const [fuel, setFuel] = useState('');

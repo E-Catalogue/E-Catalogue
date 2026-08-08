@@ -24,13 +24,6 @@ interface Props {
 export const NameFormModal = ({ open, onClose, title, subtitle, icon, label = 'Nama', initial, submitting, onSubmit }: Props) => {
   const [name, setName] = useState(initial?.name ?? '');
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
-  const [seed, setSeed] = useState<NameActiveValues | null | undefined>(initial);
-
-  if (open && initial !== seed) {
-    setSeed(initial);
-    setName(initial?.name ?? '');
-    setIsActive(initial?.isActive ?? true);
-  }
 
   const submit = (e: FormEvent) => {
     e.preventDefault();

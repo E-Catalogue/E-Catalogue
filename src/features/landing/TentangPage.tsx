@@ -1,13 +1,11 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
 import { CustomerLoader, CustomerServerError, EmptyCmsState } from './CustomerStates';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { usePublicAbout, usePublicSiteSettings } from './landing.hooks';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
-
-const HERO_FALLBACK = 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?q=80&w=1400&auto=format&fit=crop';
 
 export const TentangPage = () => {
   const { data: about, isLoading, isError, refetch } = usePublicAbout();
@@ -20,7 +18,7 @@ export const TentangPage = () => {
   if (!about || Object.keys(about).length === 0 || (!about.hero && !about.values)) return <EmptyCmsState title="Halaman Tentang Sedang Dipersiapkan" />;
 
   const hero = about?.hero;
-  const heroImg = cmsImageUrl('page', hero?.imageFilename) ?? HERO_FALLBACK;
+  const heroImg = cmsImageUrl('page', hero?.imageFilename);
   const vm = about?.visiMisi;
 
   return (
@@ -37,11 +35,13 @@ export const TentangPage = () => {
               <Link to={resolve(hero.ctaLink)} className="inline-flex items-center gap-2 mt-6 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark transition-colors">{hero.ctaLabel} <ArrowRight size={16} /></Link>
             </div>
             <div className="relative animate-scale-in">
-              <img src={heroImg} alt={hero.title} className="rounded-[2.5rem] shadow-card-hover w-full object-cover aspect-[4/3]" />
+              {heroImg ? <img src={heroImg} alt={hero.title} className="rounded-[2.5rem] shadow-card-hover w-full object-cover aspect-[4/3]" /> : <div className="aspect-[4/3] rounded-[2.5rem] bg-gradient-to-br from-primary-light via-surface to-background border border-border grid place-items-center"><Ic name="building-2" size={72} className="text-primary/30" /></div>}
             </div>
           </div>
         </section>
       )}
+
+      {about.story?.isVisible !== false && about.story && <section className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 grid gap-10 lg:grid-cols-[.85fr_1.15fr] items-center"><Reveal>{about.story.imageFilename ? <img src={cmsImageUrl('page', about.story.imageFilename) ?? ''} alt={about.story.title} className="aspect-[4/3] w-full rounded-[2.5rem] object-cover shadow-card" /> : <div className="aspect-[4/3] rounded-[2.5rem] border border-border bg-surface grid place-items-center"><Ic name="handshake" size={64} className="text-primary/25" /></div>}</Reveal><Reveal delay={100}><p className="text-[12px] font-extrabold uppercase tracking-[.16em] text-primary">{about.story.eyebrow}</p><h2 className="mt-3 text-3xl font-extrabold leading-tight text-ink">{about.story.title}</h2><div className="mt-5 space-y-4">{about.story.paragraphs.map((paragraph) => <p key={paragraph} className="text-[14px] font-medium leading-7 text-muted">{paragraph}</p>)}</div></Reveal></section>}
 
       {/* Stats */}
       {about?.stats?.isVisible !== false && about?.stats?.items?.length ? (
@@ -65,12 +65,12 @@ export const TentangPage = () => {
             <Reveal className="bg-background rounded-2xl border border-border p-7">
               <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow mb-4"><Ic name={vm.visiIcon} size={24} /></div>
               <h2 className="text-xl font-extrabold text-ink">{vm.visiTitle}</h2>
-              <p className="text-muted font-medium mt-2 leading-relaxed">{vm.visi}</p>
+              <ul className="mt-4 space-y-3">{vm.visiItems.map((item) => <li key={item} className="flex gap-2.5 text-[13px] font-medium leading-6 text-muted"><CheckCircle2 size={17} className="mt-1 shrink-0 text-primary" />{item}</li>)}</ul>
             </Reveal>
             <Reveal delay={100} className="bg-background rounded-2xl border border-border p-7">
               <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow mb-4"><Ic name={vm.misiIcon} size={24} /></div>
               <h2 className="text-xl font-extrabold text-ink">{vm.misiTitle}</h2>
-              <p className="text-muted font-medium mt-2 leading-relaxed">{vm.misi}</p>
+              <ul className="mt-4 space-y-3">{vm.misiItems.map((item) => <li key={item} className="flex gap-2.5 text-[13px] font-medium leading-6 text-muted"><CheckCircle2 size={17} className="mt-1 shrink-0 text-primary" />{item}</li>)}</ul>
             </Reveal>
           </div>
         </section>
@@ -94,6 +94,10 @@ export const TentangPage = () => {
           </Reveal>
         </section>
       ) : null}
+
+      {about.standards?.isVisible !== false && about.standards?.items?.length ? <section className="bg-ink text-white"><div className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="max-w-xl mb-9"><p className="text-[12px] font-extrabold uppercase tracking-[.16em] text-primary-light">{about.standards.eyebrow}</p><h2 className="mt-2 text-2xl md:text-3xl font-extrabold">{about.standards.title}</h2></Reveal><div className="grid gap-4 md:grid-cols-3">{about.standards.items.map((item) => <Reveal key={item.title} className="rounded-2xl border border-white/10 bg-white/5 p-6"><Ic name={item.icon} size={24} className="text-primary-light" /><h3 className="mt-4 font-extrabold">{item.title}</h3><p className="mt-2 text-[13px] font-medium leading-6 text-white/65">{item.desc}</p></Reveal>)}</div></div></section> : null}
+
+      {about.journey?.isVisible !== false && about.journey?.items?.length ? <section className="max-w-5xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="text-center mb-10"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-primary">{about.journey.eyebrow}</p><h2 className="mt-2 text-3xl font-extrabold text-ink">{about.journey.title}</h2></Reveal><div className="relative space-y-4 before:absolute before:left-[3.15rem] before:top-5 before:bottom-5 before:w-px before:bg-border">{about.journey.items.map((item) => <div key={`${item.year}-${item.title}`} className="relative grid grid-cols-[6.5rem_1fr] gap-4"><span className="z-10 self-start rounded-full border border-primary/20 bg-primary-light px-3 py-2 text-center text-xs font-extrabold text-primary">{item.year}</span><div className="rounded-2xl border border-border bg-surface p-5"><h3 className="font-extrabold text-ink">{item.title}</h3><p className="mt-1 text-[13px] font-medium leading-6 text-muted">{item.desc}</p></div></div>)}</div></section> : null}
 
       {/* CTA */}
       {about?.cta?.isVisible !== false && about?.cta && (

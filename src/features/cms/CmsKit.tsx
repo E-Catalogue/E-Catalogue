@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Plus, Trash2, Eye, EyeOff, Save, GripVertical, Sparkles } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
@@ -38,8 +38,36 @@ export const TextArea = ({ label, value, onChange, rows = 3, placeholder }: {
 /** Baris atas kartu section: ikon + judul + toggle tampil + tombol simpan. */
 export const SectionBar = ({ title, hint, icon, isVisible, onToggleVisible, onSave, saving }: {
   title: string; hint?: string; icon?: ReactNode; isVisible?: boolean; onToggleVisible?: () => void; onSave: () => void; saving?: boolean;
-}) => (
-  <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-divider">
+}) => {
+  const barRef = useRef<HTMLDivElement>(null);
+  const wasSaving = useRef(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    const card = barRef.current?.parentElement;
+    if (!card) return;
+    const markDirty = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('[data-section-save]')) return;
+      if (event.type === 'click' && !target?.closest('button')) return;
+      setIsDirty(true);
+    };
+    card.addEventListener('input', markDirty);
+    card.addEventListener('change', markDirty);
+    card.addEventListener('click', markDirty);
+    return () => {
+      card.removeEventListener('input', markDirty);
+      card.removeEventListener('change', markDirty);
+      card.removeEventListener('click', markDirty);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (wasSaving.current && !saving) queueMicrotask(() => setIsDirty(false));
+    wasSaving.current = !!saving;
+  }, [saving]);
+
+  return <div ref={barRef} className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-divider">
     <div className="flex items-center gap-3 min-w-0">
       {icon && <span className="w-9 h-9 rounded-xl bg-primary-light text-primary flex items-center justify-center shrink-0">{icon}</span>}
       <div className="min-w-0">
@@ -48,6 +76,7 @@ export const SectionBar = ({ title, hint, icon, isVisible, onToggleVisible, onSa
       </div>
     </div>
     <div className="flex items-center gap-2">
+      {isDirty && <span className="rounded-full bg-accent-amber/10 px-2.5 py-1 text-[10px] font-extrabold text-accent-amber">Belum disimpan</span>}
       {onToggleVisible && (
         <button onClick={onToggleVisible}
           className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-[12px] font-bold border transition-colors ${
@@ -56,10 +85,10 @@ export const SectionBar = ({ title, hint, icon, isVisible, onToggleVisible, onSa
           {isVisible ? <Eye size={14} /> : <EyeOff size={14} />} {isVisible ? 'Tampil' : 'Disembunyikan'}
         </button>
       )}
-      <Button icon={<Save size={15} />} onClick={onSave} loading={saving}>{saving ? 'Menyimpan…' : 'Simpan'}</Button>
+      <span data-section-save><Button icon={<Save size={15} />} onClick={onSave} loading={saving}>{saving ? 'Menyimpan…' : 'Simpan'}</Button></span>
     </div>
-  </div>
-);
+  </div>;
+};
 
 /** Editor daftar item {icon,title,desc} (why-us, how-it-works, values). */
 export const IconItemsEditor = ({ items, onChange, itemLabel = 'Item' }: {

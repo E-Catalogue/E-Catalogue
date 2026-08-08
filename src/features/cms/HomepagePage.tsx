@@ -1,8 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { LayoutTemplate, Tags, ShieldCheck, ListChecks, Star, Quote, Megaphone, Loader2, ExternalLink, Search, Check } from 'lucide-react';
+import { LayoutTemplate, Tags, ShieldCheck, ListChecks, Star, Quote, Megaphone, Loader2, ExternalLink, Search, Check, MapPin, CircleHelp, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/Field';
+import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { grantMutationConfirmationLease } from '@/core/api/mutationConfirmation';
 import { cmsImageUrl } from './cms.api';
 import { useSectionForm, useUploadHeroImage, useHomepageLookup } from './cms.hooks';
@@ -11,7 +12,7 @@ import { ImageUpload } from './ImageUpload';
 import { SectionBar, SectionCardShell, TextArea, IconItemsEditor, AutoValueField, ModeSelect, CmsTabs } from './CmsKit';
 import type {
   HomepageHero, HomepageBrands, HomepageWhyUs, HomepageHowItWorks,
-  HomepageFeatured, HomepageTestimonialsHeader, HomepageCta,
+  HomepageFeatured, HomepageTestimonialsHeader, HomepageLocations, HomepageFaq, HomepageCta,
 } from './cms.types';
 
 const Spinner = () => <div className="flex items-center justify-center py-16 text-muted"><Loader2 size={22} className="animate-spin" /></div>;
@@ -76,6 +77,7 @@ const HeroEditor = () => {
       return { imageFilename: r.filename } as Partial<HomepageHero>;
     },
   });
+  const { data: lookup } = useHomepageLookup(!!form);
   if (isLoading || !form) return <Spinner />;
   const setStat = (i: number, k: 'value' | 'label', v: string) => patch({ stats: form.stats.map((s, idx) => (idx === i ? { ...s, [k]: v } : s)) });
   return (
@@ -86,6 +88,9 @@ const HeroEditor = () => {
         <TextField label="Judul (pakai <em>…</em>)" value={form.titleHtml} onChange={(e) => patch({ titleHtml: e.target.value })} />
       </div>
       <TextArea label="Subtitle" value={form.subtitle} onChange={(v) => patch({ subtitle: v })} />
+      <div className="overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary-light to-surface p-5"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-primary">Preview hero</p><h4 className="mt-2 text-2xl font-extrabold leading-tight text-ink">{form.titleHtml.replace(/<\/?em>/g, '') || 'Judul hero'}</h4><p className="mt-2 max-w-2xl text-[12px] font-medium leading-5 text-muted">{form.subtitle || 'Deskripsi showroom akan tampil di sini.'}</p></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><TextField label="Placeholder Pencarian" value={form.searchPlaceholder ?? ''} onChange={(e) => patch({ searchPlaceholder: e.target.value })} /><TextField label="Label Tombol Pencarian" value={form.searchButtonLabel ?? ''} onChange={(e) => patch({ searchButtonLabel: e.target.value })} /></div>
+      <SearchableSelect label="Cabang Utama Hero" value={form.primaryBranchId ?? ''} onChange={(value) => patch({ primaryBranchId: value || null })} clearable options={(lookup?.branches ?? []).map((branch) => ({ value: branch.id, label: branch.nama, sublabel: `${branch.lokasi} · ${branch.isPublic ? 'Tayang' : 'Belum publik'}` }))} placeholder="Gunakan cabang publik pertama" searchPlaceholder="Cari cabang..." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField label="CTA Utama — Label" value={form.primaryCtaLabel} onChange={(e) => patch({ primaryCtaLabel: e.target.value })} />
         <TextField label="CTA Utama — Link" value={form.primaryCtaLink} onChange={(e) => patch({ primaryCtaLink: e.target.value })} />
@@ -117,6 +122,20 @@ const HeroEditor = () => {
       </div>
     </SectionCardShell>
   );
+};
+
+const LocationsEditor = () => {
+  const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageLocations>('homepage', 'locations');
+  if (isLoading || !form) return <Spinner />;
+  return <SectionCardShell><SectionBar title="Lokasi Showroom" icon={<MapPin size={17} />} hint="Data cabang diambil dari Master Cabang yang ditandai publik" isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} /><div className="grid md:grid-cols-2 gap-4"><TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} /><TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} /></div><TextArea label="Subtitle" value={form.subtitle} onChange={(subtitle) => patch({ subtitle })} /><TextField label="Jumlah Cabang" type="number" value={String(form.limit)} onChange={(e) => patch({ limit: Number(e.target.value) })} /></SectionCardShell>;
+};
+
+const FaqEditor = () => {
+  const { form, patch, save, toggleVisible, saving, isLoading } = useSectionForm<HomepageFaq>('homepage', 'faq');
+  if (isLoading || !form) return <Spinner />;
+  const items = form.items ?? [];
+  const change = (index: number, key: 'question' | 'answer', value: string) => patch({ items: items.map((item, i) => i === index ? { ...item, [key]: value } : item) });
+  return <SectionCardShell><SectionBar title="FAQ Beranda" icon={<CircleHelp size={17} />} isVisible={form.isVisible} onToggleVisible={toggleVisible} onSave={save} saving={saving} /><div className="grid md:grid-cols-2 gap-4"><TextField label="Eyebrow" value={form.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} /><TextField label="Judul" value={form.title} onChange={(e) => patch({ title: e.target.value })} /></div><div className="space-y-3">{items.map((item, index) => <div key={index} className="rounded-2xl border border-border bg-surface-soft p-4"><div className="flex justify-between gap-3"><p className="text-[11px] font-extrabold uppercase text-muted">Pertanyaan {index + 1}</p><button type="button" onClick={() => patch({ items: items.filter((_, i) => i !== index) })} className="text-semantic-error"><Trash2 size={15} /></button></div><div className="mt-3 space-y-3"><TextField label="Pertanyaan" value={item.question} onChange={(e) => change(index, 'question', e.target.value)} /><TextArea label="Jawaban" value={item.answer} onChange={(value) => change(index, 'answer', value)} rows={3} /></div></div>)}<Button variant="secondary" icon={<Plus size={14} />} onClick={() => patch({ items: [...items, { question: '', answer: '' }] })}>Tambah Pertanyaan</Button></div></SectionCardShell>;
 };
 
 /* ── Brands ── */
@@ -249,6 +268,8 @@ const TABS = [
   { key: 'how-it-works', label: 'Cara Kerja', icon: <ListChecks size={14} /> },
   { key: 'featured', label: 'Unit Unggulan', icon: <Star size={14} /> },
   { key: 'testimonials', label: 'Testimoni', icon: <Quote size={14} /> },
+  { key: 'locations', label: 'Lokasi', icon: <MapPin size={14} /> },
+  { key: 'faq', label: 'FAQ', icon: <CircleHelp size={14} /> },
   { key: 'cta', label: 'CTA', icon: <Megaphone size={14} /> },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
@@ -268,6 +289,8 @@ export const HomepagePage = () => {
       {tab === 'how-it-works' && <IconListSection section="how-it-works" title="Cara Kerja" hint="Langkah-langkah" field="steps" icon={<ListChecks size={17} />} />}
       {tab === 'featured' && <FeaturedEditor />}
       {tab === 'testimonials' && <TestimonialsHeaderEditor />}
+      {tab === 'locations' && <LocationsEditor />}
+      {tab === 'faq' && <FaqEditor />}
       {tab === 'cta' && <CtaEditor />}
     </div>
   );

@@ -219,7 +219,6 @@ const Locked = ({ text }: { text: string }) => (
 
 export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   const [form, setForm] = useState<UnitFormState>(() => toForm(unit));
-  const [seedId, setSeedId] = useState<string | null | undefined>('init');
   const [cyclePolicyError, setCyclePolicyError] = useState('');
   const [step, setStep] = useState(0);
   const [createdUnit, setCreatedUnit] = useState<Unit | null>(null);
@@ -230,14 +229,6 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
   // dokumen, perlengkapan, akun kas, investor+modal, pricing) diambil dari SATU endpoint
   // `/units/lookups`. Tidak lagi menggabung CRUD master (`/mereks`, `/dokumens`, dst) + finance lookup.
   const { data: lookupsData, isLoading: lookupsLoading } = useUnitLookups(open);
-
-  const currentSeed = unit?.id ?? null;
-  if (open && seedId !== currentSeed) {
-    setSeedId(currentSeed);
-    setForm(toForm(unit));
-    setStep(0);
-    setCreatedUnit(null);
-  }
 
   const persistedUnit = unit ?? createdUnit;
   const isEdit = !!unit;
@@ -336,7 +327,7 @@ export const UnitFormModal = ({ open, onClose, unit }: UnitFormModalProps) => {
         : { fundingSource: 'COMPANY_OWNED' },
     };
     if (unit) {
-      const unitPayload: Partial<UnitFormData> & { funding?: any } = { ...payload };
+      const unitPayload: Partial<UnitFormData> = { ...payload };
       delete unitPayload.leasingOffers;
       if (!fundingChanged) {
         delete unitPayload.funding;

@@ -111,19 +111,19 @@ export const KatalogDetailPage = () => {
             </div>
             <div className="absolute top-3 right-3 flex items-center gap-2">
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm ${
-                d.statusKatalog === 'SOLD' || (d as any).statusUnit === 'SOLD' || (d as any).isSold
+                d.statusKatalog === 'SOLD' || d.statusUnit === 'SOLD' || d.isSold
                   ? 'bg-semantic-error text-white'
-                  : (d as any).statusUnit === 'INVENTORY'
+                  : d.statusUnit === 'INVENTORY'
                   ? 'bg-accent-blue text-white'
-                  : (d as any).statusUnit === 'HOLD' || d.statusKatalog === 'BOOKED'
+                  : d.statusUnit === 'HOLD' || d.statusKatalog === 'BOOKED'
                   ? 'bg-accent-amber text-white'
                   : 'bg-accent-green text-white'
               }`}>
-                {d.statusKatalog === 'SOLD' || (d as any).statusUnit === 'SOLD' || (d as any).isSold
+                {d.statusKatalog === 'SOLD' || d.statusUnit === 'SOLD' || d.isSold
                   ? 'Terjual'
-                  : (d as any).statusUnit === 'INVENTORY'
+                  : d.statusUnit === 'INVENTORY'
                   ? 'Inventory'
-                  : (d as any).statusUnit === 'HOLD'
+                  : d.statusUnit === 'HOLD'
                   ? 'Hold'
                   : d.statusKatalog === 'BOOKED'
                   ? 'Booked'
@@ -171,7 +171,7 @@ export const KatalogDetailPage = () => {
             <Spec icon={Palette} label="Warna" value={d.warna || '-'} />
           </div>
           <div className="flex flex-col gap-2.5">
-            {d.statusKatalog === 'SOLD' || (d as any).statusUnit === 'SOLD' || (d as any).isSold ? (
+            {d.statusKatalog === 'SOLD' || d.statusUnit === 'SOLD' || d.isSold ? (
               <div className="flex items-center justify-center gap-2 rounded-xl bg-semantic-error/10 border border-semantic-error/20 text-semantic-error font-bold text-[14px] px-5 py-3.5 w-full">
                 <CheckCircle2 size={17} className="text-semantic-error" /> Unit Ini Sudah Terjual (Sold)
               </div>

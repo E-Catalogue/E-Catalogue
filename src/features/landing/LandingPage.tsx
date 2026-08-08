@@ -1,6 +1,7 @@
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, HandCoins, Star, Quote } from 'lucide-react';
+import { ArrowRight, Search, HandCoins, Star, Quote, MapPin, Clock3, ShieldCheck, ChevronDown } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
@@ -10,16 +11,20 @@ import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicHomepage, usePublicSiteSettings } from './landing.hooks';
 import { heroContainer, fadeUpItem, staggerContainer } from './landing.motion';
 import type { CatalogCard } from './public.types';
-
-const HERO_FALLBACK_IMG = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1400&auto=format&fit=crop';
+import { BranchCard, ShowroomMap } from './ShowroomMap';
+import { TestimonialDetailModal } from './TestimonialDetailModal';
+import { formatCurrency } from '@/core/utils/format';
 
 export const LandingPage = () => {
   const { data: hp, isLoading, isError, refetch } = usePublicHomepage();
   const { data: site } = usePublicSiteSettings();
   const navigate = useNavigate();
+  const [heroSearch, setHeroSearch] = useState('');
+  const [testimonialId, setTestimonialId] = useState<string | null>(null);
   const openDetail = (u: CatalogCard) => navigate({ to: '/katalog/$id', params: { id: u.id } });
-  const waUrl = buildWhatsAppUrl(site?.whatsappNumber, waMessages.creditConsult(site?.companyName));
+  const waUrl = buildWhatsAppUrl(site?.whatsappNumber, waMessages.generalContact(site?.companyName));
   const resolveLink = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
+  const submitHeroSearch = (event: FormEvent) => { event.preventDefault(); navigate({ to: '/katalog', search: { q: heroSearch.trim() } }); };
 
   // Tampilkan hanya setelah data siap — hindari render setengah jadi.
   if (isLoading) return <CustomerLoader />;
@@ -50,7 +55,7 @@ export const LandingPage = () => {
   }
 
   const hero = hp?.hero;
-  const heroImg = cmsImageUrl('page', hero?.imageFilename) ?? HERO_FALLBACK_IMG;
+  const heroImg = hero?.spotlightUnit?.image?.filename ? cmsImageUrl('unit', hero.spotlightUnit.image.filename) : cmsImageUrl('page', hero?.imageFilename);
   const fc = hero?.floatingCard;
 
   return (
@@ -77,13 +82,14 @@ export const LandingPage = () => {
                 })}
               </motion.h1>
               <motion.p variants={fadeUpItem} className="text-muted font-medium mt-4 text-[15px] leading-relaxed max-w-md">{hero.subtitle}</motion.p>
+              {hero.primaryBranch && <motion.div variants={fadeUpItem} className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-bold text-ink-soft"><span className="inline-flex items-center gap-1.5"><MapPin size={14} className="text-primary" />{hero.primaryBranch.nama} · {hero.primaryBranch.lokasi}</span>{hero.primaryBranch.businessHours && <span className="inline-flex items-center gap-1.5"><Clock3 size={14} className="text-primary" />{hero.primaryBranch.businessHours}</span>}</motion.div>}
+              <motion.form variants={fadeUpItem} onSubmit={submitHeroSearch} className="mt-6 flex max-w-xl gap-2 rounded-2xl border border-border bg-surface p-2 shadow-card">
+                <div className="relative flex-1"><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input value={heroSearch} onChange={(e) => setHeroSearch(e.target.value)} placeholder={hero.searchPlaceholder || 'Cari unit yang Anda inginkan'} className="h-11 w-full bg-transparent pl-10 pr-3 text-[13px] font-semibold text-ink outline-none" /></div>
+                <button className="rounded-xl bg-primary px-4 text-[12px] font-extrabold text-white transition-transform hover:scale-[1.02]">{hero.searchButtonLabel || 'Cari Unit'}</button>
+              </motion.form>
               <motion.div variants={fadeUpItem} className="flex flex-wrap gap-3 mt-6">
-                <Link to={resolveLink(hero.primaryCtaLink)} className="group inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark hover:scale-[1.03] active:scale-[0.97] transition-all">
-                  <Search size={17} /> {hero.primaryCtaLabel} <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
-                </Link>
-                <Link to={resolveLink(hero.secondaryCtaLink)} className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary hover:scale-[1.03] active:scale-[0.97] transition-all">
-                  <HandCoins size={17} /> {hero.secondaryCtaLabel}
-                </Link>
+                {hero.primaryCtaLink === 'whatsapp' ? <a href={waUrl} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark hover:scale-[1.03] active:scale-[0.97] transition-all"><Search size={17} /> {hero.primaryCtaLabel} <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" /></a> : <Link to={resolveLink(hero.primaryCtaLink)} className="group inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark hover:scale-[1.03] active:scale-[0.97] transition-all"><Search size={17} /> {hero.primaryCtaLabel} <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" /></Link>}
+                {hero.secondaryCtaLink === 'whatsapp' ? <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary hover:scale-[1.03] active:scale-[0.97] transition-all"><HandCoins size={17} /> {hero.secondaryCtaLabel}</a> : <Link to={resolveLink(hero.secondaryCtaLink)} className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary hover:scale-[1.03] active:scale-[0.97] transition-all"><HandCoins size={17} /> {hero.secondaryCtaLabel}</Link>}
               </motion.div>
               <motion.div variants={fadeUpItem} className="flex gap-8 mt-9">
                 {hero.stats.map((s) => (
@@ -102,8 +108,9 @@ export const LandingPage = () => {
               className="relative"
             >
               <div className="absolute -inset-4 bg-gradient-to-tr from-primary/25 to-transparent rounded-[3rem] blur-2xl animate-breathe" />
-              <div className="animate-bob-slow">
-                <img src={heroImg} alt={hero.badgeText} className="relative rounded-[2.5rem] shadow-card-hover w-full object-cover aspect-[4/3]" />
+              <div className="animate-bob-slow relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-ink shadow-card-hover aspect-[4/3]">
+                {heroImg ? <img src={heroImg} alt={hero.spotlightUnit?.name || hero.badgeText} className="h-full w-full object-cover opacity-90" /> : <div className="grid h-full place-items-center bg-gradient-to-br from-ink to-ink-soft text-white"><ShieldCheck size={64} className="opacity-30" /></div>}
+                {hero.spotlightUnit && <button onClick={() => openDetail(hero.spotlightUnit!)} className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-ink/70 p-4 text-left text-white backdrop-blur-md transition-colors hover:bg-ink/85"><span className="text-[10px] font-extrabold uppercase tracking-[.18em] text-white/65">Sorotan showroom</span><span className="mt-1 flex items-end justify-between gap-3"><span><strong className="block text-base">{hero.spotlightUnit.name}</strong><span className="text-[11px] text-white/70">{hero.spotlightUnit.tahun} · {hero.spotlightUnit.warna}</span></span><strong className="text-sm">{formatCurrency(hero.spotlightUnit.harga)}</strong></span></button>}
               </div>
               {fc && (
                 <motion.div
@@ -207,6 +214,8 @@ export const LandingPage = () => {
       ) : null}
 
       {/* TESTIMONIALS */}
+      {hp?.locations?.isVisible !== false && hp?.locations?.items?.length ? <section className="bg-surface border-y border-border"><div className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="max-w-2xl mb-8"><p className="text-primary font-bold text-[13px] uppercase tracking-wide">{hp.locations.eyebrow}</p><h2 className="mt-2 text-2xl md:text-3xl font-extrabold text-ink">{hp.locations.title}</h2><p className="mt-2 text-muted font-medium">{hp.locations.subtitle}</p></Reveal><ShowroomMap branches={hp.locations.items} className="h-[390px]" /><div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{hp.locations.items.map((branch) => <BranchCard key={branch.id} branch={branch} compact />)}</div></div></section> : null}
+
       {hp?.testimonials?.isVisible !== false && hp?.testimonials?.items?.length ? (
         <section className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
           <Reveal className="text-center max-w-xl mx-auto mb-10">
@@ -216,7 +225,7 @@ export const LandingPage = () => {
           </Reveal>
           <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {hp.testimonials.items.map((t) => (
-              <motion.div key={t.id} variants={fadeUpItem} whileHover={{ y: -6 }} className="group bg-surface rounded-2xl border border-border p-6 hover:shadow-card hover:border-primary/30 transition-colors">
+              <motion.button type="button" onClick={() => setTestimonialId(t.id)} key={t.id} variants={fadeUpItem} whileHover={{ y: -6 }} className="group bg-surface rounded-2xl border border-border p-6 hover:shadow-card hover:border-primary/30 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-primary">
                 <Quote size={28} className="text-primary/30 group-hover:text-primary/50 transition-colors" />
                 <div className="flex gap-0.5 mt-3">
                   {Array.from({ length: t.rating }).map((_, i) => <Star key={i} size={15} className="fill-accent-amber text-accent-amber" />)}
@@ -233,11 +242,14 @@ export const LandingPage = () => {
                     {t.role && <p className="text-[11px] text-muted font-semibold">{t.role}</p>}
                   </div>
                 </div>
-              </motion.div>
+                <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-extrabold text-primary">Baca cerita lengkap <ArrowRight size={13} /></span>
+              </motion.button>
             ))}
           </motion.div>
         </section>
       ) : null}
+
+      {hp?.faq?.isVisible !== false && hp?.faq?.items?.length ? <section className="max-w-4xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="text-center mb-8"><p className="text-primary font-bold text-[13px] uppercase tracking-wide">{hp.faq.eyebrow}</p><h2 className="mt-2 text-2xl md:text-3xl font-extrabold text-ink">{hp.faq.title}</h2></Reveal><div className="space-y-3">{hp.faq.items.map((item) => <details key={item.question} className="group rounded-2xl border border-border bg-surface p-5 open:border-primary/30 open:shadow-card"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-extrabold text-ink">{item.question}<ChevronDown size={18} className="text-primary transition-transform group-open:rotate-180" /></summary><p className="mt-3 pr-8 text-[13px] font-medium leading-6 text-muted">{item.answer}</p></details>)}</div></section> : null}
 
       {/* CTA */}
       {hp?.cta?.isVisible !== false && hp?.cta && (
@@ -264,6 +276,7 @@ export const LandingPage = () => {
           </Reveal>
         </section>
       )}
+      <TestimonialDetailModal id={testimonialId} onClose={() => setTestimonialId(null)} />
     </>
   );
 };

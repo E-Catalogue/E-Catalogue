@@ -5,7 +5,7 @@
 > Daftar task actionable turunan dari [PRD.md](PRD.md) & [SRS](SRS_GM_Mobilindo.md).
 > Status: `[x]` selesai · `[~]` sebagian · `[ ]` belum. Prioritas: 🔴 tinggi · 🟠 sedang · 🟢 rendah.
 >
-> **Terakhir diperbarui:** 3 Agustus 2026 (rev 26 — revamp Inventori Tabel/Kartu, filter status multi-select, anchored dropdown portal, format Rupiah langsung, penawaran leasing per Unit, gate Ready Stock, dan share detail internal ke WhatsApp. Implementasi mengikuti `.prd/backend_inventory_leasing_whatsapp_20260803.md`; QA E2E menunggu backend di laptop tujuan.)
+> **Terakhir diperbarui:** 8 Agustus 2026 (rev 27 — Live Showroom, CMS konten Beranda/Tentang/Kontak, cabang publik + peta OSM, testimoni serah-terima, katalog tiga status, 404 publik, template WhatsApp umum, dan standardisasi lifecycle form. Implementasi mengikuti `.prd/backend_public_cms_content_revamp_20260808.md`; QA E2E menunggu backend di laptop tujuan.)
 >
 > rev 24 — **revamp CMS/Public terimplementasi end-to-end**: CRUD/toggle/reorder menu publik, Unit Unggulan, logo rounded, dan ikon submenu selesai.
 >
@@ -23,7 +23,21 @@
 
 ---
 
-## ⚠️ Status eksekusi saat ini (3 Agustus 2026)
+## ⚠️ Status eksekusi saat ini (8 Agustus 2026)
+
+### ✅ Revamp CMS dan Website Publik Showroom (rev 27)
+
+- [x] Cabang memiliki kontrol tayang publik, urutan, deskripsi, jam operasional, koordinat, foto, dan endpoint agregat publik.
+- [x] Beranda memakai konsep Live Showroom: identitas, pencarian katalog, lokasi/jam buka, unit unggulan aktual, trust content, testimoni detail, FAQ, dan CTA.
+- [x] Tentang dan Kontak diperkaya; konten bisnis dan repeatable arrays dikelola per section melalui CMS.
+- [x] Peta multi-cabang memakai Leaflet + OpenStreetMap tanpa API key atau perubahan env.
+- [x] Testimoni terhubung ke unit SOLD, memiliki metadata/foto serah-terima, draft/publish gate, dan detail publik dengan plat tersamarkan.
+- [x] Katalog publik menerima unit aktif-terpublikasi berstatus Ready Stock, Hold, atau Sold.
+- [x] URL publik tidak dikenal memakai halaman 404 publik tanpa redirect/petunjuk login.
+- [x] Template direct WhatsApp publik hanya berisi konsultasi umum/unit tanpa hasil simulasi kredit.
+- [x] Lifecycle modal create/edit diaudit: open-cycle baru bersih, error mempertahankan input, dan wizard Unit bertahan sampai flow selesai.
+- [x] Test backend/frontend terkait kontrak konten, testimoni, katalog, lifecycle form, dan WhatsApp ditambahkan.
+- [ ] Migration/generate/restart backend serta QA browser E2E dijalankan pada laptop backend tujuan.
 
 ### ✅ Revamp Inventori, Leasing Unit, dan WhatsApp (rev 26)
 

@@ -34,10 +34,10 @@ export const useUnitModals = () => {
   const modals = (
     <>
       <UnitDetailModal open={!!detail} unit={detail?.unit ?? null} salesView={detail?.salesView} onClose={() => setDetail(null)} onEdit={openEdit} />
-      <UnitFormModal open={!!form} unit={form?.unit} onClose={() => setForm(null)} />
+      <UnitFormModal key={form ? form.unit?.id ?? 'new' : 'closed'} open={!!form} unit={form?.unit} onClose={() => setForm(null)} />
       {leasing && <UnitLeasingModal key={leasing.id} open unit={leasing} onClose={() => setLeasing(null)} />}
-      <ArchiveUnitModal open={!!toArchive} unit={toArchive} onClose={() => setToArchive(null)} />
-      <CancelPurchaseModal open={!!toCancelPurchase} unit={toCancelPurchase} onClose={() => setToCancelPurchase(null)} />
+      <ArchiveUnitModal key={toArchive?.id ?? 'closed'} open={!!toArchive} unit={toArchive} onClose={() => setToArchive(null)} />
+      <CancelPurchaseModal key={toCancelPurchase?.id ?? 'closed'} open={!!toCancelPurchase} unit={toCancelPurchase} onClose={() => setToCancelPurchase(null)} />
     </>
   );
 

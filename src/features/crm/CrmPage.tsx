@@ -146,6 +146,7 @@ const CrmPageInner = () => {
       </SectionCard>
 
       <LeadFormModal
+        key={form ? form.item?.id ?? 'new' : 'closed'}
         open={!!form}
         onClose={() => setForm(null)}
         item={form?.item}

@@ -6,6 +6,7 @@ import type { Unit } from './unit.types';
 import { useArchiveUnit } from './unit.hooks';
 import { unitDisplayName } from './unit.display';
 import { Archive, AlertCircle } from 'lucide-react';
+import { getApiErrorMessage } from '@/core/api/apiError';
 
 interface ArchiveUnitModalProps {
   open: boolean;
@@ -34,8 +35,8 @@ export const ArchiveUnitModal: React.FC<ArchiveUnitModalProps> = ({ open, unit, 
           setReason('');
           onClose();
         },
-        onError: (err: any) => {
-          setErrorMessage(err.response?.data?.message || err.message || 'Gagal mengarsipkan unit');
+        onError: (err: unknown) => {
+          setErrorMessage(getApiErrorMessage(err, 'Gagal mengarsipkan unit'));
         },
       }
     );
