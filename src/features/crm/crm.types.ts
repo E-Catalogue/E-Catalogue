@@ -208,11 +208,29 @@ export interface LeadOrder {
   cancelledAt?: string | null;
   cancellationReason?: OrderCancellationReason | null;
   cancellationNote?: string | null;
+  supersededByOrderId?: string | null;
+  autoCancellationSummary?: { competitorCount: number; refundCount: number; totalRefund: number };
   stageEvents?: LeadOrderStageEvent[];
   catatan?: string | null;
   totalPaid?: number;
   remainingPayment?: number;
   isPaid?: boolean;
+}
+
+export interface LeadOrderDealImpact {
+  orderId: string;
+  nomorOrder: string;
+  competitorCount: number;
+  totalRefund: number;
+  canDeal: boolean;
+  competitors: Array<{
+    id: string;
+    nomorOrder: string;
+    customer: { id: string; nama: string; noHp?: string | null };
+    refundableAmount: number;
+    cashAccounts: Array<{ id: string; name: string; code: string; isActive: boolean }>;
+  }>;
+  blockers: Array<{ code: string; message: string; orderId: string; paymentId?: string; cashAccountId?: string }>;
 }
 
 export interface LeadOrderStageEvent {

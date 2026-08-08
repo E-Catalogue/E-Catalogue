@@ -7,7 +7,7 @@ import { SelectField, TextField } from '@/shared/components/ui/Field';
 import { DateField } from '@/shared/components/ui/DateField';
 import { CashAccountSelect } from '@/features/finance/components';
 import { useLeadOrderCashAccounts } from '@/features/finance/lookup';
-import { useLeadPayments } from '@/features/crm/crm.hooks';
+import { useLeadOrderDealImpact, useLeadPayments } from '@/features/crm/crm.hooks';
 import { formatCurrency } from '@/core/utils/format';
 import { usePermissions } from '@/features/auth/usePermissions';
 import {
@@ -42,6 +42,13 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
   const resourceKey = order?.branchId ?? 'order';
   const resourceHeaders = order?.branchId ? { 'X-Branch-Id': order.branchId } : undefined;
   const paymentsQuery = useLeadPayments(resourceKey, open && order ? order.id : null, resourceHeaders);
+  const dealImpactQuery = useLeadOrderDealImpact(
+    resourceKey,
+    open && pending === 'DEAL' && order ? order.id : null,
+    resourceHeaders,
+    open && pending === 'DEAL',
+  );
+  const dealImpact = dealImpactQuery.data;
   const { data: cashAccounts = [], isLoading: cashLoading } = useLeadOrderCashAccounts(resourceKey, {
     headers: resourceHeaders,
     enabled: open && refundEnabled,
@@ -136,9 +143,21 @@ export const OrderStatusModal = ({ open, onClose, order, submitting, onSubmit }:
       </Modal>
 
       <ConfirmDialog open={pending === 'DEAL'} onClose={() => setPending(null)} onConfirm={submitDeal}
-        closeOnConfirm={false} loading={submitting} confirmDisabled={!backdateValid} tone="primary" icon={CheckCircle2} title="Tandai Order DEAL"
-        message="Unit akan ditandai SOLD, lead menjadi WON, dan settlement penjualan dibuat. Tindakan ini tidak dapat dibatalkan."
-        confirmLabel="Ya, Tandai DEAL"><div className="mt-3 space-y-2"><DateField label="Tanggal DEAL" required value={dealDate} onChange={setDealDate} />{backdateRequired && <TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} />}</div></ConfirmDialog>
+        closeOnConfirm={false} loading={submitting || dealImpactQuery.isLoading} confirmDisabled={!backdateValid || !dealImpact?.canDeal} tone="primary" icon={CheckCircle2} title="Tandai Order DEAL"
+        message="Unit akan ditandai SOLD, lead menjadi WON, dan settlement penjualan dibuat. Booking pesaing dibatalkan serta pembayaran kasnya direfund otomatis dalam transaksi yang sama."
+        confirmLabel="Ya, Tandai DEAL">
+        <div className="mt-3 space-y-3">
+          {dealImpactQuery.isError && <p className="rounded-xl bg-semantic-error/10 p-3 text-[11px] font-semibold text-semantic-error">Dampak DEAL gagal dimuat. Muat ulang sebelum melanjutkan.</p>}
+          {dealImpact && <div className="rounded-xl border border-border bg-surface-soft p-3 text-[12px]">
+            <div className="flex justify-between gap-3 font-bold text-ink"><span>Booking yang dibatalkan</span><span>{dealImpact.competitorCount}</span></div>
+            <div className="mt-1 flex justify-between gap-3 font-bold text-ink"><span>Total refund otomatis</span><span className="text-primary">{formatCurrency(dealImpact.totalRefund)}</span></div>
+            {dealImpact.competitors.length > 0 && <div className="mt-2 space-y-1 text-[11px] text-muted">{dealImpact.competitors.map((competitor) => <p key={competitor.id}>{competitor.nomorOrder} · {competitor.customer.nama} · {formatCurrency(competitor.refundableAmount)}</p>)}</div>}
+            {dealImpact.blockers.length > 0 && <div className="mt-3 space-y-1 rounded-lg bg-semantic-error/10 p-2 text-[11px] font-semibold text-semantic-error">{dealImpact.blockers.map((blocker) => <p key={`${blocker.code}:${blocker.paymentId ?? blocker.orderId}`}>{blocker.message}</p>)}</div>}
+          </div>}
+          <DateField label="Tanggal DEAL" required value={dealDate} onChange={setDealDate} />
+          {backdateRequired && <TextField label="Alasan backdate *" value={backdateReason} onChange={(event) => setBackdateReason(event.target.value)} maxLength={2000} />}
+        </div>
+      </ConfirmDialog>
 
       <ConfirmDialog open={pending === 'CANCELLED'} onClose={() => setPending(null)} onConfirm={submitCancellation}
         closeOnConfirm={false} loading={submitting} confirmDisabled={!refundValid || !backdateValid} tone="danger" icon={XCircle} title="Batalkan Order"

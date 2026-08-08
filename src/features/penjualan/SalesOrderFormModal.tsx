@@ -89,7 +89,16 @@ export const SalesOrderFormModal = ({ open, onClose, item, submitting, currentUs
   const referenceOnly = form.historicalMode === 'REFERENCE_ONLY';
   const unitOptions = (lookup?.units ?? [])
     .filter((u) => referenceOnly ? u.historicalMode === 'REFERENCE_ONLY' : u.historicalMode !== 'REFERENCE_ONLY')
-    .map((u) => ({ value: u.id, label: unitOptionLabel(u), sublabel: [u.merek?.name, u.tipe?.name, u.historicalMode === 'REFERENCE_ONLY' ? 'Staging historis' : ''].filter(Boolean).join(' · ') || undefined }));
+    .map((u) => ({
+      value: u.id,
+      label: unitOptionLabel(u),
+      sublabel: [
+        u.merek?.name,
+        u.tipe?.name,
+        u.historicalMode === 'REFERENCE_ONLY' ? 'Staging historis' : '',
+        u.activeBookingCount > 0 ? `${u.activeBookingCount} booking aktif` : '',
+      ].filter(Boolean).join(' · ') || undefined,
+    }));
   const leasingOptions = (lookup?.leasings ?? []).map((l) => ({ value: l.id, label: l.name }));
   const salesOptions = (lookup?.sales ?? []).map((s) => ({ value: s.id, label: s.name, sublabel: s.username }));
   const referencePaid = form.referencePayments.reduce((total, payment) => total + Number(payment.amount || 0), 0);

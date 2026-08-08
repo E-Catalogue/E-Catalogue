@@ -459,6 +459,7 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
             {o.status === 'CANCELLED' && o.cancelledAt && <InfoItem label="Tanggal Batal" value={new Date(o.cancelledAt).toLocaleDateString('id-ID')} />}
             {o.status === 'CANCELLED' && <InfoItem label="Alasan Batal" value={o.cancellationReason?.replaceAll('_', ' ') ?? '-'} />}
             {o.status === 'CANCELLED' && o.cancellationNote && <InfoItem label="Catatan Batal" value={o.cancellationNote} />}
+            {o.status === 'CANCELLED' && o.supersededByOrderId && <InfoItem label="Dikalahkan Order" value={`Dibatalkan otomatis karena Unit DEAL pada Order ${o.supersededByOrderId}`} wrapClass="col-span-2 md:col-span-3" />}
             {o.paymentType === 'KREDIT' && (
               <>
                 <InfoItem label="Leasing" value={o.leasing?.name ?? '-'} />

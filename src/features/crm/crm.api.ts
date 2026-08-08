@@ -1,7 +1,7 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  CreditStagePayload, Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellation, LeadPayment, LeadPaymentReverseResult, LeadStatus,
+  CreditStagePayload, Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellation, LeadOrderDealImpact, LeadPayment, LeadPaymentReverseResult, LeadStatus,
   OrderStatus, SaleSettlement, UnitSummary,
 } from './crm.types';
 
@@ -64,7 +64,7 @@ export const leadApi = {
 export interface LeadOrderFormLookup {
   leads: { id: string; branchId: string; nama: string; nik: string; status: LeadStatus; opportunities?: Array<{ id: string; status: LeadStatus }> }[];
   sources: { id: string; name: string; code: string }[];
-  units: { id: string; name?: string | null; branchId: string; platNomor: string; otrPrice: number; historicalMode?: 'REFERENCE_ONLY' | null; merek?: { name: string } | null; tipe?: { name: string } | null }[];
+  units: { id: string; name?: string | null; branchId: string; platNomor: string; otrPrice: number; activeBookingCount: number; historicalMode?: 'REFERENCE_ONLY' | null; merek?: { name: string } | null; tipe?: { name: string } | null }[];
   sales: { id: string; branchId: string; name: string; username: string }[];
   leasings: { id: string; name: string; code: string }[];
 }
@@ -82,6 +82,8 @@ export const leadOrderApi = {
     apiClient.get<ApiResponse<{ count: number }>>('/lead-orders/settlement-pending/count', { headers }).then((r) => r.data.data),
   get: (id: string, headers?: BranchHeaders) =>
     apiClient.get<ApiResponse<LeadOrder>>(`/lead-orders/${id}`, { headers }).then((r) => r.data.data),
+  dealImpact: (id: string, headers?: BranchHeaders) =>
+    apiClient.get<ApiResponse<LeadOrderDealImpact>>(`/lead-orders/${id}/deal-impact`, { headers }).then((r) => r.data.data),
   create: (body: Partial<LeadOrder> & { lead?: Partial<Lead> }, headers?: BranchHeaders) =>
     apiClient.post<ApiResponse<LeadOrder>>('/lead-orders', body, { headers }).then((r) => r.data.data),
   update: (id: string, body: Partial<LeadOrder>, headers?: BranchHeaders) =>

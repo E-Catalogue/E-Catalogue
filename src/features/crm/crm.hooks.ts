@@ -85,6 +85,13 @@ export const usePendingDealFinalizations = (branchKey: string, headers: BranchHe
 export const useLeadOrder = (branchKey: string, id: string | null, headers: BranchHeaders) =>
   useQuery({ queryKey: orderKeys.detail(branchKey, id), queryFn: () => leadOrderApi.get(id as string, headers), enabled: !!id });
 
+export const useLeadOrderDealImpact = (branchKey: string, id: string | null, headers: BranchHeaders, enabled = true) =>
+  useQuery({
+    queryKey: ['lead-order-deal-impact', branchKey, id],
+    queryFn: () => leadOrderApi.dealImpact(id as string, headers),
+    enabled: enabled && !!id,
+  });
+
 export const useLeadOrderMutations = (branchKey: string) => {
   const qc = useQueryClient();
   const invalList = () => qc.invalidateQueries({ queryKey: ['lead-orders'] });
@@ -115,6 +122,8 @@ export const useLeadOrderMutations = (branchKey: string) => {
     qc.invalidateQueries({ queryKey: ['cash-transactions'] });
     qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
     qc.invalidateQueries({ queryKey: ['books'] });
+    qc.invalidateQueries({ queryKey: ['lookup', 'lead-order', 'order-form'] });
+    qc.invalidateQueries({ queryKey: ['lead-order-deal-impact'] });
   };
 
   return {
@@ -128,6 +137,7 @@ export const useLeadOrderMutations = (branchKey: string) => {
         qc.invalidateQueries({ queryKey: ['lead', order.leadId] });
         qc.invalidateQueries({ queryKey: ['lead-opportunities', order.leadId] });
         qc.invalidateQueries({ queryKey: ['test-drives'] });
+        qc.invalidateQueries({ queryKey: ['lookup', 'lead-order', 'order-form'] });
       },
       onError: (e: unknown) => notifyApiError(e),
     }),
