@@ -1,9 +1,9 @@
-import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge, Fuel, MapPin } from 'lucide-react';
+import { Heart, Gauge, Calendar, Pencil, Trash2, Eye, GitMerge, Fuel, MapPin, Palette } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import type { Unit as BackendUnit } from '@/features/units/unit.types';
 import type { Unit as MockUnit } from '@/data/types';
-import { formatCurrency, formatNumber } from '@/core/utils/format';
+import { formatCurrency, formatNumber, formatTransmisi } from '@/core/utils/format';
 import { StatusBadge } from './StatusBadge';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
 import { API_ORIGIN } from '@/core/api/client';
@@ -38,40 +38,33 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
   const targetPrice = isMock ? null : backendUnit.targetPrice;
   const displayPrice = isMock ? (unit as MockUnit).price : (otrPrice || targetPrice || backendUnit.purchaseCost || 0);
 
-  const createdAt = isMock ? undefined : (unit as BackendUnit).createdAt;
-  const isNew = isMock 
-    ? (unit as MockUnit).isNew 
-    : (createdAt && new Date().getTime() - new Date(createdAt).getTime() < 7 * 24 * 60 * 60 * 1000);
-
   const brandName = isMock ? (unit as MockUnit).brand : (unit as BackendUnit).merek?.name;
   const modelName = isMock ? `${(unit as MockUnit).model} ${(unit as MockUnit).variant}` : (unit as BackendUnit).tipe?.name;
   // Judul kartu = Nama Unit (backend) dengan fallback; mock tetap brand+model.
   const titleText = isMock
     ? `${brandName} ${modelName}`
     : (backendUnit.name?.trim() || [brandName, modelName].filter(Boolean).join(' ') || backendUnit.platNomor || '');
-  const subtitleText = isMock
-    ? ''
-    : [[brandName, modelName].filter(Boolean).join(' '), backendUnit.platNomor].filter(Boolean).join(' · ');
+  const normalizedTitle = titleText.toLocaleLowerCase('id-ID');
+  const identityLabel = modelName && normalizedTitle.includes(String(modelName).toLocaleLowerCase('id-ID'))
+    ? brandName
+    : [brandName, modelName].filter(Boolean).join(' ');
+  const subtitleText = isMock ? '' : [identityLabel, backendUnit.platNomor].filter(Boolean).join(' · ');
   const tahun = isMock ? (unit as MockUnit).year : (unit as BackendUnit).tahun;
-  const transmisi = isMock ? (unit as MockUnit).transmission : ((unit as BackendUnit).transmisi === 'AUTOMATIC' ? 'Automatic' : 'Manual');
+  const transmisi = formatTransmisi(isMock ? (unit as MockUnit).transmission : (unit as BackendUnit).transmisi);
   const km = isMock ? (unit as MockUnit).km : (unit as BackendUnit).kilometer;
   const statusUnit = statusOverride ?? (isMock ? (unit as MockUnit).status : (unit as BackendUnit).statusUnit);
 
   const bahanBakarLabel = isMock ? '' : (unit as BackendUnit).bahanBakar ?? '';
-  const fundingLabel = isMock
-    ? null
-    : backendUnit.fundingAgreement?.fundingSource === 'INVESTOR'
-      ? [backendUnit.fundingAgreement.investor?.code, backendUnit.fundingAgreement.investor?.name].filter(Boolean).join(' — ') || 'Investor'
-      : 'Milik Perusahaan';
+  const warna = isMock ? (unit as MockUnit).color : backendUnit.warna;
 
   return (
     <motion.div
       onClick={() => onView?.(unit)}
       whileHover={clickable ? { y: -4, transition: { duration: 0.2 } } : {}}
       whileTap={clickable ? { scale: 0.98 } : {}}
-      className={`group bg-surface rounded-2xl border border-border overflow-hidden hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 ${clickable ? 'cursor-pointer' : ''}`}
+      className={`group overflow-hidden rounded-[1.5rem] border border-border/80 bg-surface p-2 shadow-[0_12px_36px_rgba(19,27,46,0.07)] transition-all duration-300 hover:border-primary/25 hover:shadow-[0_22px_54px_rgba(19,27,46,0.13)] ${clickable ? 'cursor-pointer' : ''}`}
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-[1.1rem] bg-surface-soft">
         <motion.img
           src={imageUrl}
           alt={titleText}
@@ -81,16 +74,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
         />
-        {/* Gradient overlay bawah untuk kontras teks */}
-        {statusUnit === 'SOLD' || statusUnit === 'sold' || statusUnit === 'Terjual' ? (
-          <span className="absolute top-3 left-3 bg-semantic-error text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-lg shadow-sm">
-            Terjual
-          </span>
-        ) : isNew ? (
-          <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-lg shadow-glow">
-            Baru
-          </span>
-        ) : null}
+        <div className="absolute left-3 top-3 z-10"><StatusBadge status={statusUnit as never} label={statusLabelOverride} variant="overlay" /></div>
         {/* Badge transmisi + bahan bakar di pojok kiri bawah gambar */}
         <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold shadow-sm ${
@@ -112,7 +96,7 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
         )}
 
         {onEdit || onDelete || actions ? (
-          <div className="absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute right-2.5 top-2.5 flex gap-1.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
             {onView && (
               <button onClick={(e) => { e.stopPropagation(); onView(unit); }} className="w-8 h-8 rounded-full bg-surface/95 backdrop-blur flex items-center justify-center text-muted hover:text-primary shadow-sm transition-colors" title="Detail">
                 <Eye size={15} strokeWidth={2.3} />
@@ -136,40 +120,34 @@ export const UnitCard = <T extends UnitCardUnit>({ unit, onView, onEdit, onDelet
         )}
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
+      <div className="px-2 pb-2 pt-4 sm:px-3 sm:pb-3">
+        <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="font-extrabold text-ink text-[14px] leading-snug truncate" title={titleText}>
+            <h3 className="truncate text-[15px] font-extrabold leading-snug text-ink sm:text-base" title={titleText}>
               {titleText}
             </h3>
             {subtitleText && (
               <p className="text-[11px] font-medium text-muted mt-0.5 truncate">{subtitleText}</p>
             )}
           </div>
-          <StatusBadge status={statusUnit as never} label={statusLabelOverride} />
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[11px] font-semibold text-muted">
-          <span className="flex items-center gap-1"><Calendar size={12} /> {tahun}</span>
-          <span className="flex items-center gap-1 truncate"><Gauge size={12} /> {formatNumber(km)} KM</span>
+        <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-2xl bg-surface-soft p-2 text-[10px] font-bold text-muted sm:text-[11px]">
+          <span className="flex items-center gap-1.5 rounded-xl bg-surface px-2.5 py-2"><Calendar size={13} className="text-primary" /> {tahun}</span>
+          <span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-surface px-2.5 py-2"><Gauge size={13} className="shrink-0 text-primary" /><span className="truncate">{formatNumber(km)} KM</span></span>
+          <span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-surface px-2.5 py-2"><Palette size={13} className="shrink-0 text-primary" /><span className="truncate">{warna || '-'}</span></span>
           {!isMock && (
-            <span className="flex items-center gap-1 text-ink/80 truncate">
-              <MapPin size={12} className="text-primary shrink-0" /> {backendUnit.branch?.nama || 'Cabang Utama'}
+            <span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-surface px-2.5 py-2 text-ink/80">
+              <MapPin size={13} className="shrink-0 text-primary" /><span className="truncate">{backendUnit.branch?.nama || 'Cabang Utama'}</span>
             </span>
           )}
         </div>
-        {!isMock && fundingLabel && (
-          <div className="mt-3 rounded-lg bg-surface-soft px-2.5 py-2">
-            <p className="text-[9px] font-bold uppercase tracking-wide text-muted">Pendanaan</p>
-            <p className="mt-0.5 truncate text-[11px] font-bold text-ink" title={fundingLabel}>{fundingLabel}</p>
-          </div>
-        )}
         <div className="mt-3 pt-3 border-t border-divider">
           {isMock ? (
             <span className="font-extrabold text-primary text-[15px] truncate">{formatCurrency(displayPrice)}</span>
           ) : (
             <div className="min-w-0 grid grid-cols-2 gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted">OTR</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Harga</p>
                 <p className="font-extrabold text-primary text-[14px] truncate">{otrPrice ? formatCurrency(otrPrice) : '-'}</p>
               </div>
               <div className="min-w-0">

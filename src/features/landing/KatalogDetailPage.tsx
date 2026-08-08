@@ -15,6 +15,7 @@ import { usePublicCatalogUnit, usePublicRelatedUnits, usePublicSiteSettings } fr
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import type { CatalogCard, CatalogDetail } from './public.types';
+import { Reveal } from '@/shared/components/Reveal';
 
 const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: string; value: string }) => (
   <div className="flex items-center gap-3 p-3.5 rounded-xl bg-surface-soft border border-border">
@@ -102,7 +103,7 @@ export const KatalogDetailPage = () => {
 
       <div className="grid lg:grid-cols-[1fr_420px] gap-8 items-start">
         {/* GALLERY */}
-        <div className="animate-fade-in">
+        <Reveal>
           <div className="relative rounded-2xl overflow-hidden aspect-[16/10] bg-surface-soft border border-border group">
             <img src={gallery[activeImg]} alt={title} onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }} className="w-full h-full object-cover transition-opacity duration-200" />
             <div className="absolute top-3 left-3 flex gap-2">
@@ -149,10 +150,10 @@ export const KatalogDetailPage = () => {
               ))}
             </div>
           )}
-        </div>
+        </Reveal>
 
         {/* INFO */}
-        <div className="animate-float-up space-y-5">
+        <Reveal delay={100} className="space-y-5">
           <div>
             <div className="flex items-center gap-1.5 text-[12px] font-bold text-primary mb-1.5"><BadgeCheck size={14} /> Unit Terverifikasi · 150+ Titik Inspeksi</div>
             <h1 className="text-2xl md:text-[28px] font-extrabold text-ink leading-tight">{title}</h1>
@@ -186,7 +187,7 @@ export const KatalogDetailPage = () => {
             <span className="flex items-center gap-1.5"><BadgeCheck size={14} className="text-accent-green" /> Surat Lengkap</span>
             <span className="flex items-center gap-1.5"><MapPin size={14} className="text-accent-green" /> Bisa Test Drive</span>
           </div>
-        </div>
+        </Reveal>
       </div>
 
       {/* Specs + Contact */}

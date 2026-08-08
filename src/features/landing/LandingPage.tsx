@@ -75,12 +75,12 @@ export const LandingPage = () => {
             <div className="absolute bottom-4 right-1/3 w-64 h-64 rounded-full bg-primary/8 blur-3xl animate-breathe" />
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-20 grid lg:grid-cols-2 gap-10 items-center relative">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 sm:py-12 md:py-16 lg:py-20 grid lg:grid-cols-2 gap-8 lg:gap-10 items-center relative">
             <motion.div variants={heroContainer} initial="hidden" animate="show">
               <motion.span variants={fadeUpItem} className="inline-flex items-center gap-2 rounded-full bg-primary-light text-primary text-[12px] font-bold px-3 py-1.5">
                 <Ic name={hero.floatingCard?.icon ?? 'badge-check'} size={14} /> {hero.badgeText}
               </motion.span>
-              <motion.h1 variants={fadeUpItem} className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-ink leading-[1.1] mt-4">
+              <motion.h1 variants={fadeUpItem} className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold text-ink leading-[1.1] mt-4">
                 {hero.titleHtml.split(/(<em>.*?<\/em>)/g).filter(Boolean).map((part, i) => {
                   const m = part.match(/^<em>(.*?)<\/em>$/);
                   return m ? <span key={i} className="text-primary">{m[1]}</span> : <span key={i}>{part}</span>;
@@ -96,7 +96,7 @@ export const LandingPage = () => {
                 {hero.primaryCtaLink === 'whatsapp' ? <a href={waUrl} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark hover:scale-[1.03] active:scale-[0.97] transition-all"><Search size={17} /> {hero.primaryCtaLabel} <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" /></a> : <Link to={resolveLink(hero.primaryCtaLink)} className="group inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3 shadow-glow hover:bg-primary-dark hover:scale-[1.03] active:scale-[0.97] transition-all"><Search size={17} /> {hero.primaryCtaLabel} <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" /></Link>}
                 {hero.secondaryCtaLink === 'whatsapp' ? <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary hover:scale-[1.03] active:scale-[0.97] transition-all"><HandCoins size={17} /> {hero.secondaryCtaLabel}</a> : <Link to={resolveLink(hero.secondaryCtaLink)} className="inline-flex items-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3 hover:border-primary hover:text-primary hover:scale-[1.03] active:scale-[0.97] transition-all"><HandCoins size={17} /> {hero.secondaryCtaLabel}</Link>}
               </motion.div>
-              <motion.div variants={fadeUpItem} className="flex gap-8 mt-9">
+              <motion.div variants={fadeUpItem} className="grid grid-cols-3 gap-3 sm:flex sm:gap-8 mt-8 sm:mt-9">
                 {hero.stats.map((s) => (
                   <motion.div key={s.label} whileHover={{ y: -3 }} className="cursor-default">
                     <p className="text-2xl md:text-3xl font-extrabold text-ink">{s.value}</p>
@@ -110,7 +110,7 @@ export const LandingPage = () => {
               initial={{ opacity: 0, scale: 0.9, x: 24 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 60, damping: 14 }}
-              className="relative"
+              className="relative min-w-0 w-full"
             >
               <div className="absolute -inset-4 bg-gradient-to-tr from-primary/25 to-transparent rounded-[3rem] blur-2xl animate-breathe" />
               <HeroUnitCarousel

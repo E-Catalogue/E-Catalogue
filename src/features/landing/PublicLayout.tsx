@@ -44,7 +44,7 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
     : menus.map((l) => ({ to: l.path, label: l.label }));
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="public-motion-scope min-h-screen bg-background flex flex-col">
       {/* NAVBAR */}
       <header className="sticky top-0 z-40 bg-surface/85 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">

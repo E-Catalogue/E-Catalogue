@@ -11,6 +11,7 @@ import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { usePublicCatalog, usePublicCatalogBrands, usePublicCatalogPage } from './landing.hooks';
 import type { CatalogCard, CatalogQuery, PublicTransmisi } from './public.types';
+import { Reveal } from '@/shared/components/Reveal';
 
 type SortKey = NonNullable<CatalogQuery['sort']>;
 
@@ -122,7 +123,7 @@ export const KatalogPage = () => {
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Katalog' }]}
       />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+      <Reveal className="max-w-7xl mx-auto px-4 md:px-6 py-6 sm:py-8">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <div className="relative flex-1">
@@ -207,7 +208,7 @@ export const KatalogPage = () => {
             </div>
           </aside>
         </div>
-      </div>
+      </Reveal>
 
       {/* Mobile filter drawer */}
       {showFilter && (

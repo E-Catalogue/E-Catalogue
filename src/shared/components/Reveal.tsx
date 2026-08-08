@@ -11,11 +11,11 @@ interface RevealProps extends HTMLMotionProps<'div'> {
 export const Reveal = forwardRef<HTMLDivElement, RevealProps>(({ children, delay = 0, className = '', ...rest }, ref) => (
   <motion.div
     ref={ref}
-    initial={{ opacity: 0, y: 30 }}
+    initial={{ opacity: 0, y: 24 }}
     whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-10% 0px -10% 0px' }}
+    viewport={{ once: true, margin: '-6% 0px -6% 0px' }}
     transition={{
-      type: 'spring', stiffness: 70, damping: 15, mass: 1,
+      type: 'spring', stiffness: 55, damping: 18, mass: 1.05,
       delay: delay > 10 ? delay / 1000 : delay,
     }}
     className={className}

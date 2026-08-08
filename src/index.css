@@ -85,6 +85,11 @@
 }
 .animate-scale-in { animation: scaleIn 0.25s ease-out both; }
 
+/* Tempo khusus website publik: setara dengan entrance beranda yang lebih lembut. */
+.public-motion-scope .animate-float-up { animation-duration: 0.72s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+.public-motion-scope .animate-fade-in { animation-duration: 0.52s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+.public-motion-scope .animate-scale-in { animation-duration: 0.68s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+
 /* ── Ambient / continuous motion untuk landing page ── */
 @keyframes blobFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -115,7 +120,8 @@
 .animate-gradient-pan { background-size: 200% 200%; animation: gradientPan 12s ease infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-blob, .animate-blob-slow, .animate-breathe, .animate-bob, .animate-bob-slow, .animate-gradient-pan { animation: none; }
+  .animate-blob, .animate-blob-slow, .animate-breathe, .animate-bob, .animate-bob-slow, .animate-gradient-pan,
+  .public-motion-scope .animate-float-up, .public-motion-scope .animate-fade-in, .public-motion-scope .animate-scale-in { animation: none; }
 }
 
 /* Staggered list helper */

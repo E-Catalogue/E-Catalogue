@@ -20,7 +20,9 @@ export const usePublicHomepage = () =>
 export const usePublicHeroCatalog = () =>
   useQuery({
     queryKey: ['public', 'catalog', 'hero'],
-    queryFn: () => landingApi.getCatalog({ page: 1, limit: 5, sort: 'newest' }),
+    // Ambil kandidat lebih banyak agar Ready Stock yang lebih lama tetap
+    // bisa diprioritaskan oleh carousel, lalu carousel membatasi hasilnya ke 5.
+    queryFn: () => landingApi.getCatalog({ page: 1, limit: 100, sort: 'newest' }),
     staleTime: FIVE_MIN,
   });
 

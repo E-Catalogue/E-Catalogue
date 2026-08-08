@@ -8,6 +8,7 @@ import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { usePublicCatalog, usePublicCreditConfig, usePublicSiteSettings, useCalculateCredit } from './landing.hooks';
 import type { CreditCalcResult } from './public.types';
+import { Reveal } from '@/shared/components/Reveal';
 
 export const SimulasiPage = () => {
   const { data: config } = usePublicCreditConfig();
@@ -64,7 +65,7 @@ export const SimulasiPage = () => {
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 grid lg:grid-cols-[1.1fr_1fr] gap-6 items-start">
         {/* FORM */}
-        <div className="bg-surface rounded-2xl border border-border p-6 md:p-7 space-y-7">
+        <Reveal className="bg-surface rounded-2xl border border-border p-5 sm:p-6 md:p-7 space-y-7">
           <div>
             <label className="flex items-center gap-2 text-[12px] font-bold text-ink mb-2"><Car size={15} className="text-primary" /> Pilih Mobil</label>
             <SearchableSelect
@@ -92,7 +93,7 @@ export const SimulasiPage = () => {
 
           <div>
             <label className="flex items-center gap-2 text-[12px] font-bold text-ink mb-2.5"><Calendar size={15} className="text-primary" /> Tenor (bulan)</label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {tenors.map((t) => (
                 <button key={t} onClick={() => setTenor(t)} className={`py-2.5 rounded-xl text-[13px] font-bold transition-colors ${tenor === t ? 'bg-primary text-white shadow-glow' : 'bg-surface-soft border border-border text-ink-soft hover:border-primary'}`}>{t}</button>
               ))}
@@ -107,10 +108,10 @@ export const SimulasiPage = () => {
             <input type="range" min={config?.rateMin ?? 2} max={config?.rateMax ?? 9} step={config?.rateStep ?? 0.5} value={rate} onChange={(e) => setRate(Number(e.target.value))} className="w-full accent-[color:var(--color-primary)]" />
             <div className="flex justify-between text-[10px] font-semibold text-muted mt-1"><span>{config?.rateMin ?? 2}%</span><span>{config?.rateMax ?? 9}%</span></div>
           </div>
-        </div>
+        </Reveal>
 
         {/* RESULT */}
-        <div className="lg:sticky lg:top-20 flex flex-col gap-4">
+        <Reveal delay={100} className="lg:sticky lg:top-20 flex flex-col gap-4">
           <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-7 text-white relative overflow-hidden">
             <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
             <p className="relative text-[12px] font-bold uppercase tracking-wide text-white/80 flex items-center gap-2">
@@ -137,7 +138,7 @@ export const SimulasiPage = () => {
               <Link to="/katalog/$id" params={{ id: selected.id }} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-surface border border-border text-ink-soft font-bold text-[14px] px-5 py-3.5 hover:border-primary hover:text-primary transition-colors">Lihat Unit <ArrowRight size={16} /></Link>
             )}
           </div>
-        </div>
+        </Reveal>
       </div>
     </>
   );

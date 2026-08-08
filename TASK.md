@@ -517,9 +517,15 @@ Pendukung: `ImageUpload` (preview + validasi), `useSectionForm`/`useCmsSection` 
 ### F. CMS + Situs Publik — SELESAI ✅
 - [x] Panel admin CMS: Site Settings, Beranda (7 section), Tentang (5 section), Testimoni, Katalog (publish+galeri+header), Kontak & Pesan (inbox), Simulasi Kredit
 - [x] **Situs publik consume `/public/*`** — 7 halaman (`landing/*`) sudah dinamis dari API (site-settings, homepage, about, catalog+detail+related, credit config+calculate, contact submit). Data dummy Redux tidak lagi dipakai di situs publik.
-- [x] **Hero unit carousel kompatibel lintas versi backend** — prioritas memakai `hero.sliderUnits`, lalu otomatis mengambil 5 unit terbaru yang sudah tayang dari `GET /public/catalog`, dengan unit unggulan sebagai fallback terakhir.
+- [x] **Hero unit carousel kompatibel lintas versi backend** — menggabungkan `hero.sliderUnits` dengan rollout fallback hingga 100 kandidat katalog tanpa duplikat, mendahulukan `READY_STOCK`, lalu membatasi maksimal 5 unit. Unit unggulan tetap menjadi fallback terakhir.
 - [x] **Cabang Utama sebagai sumber kontak website** — Master Cabang memiliki flag tunggal utama; Pengaturan Situs menampilkan jadwal tujuh hari secara read-only dan halaman Kontak/footer memakai nomor, alamat, serta jam dari cabang tersebut.
-- [x] **Motion carousel dan fallback foto unit** — next/autoplay menggeser kartu secara eksplisit; unit katalog tanpa foto memakai gambar default produk.
+- [x] **Motion carousel dan fallback foto unit** — memakai track kartu horizontal nyata dengan peek-card yang masuk menjadi kartu utama saat next/autoplay, loop tanpa lompatan, maksimal 5 unit dengan Ready Stock diprioritaskan dan urutan terbaru di dalam status yang sama; unit tanpa foto memakai gambar default produk.
+- [x] **Stacked carousel responsif** — track tetap bergerak nyata, sementara kartu berikutnya overlap di belakang dengan skala/opacity berbeda; intrinsic-width loop pada grid diperbaiki dan lolos QA HP 390px serta tablet 820px.
+- [x] **Polish kartu unit** — kartu Unit Unggulan, Katalog publik, dan tab Kartu Inventori memakai shell berlapis, media membulat, spec panel ringkas, hierarchy harga yang lebih kuat, serta action yang tetap terlihat pada perangkat sentuh. Hero memakai label “Harga” dan nama transmisi lengkap.
+- [x] **Dedup informasi kartu unit** — badge status hanya tampil sekali di kiri atas foto, blok Pendanaan dihapus dari kartu Inventori, warna dipindahkan ke panel spesifikasi, subtitle tidak mengulang nama model, dan rasio foto diperbesar menjadi 4:3 pada kartu publik maupun Inventori.
+- [x] **Standardisasi badge status unit** — seluruh badge memakai satu `StatusBadge`; konteks tabel/detail menggunakan tinted badge, konteks foto kartu menggunakan overlay solid 28px dengan radius 8px. Wrapper ganda penyebab border bertumpuk dihapus; badge slider hero tetap independen.
+- [x] **QA breakpoint carousel terbaru** — transisi dan horizontal overflow diverifikasi pada 320px, 390px, dan 820px; suite frontend lulus 66 test, lint tanpa error, dan production build berhasil.
+- [x] **Motion publik konsisten** — Reveal, header, dan entrance halaman Tentang/Katalog/Detail/Kontak/Simulasi memakai tempo/easing lembut setara Beranda serta menghormati `prefers-reduced-motion`.
 - [ ] 🟢 Verifikasi end-to-end dengan backend aktif (uji render nyata + submit form).
 
 ### Z. Perbaikan build (bukan CMS/publik — pekerjaan paralel) 🟠
