@@ -3,7 +3,7 @@ import type { ApiResponse } from '@/core/api/types';
 import type {
   SiteSettings, SiteSettingsRaw, SiteSettingsUpdate,
   ContactPage, CatalogPage,
-  Testimonial, TestimonialForm,
+  Testimonial, TestimonialForm, TestimonialLookups,
   ContactMessage, ContactStatus,
   CreditSimConfig,
   CmsCatalogRow, CmsCatalogPublishBody, CmsCatalogImage,
@@ -82,6 +82,7 @@ export const testimonialApi = {
   setPublish: (id: string, isPublished: boolean) => apiClient.patch<ApiResponse<Testimonial>>(`/cms/testimonials/${id}/publish`, { isPublished }).then((r) => r.data.data),
   uploadAvatar: (id: string, file: File) => apiClient.post<ApiResponse<{ filename: string }>>(`/cms/testimonials/${id}/avatar`, fileForm(file), uploadCfg).then((r) => r.data.data),
   uploadImage: (id: string, file: File) => apiClient.post<ApiResponse<{ filename: string }>>(`/cms/testimonials/${id}/image`, fileForm(file), uploadCfg).then((r) => r.data.data),
+  lookups: () => apiClient.get<ApiResponse<TestimonialLookups>>('/cms/testimonials/lookups').then((r) => r.data.data),
   soldUnits: (search?: string) => apiClient.get<ApiResponse<NonNullable<Testimonial['unit']>[]>>('/cms/testimonials/unit-lookups', { params: { search } }).then((r) => r.data.data),
   remove: (id: string) => apiClient.delete(`/cms/testimonials/${id}`).then((r) => r.data),
 };

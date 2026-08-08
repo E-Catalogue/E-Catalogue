@@ -130,8 +130,8 @@ export const useUpdateCatalogPage = () => {
 /* ── Testimoni ── */
 export const useTestimonials = (params: CmsListParams) =>
   useQuery({ queryKey: ['cms', 'testimonials', params], queryFn: () => testimonialApi.list(params) });
-export const useTestimonialSoldUnits = (enabled = true) =>
-  useQuery({ queryKey: ['cms', 'testimonials', 'sold-units'], queryFn: () => testimonialApi.soldUnits(), enabled });
+export const useTestimonialLookups = (enabled = true) =>
+  useQuery({ queryKey: ['cms', 'testimonials', 'transaction-lookups'], queryFn: () => testimonialApi.lookups(), enabled });
 
 export const useTestimonialMutations = () => {
   const qc = useQueryClient();

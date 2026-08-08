@@ -95,13 +95,32 @@ export const TentangPage = () => {
         </section>
       ) : null}
 
-      {about.standards?.isVisible !== false && about.standards?.items?.length ? <section className="bg-ink text-white"><div className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="max-w-xl mb-9"><p className="text-[12px] font-extrabold uppercase tracking-[.16em] text-primary-light">{about.standards.eyebrow}</p><h2 className="mt-2 text-2xl md:text-3xl font-extrabold">{about.standards.title}</h2></Reveal><div className="grid gap-4 md:grid-cols-3">{about.standards.items.map((item) => <Reveal key={item.title} className="rounded-2xl border border-white/10 bg-white/5 p-6"><Ic name={item.icon} size={24} className="text-primary-light" /><h3 className="mt-4 font-extrabold">{item.title}</h3><p className="mt-2 text-[13px] font-medium leading-6 text-white/65">{item.desc}</p></Reveal>)}</div></div></section> : null}
+      {about.standards?.isVisible !== false && about.standards?.items?.length ? (
+        <section className="relative isolate overflow-hidden bg-ink text-white">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/[0.04] to-transparent" />
+          <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24">
+            <Reveal className="max-w-2xl mb-10 md:mb-12">
+              <p className="text-[12px] font-extrabold uppercase tracking-[.16em] text-primary-light">{about.standards.eyebrow}</p>
+              <h2 className="mt-3 text-2xl md:text-3xl font-extrabold leading-tight">{about.standards.title}</h2>
+            </Reveal>
+            <div className="grid gap-4 md:grid-cols-3">
+              {about.standards.items.map((item) => (
+                <Reveal key={item.title} className="rounded-2xl border border-white/10 bg-white/5 p-6 md:p-7">
+                  <Ic name={item.icon} size={24} className="text-primary-light" />
+                  <h3 className="mt-4 font-extrabold">{item.title}</h3>
+                  <p className="mt-2 text-[13px] font-medium leading-6 text-white/65">{item.desc}</p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {about.journey?.isVisible !== false && about.journey?.items?.length ? <section className="max-w-5xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="text-center mb-10"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-primary">{about.journey.eyebrow}</p><h2 className="mt-2 text-3xl font-extrabold text-ink">{about.journey.title}</h2></Reveal><div className="relative space-y-4 before:absolute before:left-[3.15rem] before:top-5 before:bottom-5 before:w-px before:bg-border">{about.journey.items.map((item) => <div key={`${item.year}-${item.title}`} className="relative grid grid-cols-[6.5rem_1fr] gap-4"><span className="z-10 self-start rounded-full border border-primary/20 bg-primary-light px-3 py-2 text-center text-xs font-extrabold text-primary">{item.year}</span><div className="rounded-2xl border border-border bg-surface p-5"><h3 className="font-extrabold text-ink">{item.title}</h3><p className="mt-1 text-[13px] font-medium leading-6 text-muted">{item.desc}</p></div></div>)}</div></section> : null}
 
       {/* CTA */}
       {about?.cta?.isVisible !== false && about?.cta && (
-        <section className="max-w-7xl mx-auto px-4 md:px-6 pb-16">
+        <section className="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20">
           <Reveal className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark p-8 md:p-14 text-center text-white">
             <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
             <h2 className="relative text-2xl md:text-3xl font-extrabold leading-tight">{about.cta.title}</h2>

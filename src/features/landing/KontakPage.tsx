@@ -6,12 +6,13 @@ import { usePublicSiteSettings, usePublicContactPage, useSubmitContact } from '.
 import { notifyApiError } from '@/core/api/notify';
 import { Reveal } from '@/shared/components/Reveal';
 import { BranchCard, ShowroomMap } from './ShowroomMap';
+import { CustomerLoader, CustomerServerError } from './CustomerStates';
 
 const inputClass = 'w-full h-11 px-3.5 rounded-xl bg-surface-soft border border-border text-sm font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-all';
 
 export const KontakPage = () => {
   const { data: settings } = usePublicSiteSettings();
-  const { data: page } = usePublicContactPage();
+  const { data: page, isLoading, isError, refetch } = usePublicContactPage();
   const submitM = useSubmitContact();
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '', website: '' });
@@ -25,6 +26,9 @@ export const KontakPage = () => {
   const waUrl = buildWhatsAppUrl(settings?.whatsappNumber, waMessages.generalContact(settings?.companyName));
   const branches = page?.locations?.items ?? [];
   const faq = page?.faq;
+
+  if (isLoading) return <CustomerLoader />;
+  if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;
 
   return <>
     <PublicHeader eyebrow={page?.hero?.eyebrow ?? 'Kontak'} title={page?.hero?.title ?? 'Temukan Showroom dan Hubungi Kami'} subtitle={page?.hero?.subtitle ?? ''} breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Kontak' }]} />
