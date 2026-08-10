@@ -91,7 +91,7 @@ export const BranchImagesModal = ({ open, onClose, branch }: Props) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {images.map((img) => (
             <div key={img.id} className="group relative rounded-xl overflow-hidden border border-border aspect-[4/3] bg-surface-soft">
-              <img src={img.url ?? mediaUrl(img.id)} alt="" className="w-full h-full object-cover" />
+              <img src={mediaUrl(img.id)} alt="" className="w-full h-full object-cover" />
               <button
                 onClick={() => setToDelete(img.id)}
                 className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-surface/90 backdrop-blur text-semantic-error flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"

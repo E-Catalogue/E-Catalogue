@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Wrench, Plus, Pencil, Trash2, Play, CheckCircle, Loader2, Check,
+  Wrench, Plus, Pencil, Trash2, Play, CheckCircle, Loader2, Check, FileDown,
   ChevronDown, ChevronUp, Receipt, Send, XCircle, Info,
 } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -12,7 +12,7 @@ import { businessToday } from '@/core/utils/businessDate';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { CashAccountSelect } from '@/features/finance/components';
 import { usePermissions } from '@/features/auth/usePermissions';
-import { API_ORIGIN } from '@/core/api/client';
+import { apiClient } from '@/core/api/client';
 import {
   useRekondisi, useRekondisiMutations, useRekondisiDetails, useRekondisiDetailMutations, useRekondisiVendorLookup, useRekondisiCheckLookup,
 } from './rekondisi.hooks';
@@ -50,10 +50,27 @@ const MiniCurrencyInput = ({ value, onChange, className = '', placeholder = 'Nom
 };
 
 const today = businessToday;
-const mediaUrl = (url?: string | null) => {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${API_ORIGIN}/${url.replace(/^\/+/, '')}`;
+const InvoiceLink = ({ url }: { url: string }) => {
+  const [loading, setLoading] = useState(false);
+  const open = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(url.replace(/^\/api\/v1(?=\/)/, ''), { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data as Blob);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (error) {
+      notifyApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button type="button" onClick={open} disabled={loading} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline disabled:opacity-50">
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />} Lihat Invoice
+    </button>
+  );
 };
 
 /* ── Stepper: 6 langkah, dipetakan langsung dari status backend ── */
@@ -573,9 +590,7 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
               )}
 
               {rekondisi.invoiceUrl && (
-                <a href={mediaUrl(rekondisi.invoiceUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-primary hover:underline">
-                  <Receipt size={13} /> Lihat Invoice
-                </a>
+                <InvoiceLink url={rekondisi.invoiceUrl} />
               )}
             </div>
           )}

@@ -81,7 +81,7 @@ const ProofLink = ({ url }: { url: string }) => {
   const open = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get(url, { responseType: 'blob' });
+      const res = await apiClient.get(url.replace(/^\/api\/v1(?=\/)/, ''), { responseType: 'blob' });
       const blobUrl = URL.createObjectURL(res.data as Blob);
       window.open(blobUrl, '_blank', 'noopener');
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
