@@ -30,6 +30,7 @@ export interface OrderListParams {
   dateFrom?: string;
   dateTo?: string;
   isPaid?: boolean;
+  pendingFinalization?: boolean;
 }
 
 // ---- Lead ----

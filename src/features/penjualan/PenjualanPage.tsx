@@ -54,6 +54,7 @@ export const PenjualanPage = () => {
   const [statusApproval, setStatusApproval] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [pendingFinalization, setPendingFinalization] = useState(false);
   const debounced = useDebouncedValue(search, 350);
 
   const { data, isLoading, isError, refetch } = useLeadOrders(branchKey, {
@@ -68,6 +69,7 @@ export const PenjualanPage = () => {
     statusApproval: statusApproval || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    pendingFinalization: pendingFinalization || undefined,
   }, branchHeader);
   const { data: lookup } = useLeadOrderFormLookup(branchKey, branchHeader);
   const m = useLeadOrderMutations(branchKey);
@@ -86,6 +88,20 @@ export const PenjualanPage = () => {
   const handleSubmit = (values: Partial<LeadOrder>) => {
     if (form?.item) m.update.mutate({ id: form.item.id, body: values, headers: branchHeader }, { onSuccess: () => setForm(null) });
     else m.create.mutate({ body: values as never, headers: branchHeader }, { onSuccess: () => setForm(null) });
+  };
+
+  const togglePendingFinalization = () => {
+    setSearch('');
+    setFilterStatus('');
+    setFilterSales('');
+    setPaymentType('');
+    setStatusSlik('');
+    setSurveyStatus('');
+    setStatusApproval('');
+    setDateFrom('');
+    setDateTo('');
+    setPendingFinalization((active) => !active);
+    setPage(1);
   };
 
   const columns: Column<LeadOrder>[] = [
@@ -192,7 +208,7 @@ export const PenjualanPage = () => {
           )}
         />
 
-        <PendingDealFinalizationNotice branchKey={branchKey} headers={branchHeader} />
+        <PendingDealFinalizationNotice branchKey={branchKey} headers={branchHeader} active={pendingFinalization} onToggle={togglePendingFinalization} />
 
         {mutationBlocked && (
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 text-[12px] font-semibold text-accent-amber">
