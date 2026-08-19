@@ -1,7 +1,7 @@
 // Kontrak: ecatalogue-be/.prd/create_investor_obligation_20260717_090122.md
 // + ecatalogue-be/src/modules/investor-obligation/*.js (kode backend menang atas prosa PRD).
 
-export type InvestorObligationType = 'FIXED_RETURN' | 'PRINCIPAL' | 'PROFIT_SHARE';
+export type InvestorObligationType = 'FIXED_RETURN' | 'PRINCIPAL_RETURN' | 'PROFIT_SHARE';
 export type InvestorObligationStatus = 'ACCRUED' | 'DUE' | 'PARTIALLY_PAID' | 'PAID' | 'REVERSED';
 export type InvestorPaymentPostingStatus = 'PENDING' | 'POSTED' | 'REVERSED';
 
@@ -25,7 +25,32 @@ export interface InvestorObligation {
   updatedAt: string;
   investor: { id: string; name: string; code: string };
   branch: { id: string; nama: string; code: string };
-  fundingAgreement: { id: string; unitId: string; scheme: string; status: string; principalAmount: number };
+  fundingAgreement: {
+    id: string;
+    unitId: string;
+    scheme: string;
+    status: string;
+    principalAmount: number;
+    fixedReturnRate: number | null;
+    profitShareRate: number | null;
+    finalCyclePolicy: 'FULL' | 'PRORATA' | 'NONE' | null;
+    unit: {
+      id: string;
+      name: string;
+      platNomor: string;
+      tahun: number;
+      noRangka: string;
+      merek: { name: string };
+      tipe: { name: string };
+    };
+  };
+  settlement: {
+    id: string;
+    finalPrice: number;
+    pricingCostBasis: number;
+    profitBasis: number;
+    investorProfit: number;
+  } | null;
 }
 
 export interface InvestorPayment {
@@ -81,7 +106,7 @@ export interface InvestorObligationPayResult {
 
 export const OBLIGATION_TYPE_LABEL: Record<InvestorObligationType, string> = {
   FIXED_RETURN: 'Fixed Return',
-  PRINCIPAL: 'Pokok (Principal)',
+  PRINCIPAL_RETURN: 'Pengembalian Pokok',
   PROFIT_SHARE: 'Bagi Hasil',
 };
 

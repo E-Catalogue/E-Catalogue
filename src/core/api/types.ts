@@ -5,6 +5,12 @@ export interface ApiMeta {
   limit: number;
   total: number;
   totalPages: number;
+  summary?: {
+    totalUnit: number;
+    published: number;
+    hidden: number;
+    featured: number;
+  };
 }
 
 export interface ApiResponse<T> {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  PiggyBank, Loader2, Receipt, RotateCcw, AlertTriangle, CalendarDays, Landmark,
+  PiggyBank, Loader2, Receipt, RotateCcw, AlertTriangle, CalendarDays, Landmark, CarFront, Calculator,
 } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -27,6 +27,55 @@ import {
 type BranchHeaders = Record<string, string> | undefined;
 
 const today = businessToday;
+
+const RETURN_POLICY_LABEL = {
+  FULL: '1 bulan penuh',
+  PRORATA: 'prorata hari aktif',
+  NONE: 'tanpa imbal hasil siklus terakhir',
+} as const;
+
+const ObligationOrigin = ({ obligation }: { obligation: InvestorObligation }) => {
+  const unit = obligation.fundingAgreement.unit;
+  const rate = obligation.rateSnapshot ?? 0;
+  const settlement = obligation.settlement;
+
+  let formula = `${formatCurrency(obligation.basisAmount)} (pokok yang dikembalikan)`;
+  let explanation = 'Kewajiban ini adalah pengembalian modal investor untuk unit yang terjual.';
+  if (obligation.type === 'FIXED_RETURN') {
+    const policy = obligation.fundingAgreement.finalCyclePolicy;
+    const fullCycleAmount = Math.round(obligation.basisAmount * rate) / 100;
+    formula = Math.abs(fullCycleAmount - obligation.amount) < 0.01
+      ? `${formatCurrency(obligation.basisAmount)} × ${rate}% = ${formatCurrency(obligation.amount)}`
+      : `${formatCurrency(obligation.basisAmount)} × ${rate}% = ${formatCurrency(fullCycleAmount)}, disesuaikan ${policy ? RETURN_POLICY_LABEL[policy] : 'siklus'} menjadi ${formatCurrency(obligation.amount)}`;
+    explanation = `Imbal hasil investor untuk siklus ini${policy ? `; siklus terakhir memakai kebijakan ${RETURN_POLICY_LABEL[policy]}` : ''}.`;
+  } else if (obligation.type === 'PROFIT_SHARE') {
+    const finalPrice = settlement?.finalPrice ?? 0;
+    const costBasis = settlement?.pricingCostBasis ?? 0;
+    const profitBasis = settlement?.profitBasis ?? obligation.basisAmount;
+    formula = `max(${formatCurrency(finalPrice)} − ${formatCurrency(costBasis)}, Rp 0) = ${formatCurrency(profitBasis)} × ${rate}% = ${formatCurrency(obligation.amount)}`;
+    explanation = 'Bagi hasil investor dihitung dari laba penjualan positif setelah harga jual dikurangi HPP.';
+  }
+
+  return (
+    <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="rounded-xl border border-border p-4">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted"><CarFront size={14} /> Unit Penjualan</p>
+        <p className="mt-2 text-[14px] font-extrabold text-ink">{unit.name}</p>
+        <p className="text-[12px] font-semibold text-ink-soft">{unit.merek?.name} {unit.tipe?.name} · {unit.tahun}</p>
+        <div className="mt-2 space-y-0.5 text-[11px] font-medium text-muted">
+          <p>Plat nomor: <span className="font-bold text-ink">{unit.platNomor}</span></p>
+          <p>No. rangka: <span className="font-bold text-ink">{unit.noRangka}</span></p>
+        </div>
+      </div>
+      <div className="rounded-xl border border-border p-4">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted"><Calculator size={14} /> Asal Kewajiban</p>
+        <p className="mt-2 text-[12px] font-bold text-ink">{OBLIGATION_TYPE_LABEL[obligation.type]}</p>
+        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-ink-soft">{formula}</p>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-muted">{explanation}</p>
+      </div>
+    </section>
+  );
+};
 
 /** Pesan banner inline per error code finansial (README §17: jangan hanya toast). */
 const ERROR_BANNER: Record<string, { title: string; message: string }> = {
@@ -262,6 +311,8 @@ export const InvestorObligationDetailModal = ({ open, onClose, id, branchKey, br
             <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} /> Jatuh tempo {formatDate(obligation.dueDate)}</span>
             <span className="inline-flex items-center gap-1.5"><Landmark size={13} /> {obligation.branch?.nama} ({obligation.branch?.code})</span>
           </div>
+
+          <ObligationOrigin obligation={obligation} />
 
           <section>
             <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Bayar Kewajiban</p>

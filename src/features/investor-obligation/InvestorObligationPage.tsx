@@ -27,7 +27,7 @@ import {
 import { InvestorObligationDetailModal } from './InvestorObligationDetailModal';
 
 const STATUS_OPTIONS: InvestorObligationStatus[] = ['ACCRUED', 'DUE', 'PARTIALLY_PAID', 'PAID', 'REVERSED'];
-const TYPE_OPTIONS: InvestorObligationType[] = ['FIXED_RETURN', 'PRINCIPAL', 'PROFIT_SHARE'];
+const TYPE_OPTIONS: InvestorObligationType[] = ['FIXED_RETURN', 'PRINCIPAL_RETURN', 'PROFIT_SHARE'];
 const SUMMARY_STATUSES: InvestorObligationStatus[] = ['ACCRUED', 'DUE', 'PARTIALLY_PAID', 'PAID'];
 
 const isOverdue = (o: InvestorObligation) =>

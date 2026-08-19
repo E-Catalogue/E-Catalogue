@@ -143,8 +143,7 @@ export const KatalogPage = () => {
   const [unfinalizedUnit, setUnfinalizedUnit] = useState<CmsCatalogRow | null>(null);
   const galleryRow = rows.find((r) => r.id === galleryId) ?? null;
 
-  const publishedCount = rows.filter((u) => u.isPublished).length;
-  const featuredCount = rows.filter((u) => u.isFeatured).length;
+  const summary = data?.meta?.summary;
 
   const isUnitPricingFinalized = (u: CmsCatalogRow) =>
     Boolean(u.isPricingFinalized || u.pricingFinalizedAt);
@@ -319,10 +318,10 @@ export const KatalogPage = () => {
       {/* Summary stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {[
-          { icon: <Car size={18} className="text-primary" />, bg: 'bg-primary/10', label: 'Total Unit', value: total },
-          { icon: <Globe size={18} className="text-accent-green" />, bg: 'bg-accent-green/10', label: 'Tayang di Katalog', value: publishedCount, color: 'text-accent-green' },
-          { icon: <EyeOff size={18} className="text-muted" />, bg: 'bg-muted/10', label: 'Disembunyikan', value: Math.max(0, total - publishedCount), color: 'text-muted' },
-          { icon: <Star size={18} className="text-accent-amber fill-accent-amber" />, bg: 'bg-accent-amber/10', label: 'Unit Unggulan', value: featuredCount, color: 'text-accent-amber' },
+          { icon: <Car size={18} className="text-primary" />, bg: 'bg-primary/10', label: 'Total Unit', value: summary?.totalUnit ?? 0 },
+          { icon: <Globe size={18} className="text-accent-green" />, bg: 'bg-accent-green/10', label: 'Tayang di Katalog', value: summary?.published ?? 0, color: 'text-accent-green' },
+          { icon: <EyeOff size={18} className="text-muted" />, bg: 'bg-muted/10', label: 'Disembunyikan', value: summary?.hidden ?? 0, color: 'text-muted' },
+          { icon: <Star size={18} className="text-accent-amber fill-accent-amber" />, bg: 'bg-accent-amber/10', label: 'Unit Unggulan', value: summary?.featured ?? 0, color: 'text-accent-amber' },
         ].map((s) => (
           <div key={s.label} className="bg-surface rounded-2xl border border-border p-4 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>{s.icon}</div>
