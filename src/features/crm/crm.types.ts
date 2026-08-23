@@ -37,6 +37,13 @@ export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
   CANCELLED: 'bg-rose-100 text-rose-600',
 };
 
+export const SURVEY_STATUS_LABEL: Record<SurveyStatus, string> = {
+  PENDING: 'Menunggu',
+  SCHEDULED: 'Terjadwal',
+  PASSED: 'Lolos',
+  REJECTED: 'Ditolak',
+};
+
 export const JENIS_PEMBAYARAN_LABEL: Record<JenisPembayaran, string> = {
   BOOKING_FEE: 'Booking Fee',
   DP: 'Uang Muka (DP)',
