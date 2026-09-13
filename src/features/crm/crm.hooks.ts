@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  leadApi, leadOrderApi, leadOrderLookupApi, leadPaymentApi, settlementApi, unitApi,
+  creditExpenseApi, leadApi, leadOrderApi, leadOrderLookupApi, leadPaymentApi, settlementApi, unitApi,
 } from './crm.api';
 import type { LeadListParams, OrderListParams } from './crm.api';
+import type { CreditExpenseCreatePayload } from './crm.types';
 import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { notifyApiError } from '@/core/api/notify';
@@ -206,6 +207,49 @@ export const useLeadPaymentMutations = (branchKey: string, orderId: string) => {
       mutationFn: (v: { id: string; body: { transactionDate?: string; description?: string }; headers: BranchHeaders }) =>
         leadPaymentApi.reverse(orderId, v.id, v.body, v.headers),
       onSuccess: () => { toast('Pembayaran berhasil dibalik'); invalDownstream(); },
+    }),
+  };
+};
+
+// ---------- Biaya Proses Kredit ----------
+const creditExpenseKeys = {
+  list: (branchKey: string, orderId?: string | null) => ['credit-expenses', branchKey, orderId] as const,
+};
+
+export const useCreditProcessExpenses = (branchKey: string, orderId: string | null, headers: BranchHeaders, enabled = true) =>
+  useQuery({
+    queryKey: creditExpenseKeys.list(branchKey, orderId),
+    queryFn: () => creditExpenseApi.list(orderId as string, headers),
+    enabled: !!orderId && enabled,
+  });
+
+/** Invalidasi menyeluruh: order/settlement, kas, pembukuan, dashboard — biaya langsung
+ * terposting ke kas dan mengurangi profit owner. */
+export const useCreditProcessExpenseMutations = (branchKey: string, orderId: string) => {
+  const qc = useQueryClient();
+  const inval = () => {
+    qc.invalidateQueries({ queryKey: ['credit-expenses', branchKey, orderId] });
+    qc.invalidateQueries({ queryKey: ['lead-order', branchKey, orderId] });
+    qc.invalidateQueries({ queryKey: ['lead-orders'] });
+    qc.invalidateQueries({ queryKey: ['lead-order-settlement', branchKey, orderId] });
+    qc.invalidateQueries({ queryKey: ['cash-accounts'] });
+    qc.invalidateQueries({ queryKey: ['cash-transactions'] });
+    qc.invalidateQueries({ queryKey: ['book-profit-summary'] });
+    qc.invalidateQueries({ queryKey: ['books'] });
+    qc.invalidateQueries({ queryKey: ['dashboard-overview'] });
+    qc.invalidateQueries({ queryKey: ['cash-flow-dashboard'] });
+  };
+  return {
+    create: useMutation({
+      mutationFn: (v: { body: CreditExpenseCreatePayload; headers: BranchHeaders }) =>
+        creditExpenseApi.create(orderId, v.body, v.headers),
+      onSuccess: () => { toast('Biaya proses kredit tercatat & terposting ke kas'); inval(); },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
+    reverse: useMutation({
+      mutationFn: (v: { id: string; headers: BranchHeaders }) => creditExpenseApi.reverse(orderId, v.id, v.headers),
+      onSuccess: () => { toast('Biaya proses kredit dibalik'); inval(); },
+      onError: (e: unknown) => notifyApiError(e),
     }),
   };
 };

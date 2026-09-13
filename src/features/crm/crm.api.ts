@@ -1,9 +1,10 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
 import type {
-  CreditStagePayload, Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellation, LeadOrderDealImpact, LeadPayment, LeadPaymentReverseResult, LeadStatus,
+  CreditExpenseCreatePayload, CreditProcessExpense, CreditStagePayload, Lead, LeadOpportunityHistory, LeadOrder, LeadOrderCancellation, LeadOrderDealImpact, LeadPayment, LeadPaymentReverseResult, LeadStatus,
   OrderStatus, SaleSettlement, UnitSummary,
 } from './crm.types';
+export type { CreditExpenseCreatePayload } from './crm.types';
 
 /** Header opsional `{ 'X-Branch-Id': branchId }` — wajib diisi caller untuk mutation Owner (README §8). */
 type BranchHeaders = Record<string, string> | undefined;
@@ -121,6 +122,18 @@ export const leadPaymentApi = {
     apiClient.post<ApiResponse<LeadPaymentReverseResult>>(`/lead-orders/${orderId}/payments/${id}/reverse`, body, { headers }).then((r) => r.data.data),
   remove: (orderId: string, id: string, headers?: BranchHeaders) =>
     apiClient.delete<ApiResponse<LeadPayment>>(`/lead-orders/${orderId}/payments/${id}`, { headers }).then((r) => r.data),
+};
+
+// ---- Biaya Proses Kredit (nested under order — credit-expense.route.js) ----
+/** Biaya proses kredit per order (faktur, absah, survei, rabing data, mediator, dll).
+ * POST langsung terposting ke kas — tidak ada draft. DELETE berarti reversal oleh backend. */
+export const creditExpenseApi = {
+  list: (orderId: string, headers?: BranchHeaders) =>
+    apiClient.get<ApiResponse<CreditProcessExpense[]>>(`/lead-orders/${orderId}/credit-expenses`, { headers }).then((r) => r.data.data ?? []),
+  create: (orderId: string, body: CreditExpenseCreatePayload, headers?: BranchHeaders) =>
+    apiClient.post<ApiResponse<CreditProcessExpense>>(`/lead-orders/${orderId}/credit-expenses`, body, { headers }).then((r) => r.data.data),
+  reverse: (orderId: string, id: string, headers?: BranchHeaders) =>
+    apiClient.delete<ApiResponse<CreditProcessExpense>>(`/lead-orders/${orderId}/credit-expenses/${id}`, { headers }).then((r) => r.data.data),
 };
 
 // ---- Settlement (lead-order.route.js — /:id/settlement, sales-incentive, settlement/finalize) ----

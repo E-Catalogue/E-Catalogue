@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Plus, ReceiptText, RefreshCw, AlertTriangle, ClipboardCheck,
+  Plus, ReceiptText, RefreshCw, AlertTriangle, ClipboardCheck, Landmark,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -18,6 +18,7 @@ import { SalesOrderFormModal } from './SalesOrderFormModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { OrderStatusModal } from './OrderStatusModal';
 import { CreditStageModal } from './CreditStageModal';
+import { CreditExpenseQuickForm } from './CreditExpenseSection';
 import { DateField } from '@/shared/components/ui/DateField';
 import { useLeadOrders, useLeadOrderMutations, useLeadOrderFormLookup } from '@/features/crm/crm.hooks';
 import { PendingDealFinalizationNotice } from '@/features/crm/PendingDealFinalizationNotice';
@@ -78,6 +79,7 @@ export const PenjualanPage = () => {
   const [detail, setDetail] = useState<string | null>(null);
   const [statusModal, setStatusModal] = useState<LeadOrder | null>(null);
   const [creditModal, setCreditModal] = useState<LeadOrder | null>(null);
+  const [expenseModal, setExpenseModal] = useState<LeadOrder | null>(null);
 
   const orders = data?.data ?? [];
   const salesFilterOptions = [
@@ -173,6 +175,19 @@ export const PenjualanPage = () => {
           {r.isPaid ? 'Lunas' : 'Belum'}
         </span>
       ),
+    },
+    {
+      header: 'Biaya Kredit',
+      align: 'right',
+      cell: (r) => (r.paymentType === 'KREDIT' && r.status !== 'CANCELLED' && r.historicalMode !== 'REFERENCE_ONLY' && can('OPERATIONAL_EXPENSE_CREATE') ? (
+        <button
+          onClick={() => setExpenseModal(r)}
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+          title="Tambah biaya proses kredit (faktur, absah, survei, dll)"
+        >
+          <Landmark size={13} /> {r.creditProcessExpenseTotal ? idr(r.creditProcessExpenseTotal) : 'Tambah'}
+        </button>
+      ) : <span className="text-[11px] text-muted">-</span>),
     },
     {
       header: '',
@@ -321,6 +336,19 @@ export const PenjualanPage = () => {
             { onSuccess: () => setCreditModal(null) },
           )}
         />
+
+        {/* Quick input biaya proses kredit langsung dari baris order — tanpa buka detail dulu. */}
+        {expenseModal && (
+          <CreditExpenseQuickForm
+            orderId={expenseModal.id}
+            orderNumber={expenseModal.nomorOrder}
+            unitLabel={expenseModal.unit ? `${unitDisplayName(expenseModal.unit)} · ${expenseModal.unit.platNomor ?? ''}`.trim() : undefined}
+            branchKey={branchKey}
+            headers={expenseModal.branchId ? { 'X-Branch-Id': expenseModal.branchId } : branchHeader}
+            open
+            onClose={() => setExpenseModal(null)}
+          />
+        )}
       </div>
     </RequirePermission>
   );

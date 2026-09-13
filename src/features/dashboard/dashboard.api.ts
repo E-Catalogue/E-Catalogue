@@ -12,4 +12,15 @@ export const dashboardApi = {
     apiClient
       .get<ApiResponse<DashboardOverview>>('/dashboard', { params, headers })
       .then((r) => r.data.data),
+  export: async (params: { period: string }, headers?: Record<string, string>) => {
+    const response = await apiClient.get<Blob>('/dashboard/export', { params, headers, responseType: 'blob', timeout: 60_000 });
+    const disposition = response.headers['content-disposition'];
+    const filename = disposition?.match(/filename="?([^";]+)"?/i)?.[1] ?? `dashboard-${params.period}.xlsx`;
+    const url = URL.createObjectURL(response.data);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  },
 };

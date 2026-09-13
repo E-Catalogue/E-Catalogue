@@ -6,6 +6,7 @@ import {
   Car,
   CreditCard,
   DollarSign,
+  Download,
   Landmark,
   Layers,
   RefreshCw,
@@ -33,6 +34,8 @@ import { StatCard } from './components/StatCard';
 import { useClosingReport } from '@/features/reports/report.hooks';
 import { usePermissions } from '@/features/auth/usePermissions';
 import { PendingDealFinalizationNotice } from '@/features/crm/PendingDealFinalizationNotice';
+import { Button } from '@/shared/components/ui/Button';
+import { notifyApiError } from '@/core/api/notify';
 
 const MONTH_LABEL_LONG = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -40,8 +43,9 @@ const MONTH_LABEL_LONG = [
 ];
 
 const currentMonth = () => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+  const current = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${current.year}-${current.month}`;
 };
 
 const formatPeriodLabel = (period: string) => {
@@ -54,6 +58,7 @@ const asPct = (value: number) => Math.max(0, Math.min(Math.round(value), 999));
 
 const DashboardPageInner = () => {
   const [period, setPeriod] = useState(currentMonth());
+  const [exporting, setExporting] = useState(false);
   const { branchHeader, branchKey } = useBranchScope();
   const { can } = usePermissions();
   const [year, month] = period.split('-').map(Number);
@@ -65,6 +70,17 @@ const DashboardPageInner = () => {
     queryFn: () => dashboardApi.overview({ period }, branchHeader),
   });
 
+  const exportDashboard = async () => {
+    setExporting(true);
+    try {
+      await dashboardApi.export({ period }, branchHeader);
+    } catch (exportError) {
+      notifyApiError(exportError);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-float-up pb-12">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface p-4 rounded-2xl border border-border shadow-card">
@@ -75,6 +91,9 @@ const DashboardPageInner = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <Button variant="secondary" icon={<Download size={15} />} onClick={exportDashboard} disabled={exporting}>
+            {exporting ? 'Menyiapkan...' : 'Export XLSX'}
+          </Button>
           <MonthField
             value={period}
             onChange={(v) => setPeriod(v || currentMonth())}
@@ -136,7 +155,7 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
     ) },
     { header: 'Unit Terjual', align: 'right', cell: (row) => `${row.summary.unitSold} / ${row.summary.targetUnit}` },
     { header: 'Omzet', align: 'right', cell: (row) => formatCurrency(row.summary.revenue, { compact: true }) },
-    { header: 'Profit Bersih', align: 'right', cell: (row) => formatCurrency(row.summary.netProfit, { compact: true }) },
+    { header: 'Profit Bersih Owner', align: 'right', cell: (row) => formatCurrency(row.summary.netProfit, { compact: true }) },
     { header: 'Net Cash Flow', align: 'right', cell: (row) => formatCurrency(row.summary.netCashFlow, { compact: true }) },
     { header: 'Stok Aktif', align: 'right', cell: (row) => `${row.inventory.totalStock} Unit` },
   ];
@@ -175,14 +194,15 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
           <StatCard
             icon={Trophy}
             color="orange"
-            label="Profit Bersih Perusahaan"
+            label="Profit Bersih Owner"
             value={formatCurrency(summary.netProfit, { compact: true })}
             subtitle={{ text: 'Margin bersih:', highlight: `${marginPct}% dari omzet` }}
             details={[
-              { label: 'Gross Profit', value: formatCurrency(summary.grossProfit, { compact: true }) },
-              { label: 'Target Gross Profit', value: formatCurrency(summary.targetGrossProfit, { compact: true }) },
-              { label: 'HPP', value: formatCurrency(summary.hpp, { compact: true }) },
-              { label: 'Expense', value: formatCurrency(summary.expense, { compact: true }), color: 'text-semantic-error' },
+              { label: 'Profit Settlement', value: formatCurrency(summary.companyNetProfitBeforePeriodExpenses, { compact: true }) },
+              { label: 'Operasional', value: formatCurrency(summary.operationalExpense, { compact: true }), color: 'text-semantic-error' },
+              { label: 'Overhead Payroll', value: formatCurrency(summary.payrollOverheadExpense, { compact: true }), color: 'text-semantic-error' },
+              { label: 'Biaya Proses Kredit', value: formatCurrency(summary.creditProcessExpense, { compact: true }), color: 'text-semantic-error' },
+              { label: 'Insentif sudah di settlement', value: formatCurrency(summary.payrollIncentivePaid, { compact: true }) },
             ]}
           />
           <StatCard
@@ -205,7 +225,8 @@ const DashboardContent = ({ data, isFetching }: { data: DashboardOverview; isFet
             subtitle={{ text: 'Rasio expense:', highlight: `${expenseRatioPct}% dari omzet` }}
             details={[
               { label: 'Operasional', value: formatCurrency(summary.operationalExpense, { compact: true }) },
-              { label: 'Payroll', value: formatCurrency(summary.payrollExpense, { compact: true }) },
+              { label: 'Payroll Dibayar', value: formatCurrency(summary.payrollExpense, { compact: true }) },
+              { label: 'Overhead Payroll', value: formatCurrency(summary.payrollOverheadExpense, { compact: true }) },
               { label: 'Rekondisi', value: formatCurrency(summary.reconditioningCost, { compact: true }) },
             ]}
           />

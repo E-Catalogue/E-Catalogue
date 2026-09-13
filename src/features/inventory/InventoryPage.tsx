@@ -333,6 +333,11 @@ const CreateRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => vo
             <p className="text-[13px] text-muted font-medium leading-relaxed">
               Rekondisi baru akan dibuat berstatus Draft. Vendor dan item pekerjaan bisa dilengkapi setelahnya di menu Rekondisi.
             </p>
+            {unit.statusUnit === 'READY_STOCK' && (
+              <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-3 py-2.5 text-[12px] font-semibold leading-relaxed text-ink-soft">
+                Unit tetap Ready Stock dan booking aktif tetap tersimpan. Rekondisi ini tidak mengubah Target maupun OTR; proses DEAL baru dapat dilakukan setelah rekondisi selesai.
+              </div>
+            )}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">Catatan Awal (opsional)</label>
               <textarea
@@ -355,7 +360,7 @@ const CreateRekondisiModal = ({ unit, onClose }: { unit: Unit; onClose: () => vo
         tone="primary"
         icon={Wrench}
         title="Konfirmasi Tambah Rekondisi"
-        message={`Buat rekondisi baru untuk unit ${unit.platNomor}?`}
+        message={`Buat rekondisi baru untuk unit ${unit.platNomor}? Harga unit dan booking aktif tidak akan berubah.`}
         confirmLabel="Ya, Buat"
       />
     </>
@@ -455,7 +460,7 @@ const InventoryPageInner = () => {
       { icon: <Landmark size={13} />, label: 'Data Leasing', onClick: () => m.openLeasing(unit) },
       ...(unit.statusUnit !== 'SOLD' ? [{ icon: <RefreshCw size={13} />, label: 'Ubah Status Unit', onClick: () => setStatusUnit(unit) }] : []),
     ] : []),
-    ...(unit.historicalMode !== 'REFERENCE_ONLY' && can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
+    ...(unit.historicalMode !== 'REFERENCE_ONLY' && ['INVENTORY', 'READY_STOCK'].includes(unit.statusUnit) && can('REKONDISI_CREATE') ? [{ icon: <Wrench size={13} />, label: 'Tambah Rekondisi', onClick: () => setRekondisiTarget(unit), dividerAfter: true }] : []),
     ...(unit.historicalMode !== 'REFERENCE_ONLY' && can('UNIT_DELETE') ? [
       { icon: <Archive size={13} />, label: 'Arsipkan Unit', onClick: () => m.openArchive(unit) },
       ...(unit.statusUnit === 'INVENTORY'

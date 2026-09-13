@@ -8,6 +8,7 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import type { CatalogCard } from './public.types';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+import { PublicUnitImage } from './PublicUnitImage';
 
 export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (c: CatalogCard) => void }) => {
   const img = cmsImageUrl('unit', card.image?.filename) ?? DEFAULT_CAR_IMAGE;
@@ -61,15 +62,13 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
       className={`group overflow-hidden rounded-[1.5rem] border border-border/80 bg-surface p-2 shadow-[0_12px_36px_rgba(19,27,46,0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_22px_54px_rgba(19,27,46,0.13)] ${onView ? 'cursor-pointer' : ''}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-[1.1rem] bg-surface-soft">
-        <motion.img
-          src={img}
-          alt={title}
-          loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }}
-          className="w-full h-full object-cover"
+        <motion.div
+          className="h-full w-full"
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
+        >
+          <PublicUnitImage src={img} alt={title} />
+        </motion.div>
 
         {/* Bottom gradient overlay for badges readability */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-black/10" />

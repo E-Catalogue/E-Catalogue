@@ -19,11 +19,12 @@ import { useClosingOrders, useClosingReport } from './report.hooks';
 import type { ClosingFilters, ClosingMetric, ClosingOrder } from './report.types';
 
 const monthRange = () => {
-  const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  return { dateFrom: iso(first), dateTo: iso(last) };
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+  const current = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const year = Number(current.year);
+  const month = Number(current.month);
+  const period = `${current.year}-${current.month}`;
+  return { dateFrom: `${period}-01`, dateTo: `${period}-${String(new Date(Date.UTC(year, month, 0)).getUTCDate()).padStart(2, '0')}` };
 };
 
 const METRICS: Array<{ key: ClosingMetric; field: keyof NonNullable<ReturnType<typeof useClosingReport>['data']>['summary']; label: string; tone?: string }> = [
@@ -63,7 +64,16 @@ const ClosingReportPageInner = () => {
         row.sales?.name?.toLowerCase().includes(q) ||
         row.leasing?.name?.toLowerCase().includes(q) ||
         row.status?.toLowerCase().includes(q) ||
-        row.paymentType?.toLowerCase().includes(q)
+        row.paymentType?.toLowerCase().includes(q) ||
+        row.unit?.name?.toLowerCase().includes(q) ||
+        row.unit?.platNomor?.toLowerCase().includes(q) ||
+        row.latestProcess?.stage?.toLowerCase().includes(q) ||
+        row.latestProcess?.toStatus?.toLowerCase().includes(q) ||
+        row.latestProcess?.reason?.toLowerCase().includes(q) ||
+        row.latestProcess?.note?.toLowerCase().includes(q) ||
+        row.cancellationReason?.toLowerCase().includes(q) ||
+        row.cancellationNote?.toLowerCase().includes(q) ||
+        row.catatan?.toLowerCase().includes(q)
       );
     });
   }, [rawOrders, searchQuery]);
@@ -72,10 +82,13 @@ const ClosingReportPageInner = () => {
     { header: 'No. Order', cell: (row) => <span className="font-bold text-ink">{row.nomorOrder}</span> },
     { header: 'Tanggal', cell: (row) => row.tanggalOrder ? formatDate(row.tanggalOrder) : '-' },
     { header: 'Customer', cell: (row) => row.lead?.nama ?? '-' },
+    { header: 'Unit', cell: (row) => <div className="min-w-36"><p className="font-bold text-ink">{row.unit?.name ?? '-'}</p><p className="text-[10px] font-semibold text-muted">{row.unit?.platNomor ?? '-'}</p></div> },
     { header: 'Sales', cell: (row) => row.sales?.name ?? '-' },
     { header: 'Pembayaran', cell: (row) => row.paymentType ?? '-' },
     { header: 'Leasing', cell: (row) => row.leasing?.name ?? '-' },
     { header: 'Status', cell: (row) => <span className="inline-flex px-2 py-0.5 rounded text-[11px] font-bold bg-surface-soft border border-border">{row.status}</span> },
+    { header: 'Proses Terakhir', cell: (row) => <div className="min-w-32"><p className="font-bold text-ink">{row.latestProcess ? `${row.latestProcess.stage} · ${row.latestProcess.toStatus}` : row.status}</p><p className="text-[10px] font-semibold text-muted">{row.latestProcess?.effectiveAt ? formatDate(row.latestProcess.effectiveAt) : '-'}</p></div> },
+    { header: 'Keterangan', cell: (row) => <span className="block min-w-48 whitespace-normal text-[11px] font-medium text-ink-soft">{row.latestProcess?.reason || row.latestProcess?.note || row.cancellationNote || row.catatan || '-'}</span> },
     { header: 'Harga', align: 'right', cell: (row) => <span className="font-bold text-primary">{formatCurrency(row.hargaFinal ?? 0)}</span> },
   ];
 
@@ -155,7 +168,7 @@ const ClosingReportPageInner = () => {
               size="sm"
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Cari order, customer, sales..."
+              placeholder="Cari order, unit, proses, catatan..."
             />
           </div>
         }

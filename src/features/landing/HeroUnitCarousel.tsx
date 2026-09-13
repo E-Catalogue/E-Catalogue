@@ -4,6 +4,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Gauge, Palette, ShieldCheck } 
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { formatCurrency, formatTransmisi } from '@/core/utils/format';
 import type { CatalogCard } from './public.types';
+import { PublicUnitImage } from './PublicUnitImage';
 
 const AUTOPLAY_MS = 5_000;
 const MAX_SLIDER_UNITS = 5;
@@ -60,7 +61,7 @@ const UnitSlide = ({ unit, index, total, active, clone, width, overlap, first, o
     className={`relative h-full shrink-0 origin-left overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] lg:rounded-[2.5rem] border border-white/50 bg-ink shadow-card-hover ${active ? 'z-10 saturate-100' : 'z-0 saturate-75'}`}
     style={{ width, marginLeft: first ? 0 : -overlap }}
   >
-    <img src={unitImage(unit)} alt={clone ? '' : unit.name} className="h-full w-full object-cover" />
+    <PublicUnitImage src={unitImage(unit)} alt={clone ? '' : unit.name} loading={active && !clone ? 'eager' : 'lazy'} />
     <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/25 to-transparent" />
     <div className="absolute inset-x-0 bottom-0 p-4 text-white min-[420px]:p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -174,7 +175,7 @@ export const HeroUnitCarousel = ({ units, fallbackImage, fallbackAlt, onView }: 
 
   if (!sliderUnits.length) {
     return <section aria-label="Unit unggulan showroom" className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/50 bg-ink shadow-card-hover sm:aspect-[4/3] sm:rounded-[2.5rem] lg:aspect-[5/4]">
-      {fallbackImage ? <img src={fallbackImage} alt={fallbackAlt} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center bg-gradient-to-br from-ink via-ink-soft to-primary-dark text-white"><ShieldCheck size={72} className="opacity-25" /></div>}
+      {fallbackImage ? <PublicUnitImage src={fallbackImage} alt={fallbackAlt} loading="eager" /> : <div className="grid h-full place-items-center bg-gradient-to-br from-ink via-ink-soft to-primary-dark text-white"><ShieldCheck size={72} className="opacity-25" /></div>}
       <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6"><div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-ink/45 px-3.5 py-2 text-[10px] font-extrabold uppercase tracking-[.15em] backdrop-blur-md"><ShieldCheck size={14} /> Koleksi showroom segera diperbarui</div></div>
     </section>;

@@ -27,6 +27,7 @@ import {
 } from '@/features/crm/crm.types';
 import { HistoricalModeBadge } from '@/shared/components/ui/HistoricalModeBadge';
 import { BackdateReasonHint } from '@/shared/components/ui/BackdateReasonHint';
+import { CreditExpenseSection } from '@/features/penjualan/CreditExpenseSection';
 
 type BranchHeaders = Record<string, string> | undefined;
 
@@ -331,6 +332,8 @@ const SettlementPanel = ({
   const leasingBonus = (settlement.leasingBonusAdjustments ?? []).reduce((total, adjustment) => total + adjustment.amount, 0);
   const leasingBonusTax = (settlement.leasingBonusAdjustments ?? []).reduce((total, adjustment) => total + adjustment.taxProvision, 0);
   const leasingBonusNet = (settlement.leasingBonusAdjustments ?? []).reduce((total, adjustment) => total + adjustment.companyNetIncome, 0);
+  const creditExpenses = settlement.order?.creditProcessExpenses ?? [];
+  const creditExpenseTotal = creditExpenses.reduce((total, item) => total + item.amount, 0);
 
   return (
     <div className="space-y-4">
@@ -351,11 +354,18 @@ const SettlementPanel = ({
         {row('Rekondisi Tambahan', settlement.additionalReconditioningCost)}
         {row('Insentif Sales', settlement.salesIncentiveAmount)}
         {row('Bonus Leasing Perusahaan', leasingBonus)}
+        {creditExpenseTotal > 0 && row('Biaya Proses Kredit', creditExpenseTotal)}
         <div className="border-t border-border my-1.5" />
         {row('Profit Perusahaan (sblm Pajak)', settlement.companyProfitBeforeTax)}
         {row('Provisi Pajak', settlement.taxProvision)}
         {row('Profit Bersih Perusahaan', settlement.companyNetProfit, true)}
         {leasingBonus > 0 && <><div className="border-t border-border my-1.5" />{row('Laba Bersih termasuk Bonus Leasing', (settlement.companyNetProfit ?? 0) + leasingBonusNet, true)}{row('Pajak Bonus Leasing', leasingBonusTax)}</>}
+        {creditExpenseTotal > 0 && (
+          <>
+            <div className="border-t border-border my-1.5" />
+            {row('Estimasi Laba Bersih Owner (setelah biaya kredit)', (settlement.companyNetProfit ?? 0) + leasingBonusNet - creditExpenseTotal, true)}
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-2 text-[11px] font-medium text-muted">
@@ -490,6 +500,19 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
               <p className="text-[12px] font-bold text-ink mb-2">Riwayat Proses Kredit ({o.stageEvents?.length ?? 0})</p>
               {(o.stageEvents?.length ?? 0) === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-[12px] text-muted">Belum ada milestone bertanggal. Status lama tanpa event dianggap data legacy.</div> : <div className="divide-y divide-divider rounded-xl border border-border">{o.stageEvents?.map((event) => <div key={event.id} className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 text-[11px]"><span className="font-bold text-ink">{event.stage}</span><span>{creditStageStatusLabel(event.stage, event.fromStatus)} → {creditStageStatusLabel(event.stage, event.toStatus)}</span><span>{new Date(event.effectiveAt).toLocaleDateString('id-ID')}</span><span>{event.reason ?? '-'}</span><span className="text-muted">{event.createdBy?.name ?? '-'}{event.note ? ` · ${event.note}` : ''}</span></div>)}</div>}
             </section>
+          )}
+
+          {/* Biaya proses kredit (faktur, absah, survei, rabing data, mediator, dll) —
+              hanya order KREDIT; langsung terposting ke kas & mengurangi profit owner. */}
+          {o.paymentType === 'KREDIT' && o.status !== 'CANCELLED' && o.historicalMode !== 'REFERENCE_ONLY' && (
+            <CreditExpenseSection
+              orderId={o.id}
+              orderNumber={o.nomorOrder}
+              unitLabel={o.unit ? `${unitDisplayName(o.unit)} · ${o.unit.platNomor ?? ''}`.trim() : undefined}
+              branchKey={branchKey}
+              headers={branchHeader}
+              mutationBlocked={mutationBlocked}
+            />
           )}
 
           {/* Payment summary */}

@@ -14,8 +14,8 @@ import { useBranchScope } from '@/features/auth/useBranchScope';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { notifyApiError } from '@/core/api/notify';
 import { reportApi } from './report.api';
-import { useExpenseDetails, useExpenseReport } from './report.hooks';
-import type { ExpenseDetailRow, ExpenseFilters } from './report.types';
+import { useCreditBreakdown, useExpenseDetails, useExpenseReport } from './report.hooks';
+import type { CreditBreakdownGroup, ExpenseDetailRow, ExpenseFilters } from './report.types';
 
 const currentPeriod = () => new Date().toISOString().slice(0, 7);
 const expenseTypeLabel: Record<string, string> = {
@@ -24,6 +24,67 @@ const expenseTypeLabel: Record<string, string> = {
   RECONDITIONING: 'Rekondisi',
   PAYROLL: 'Payroll',
   REFUND: 'Refund',
+  CREDIT_PROCESS: 'Biaya Kredit',
+};
+
+const CreditBreakdownSection = ({ branchKey, period, headers }: { branchKey: string; period: string; headers: Record<string, string> | undefined }) => {
+  const [salesId, setSalesId] = useState('');
+  const [leasingId, setLeasingId] = useState('');
+  const report = useCreditBreakdown(branchKey, { period, salesId: salesId || undefined, leasingId: leasingId || undefined }, headers);
+  const data = report.data;
+
+  const groupColumns: Column<CreditBreakdownGroup>[] = [
+    { header: 'Total Biaya', align: 'right', cell: (r) => <span className="font-extrabold text-ink">{formatCurrency(r.totalAmount)}</span> },
+    { header: 'Transaksi', align: 'right', cell: (r) => r.transactionCount },
+    { header: 'Order', align: 'right', cell: (r) => r.orderCount },
+    { header: 'Rincian Keterangan', cell: (r) => r.labels.length ? <span className="text-[11px] font-medium text-muted">{r.labels.map((l) => `${l.label} (${formatCurrency(l.amount, { compact: true })})`).join(' · ')}</span> : '-' },
+  ];
+  const salesColumns: Column<CreditBreakdownGroup>[] = [
+    { header: 'Sales', cell: (r) => <span className="font-bold text-ink">{r.sales?.name ?? 'Tanpa Sales'}</span> },
+    ...groupColumns,
+  ];
+  const leasingColumns: Column<CreditBreakdownGroup>[] = [
+    { header: 'Leasing', cell: (r) => <span className="font-bold text-ink">{r.leasing?.name ?? 'Tanpa Leasing'}</span> },
+    ...groupColumns,
+  ];
+
+  return (
+    <SectionCard
+      title="Biaya Proses Kredit"
+      icon={<ReceiptText size={16} />}
+      subtitle="Faktur, absah, survei, rabing data, mediator per order kredit — terurut dari yang paling boros."
+      bodyClassName="p-0 md:p-0"
+      action={
+        <div className="flex flex-wrap gap-2">
+          <div className="w-44"><SelectField label="" value={salesId} onChange={(e) => setSalesId(e.target.value)} options={[{ value: '', label: 'Semua Sales' }]} /></div>
+          <div className="w-44"><SelectField label="" value={leasingId} onChange={(e) => setLeasingId(e.target.value)} options={[{ value: '', label: 'Semua Leasing' }]} /></div>
+        </div>
+      }
+    >
+      {report.isLoading ? (
+        <div className="p-4"><DataTable columns={salesColumns} data={[]} rowKey={() => 'loading'} loading={true} /></div>
+      ) : report.isError ? (
+        <div className="p-6 text-center text-sm font-semibold text-muted">Gagal memuat rincian biaya proses kredit.</div>
+      ) : !data || data.total === 0 ? (
+        <EmptyState title="Belum ada biaya proses kredit" description="Tidak ada biaya kredit tercatat pada periode ini." />
+      ) : (
+        <div className="space-y-5 p-4">
+          <div className="rounded-xl border border-border bg-surface-soft px-4 py-3 flex flex-wrap gap-x-8 gap-y-1">
+            <p className="text-[12px] font-semibold text-muted">Total Biaya Kredit: <strong className="text-ink">{formatCurrency(data.total)}</strong></p>
+            <p className="text-[12px] font-semibold text-muted">Order: <strong className="text-ink">{data.orderCount}</strong></p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Per Sales</p>
+            <DataTable columns={salesColumns} data={data.bySales} rowKey={(r) => r.sales?.id ?? 'unassigned'} />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">Per Leasing</p>
+            <DataTable columns={leasingColumns} data={data.byLeasing} rowKey={(r) => r.leasing?.id ?? 'unassigned'} />
+          </div>
+        </div>
+      )}
+    </SectionCard>
+  );
 };
 
 const ExpenseReportPageInner = () => {
@@ -168,6 +229,8 @@ const ExpenseReportPageInner = () => {
           </>
         )}
       </SectionCard>
+
+      <CreditBreakdownSection branchKey={branchKey} period={filters.period} headers={branchHeader} />
 
       <SectionCard title="Refund Penjualan" bodyClassName="p-0 md:p-0">
         <DataTable

@@ -1,6 +1,6 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/core/api/types';
-import type { ClosingFilters, ClosingMetric, ClosingOrder, ClosingReport, ExpenseDetailRow, ExpenseFilters, ExpenseReport } from './report.types';
+import type { ClosingFilters, ClosingMetric, ClosingOrder, ClosingReport, CreditBreakdownFilters, CreditBreakdownReport, ExpenseDetailRow, ExpenseFilters, ExpenseReport } from './report.types';
 
 type Headers = Record<string, string> | undefined;
 
@@ -23,6 +23,9 @@ export const reportApi = {
     download(response.data, filenameOf(response.headers['content-disposition'], 'laporan-closing.xlsx'));
   },
   expenses: (params: ExpenseFilters, headers?: Headers) => apiClient.get<ApiResponse<ExpenseReport>>('/reports/expenses', { params, headers }).then((r) => r.data.data),
+  /** Rincian biaya proses kredit per sales/leasing — filter opsional salesId/leasingId. */
+  creditBreakdown: (params: CreditBreakdownFilters, headers?: Headers) =>
+    apiClient.get<ApiResponse<CreditBreakdownReport>>('/reports/expenses/credit-breakdown', { params, headers }).then((r) => r.data.data),
   expenseDetails: (params: ExpenseFilters & { page?: number; limit?: number }, headers?: Headers) => apiClient.get<ApiResponse<ExpenseDetailRow[]>>('/reports/expenses/details', { params, headers }).then((r) => r.data),
   exportExpenses: async (params: ExpenseFilters, headers?: Headers) => {
     const response = await apiClient.get<Blob>('/reports/expenses/export', { params, headers, responseType: 'blob', timeout: 60_000 });

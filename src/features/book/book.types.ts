@@ -19,6 +19,8 @@ export interface BookPeriod {
   unitHpp: number;
   operationalExpense: number;
   payrollExpense: number;
+  payrollIncentivePaid: number | null;
+  payrollOverheadExpense: number | null;
   reconditioningCost: number;
   grossProfit: number;
   operationalNetProfit: number;
@@ -26,8 +28,12 @@ export interface BookPeriod {
   fixedReturnExpense: number;
   additionalReconditioningCost: number;
   salesIncentiveAccrued: number;
+  /** Total biaya proses kredit per order (faktur, absah, survei, dll) — snapshot baru selalu ada. */
+  creditProcessExpense: number;
   taxProvision: number;
   companyNetProfit: number;
+  companyNetProfitBeforePeriodExpenses: number | null;
+  ownerNetProfit: number | null;
   closedAt: string | null;
   closedById: string | null;
   createdAt: string;
@@ -85,7 +91,8 @@ export interface CashSummaryFields {
 export const PROFIT_SUMMARY_FIELDS = [
   'salesRevenue', 'unitSold', 'unitHpp', 'grossProfit', 'investorProfit',
   'leasingBonusIncome', 'leasingBonusTaxProvision', 'fixedReturnExpense', 'additionalReconditioningCost', 'salesIncentiveAccrued',
-  'taxProvision', 'companyNetProfit', 'operationalExpense', 'payrollExpense', 'operationalNetProfit',
+  'taxProvision', 'companyNetProfit', 'companyNetProfitBeforePeriodExpenses', 'operationalExpense', 'payrollExpense',
+  'payrollIncentivePaid', 'payrollOverheadExpense', 'creditProcessExpense', 'ownerNetProfit', 'operationalNetProfit',
 ] as const;
 export interface ProfitSummaryFields {
   salesRevenue: number;
@@ -100,8 +107,13 @@ export interface ProfitSummaryFields {
   salesIncentiveAccrued: number;
   taxProvision: number;
   companyNetProfit: number;
+  companyNetProfitBeforePeriodExpenses: number;
   operationalExpense: number;
   payrollExpense: number;
+  payrollIncentivePaid: number;
+  payrollOverheadExpense: number;
+  creditProcessExpense: number;
+  ownerNetProfit: number;
   operationalNetProfit: number;
 }
 

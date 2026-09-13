@@ -36,10 +36,19 @@ type Tab = 'ringkasan' | 'laporan-tutup-buku' | 'ledger' | 'pajak';
 // Snapshot lama belum memiliki pemisahan bonus leasing. Nilainya sengaja boleh null
 // agar UI tidak mengubahnya menjadi angka berjalan yang berpotensi menyesatkan.
 type ExecutiveSummary = CashSummaryFields
-  & Omit<ProfitSummaryFields, 'unitSold' | 'leasingBonusIncome' | 'leasingBonusTaxProvision'>
-  & { unitSold: number | null; leasingBonusIncome: number | null; leasingBonusTaxProvision: number | null };
+  & Omit<ProfitSummaryFields, 'unitSold' | 'leasingBonusIncome' | 'leasingBonusTaxProvision' | 'payrollIncentivePaid' | 'payrollOverheadExpense' | 'companyNetProfitBeforePeriodExpenses' | 'ownerNetProfit' | 'creditProcessExpense'>
+  & {
+    unitSold: number | null; leasingBonusIncome: number | null; leasingBonusTaxProvision: number | null;
+    payrollIncentivePaid: number | null; payrollOverheadExpense: number | null;
+    companyNetProfitBeforePeriodExpenses: number | null; ownerNetProfit: number | null;
+    creditProcessExpense: number | null;
+  };
 
-const currentPeriod = () => new Date().toISOString().slice(0, 7);
+const currentPeriod = () => {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+  const current = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${current.year}-${current.month}`;
+};
 const idr = (n: number) => formatCurrency(n, { compact: true });
 
 const KpiCard = ({
@@ -139,7 +148,7 @@ const RingkasanTab = ({
             <h3 className="text-[13px] font-extrabold uppercase tracking-wide text-muted mb-3">Ikhtisar Utama</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <KpiCard label="Saldo Akhir" value={formatCurrency(summary?.endingCash ?? 0)} caption="Saldo kas pada akhir periode" icon={Landmark} color="bg-primary" />
-              <KpiCard label="Laba Bersih Perusahaan" value={formatCurrency(summary?.companyNetProfit ?? 0)} caption="Setelah pembagian investor dan pajak; belum termasuk beban operasional & payroll" icon={TrendingUp} color="bg-accent-green" />
+              <KpiCard label="Profit Bersih Owner" value={formatCurrency(summary?.ownerNetProfit ?? summary?.operationalNetProfit ?? 0)} caption="Profit settlement dikurangi operasional, overhead payroll, dan biaya proses kredit" icon={TrendingUp} color="bg-accent-green" />
               <KpiCard label="Pendapatan Penjualan" value={formatCurrency(summary?.salesRevenue ?? 0)} caption="Nilai sales order DEAL pada periode ini" icon={ArrowDownLeft} color="bg-accent-green" />
               <KpiCard label="Unit Terjual" value={unitSold === null || unitSold === undefined ? '—' : String(unitSold)} caption={unitSold === null || unitSold === undefined ? 'Tidak tersedia pada snapshot lama' : 'Jumlah sales order DEAL'} icon={ShieldCheck} color="bg-accent-blue" />
             </div>
@@ -157,19 +166,21 @@ const RingkasanTab = ({
           <SectionCard title="Beban dan Pembagian" icon={<ArrowUpRight size={16} />} subtitle="Pengurang laba yang tercatat dari aktivitas operasional dan settlement penjualan.">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               <MetricCard label="Beban Operasional" value={idr(summary?.operationalExpense ?? 0)} tone="negative" />
-              <MetricCard label="Beban Payroll" value={idr(summary?.payrollExpense ?? 0)} tone="negative" />
+              <MetricCard label="Payroll Dibayar" value={idr(summary?.payrollExpense ?? 0)} note="Termasuk insentif yang sudah masuk settlement" tone="negative" />
+              <MetricCard label="Overhead Payroll" value={idr(summary?.payrollOverheadExpense ?? 0)} note="Gaji pokok + tunjangan − potongan" tone="negative" />
               <MetricCard label="Laba Investor" value={idr(summary?.investorProfit ?? 0)} tone="negative" />
               <MetricCard label="Fixed Return Investor" value={idr(summary?.fixedReturnExpense ?? 0)} tone="negative" />
               <MetricCard label="Rekondisi Tambahan" value={idr(summary?.additionalReconditioningCost ?? 0)} tone="negative" />
               <MetricCard label="Insentif Sales" value={idr(summary?.salesIncentiveAccrued ?? 0)} note="Akrual dari settlement" tone="negative" />
+              <MetricCard label="Biaya Proses Kredit" value={idr(summary?.creditProcessExpense ?? 0)} note="Faktur, absah, survei, rabing data, mediator per order kredit" tone="negative" />
             </div>
           </SectionCard>
 
           <SectionCard title="Hasil Akhir" icon={<Landmark size={16} />} subtitle="Metrik akhir dibaca setelah seluruh komponen pengurang pada masing-masing tahap diperhitungkan.">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <MetricCard label="Provisi Pajak" value={idr(summary?.taxProvision ?? 0)} note={`Dana pajak yang dicadangkan; termasuk pajak bonus ${idr(summary?.leasingBonusTaxProvision ?? 0)}`} tone="negative" />
-              <MetricCard label="Laba Bersih Perusahaan" value={idr(summary?.companyNetProfit ?? 0)} note="Setelah pembagian investor dan pajak" tone="positive" />
-              <MetricCard label="Laba Bersih Operasional" value={idr(summary?.operationalNetProfit ?? 0)} note="Laba bersih perusahaan − beban operasional − payroll" tone="positive" />
+              <MetricCard label="Profit Settlement" value={idr(summary?.companyNetProfitBeforePeriodExpenses ?? summary?.companyNetProfit ?? 0)} note="Settlement final + pendapatan bersih bonus leasing" tone="positive" />
+              <MetricCard label="Profit Bersih Owner" value={idr(summary?.ownerNetProfit ?? summary?.operationalNetProfit ?? 0)} note="Profit settlement − operasional − overhead payroll − biaya proses kredit" tone="positive" />
             </div>
           </SectionCard>
 
@@ -234,7 +245,7 @@ const RingkasanTab = ({
                 <MetricCard label="Saldo Akhir" value={idr(preview.data.summary.endingCash)} tone="neutral" />
                 <MetricCard label="Penjualan" value={idr(preview.data.summary.salesRevenue)} tone="positive" />
                 <MetricCard label="Unit Terjual" value={String(preview.data.summary.unitSold)} tone="neutral" />
-                <MetricCard label="Laba Bersih Operasional" value={idr(preview.data.summary.operationalNetProfit)} tone="positive" />
+                <MetricCard label="Profit Bersih Owner" value={idr(preview.data.summary.ownerNetProfit ?? preview.data.summary.operationalNetProfit)} tone="positive" />
               </div>
               <div className="space-y-2 text-left">{preview.data.checks.map((check) => <p key={check.code} className={`text-[12px] font-semibold ${check.status === 'READY' ? 'text-semantic-success' : check.status === 'WARNING' ? 'text-accent-amber' : 'text-semantic-error'}`}>• {check.message}</p>)}</div>
               <label className="flex gap-2.5 items-start text-left cursor-pointer"><input type="checkbox" checked={reviewedTransactions} onChange={(event) => setReviewedTransactions(event.target.checked)} className="mt-0.5 accent-primary" /><span className="text-[12px] font-semibold text-ink-soft">Saya telah meninjau transaksi dan angka ringkasan periode ini.</span></label>
@@ -270,8 +281,8 @@ const LaporanTutupBukuTab = ({
 
       <section><h3 className="text-[13px] font-extrabold uppercase tracking-wide text-muted mb-3">Kas</h3><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"><MetricCard label="Saldo Awal" value={idr(snapshot.openingCash)} /><MetricCard label="Kas Masuk" value={idr(snapshot.cashIn)} tone="positive" /><MetricCard label="Kas Keluar" value={idr(snapshot.cashOut)} tone="negative" /><MetricCard label="Saldo Akhir" value={idr(snapshot.endingCash)} tone="positive" /></div></section>
       <SectionCard title="Penjualan & Margin" icon={<TrendingUp size={16} />} subtitle="Angka penjualan dan margin yang disimpan saat penutupan."><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3"><MetricCard label="Pendapatan Penjualan" value={idr(snapshot.salesRevenue)} tone="positive" /><MetricCard label="Bonus Leasing" value={snapshot.leasingBonusIncome === null ? '—' : idr(snapshot.leasingBonusIncome)} note={snapshot.leasingBonusIncome === null ? 'Tidak tersedia pada snapshot lama' : 'Pendapatan tambahan, bukan harga jual unit'} tone="positive" /><MetricCard label="Unit Terjual" value={unitSold === null ? '—' : String(unitSold)} note={unitSold === null ? 'Tidak tersedia pada snapshot lama' : undefined} /><MetricCard label="HPP Unit" value={idr(snapshot.unitHpp)} tone="negative" /><MetricCard label="Laba Kotor" value={idr(snapshot.grossProfit)} note="Penjualan − HPP" tone="positive" /></div></SectionCard>
-      <SectionCard title="Beban & Pembagian" icon={<ArrowUpRight size={16} />} subtitle="Komponen pengurang dan pembagian yang tercatat di snapshot."><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"><MetricCard label="Beban Operasional" value={idr(snapshot.operationalExpense)} tone="negative" /><MetricCard label="Beban Payroll" value={idr(snapshot.payrollExpense)} tone="negative" /><MetricCard label="Laba Investor" value={idr(snapshot.investorProfit)} tone="negative" /><MetricCard label="Fixed Return Investor" value={idr(snapshot.fixedReturnExpense)} tone="negative" /><MetricCard label="Rekondisi Tambahan" value={idr(snapshot.additionalReconditioningCost)} tone="negative" /><MetricCard label="Insentif Sales" value={idr(snapshot.salesIncentiveAccrued)} tone="negative" /></div></SectionCard>
-      <SectionCard title="Hasil Akhir" icon={<Landmark size={16} />} subtitle="Hasil akhir snapshot setelah komponen settlement dan biaya terkait."><div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><MetricCard label="Provisi Pajak" value={idr(snapshot.taxProvision)} note={snapshot.leasingBonusTaxProvision === null ? 'Rincian bonus tidak tersedia pada snapshot lama' : `Termasuk pajak bonus ${idr(snapshot.leasingBonusTaxProvision)}`} tone="negative" /><MetricCard label="Laba Bersih Perusahaan" value={idr(snapshot.companyNetProfit)} tone="positive" /><MetricCard label="Laba Bersih Operasional" value={idr(snapshot.operationalNetProfit)} note="Setelah beban operasional dan payroll" tone="positive" /></div></SectionCard>
+      <SectionCard title="Beban & Pembagian" icon={<ArrowUpRight size={16} />} subtitle="Komponen pengurang dan pembagian yang tercatat di snapshot."><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"><MetricCard label="Beban Operasional" value={idr(snapshot.operationalExpense)} tone="negative" /><MetricCard label="Payroll Dibayar" value={idr(snapshot.payrollExpense)} note="Termasuk insentif" tone="negative" /><MetricCard label="Overhead Payroll" value={snapshot.payrollOverheadExpense === null ? '—' : idr(snapshot.payrollOverheadExpense)} note={snapshot.payrollOverheadExpense === null ? 'Tidak tersedia pada snapshot lama' : 'Gaji pokok + tunjangan − potongan'} tone="negative" /><MetricCard label="Laba Investor" value={idr(snapshot.investorProfit)} tone="negative" /><MetricCard label="Fixed Return Investor" value={idr(snapshot.fixedReturnExpense)} tone="negative" /><MetricCard label="Rekondisi Tambahan" value={idr(snapshot.additionalReconditioningCost)} note="Sudah diperhitungkan dalam settlement" tone="negative" /><MetricCard label="Insentif Sales" value={idr(snapshot.salesIncentiveAccrued)} note="Sudah diperhitungkan dalam settlement" tone="negative" /><MetricCard label="Biaya Proses Kredit" value={idr(snapshot.creditProcessExpense)} note="Faktur, absah, survei, rabing data, mediator per order kredit" tone="negative" /></div></SectionCard>
+      <SectionCard title="Hasil Akhir" icon={<Landmark size={16} />} subtitle="Hasil akhir snapshot setelah komponen settlement dan biaya periode."><div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><MetricCard label="Provisi Pajak" value={idr(snapshot.taxProvision)} note={snapshot.leasingBonusTaxProvision === null ? 'Rincian bonus tidak tersedia pada snapshot lama' : `Termasuk pajak bonus ${idr(snapshot.leasingBonusTaxProvision)}`} tone="negative" /><MetricCard label="Profit Settlement" value={snapshot.companyNetProfitBeforePeriodExpenses === null ? idr(snapshot.companyNetProfit) : idr(snapshot.companyNetProfitBeforePeriodExpenses)} note="Settlement final + pendapatan bersih bonus leasing" tone="positive" /><MetricCard label="Profit Bersih Owner" value={snapshot.ownerNetProfit === null ? idr(snapshot.operationalNetProfit) : idr(snapshot.ownerNetProfit)} note={snapshot.ownerNetProfit === null ? 'Formula snapshot lama' : 'Profit settlement − operasional − overhead payroll − biaya proses kredit'} tone="positive" /></div></SectionCard>
     </div>
   );
 };

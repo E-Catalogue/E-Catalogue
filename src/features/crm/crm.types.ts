@@ -162,6 +162,30 @@ export interface SalesComboboxUser {
   username?: string | null;
 }
 
+/** `CreditProcessExpense` (backend credit_process_expenses) — biaya proses kredit per order
+ * (faktur, absah, survei, rabing data, mediator, dll). Langsung terposting ke kas saat dibuat;
+ * penghapusan berarti reversal ledger oleh backend. */
+export interface CreditProcessExpense {
+  id: string;
+  leadOrderId: string;
+  branchId?: string;
+  label: string;
+  amount: number;
+  expenseDate: string;
+  cashAccountId: string;
+  cashAccount?: { id: string; name: string; code: string; type: string } | null;
+  cashTransactionId?: string | null;
+  reversedAt?: string | null;
+  createdAt?: string;
+}
+
+export interface CreditExpenseCreatePayload {
+  label: string;
+  amount: number;
+  expenseDate?: string;
+  cashAccountId?: string;
+}
+
 export interface LeadOrder {
   id: string;
   nomorOrder: string;
@@ -222,6 +246,9 @@ export interface LeadOrder {
   totalPaid?: number;
   remainingPayment?: number;
   isPaid?: boolean;
+  /** Total biaya proses kredit aktif (dihitung backend `normalizeOrder`). */
+  creditProcessExpenseTotal?: number;
+  creditProcessExpenses?: CreditProcessExpense[];
 }
 
 export interface LeadOrderDealImpact {
@@ -328,6 +355,8 @@ export interface SaleSettlement {
   companyNetProfit: number | null;
   taxReserveStatus: TaxReserveStatus;
   taxTransferGroupId?: string | null;
+  /** Order terkait (subset) — membawa rincian `creditProcessExpenses` aktif. */
+  order?: { id: string; nomorOrder: string; creditProcessExpenses?: CreditProcessExpense[] } | null;
   leasingBonusAdjustments?: Array<{ id: string; paymentId: string; receivedAt: string; amount: number; taxRateSnapshot: number; taxProvision: number; companyNetIncome: number; taxReserveStatus: TaxReserveStatus; taxTransferGroupId?: string | null }>;
   finalizedAt?: string | null;
   createdAt?: string;

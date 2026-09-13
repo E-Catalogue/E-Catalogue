@@ -20,7 +20,13 @@ export interface DashboardSummary {
   expense: number;
   operationalExpense: number;
   payrollExpense: number;
+  payrollIncentivePaid: number;
+  payrollOverheadExpense: number;
   reconditioningCost: number;
+  /** Total biaya proses kredit per order kredit (faktur, absah, survei, rabing data, mediator, dll). */
+  creditProcessExpense: number;
+  companyNetProfitBeforePeriodExpenses: number;
+  ownerNetProfit: number;
   netProfit: number;
   investorProfit: number;
   fixedReturnExpense: number;

@@ -56,10 +56,10 @@ const CreateRekondisiModal = ({
   const [unitId, setUnitId] = useState('');
   // Backend TIDAK menyediakan lookup unit khusus rekondisi (`/finance/lookups/units` dihapus, dan
   // rekondisi.route.js hanya punya vendors/checks/cash-accounts). Rekondisi memang operasi berbasis
-  // unit, jadi pakai daftar unit nyata `/units` lalu saring status INVENTORY di klien.
+  // unit, jadi pakai daftar unit nyata `/units` lalu saring status yang diizinkan di klien.
   const { data: unitsRes, isLoading } = useUnits({ page: 1, limit: 100 });
   const createM = useCreateRekondisi();
-  const units = (unitsRes?.data ?? []).filter((u) => u.statusUnit === 'INVENTORY');
+  const units = (unitsRes?.data ?? []).filter((u) => ['INVENTORY', 'READY_STOCK'].includes(u.statusUnit));
   const selected = units.find((unit) => unit.id === unitId);
 
   const handleCreate = async () => {
@@ -87,7 +87,7 @@ const CreateRekondisiModal = ({
       open={open}
       onClose={onClose}
       title="Buat Rekondisi"
-      subtitle="Pilih unit inventory untuk memulai rekondisi"
+      subtitle="Pilih unit Inventory atau Ready Stock untuk memulai rekondisi"
       icon={<Wrench size={18} />}
       size="md"
       footer={
@@ -101,21 +101,26 @@ const CreateRekondisiModal = ({
     >
       <div className="space-y-4">
         <SearchableSelect
-          label="Unit Inventory"
+          label="Unit"
           required
           value={unitId}
           onChange={setUnitId}
           loading={isLoading}
           options={units.map((unit) => ({ value: unit.id, label: unitOptionLabel(unit), sublabel: [unit.merek?.name, unit.tipe?.name].filter(Boolean).join(' ') || undefined }))}
-          placeholder="Pilih unit inventory"
+          placeholder="Pilih unit"
           searchPlaceholder="Cari plat / merek / tipe..."
-          emptyMessage="Tidak ada unit berstatus Inventory."
+          emptyMessage="Tidak ada unit berstatus Inventory atau Ready Stock."
         />
         {selected && (
           <div className="rounded-xl border border-border bg-surface-soft p-3 text-[12px] font-semibold text-ink-soft">
             Harga beli: <span className="font-bold text-ink">{idr(selected.purchaseCost)}</span>
             {selected.purchaseCashTransactionId && (
               <span className="ml-2 text-primary">Pembelian sudah tercatat kas</span>
+            )}
+            {selected.statusUnit === 'READY_STOCK' && (
+              <p className="mt-2 leading-relaxed text-accent-amber">
+                Harga Target/OTR dan seluruh booking tetap. DEAL menunggu rekondisi ini selesai.
+              </p>
             )}
           </div>
         )}
@@ -141,7 +146,7 @@ const RekondisiPageInner = () => {
   const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined, period: period || undefined, dateBasis });
 
   const rows: Rekondisi[] = useMemo(() => data?.data ?? [], [data?.data]);
-  const units = (unitLookup?.data ?? []).filter((u) => u.statusUnit === 'INVENTORY');
+  const units = (unitLookup?.data ?? []).filter((u) => ['INVENTORY', 'READY_STOCK'].includes(u.statusUnit));
   const total = data?.meta?.total ?? rows.length;
   const initialTotal = rows.filter((row) => row.seq === 1).reduce((sum, row) => sum + Number(row.total || 0), 0);
   const additionalTotal = rows.filter((row) => row.seq > 1).reduce((sum, row) => sum + Number(row.total || 0), 0);

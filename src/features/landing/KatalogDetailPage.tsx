@@ -6,6 +6,7 @@ import {
   Car, Loader2, CheckCircle2, Building2, Share2,
 } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
+import { PublicUnitImage } from './PublicUnitImage';
 import { SalesPickerModal } from './SalesPickerModal';
 import { formatCurrency, formatNumber, formatTransmisi } from '@/core/utils/format';
 import { cmsImageUrl } from '@/features/cms/cms.api';
@@ -24,6 +25,14 @@ const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: stri
       <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p>
       <p className="text-[13px] font-extrabold text-ink truncate" title={value}>{value}</p>
     </div>
+  </div>
+);
+
+export const CatalogBenefits = () => (
+  <div data-testid="catalog-benefits" className="-mx-1 flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto px-1 pb-1 pt-1 text-[12px] font-semibold text-ink-soft md:mx-0 md:flex-wrap md:gap-x-5 md:gap-y-2 md:overflow-visible md:px-0 md:pb-0">
+    <span className="flex shrink-0 snap-start items-center gap-1.5 rounded-full border border-border bg-surface-soft px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0"><ShieldCheck size={14} className="text-accent-green" /> Garansi Mesin 1 Bulan</span>
+    <span className="flex shrink-0 snap-start items-center gap-1.5 rounded-full border border-border bg-surface-soft px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0"><BadgeCheck size={14} className="text-accent-green" /> Surat Lengkap</span>
+    <span className="flex shrink-0 snap-start items-center gap-1.5 rounded-full border border-border bg-surface-soft px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0"><MapPin size={14} className="text-accent-green" /> Bisa Test Drive</span>
   </div>
 );
 
@@ -105,7 +114,7 @@ export const KatalogDetailPage = () => {
         {/* GALLERY */}
         <Reveal>
           <div className="relative rounded-2xl overflow-hidden aspect-[16/10] bg-surface-soft border border-border group">
-            <img src={gallery[activeImg]} alt={title} onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }} className="w-full h-full object-cover transition-opacity duration-200" />
+            <PublicUnitImage src={gallery[activeImg]} alt={title} loading="eager" imageClassName="transition-opacity duration-200" />
             <div className="absolute top-3 left-3 flex gap-2">
               {d.isNew && <span className="bg-primary text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg shadow-glow">Baru</span>}
               <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg">{d.code}</span>
@@ -145,7 +154,7 @@ export const KatalogDetailPage = () => {
             <div className="grid grid-cols-5 gap-2 mt-2.5">
               {gallery.map((img, i) => (
                 <button key={i} onClick={() => setActiveImg(i)} className={`relative rounded-xl overflow-hidden aspect-[4/3] border-2 transition-all ${activeImg === i ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'}`}>
-                  <img src={img} alt="" onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_CAR_IMAGE; }} className="w-full h-full object-cover" />
+                  <PublicUnitImage src={img} alt={`${title} foto ${i + 1}`} />
                 </button>
               ))}
             </div>
@@ -182,11 +191,7 @@ export const KatalogDetailPage = () => {
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-semibold text-ink-soft pt-1">
-            <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent-green" /> Garansi Mesin 1 Bulan</span>
-            <span className="flex items-center gap-1.5"><BadgeCheck size={14} className="text-accent-green" /> Surat Lengkap</span>
-            <span className="flex items-center gap-1.5"><MapPin size={14} className="text-accent-green" /> Bisa Test Drive</span>
-          </div>
+          <CatalogBenefits />
         </Reveal>
       </div>
 
