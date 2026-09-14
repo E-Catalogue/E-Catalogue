@@ -9,6 +9,7 @@ import {
   TrendingDown,
   ArrowLeftRight,
   BarChart3,
+  LineChart,
   Settings,
   Tag,
   Building2,
@@ -48,6 +49,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: '/laporan-pengeluaran', label: 'Laporan Pengeluaran', icon: ReceiptText, group: 'main', code: 'EXPENSE_REPORT' },
   { path: '/inventory', label: 'Inventori', icon: Car, group: 'operasional', code: 'INVENTORI' },
   { path: '/rekondisi', label: 'Rekondisi', icon: Wrench, group: 'operasional', code: 'REKONDISI' },
+  { path: '/analisispelanggan', label: 'Analisis Pelanggan', icon: LineChart, group: 'operasional', code: 'CRM_ANALYTICS' },
   { path: '/crm', label: 'CRM / Lead', icon: Users, group: 'operasional', code: 'CRM' },
   { path: '/test-drive', label: 'Test Drive', icon: KeyRound, group: 'operasional', code: 'TEST_DRIVE' },
   { path: '/penjualan', label: 'Penjualan', icon: ReceiptText, group: 'operasional', code: 'PENJUALAN' },
@@ -99,6 +101,8 @@ export const PATH_BY_CODE: Record<string, string> = {
   DASBOARD_CASHFLOW: '/dashboard-cashflow',
   DASHBOARD_CASHFLOW: '/dashboard-cashflow',
   UNIT: '/inventory',
+  CRM_ANALYTICS: '/analisispelanggan',
+  ANALYTICS: '/analisispelanggan',
   LEAD: '/crm',
   LEAD_ORDER: '/penjualan',
   LEAD_PAYMENT: '/pembayaran',
@@ -146,5 +150,6 @@ export const firstAccessibleMenuPath = (groupMenus: GroupMenu[]): string | null 
 
 export const isPathActive = (pathname: string, itemPath: string): boolean => {
   if (itemPath === '/') return pathname === '/';
-  return pathname === itemPath || pathname.startsWith(itemPath + '/');
+  if (pathname === itemPath) return true;
+  return pathname.startsWith(itemPath + '/');
 };

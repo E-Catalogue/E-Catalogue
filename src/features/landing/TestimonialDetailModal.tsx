@@ -1,4 +1,4 @@
-import { CalendarDays, Car, MapPin, Quote, Star, UserRound } from 'lucide-react';
+import { BadgeCheck, CalendarDays, Car, MapPin, Quote, Star, UserRound } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { usePublicTestimonial } from './landing.hooks';
@@ -11,7 +11,15 @@ export const TestimonialDetailModal = ({ id, onClose }: { id: string | null; onC
     <Modal open={!!id} onClose={onClose} title="Cerita Pelanggan" icon={<Quote size={19} />} size="xl">
       {isLoading || !data ? <CustomerLoader /> : (
         <div className="space-y-5">
-          {data.imageFilename && <div className="flex w-full items-center justify-center overflow-hidden rounded-2xl bg-ink/[.035] p-2 sm:p-3"><img src={cmsImageUrl('testimoni', data.imageFilename) ?? ''} alt={`Serah terima ${data.name}`} className="max-h-[58vh] w-full rounded-xl object-contain sm:max-h-[68vh]" /></div>}
+          {data.imageFilename && (
+            <div className="relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-ink/[.035] p-2 sm:p-3">
+              <img src={cmsImageUrl('testimoni', data.imageFilename) ?? ''} alt={`Serah terima ${data.name}`} className="max-h-[58vh] w-full rounded-xl object-contain sm:max-h-[68vh]" />
+              <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/95 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-ink shadow-md backdrop-blur-md">
+                <BadgeCheck size={14} className="text-primary" />
+                <span>Dokumentasi Serah Terima</span>
+              </span>
+            </div>
+          )}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 overflow-hidden rounded-full bg-primary-light text-primary grid place-items-center font-extrabold">

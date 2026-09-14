@@ -35,8 +35,8 @@ export const TestimonialCard = ({ testimonial, onView }: { testimonial: PublicTe
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/10 to-ink/20" />
 
-        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-white/25 bg-ink/45 px-2.5 py-1.5 text-[8px] font-extrabold uppercase tracking-[.11em] text-white backdrop-blur-md">
-          <BadgeCheck size={13} className="text-primary-light" /> Cerita pelanggan
+        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-white/80 bg-white/95 px-2.5 py-1.5 text-[8px] font-extrabold uppercase tracking-[.11em] text-ink shadow-sm backdrop-blur-md">
+          <BadgeCheck size={13} className="text-primary" /> Dokumentasi Serah Terima
         </span>
         <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1.5 text-[9px] font-extrabold text-ink shadow-sm">
           <Star size={13} className="fill-accent-amber text-accent-amber" /> {testimonial.rating}.0

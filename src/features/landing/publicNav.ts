@@ -7,6 +7,7 @@ export const PUBLIC_NAV: PublicNavItem[] = [
   { to: '/', label: 'Beranda' },
   { to: '/katalog', label: 'Katalog' },
   { to: '/simulasi', label: 'Simulasi Kredit' },
+  { to: '/testimoni', label: 'Testimoni' },
   { to: '/tentang', label: 'Tentang' },
   { to: '/kontak', label: 'Kontak' },
 ];

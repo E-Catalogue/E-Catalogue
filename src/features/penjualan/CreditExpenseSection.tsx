@@ -16,7 +16,7 @@ import type { CreditProcessExpense } from '@/features/crm/crm.types';
 type BranchHeaders = Record<string, string> | undefined;
 
 /** Chip keterangan sekali tap — tujuan utama quick form "1 tap + 1 ketik nominal". */
-export const CREDIT_EXPENSE_LABELS = ['Faktur', 'Absah', 'Survei', 'Rabing Data', 'Mediator', 'Lainnya'] as const;
+const CREDIT_EXPENSE_LABELS = ['Faktur', 'Absah', 'Survei', 'Rabing Data', 'Mediator', 'Lainnya'] as const;
 
 interface CreditExpenseQuickFormProps {
   orderId: string;

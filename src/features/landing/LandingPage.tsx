@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useMemo, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, HandCoins, ChevronDown } from 'lucide-react';
+import { ArrowRight, Search, HandCoins } from 'lucide-react';
 import { PublicUnitCard } from './PublicUnitCard';
 import { Reveal } from '@/shared/components/Reveal';
 import { Ic } from './Ic';
@@ -16,6 +16,8 @@ import { TestimonialDetailModal } from './TestimonialDetailModal';
 import { HeroUnitCarousel } from './HeroUnitCarousel';
 import { resolveHeroSliderUnits } from './heroSliderUnits';
 import { TestimonialCarousel } from './TestimonialCarousel';
+import { FaqSection, SUBANG_CAR_FAQS } from './FaqSection';
+import { useSeo, buildAutoDealerSchema, buildFaqSchema } from '@/core/utils/seo';
 
 export const LandingPage = () => {
   const { data: hp, isLoading, isError, refetch } = usePublicHomepage();
@@ -28,6 +30,36 @@ export const LandingPage = () => {
   const waUrl = buildWhatsAppUrl(site?.whatsappNumber, waMessages.generalContact(site?.companyName));
   const resolveLink = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
   const submitHeroSearch = (event: FormEvent) => { event.preventDefault(); navigate({ to: '/katalog', search: { q: heroSearch.trim() } }); };
+
+  const autoDealerSchema = useMemo(() => buildAutoDealerSchema(site), [site]);
+  const faqSchema = useMemo(() => buildFaqSchema(SUBANG_CAR_FAQS), []);
+
+  useSeo(
+    {
+      title: `${site?.companyName || 'GM Mobilindo'} — Showroom Mobil Bekas Subang Terpercaya & Bergaransi`,
+      description:
+        site?.footerDescription ||
+        'Pusat jual beli mobil bekas berkualitas di Subang. Melayani cash, kredit DP minim & cicilan ringan, serta tukar tambah. Cek unit ready stock bergaransi hari ini!',
+      keywords: [
+        'mobil bekas subang',
+        'showroom mobil bekas subang',
+        'jual beli mobil bekas subang',
+        'kredit mobil bekas subang',
+        'dealer mobil bekas subang',
+        'tukar tambah mobil subang',
+        'gm mobilindo subang',
+      ],
+      ogImage: '/logo.jpeg',
+      jsonLd: [autoDealerSchema, faqSchema],
+    },
+    [site, autoDealerSchema, faqSchema],
+  );
+
+  const featuredUnits = useMemo(() => {
+    const list = hp?.featured?.units ?? [];
+    const priority: Record<string, number> = { READY_STOCK: 0, READY: 0, HOLD: 1, BOOKED: 1, SOLD: 2 };
+    return [...list].sort((a, b) => (priority[a.statusUnit ?? ''] ?? 3) - (priority[b.statusUnit ?? ''] ?? 3));
+  }, [hp?.featured?.units]);
 
   // Tampilkan hanya setelah data siap — hindari render setengah jadi.
   if (isLoading) return <CustomerLoader />;
@@ -52,16 +84,18 @@ export const LandingPage = () => {
       </div>
     </section>
   );
+
   // CMS belum di-setup (tenant baru) → jangan tampil kosong melompong.
   if (!hp || Object.keys(hp).length === 0 || (!hp.hero && !hp.whyUs && !hp.featured)) {
     return <EmptyCmsState />;
   }
 
   const hero = hp?.hero;
+
   const heroSliderUnits = resolveHeroSliderUnits(
     hero?.sliderUnits,
     heroCatalog?.data,
-    hp?.featured?.units,
+    featuredUnits,
   );
 
   return (
@@ -197,7 +231,7 @@ export const LandingPage = () => {
               </Link>
             </Reveal>
             <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {hp.featured.units.map((u) => (
+              {featuredUnits.map((u) => (
                 <motion.div key={u.id} variants={fadeUpItem}><PublicUnitCard card={u} onView={openDetail} /></motion.div>
               ))}
             </motion.div>
@@ -215,11 +249,23 @@ export const LandingPage = () => {
             <h2 className="text-2xl md:text-3xl font-extrabold text-ink mt-2">{hp.testimonials.title}</h2>
             <p className="text-muted font-medium mt-2">{hp.testimonials.subtitle}</p>
           </Reveal>
-          <motion.div variants={fadeUpItem} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }}><TestimonialCarousel testimonials={hp.testimonials.items} onView={setTestimonialId} /></motion.div>
+          <motion.div variants={fadeUpItem} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-8% 0px -8% 0px' }}>
+            <TestimonialCarousel testimonials={hp.testimonials.items} onView={setTestimonialId} />
+          </motion.div>
+          <div className="mt-8 text-center">
+            <Link
+              to="/testimoni"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-surface px-6 py-3 text-[13px] font-extrabold text-primary shadow-sm hover:bg-primary hover:text-white transition-all group"
+            >
+              <span>Lihat Semua Testimoni</span>
+              <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
         </section>
       ) : null}
 
-      {hp?.faq?.isVisible !== false && hp?.faq?.items?.length ? <section className="max-w-4xl mx-auto px-4 md:px-6 py-14 md:py-20"><Reveal className="text-center mb-8"><p className="text-primary font-bold text-[13px] uppercase tracking-wide">{hp.faq.eyebrow}</p><h2 className="mt-2 text-2xl md:text-3xl font-extrabold text-ink">{hp.faq.title}</h2></Reveal><div className="space-y-3">{hp.faq.items.map((item) => <details key={item.question} className="group rounded-2xl border border-border bg-surface p-5 open:border-primary/30 open:shadow-card"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-extrabold text-ink">{item.question}<ChevronDown size={18} className="text-primary transition-transform group-open:rotate-180" /></summary><p className="mt-3 pr-8 text-[13px] font-medium leading-6 text-muted">{item.answer}</p></details>)}</div></section> : null}
+      {/* FAQ Mobil Bekas Subang */}
+      <FaqSection whatsappNumber={site?.whatsappNumber} companyName={site?.companyName} />
 
       {/* CTA */}
       {hp?.cta?.isVisible !== false && hp?.cta && (

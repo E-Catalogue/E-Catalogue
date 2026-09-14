@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { usePublicCatalog, usePublicCatalogBrands, usePublicCatalogPage } from './landing.hooks';
 import type { CatalogCard, CatalogQuery, PublicTransmisi } from './public.types';
 import { Reveal } from '@/shared/components/Reveal';
+import { useSeo } from '@/core/utils/seo';
 
 type SortKey = NonNullable<CatalogQuery['sort']>;
 
@@ -54,6 +55,19 @@ export const KatalogPage = () => {
   const [limit, setLimit] = useState(12);
   const [showFilter, setShowFilter] = useState(false);
   const debounced = useDebouncedValue(query, 400);
+
+  useSeo({
+    title: 'Daftar Mobil Bekas Subang Murah & Berkualitas — GM Mobilindo',
+    description:
+      'Telusuri pilihan mobil bekas terbaik di Subang. Tersedia berbagai merek seperti Toyota, Honda, Daihatsu, Mitsubishi dengan kondisi bergaransi mesin, surat lengkap, dan opsi simulasi kredit DP minim cicilan ringan.',
+    keywords: [
+      'mobil bekas subang',
+      'katalog mobil bekas subang',
+      'showroom mobil bekas subang',
+      'harga mobil bekas subang',
+      'kredit mobil bekas subang',
+    ],
+  });
 
   const priceBounds = useMemo(() => {
     const maxes = (pageData?.priceRanges ?? []).map((r) => r.max ?? 0).filter(Boolean);

@@ -2,6 +2,7 @@ import { apiClient } from '@/core/api/client';
 import type { ApiResponse, ApiMeta } from '@/core/api/types';
 import type {
   SiteSettings, PublicHomepage, PublicAbout, PublicContact, PublicBranch, PublicTestimonial,
+  PublicTestimonialQuery, TestimonialListResponse,
   CatalogCard, CatalogDetail, CatalogBrand, CatalogQuery,
   CreditSimConfig, CreditCalcInput, CreditCalcResult,
   PublicNavMenuItem, SalesContact,
@@ -64,6 +65,11 @@ export const landingApi = {
   getContactPage: () => apiClient.get<ApiResponse<PublicContact>>('/public/contact').then((r) => r.data.data),
   getBranches: () => apiClient.get<ApiResponse<PublicBranch[]>>('/public/branches').then((r) => r.data.data),
   getTestimonial: (id: string) => apiClient.get<ApiResponse<PublicTestimonial>>(`/public/testimonials/${id}`).then((r) => r.data.data),
+  getTestimonials: (params?: PublicTestimonialQuery): Promise<TestimonialListResponse> =>
+    apiClient.get<ApiResponse<PublicTestimonial[]>>('/public/testimonials', { params }).then((r) => ({
+      data: r.data.data || [],
+      meta: r.data.meta,
+    })),
 
   getCatalogPage: () => apiClient.get<ApiResponse<CatalogPagePublic>>('/public/catalog-page').then((r) => r.data.data),
   getCatalog: (params: CatalogQuery): Promise<CatalogListResponse> =>

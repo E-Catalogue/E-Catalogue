@@ -39,8 +39,9 @@ const isPersistentMutation = (config: InternalAxiosRequestConfig) => {
   const url = config.url ?? '';
   // POST preview dipakai hanya untuk menghitung simulasi dari payload dan tidak
   // menyimpan data; jangan munculkan konfirmasi "Simpan Perubahan".
+  // Endpoint publik (katalog publik, tracking analitik, kalkulator kredit publik) juga tidak boleh meminta konfirmasi.
   return !url.includes('/auth/')
-    && !url.includes('/public/credit-simulation/calculate')
+    && !url.includes('/public/')
     && !url.includes('/pricing-preview');
 };
 

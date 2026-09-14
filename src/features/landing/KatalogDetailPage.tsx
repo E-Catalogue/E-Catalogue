@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useParams, useNavigate } from '@tanstack/react-router';
 import {
   ChevronRight, Calendar, Gauge, Fuel, Cog, Palette, Hash, ShieldCheck,
   Phone, ArrowLeft, BadgeCheck, MapPin, ChevronLeft, ChevronRight as ChevronRightIcon,
-  Car, Loader2, CheckCircle2, Building2, Share2,
+  Car, Loader2, CheckCircle2, Building2, Share2, Maximize2,
 } from 'lucide-react';
+import { Modal } from '@/shared/components/ui/Modal';
 import { PublicUnitCard } from './PublicUnitCard';
-import { PublicUnitImage } from './PublicUnitImage';
 import { SalesPickerModal } from './SalesPickerModal';
+import { UnitDeliverySpotlight } from './UnitDeliverySpotlight';
+import { TestimonialDetailModal } from './TestimonialDetailModal';
 import { formatCurrency, formatNumber, formatTransmisi } from '@/core/utils/format';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
@@ -17,6 +19,8 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import type { CatalogCard, CatalogDetail } from './public.types';
 import { Reveal } from '@/shared/components/Reveal';
+import { trackEvent } from '@/core/utils/tracker';
+import { useSeo, buildCarSchema } from '@/core/utils/seo';
 
 const Spec = ({ icon: Icon, label, value }: { icon: typeof Calendar; label: string; value: string }) => (
   <div className="flex items-center gap-3 p-3.5 rounded-xl bg-surface-soft border border-border">
@@ -44,6 +48,60 @@ export const KatalogDetailPage = () => {
   const { data: settings } = usePublicSiteSettings();
   const [activeImg, setActiveImg] = useState(0);
   const [salesOpen, setSalesOpen] = useState(false);
+  const [selectedTestimonialId, setSelectedTestimonialId] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (unit?.id) {
+      trackEvent({
+        eventType: 'UNIT_VIEW',
+        unitId: unit.id,
+        pagePath: typeof window !== 'undefined' ? window.location.pathname : `/katalog/${unit.id}`,
+        pageTitle: (unit as CatalogDetail).name || 'Detail Unit',
+        meta: {
+          merek: (unit as CatalogDetail).merek?.name,
+          tipe: (unit as CatalogDetail).tipe?.name,
+          tahun: (unit as CatalogDetail).tahun,
+          harga: (unit as CatalogDetail).harga,
+        },
+      });
+    }
+  }, [unit]);
+
+  const detailUnit = unit as CatalogDetail | undefined;
+  const seoMerekTipe = `${detailUnit?.merek?.name ?? ''} ${detailUnit?.tipe?.name ?? ''}`.trim();
+  const carTitle = detailUnit?.name?.trim() || seoMerekTipe || 'Mobil Bekas';
+  const firstImg = (detailUnit?.images?.[0]?.filename
+    ? cmsImageUrl('unit', detailUnit.images[0].filename)
+    : undefined) ?? undefined;
+  const carSchema = useMemo(
+    () => (detailUnit ? buildCarSchema(detailUnit, firstImg) : undefined),
+    [detailUnit, firstImg],
+  );
+
+  useSeo(
+    {
+      title: detailUnit
+        ? `Jual ${carTitle} ${detailUnit.tahun || ''} Bekas Subang — ${formatCurrency(detailUnit.harga)} | ${settings?.companyName || 'GM Mobilindo'}`
+        : 'Detail Mobil Bekas Subang | GM Mobilindo',
+      description: detailUnit
+        ? `Jual ${carTitle} tahun ${detailUnit.tahun || ''} bekas di Subang. Transmisi ${formatTransmisi(detailUnit.transmisi)}, ${detailUnit.kilometer ? `${formatNumber(detailUnit.kilometer)} km` : 'kondisi istimewa'}, garansi mesin 1 bulan, surat lengkap. Melayani kredit DP minim & cash.`
+        : 'Detail mobil bekas berkualitas bergaransi di Subang — GM Mobilindo.',
+      ogImage: firstImg,
+      ogType: 'product',
+      keywords: detailUnit
+        ? [
+            `${carTitle.toLowerCase()} bekas subang`,
+            `${detailUnit.merek?.name?.toLowerCase() ?? ''} bekas subang`,
+            'kredit mobil bekas subang',
+            'jual mobil bekas subang',
+            'showroom mobil subang',
+          ]
+        : ['mobil bekas subang'],
+      jsonLd: carSchema,
+    },
+    [detailUnit, carTitle, firstImg, settings?.companyName, carSchema],
+  );
 
   if (isLoading) return <div className="flex items-center justify-center py-40 text-muted"><Loader2 size={30} className="animate-spin" /></div>;
 
@@ -70,6 +128,17 @@ export const KatalogDetailPage = () => {
   const nextImg = () => setActiveImg((i) => (i + 1) % gallery.length);
   const openDetail = (u: CatalogCard) => { setActiveImg(0); navigate({ to: '/katalog/$id', params: { id: u.id } }); };
 
+  const handleOpenSales = () => {
+    if (unit?.id) {
+      trackEvent({
+        eventType: 'WHATSAPP_CLICK',
+        unitId: unit.id,
+        meta: { unitName: (unit as CatalogDetail).name || 'Unit', location: 'unit_detail' },
+      });
+    }
+    setSalesOpen(true);
+  };
+
   const handleCopyDetailUrl = () => {
     const shareUrl = window.location.href;
     if (navigator.clipboard?.writeText) {
@@ -81,6 +150,13 @@ export const KatalogDetailPage = () => {
       input.select();
       document.execCommand('copy');
       document.body.removeChild(input);
+    }
+    if (unit?.id) {
+      trackEvent({
+        eventType: 'SHARE_CLICK',
+        unitId: unit.id,
+        meta: { unitName: title },
+      });
     }
     store.dispatch(
       showToast({
@@ -113,13 +189,25 @@ export const KatalogDetailPage = () => {
       <div className="grid lg:grid-cols-[1fr_420px] gap-8 items-start">
         {/* GALLERY */}
         <Reveal>
-          <div className="relative rounded-2xl overflow-hidden aspect-[16/10] bg-surface-soft border border-border group">
-            <PublicUnitImage src={gallery[activeImg]} alt={title} loading="eager" imageClassName="transition-opacity duration-200" />
-            <div className="absolute top-3 left-3 flex gap-2">
+          <div className="relative rounded-2xl overflow-hidden bg-surface-soft border border-border group shadow-sm flex items-center justify-center min-h-[260px]">
+            <img
+              key={activeImg}
+              src={gallery[activeImg]}
+              alt={`${title} - Foto ${activeImg + 1}`}
+              loading="eager"
+              className="w-full h-auto block object-contain max-h-[75vh] mx-auto transition-opacity duration-300 cursor-zoom-in"
+              onClick={() => setIsImageModalOpen(true)}
+              onError={(e) => {
+                e.currentTarget.src = DEFAULT_CAR_IMAGE;
+              }}
+            />
+
+            {/* Badges Floating di atas Foto */}
+            <div className="pointer-events-none absolute top-3 left-3 flex gap-2 z-10">
               {d.isNew && <span className="bg-primary text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg shadow-glow">Baru</span>}
-              <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg">{d.code}</span>
+              <span className="bg-surface/90 backdrop-blur text-ink text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm border border-border/40">{d.code}</span>
             </div>
-            <div className="absolute top-3 right-3 flex items-center gap-2">
+            <div className="pointer-events-none absolute top-3 right-3 flex items-center gap-2 z-10">
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm ${
                 d.statusKatalog === 'SOLD' || d.statusUnit === 'SOLD' || d.isSold
                   ? 'bg-semantic-error text-white'
@@ -140,21 +228,82 @@ export const KatalogDetailPage = () => {
                   : 'Ready Stock'}
               </span>
             </div>
+
+            {/* Tombol Perbesar Foto (Maximize) */}
+            <button
+              type="button"
+              onClick={() => setIsImageModalOpen(true)}
+              className="absolute right-3 bottom-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface/85 text-ink shadow-md backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 hover:scale-110 hover:bg-surface active:scale-95"
+              title="Perbesar foto"
+              aria-label="Perbesar foto ukuran penuh"
+            >
+              <Maximize2 size={15} />
+            </button>
+
+            {/* Navigation Arrows */}
             {gallery.length > 1 && (
               <>
-                <button onClick={prevImg} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/90 backdrop-blur text-ink flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface shadow-md"><ChevronLeft size={18} /></button>
-                <button onClick={nextImg} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/90 backdrop-blur text-ink flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface shadow-md"><ChevronRightIcon size={18} /></button>
+                <button
+                  type="button"
+                  onClick={prevImg}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-surface/90 backdrop-blur text-ink flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-surface hover:scale-105 shadow-md active:scale-95"
+                  aria-label="Foto sebelumnya"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={nextImg}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-surface/90 backdrop-blur text-ink flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-surface hover:scale-105 shadow-md active:scale-95"
+                  aria-label="Foto berikutnya"
+                >
+                  <ChevronRightIcon size={18} />
+                </button>
               </>
             )}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {gallery.map((_, i) => <button key={i} onClick={() => setActiveImg(i)} className={`h-1.5 rounded-full transition-all ${i === activeImg ? 'w-5 bg-white' : 'w-1.5 bg-white/60'}`} />)}
-            </div>
+
+            {/* Dots Indicator */}
+            {gallery.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1.5 rounded-full shadow-sm">
+                {gallery.map((_, i) => (
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className={`h-1.5 rounded-full transition-all ${i === activeImg ? 'w-5 bg-white' : 'w-1.5 bg-white/60 hover:bg-white/90'}`}
+                    aria-label={`Pilih foto ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* List thumbnail normal di bawah highlight */}
           {gallery.length > 1 && (
-            <div className="grid grid-cols-5 gap-2 mt-2.5">
+            <div className="grid grid-cols-5 gap-2.5 mt-3">
               {gallery.map((img, i) => (
-                <button key={i} onClick={() => setActiveImg(i)} className={`relative rounded-xl overflow-hidden aspect-[4/3] border-2 transition-all ${activeImg === i ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'}`}>
-                  <PublicUnitImage src={img} alt={`${title} foto ${i + 1}`} />
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActiveImg(i)}
+                  className={`group/thumb relative rounded-xl overflow-hidden aspect-[4/3] border-2 transition-all ${
+                    activeImg === i
+                      ? 'border-primary ring-2 ring-primary/20 shadow-sm'
+                      : 'border-border hover:border-primary/50 opacity-80 hover:opacity-100'
+                  }`}
+                  aria-label={`Lihat foto ${i + 1}`}
+                >
+                  <img
+                    src={img}
+                    alt={`${title} foto ${i + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover/thumb:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.src = DEFAULT_CAR_IMAGE;
+                    }}
+                  />
+                  {activeImg === i && (
+                    <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+                  )}
                 </button>
               ))}
             </div>
@@ -186,7 +335,7 @@ export const KatalogDetailPage = () => {
                 <CheckCircle2 size={17} className="text-semantic-error" /> Unit Ini Sudah Terjual (Sold)
               </div>
             ) : (
-              <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors w-full">
+              <button onClick={handleOpenSales} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-bold text-[14px] px-5 py-3.5 shadow-glow hover:bg-primary-dark transition-colors w-full">
                 <Phone size={17} /> Tanya / Booking Unit Ini
               </button>
             )}
@@ -228,7 +377,7 @@ export const KatalogDetailPage = () => {
         <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white h-fit shadow-card">
           <h3 className="text-lg font-extrabold">Tertarik dengan unit ini?</h3>
           <p className="text-white/85 text-[13px] font-medium mt-1.5 leading-relaxed">Hubungi sales kami untuk info lebih lanjut, negosiasi harga, atau jadwalkan test drive.</p>
-          <button onClick={() => setSalesOpen(true)} className="inline-flex items-center justify-center gap-2 w-full mt-5 rounded-xl bg-white text-primary font-bold text-[14px] px-5 py-3 hover:bg-white/90 shadow-md transition-colors"><Phone size={17} /> Chat Sales Sekarang</button>
+          <button onClick={handleOpenSales} className="inline-flex items-center justify-center gap-2 w-full mt-5 rounded-xl bg-white text-primary font-bold text-[14px] px-5 py-3 hover:bg-white/90 shadow-md transition-colors"><Phone size={17} /> Chat Sales Sekarang</button>
           {d.branch && (
             <div className="mt-5 pt-4 border-t border-white/20 text-[12px] space-y-1.5">
               <p className="font-extrabold text-[13px] text-white flex items-center gap-1.5"><Building2 size={14} /> {d.branch.name}</p>
@@ -239,6 +388,36 @@ export const KatalogDetailPage = () => {
         </div>
       </div>
 
+
+      {/* Testimoni Unit Terjual */}
+      {d.testimonials && d.testimonials.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                <BadgeCheck size={14} /> Serah Terima & Bukti Transaksi
+              </p>
+              <h2 className="text-xl md:text-2xl font-extrabold text-ink mt-1">
+                Cerita Pelanggan untuk Unit Ini
+              </h2>
+            </div>
+            <Link to="/testimoni" className="text-[13px] font-bold text-primary hover:underline inline-flex items-center gap-1">
+              Lihat Semua Testimoni <ChevronRightIcon size={14} />
+            </Link>
+          </div>
+
+          <div className="space-y-6">
+            {d.testimonials.map((t) => (
+              <UnitDeliverySpotlight
+                key={t.id}
+                testimonial={t}
+                unitTitle={title}
+                onViewModal={() => setSelectedTestimonialId(t.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Related */}
       {related && related.length > 0 && (
@@ -254,6 +433,51 @@ export const KatalogDetailPage = () => {
       )}
 
       <SalesPickerModal open={salesOpen} onClose={() => setSalesOpen(false)} waText={waText} fallbackNumber={settings?.whatsappNumber} />
+      <TestimonialDetailModal id={selectedTestimonialId} onClose={() => setSelectedTestimonialId(null)} />
+
+      {/* Modal Zoom Foto Unit Ukuran Penuh */}
+      <Modal
+        open={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        title={title}
+        subtitle={`Foto ${activeImg + 1} dari ${gallery.length}`}
+        icon={<Car size={18} />}
+        size="xl"
+      >
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-full overflow-hidden rounded-2xl bg-black/5 flex items-center justify-center">
+            <img
+              src={gallery[activeImg]}
+              alt={`${title} ukuran penuh`}
+              className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain shadow-md"
+              onError={(e) => {
+                e.currentTarget.src = DEFAULT_CAR_IMAGE;
+              }}
+            />
+          </div>
+          {gallery.length > 1 && (
+            <div className="mt-4 flex items-center justify-between w-full text-xs font-semibold text-muted">
+              <span>Foto {activeImg + 1} dari {gallery.length}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={prevImg}
+                  className="px-3 py-1.5 rounded-lg border border-border bg-surface text-ink hover:bg-surface-soft font-bold inline-flex items-center gap-1 shadow-sm transition-colors"
+                >
+                  <ChevronLeft size={14} /> Sebelumnya
+                </button>
+                <button
+                  type="button"
+                  onClick={nextImg}
+                  className="px-3 py-1.5 rounded-lg border border-border bg-surface text-ink hover:bg-surface-soft font-bold inline-flex items-center gap-1 shadow-sm transition-colors"
+                >
+                  Selanjutnya <ChevronRightIcon size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

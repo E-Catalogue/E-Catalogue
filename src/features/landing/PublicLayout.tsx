@@ -1,35 +1,46 @@
-import { useState, type ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
-import { Car, Phone, Menu, X, MapPin, Mail, Globe } from 'lucide-react';
+import { useEffect, type ReactNode } from 'react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { Car, Phone, MapPin, Mail, Globe } from 'lucide-react';
 import { FaInstagram, FaFacebookF, FaWhatsapp, FaTiktok } from 'react-icons/fa6';
 import { PUBLIC_NAV } from './publicNav';
 import { usePublicSiteSettings, usePublicNavMenus } from './landing.hooks';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
+import { MobileFloatingNav } from './MobileFloatingNav';
+import { trackEvent } from '@/core/utils/tracker';
 
 
 const NavLogo = ({ logoUrl, companyName, tagline }: { logoUrl?: string | null; companyName: string; tagline: string }) => (
-  <Link to="/" className="flex items-center gap-3">
+  <Link to="/" className="flex items-center gap-2.5 sm:gap-3 min-w-0">
     {logoUrl ? (
-      <div className="w-11 h-11 rounded-2xl overflow-hidden bg-surface border border-border shrink-0">
+      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl overflow-hidden bg-surface border border-border shrink-0">
         <img src={logoUrl} alt={companyName} className="w-full h-full object-cover" />
       </div>
     ) : (
-      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-glow shrink-0">
-        <Car size={22} className="text-white" strokeWidth={2.4} />
+      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-glow shrink-0">
+        <Car size={20} className="text-white sm:w-[22px] sm:h-[22px]" strokeWidth={2.4} />
       </div>
     )}
-    <div className="leading-none hidden sm:block">
-      <p className="font-extrabold text-ink text-[15px] tracking-tight uppercase">{companyName}</p>
-      <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-primary mt-1">{tagline}</p>
+    <div className="leading-none min-w-0">
+      <p className="font-extrabold text-ink text-[13px] sm:text-[15px] tracking-tight uppercase truncate">{companyName}</p>
+      <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.18em] text-primary mt-0.5 sm:mt-1 truncate">{tagline}</p>
     </div>
   </Link>
 );
 
 export const PublicLayout = ({ children }: { children: ReactNode }) => {
-  const [navOpen, setNavOpen] = useState(false);
   const { data: s } = usePublicSiteSettings();
   const { data: menus, isError: navMenusError } = usePublicNavMenus();
+  const routerState = useRouterState();
+  const currentPath = routerState?.location?.pathname || '/';
+
+  useEffect(() => {
+    trackEvent({
+      eventType: 'PAGE_VIEW',
+      pagePath: currentPath,
+      pageTitle: typeof document !== 'undefined' ? document.title : undefined,
+    });
+  }, [currentPath]);
 
   const companyName = s?.companyName || 'GM MOBILINDO';
   const tagline = s?.tagline || 'Used Car Specialist';
@@ -47,7 +58,7 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
     <div className="public-motion-scope min-h-screen bg-background flex flex-col">
       {/* NAVBAR */}
       <header className="sticky top-0 z-40 bg-surface/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-3 sm:gap-4">
           <NavLogo logoUrl={logoUrl} companyName={companyName} tagline={tagline} />
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((item) => (
@@ -63,34 +74,30 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <a href={waUrl} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[13px] px-4 py-2.5 shadow-glow hover:bg-primary-dark transition-colors">
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackEvent({ eventType: 'WHATSAPP_CLICK', meta: { location: 'navbar_contact' } })}
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[13px] px-4 py-2.5 shadow-glow hover:bg-primary-dark transition-colors"
+            >
               <Phone size={16} /> {contactLabel}
             </a>
-            <button onClick={() => setNavOpen((v) => !v)} className="md:hidden p-2 rounded-lg text-ink-soft hover:bg-surface-soft">
-              {navOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackEvent({ eventType: 'WHATSAPP_CLICK', meta: { location: 'navbar_mobile_chat' } })}
+              className="inline-flex sm:hidden items-center gap-1.5 rounded-full bg-accent-green text-white font-bold text-[11px] px-3 py-1.5 shadow-sm hover:bg-accent-green-dark transition-colors"
+            >
+              <FaWhatsapp size={14} /> <span>Chat Sales</span>
+            </a>
           </div>
         </div>
-        {navOpen && (
-          <div className="md:hidden border-t border-border bg-surface px-4 py-3 flex flex-col gap-1 animate-fade-in">
-            {navLinks.map((item) => (
-              <Link key={item.to} to={item.to} onClick={() => setNavOpen(false)}
-                activeOptions={{ exact: item.to === '/' }}
-                activeProps={{ className: 'bg-primary-light text-primary' }}
-                inactiveProps={{ className: 'text-ink-soft' }}
-                className="py-2.5 px-3 rounded-xl text-[14px] font-bold">
-                {item.label}
-              </Link>
-            ))}
-            <a href={waUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-2 rounded-xl bg-primary text-white font-bold text-[13px] px-4 py-2.5 justify-center">
-              <Phone size={16} /> {contactLabel}
-            </a>
-          </div>
-        )}
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-16 md:pb-0">{children}</main>
 
       {/* FOOTER */}
       <footer className="bg-ink text-white/80">
@@ -133,10 +140,13 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
             </ul>
           </div>
         </div>
-        <div className="border-t border-white/10 py-5 text-center text-[12px] font-medium">
+        <div className="border-t border-white/10 pt-5 pb-20 md:pb-5 text-center text-[12px] font-medium">
           {s?.copyrightText || `© ${new Date().getFullYear()} ${companyName}. Semua hak dilindungi.`}
         </div>
       </footer>
+
+      {/* Floating Pill Bottom Navbar for Mobile */}
+      <MobileFloatingNav items={navLinks} />
     </div>
   );
 };

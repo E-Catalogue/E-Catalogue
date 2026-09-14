@@ -1,6 +1,6 @@
 import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { landingApi } from './landing.api';
-import type { CatalogQuery, CreditCalcInput } from './public.types';
+import type { CatalogQuery, CreditCalcInput, PublicTestimonialQuery } from './public.types';
 
 const FIVE_MIN = 5 * 60_000;
 
@@ -35,6 +35,13 @@ export const usePublicBranches = () =>
   useQuery({ queryKey: ['public', 'branches'], queryFn: landingApi.getBranches, staleTime: FIVE_MIN });
 export const usePublicTestimonial = (id?: string) =>
   useQuery({ queryKey: ['public', 'testimonials', id], queryFn: () => landingApi.getTestimonial(id as string), enabled: !!id });
+
+export const usePublicTestimonials = (params?: PublicTestimonialQuery) =>
+  useQuery({
+    queryKey: ['public', 'testimonials', params],
+    queryFn: () => landingApi.getTestimonials(params),
+    placeholderData: keepPreviousData,
+  });
 
 export const usePublicCatalogPage = () =>
   useQuery({ queryKey: ['public', 'catalog-page'], queryFn: landingApi.getCatalogPage, staleTime: FIVE_MIN });

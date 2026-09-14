@@ -7,6 +7,7 @@ import type {
   CreditSimConfig, PublicNavMenuItem,
 } from '@/features/cms/cms.types';
 import type { BranchOperatingHour } from '@/features/master/types';
+import type { ApiMeta } from '@/core/api/types';
 
 export type { SiteSettings, CreditSimConfig, PublicNavMenuItem };
 
@@ -63,9 +64,24 @@ export interface CatalogDetail extends CatalogCard {
   dokumen: string[];
 
   plate: string;
+  testimonials?: PublicTestimonial[];
 }
 
 export interface CatalogBrand { id: string; name: string; count: number; }
+
+/** Query filter untuk testimoni publik. */
+export interface PublicTestimonialQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  rating?: number;
+}
+
+/** Response list testimoni publik terpaginasi. */
+export interface TestimonialListResponse {
+  data: PublicTestimonial[];
+  meta?: ApiMeta;
+}
 
 /** Kontak sales publik (GET /public/sales). */
 export interface SalesContact {
