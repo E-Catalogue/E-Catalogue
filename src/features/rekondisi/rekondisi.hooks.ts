@@ -106,6 +106,15 @@ export function useRekondisiMutations() {
       },
       onError: (e: unknown) => notifyApiError(e),
     }),
+    cancel: useMutation({
+      mutationFn: ({ id, reason }: { id: string; reason: string }) => rekondisiApi.cancel(id, reason),
+      onSuccess: (_, { id }) => {
+        store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Rekondisi berhasil dibatalkan' }));
+        inval(id);
+        qc.invalidateQueries({ queryKey: ['units'] });
+      },
+      onError: (e: unknown) => notifyApiError(e),
+    }),
   };
 }
 

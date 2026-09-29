@@ -1,4 +1,4 @@
-export type RekondisiStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'IN_PROGRESS' | 'COMPLETED';
+export type RekondisiStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 export interface Rekondisi {
   id: string;
@@ -19,6 +19,8 @@ export interface Rekondisi {
   invoiceUrl: string | null;
   completedAt?: string | null;
   paidAt: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
   cashAccountId: string | null;
   cashTransactionId: string | null;
   rekondisiDetails?: RekondisiDetail[];
@@ -92,6 +94,7 @@ export const REKONDISI_STATUS_LABEL: Record<RekondisiStatus, string> = {
   APPROVED: 'Disetujui',
   IN_PROGRESS: 'Dalam Proses',
   COMPLETED: 'Selesai',
+  CANCELLED: 'Dibatalkan',
 };
 
 export const REKONDISI_STATUS_COLOR: Record<RekondisiStatus, string> = {
@@ -100,4 +103,5 @@ export const REKONDISI_STATUS_COLOR: Record<RekondisiStatus, string> = {
   APPROVED: 'bg-teal-100 text-teal-700',
   IN_PROGRESS: 'bg-blue-100 text-blue-700',
   COMPLETED: 'bg-green-100 text-green-700',
+  CANCELLED: 'bg-rose-100 text-rose-700',
 };

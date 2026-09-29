@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
-  CheckCircle2, Eye, Plus, Wrench,
+  CheckCircle2, Eye, Plus, Wrench, XCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SectionCard } from '@/shared/components/ui/SectionCard';
@@ -9,7 +9,7 @@ import { TableSkeleton } from '@/shared/components/ui/Skeleton';
 import { ActionMenu } from '@/shared/components/ui/ActionMenu';
 import { Button } from '@/shared/components/ui/Button';
 import { Modal } from '@/shared/components/ui/Modal';
-import { SelectField } from '@/shared/components/ui/Field';
+import { SelectField, TextField } from '@/shared/components/ui/Field';
 import { MonthField } from '@/shared/components/ui/MonthField';
 import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { SearchInput } from '@/shared/components/ui/SearchInput';
@@ -25,7 +25,7 @@ import { store } from '@/app/store';
 import { showToast } from '@/app/store/uiSlice';
 import { formatCurrency, formatDate } from '@/core/utils/format';
 import { RekondisiDetailModal } from './RekondisiDetailModal';
-import { useRekondisis } from './rekondisi.hooks';
+import { useRekondisis, useRekondisiMutations } from './rekondisi.hooks';
 import {
   REKONDISI_STATUS_COLOR,
   REKONDISI_STATUS_LABEL,
@@ -42,6 +42,7 @@ const STATUS_OPTIONS: Array<{ value: RekondisiStatus | ''; label: string }> = [
   { value: 'APPROVED', label: 'Disetujui' },
   { value: 'IN_PROGRESS', label: 'Dalam Proses' },
   { value: 'COMPLETED', label: 'Selesai' },
+  { value: 'CANCELLED', label: 'Dibatalkan' },
 ];
 
 const CreateRekondisiModal = ({
@@ -141,6 +142,23 @@ const RekondisiPageInner = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [detailUnit, setDetailUnit] = useState<{ id: string; label?: string } | null>(null);
 
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<Rekondisi | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const { cancel: cancelM } = useRekondisiMutations();
+
+  const handleCancelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancelTarget || !cancelReason.trim()) return;
+    try {
+      await cancelM.mutateAsync({ id: cancelTarget.id, reason: cancelReason.trim() });
+      setCancelOpen(false);
+      setCancelTarget(null);
+    } catch (err) {
+      notifyApiError(err);
+    }
+  };
+
   // Filter unit: pakai daftar unit nyata (lihat catatan di CreateRekondisiModal — tidak ada lookup rekondisi).
   const { data: unitLookup } = useUnits({ page: 1, limit: 100 });
   const { data, isLoading, isError } = useRekondisis({ page: 1, limit: 100, status: status || undefined, unitId: unitId || undefined, period: period || undefined, dateBasis });
@@ -236,6 +254,16 @@ const RekondisiPageInner = () => {
             onClick: () => setDetailUnit({ id: r.unitId, label: r.unit?.platNomor ?? r.unitId }),
             variant: 'primary',
           },
+          ...(can('REKONDISI_UPDATE') && r.status !== 'CANCELLED' && !r.paidAt ? [{
+            icon: <XCircle size={13} />,
+            label: 'Batalkan Rekondisi',
+            onClick: () => {
+              setCancelTarget(r);
+              setCancelReason('');
+              setCancelOpen(true);
+            },
+            variant: 'danger' as const,
+          }] : []),
         ]} />
       ),
     },
@@ -324,6 +352,43 @@ const RekondisiPageInner = () => {
         unitId={detailUnit?.id ?? null}
         unitLabel={detailUnit?.label}
       />
+
+      <Modal
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        title="Batalkan Rekondisi"
+        subtitle={`Pembatalan rekondisi untuk unit ${cancelTarget?.unit ? unitDisplayName(cancelTarget.unit) : ''} (${cancelTarget?.unit?.platNomor ?? ''})`}
+        icon={<XCircle size={18} />}
+        size="md"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setCancelOpen(false)} disabled={cancelM.isPending}>Kembali</Button>
+            <Button
+              variant="danger"
+              onClick={handleCancelSubmit}
+              disabled={cancelM.isPending || !cancelReason.trim()}
+            >
+              {cancelM.isPending ? 'Membatalkan...' : 'Batalkan Rekondisi'}
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleCancelSubmit} className="space-y-4">
+          {cancelTarget?.status === 'COMPLETED' && (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+              <strong>Perhatian:</strong> Rekondisi ini sudah berstatus <strong>Selesai (COMPLETED)</strong>.
+              Pembatalan akan mengeluarkan total biaya <strong>{idr(cancelTarget.total)}</strong> dari HPP/biaya aktual unit terkait dan membebaskan unit sehingga dapat masuk status READY_STOCK.
+            </div>
+          )}
+          <TextField
+            label="Alasan Pembatalan"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Contoh: Salah pilih unit saat rekondisi / perbaikan dibatalkan"
+            required
+          />
+        </form>
+      </Modal>
     </div>
   );
 };

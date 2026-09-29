@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Loader2, Wallet, ReceiptText, RotateCcw, AlertTriangle,
-  FileDown, CheckCircle2, Landmark, DollarSign,
+  FileDown, CheckCircle2, Landmark, DollarSign, UserCheck,
 } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
@@ -16,9 +16,12 @@ import { usePermissions } from '@/features/auth/usePermissions';
 import { useIdempotencyKey } from '@/shared/hooks/useIdempotencyKey';
 import { apiClient } from '@/core/api/client';
 import { getApiErrorCode, getApiErrorMessage } from '@/core/api/apiError';
+import { useAppSelector, store } from '@/app/store';
+import { showToast } from '@/app/store/uiSlice';
+import { leadOrderApi } from '@/features/crm/crm.api';
 import {
   useLeadOrder, useLeadPayments, useLeadPaymentMutations,
-  useSaleSettlement, useSaleSettlementMutations,
+  useSaleSettlement, useSaleSettlementMutations, useLeadOrderFormLookup,
 } from '@/features/crm/crm.hooks';
 import {
   ORDER_STATUS_LABEL, ORDER_STATUS_COLOR,
@@ -442,11 +445,45 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
   const statusLabel = o?.status ? ORDER_STATUS_LABEL[o.status] : '';
   const statusColor = o?.status ? ORDER_STATUS_COLOR[o.status] : '';
 
+  const queryClient = useQueryClient();
+  const currentUser = useAppSelector((s) => s.auth.user);
+  const isSales = currentUser?.role?.code === 'SALES';
+  const canReassignSales = can('LEAD_ORDER_UPDATE') && !isSales && o?.status !== 'CANCELLED';
+
+  const { data: formLookup } = useLeadOrderFormLookup(branchKey, branchHeader, open && canReassignSales);
+  const salesOptions = (formLookup?.sales ?? []).map((s) => ({ value: s.id, label: `${s.name} (${s.username})` }));
+
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [targetSalesId, setTargetSalesId] = useState('');
+  const [reassignReason, setReassignReason] = useState('');
+  const [reassignLoading, setReassignLoading] = useState(false);
+  const [reassignError, setReassignError] = useState<string | null>(null);
+
+  const handleReassignSales = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!o?.id || !targetSalesId || !reassignReason.trim()) return;
+    setReassignLoading(true);
+    setReassignError(null);
+    try {
+      await leadOrderApi.reassignSales(o.id, { salesId: targetSalesId, reason: reassignReason.trim() }, branchHeader);
+      await queryClient.invalidateQueries({ queryKey: ['lead-order', branchKey, o.id] });
+      await queryClient.invalidateQueries({ queryKey: ['lead-orders', branchKey] });
+      await queryClient.invalidateQueries({ queryKey: ['settlement', branchKey, o.id] });
+      store.dispatch(showToast({ type: 'general', variant: 'success', title: 'Berhasil', message: 'Sales order berhasil dialihkan' }));
+      setReassignOpen(false);
+    } catch (err) {
+      setReassignError(getApiErrorMessage(err));
+    } finally {
+      setReassignLoading(false);
+    }
+  };
+
   const isLoading = orderLoading || payLoading;
 
   return (
-    <Modal
-      open={open} onClose={onClose} icon={<ReceiptText size={20} />}
+    <>
+      <Modal
+        open={open} onClose={onClose} icon={<ReceiptText size={20} />}
       title={o?.nomorOrder ?? 'Detail Order'}
       subtitle="Informasi sales order, pembayaran & settlement"
       size="xl"
@@ -472,7 +509,29 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
             <InfoItem label="Tanggal Order" value={o.tanggalOrder ? new Date(o.tanggalOrder).toLocaleDateString('id-ID') : '-'} />
             <InfoItem label="Lead" value={o.lead?.nama ?? '-'} />
             <InfoItem label="Unit" value={o.unit ? `${unitDisplayName(o.unit)} · ${o.unit.platNomor ?? ''}`.trim() : '-'} />
-            <InfoItem label="Sales" value={o.sales?.name ?? '-'} />
+            <InfoItem
+              label="Sales"
+              value={
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-ink">{o.sales?.name ?? '-'}</span>
+                  {canReassignSales && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTargetSalesId(o.salesId ?? '');
+                        setReassignReason('');
+                        setReassignError(null);
+                        setReassignOpen(true);
+                      }}
+                      className="text-[11px] text-primary hover:text-primary-hover font-semibold inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+                      title="Alihkan kepemilikan sales order ini"
+                    >
+                      <UserCheck size={11} /> Ubah
+                    </button>
+                  )}
+                </div>
+              }
+            />
             <InfoItem label="Harga Penawaran" value={idr(o.hargaPenawaran)} />
             <InfoItem label="Diskon" value={idr(o.diskonShowroom)} />
             <InfoItem label="Harga Final" value={<span className="font-bold text-ink">{idr(o.hargaFinal)}</span>} />
@@ -570,6 +629,58 @@ export const OrderDetailModal = ({ open, onClose, orderId, branchKey, branchHead
         </div>
       )}
     </Modal>
+
+    {canReassignSales && (
+      <Modal
+        open={reassignOpen}
+        onClose={() => setReassignOpen(false)}
+        title="Ubah Sales Order"
+        subtitle={`Pengalihan kepemilikan sales untuk order ${o?.nomorOrder ?? ''}`}
+        icon={<UserCheck size={18} />}
+        size="md"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setReassignOpen(false)} disabled={reassignLoading}>Batal</Button>
+            <Button
+              variant="primary"
+              onClick={handleReassignSales}
+              disabled={reassignLoading || !targetSalesId || !reassignReason.trim() || targetSalesId === o?.salesId}
+            >
+              {reassignLoading ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+              Simpan Pengalihan
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleReassignSales} className="space-y-4">
+          {reassignError && (
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              {reassignError}
+            </div>
+          )}
+          <SelectField
+            label="Pilih Sales Baru"
+            value={targetSalesId}
+            onChange={(e) => setTargetSalesId(e.target.value)}
+            options={[{ value: '', label: '-- Pilih Sales Target --' }, ...salesOptions]}
+            required
+          />
+          <TextField
+            label="Alasan Pengalihan"
+            value={reassignReason}
+            onChange={(e) => setReassignReason(e.target.value)}
+            placeholder="Contoh: Salah pilih sales saat deal / dialihkan ke office"
+            required
+          />
+          {o?.status === 'DEAL' && (
+            <p className="text-[11px] text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+              Perhatian: Order ini sudah berstatus <strong>DEAL</strong>. Pengalihan sales akan otomatis memperbarui catatan komisi/insentif dan opportunity terkait ke sales baru.
+            </p>
+          )}
+        </form>
+      </Modal>
+    )}
+  </>
   );
 };
 

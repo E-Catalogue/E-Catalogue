@@ -66,6 +66,11 @@ export const rekondisiApi = {
     return res.data;
   },
 
+  cancel: async (id: string, reason: string) => {
+    const res = await apiClient.patch<ApiResponse<Rekondisi>>(`/rekondisis/${id}/cancel`, { reason });
+    return res.data;
+  },
+
   listDetail: async (rekondisiId: string, params?: { page?: number; limit?: number }) => {
     const res = await apiClient.get<ApiResponse<RekondisiDetail[]>>(`/rekondisis/${rekondisiId}/detail`, { params });
     return res.data;

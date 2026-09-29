@@ -281,6 +281,8 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [confirmReject, setConfirmReject] = useState(false);
   const [confirmProgress, setConfirmProgress] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const { data: detailRes, isLoading: detailLoading } = useRekondisi(open ? r.id : undefined);
   const rekondisi = (detailRes?.data as Rekondisi | undefined) ?? r;
@@ -324,6 +326,25 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
           ) : (
             <div className="p-4 space-y-5">
               <StepIndicator activeIndex={step} />
+
+              {rekondisi.status === 'CANCELLED' && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+                  <XCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-[13px]">Rekondisi Ini Telah Dibatalkan</p>
+                    {rekondisi.cancelledAt && (
+                      <p className="text-[11px] text-rose-600 mt-0.5">
+                        Waktu pembatalan: {new Date(rekondisi.cancelledAt).toLocaleString('id-ID')}
+                      </p>
+                    )}
+                    {rekondisi.cancellationReason && (
+                      <p className="text-[12px] text-rose-700 mt-1 font-medium">
+                        Alasan: {rekondisi.cancellationReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Step 1: Info Rekondisi */}
               <section>
@@ -592,6 +613,22 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
               {rekondisi.invoiceUrl && (
                 <InvoiceLink url={rekondisi.invoiceUrl} />
               )}
+
+              {can('REKONDISI_UPDATE') && rekondisi.status !== 'CANCELLED' && !rekondisi.paidAt && (
+                <div className="border-t border-border pt-4 flex items-center justify-between">
+                  <span className="text-xs text-muted font-medium">Tindakan Khusus</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCancelReason('');
+                      setConfirmCancel(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition-colors"
+                  >
+                    <XCircle size={13} /> Batalkan Rekondisi Ini
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -607,6 +644,52 @@ const RekondisiCard = ({ r }: { r: Rekondisi }) => {
         loading={dm.remove.isPending}
         closeOnConfirm={false}
       />
+
+      <Modal
+        open={confirmCancel}
+        onClose={() => setConfirmCancel(false)}
+        title="Batalkan Rekondisi"
+        subtitle={`Pembatalan rekondisi #${r.seq}`}
+        icon={<XCircle size={18} />}
+        size="md"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setConfirmCancel(false)} disabled={m.cancel.isPending}>Kembali</Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (!cancelReason.trim()) return;
+                m.cancel.mutate(
+                  { id: r.id, reason: cancelReason.trim() },
+                  {
+                    onSuccess: () => setConfirmCancel(false),
+                    onError: (err) => notifyApiError(err),
+                  }
+                );
+              }}
+              disabled={m.cancel.isPending || !cancelReason.trim()}
+            >
+              {m.cancel.isPending ? 'Membatalkan...' : 'Batalkan Rekondisi'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {rekondisi.status === 'COMPLETED' && (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+              <strong>Perhatian:</strong> Rekondisi ini sudah berstatus <strong>Selesai (COMPLETED)</strong>.
+              Pembatalan akan mengeluarkan total biaya <strong>{idr(rekondisi.total)}</strong> dari HPP/biaya unit terkait dan membebaskan unit sehingga dapat masuk status READY_STOCK.
+            </div>
+          )}
+          <TextField
+            label="Alasan Pembatalan"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Contoh: Salah unit / perbaikan dibatalkan"
+            required
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

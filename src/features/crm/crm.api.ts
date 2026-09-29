@@ -95,6 +95,8 @@ export const leadOrderApi = {
     apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/status`, { status, ...(cancellation ?? {}) }, { headers }).then((r) => r.data.data),
   updateCreditStage: (id: string, body: CreditStagePayload, headers?: BranchHeaders) =>
     apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/credit-stage`, body, { headers }).then((r) => r.data.data),
+  reassignSales: (id: string, body: { salesId: string; reason: string }, headers?: BranchHeaders) =>
+    apiClient.patch<ApiResponse<LeadOrder>>(`/lead-orders/${id}/reassign-sales`, body, { headers }).then((r) => r.data.data),
 };
 
 // ---- Payment (nested under order — payment.route.js) ----
