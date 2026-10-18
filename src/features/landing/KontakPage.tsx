@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Send, CheckCircle2, MessageCircle, Loader2, ChevronDown, PhoneCall, MapPin, Clock3 } from 'lucide-react';
 import { PublicHeader } from './PublicHeader';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
+import { useSeo } from '@/core/utils/seo';
 import { usePublicSiteSettings, usePublicContactPage, useSubmitContact } from './landing.hooks';
 import { notifyApiError } from '@/core/api/notify';
 import { Reveal } from '@/shared/components/Reveal';
@@ -30,6 +31,17 @@ export const KontakPage = () => {
   const primaryPhone = primaryBranch?.phone || settings?.phone;
   const primaryWhatsapp = primaryBranch?.whatsappNumber || settings?.whatsappNumber;
   const primaryWaUrl = buildWhatsAppUrl(primaryWhatsapp, waMessages.generalContact(settings?.companyName));
+  const companyName = settings?.companyName || 'GM Mobilindo';
+
+  useSeo(
+    {
+      title: `Kontak & Lokasi Showroom — ${companyName} Subang`,
+      description: `Hubungi ${companyName} via WhatsApp atau telepon, cek jam buka, dan temukan lokasi showroom mobil bekas kami di Subang, Jawa Barat.`,
+      keywords: ['kontak gm mobilindo', 'alamat showroom mobil bekas subang', 'lokasi dealer mobil bekas subang'],
+      ogImage: '/logo.jpeg',
+    },
+    [companyName],
+  );
 
   if (isLoading) return <CustomerLoader />;
   if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;

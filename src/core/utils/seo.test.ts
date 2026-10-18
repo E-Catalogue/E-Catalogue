@@ -4,6 +4,8 @@ import {
   buildAutoDealerSchema,
   buildCarSchema,
   buildFaqSchema,
+  buildWebSiteSchema,
+  canonicalUrlFor,
 } from './seo';
 import type { CatalogDetail } from '@/features/landing/public.types';
 
@@ -101,5 +103,56 @@ describe('seo utility', () => {
     expect(schema['@type']).toBe('FAQPage');
     const questions = schema.mainEntity as Array<{ name: string }>;
     expect(questions[0].name).toBe('Apakah ada garansi?');
+  });
+
+  it('canonical dan og:image selalu memakai domain kanonis tanpa query', () => {
+    window.history.pushState({}, '', '/katalog/?merek=toyota');
+    updateSeoMetadata({ title: 'Katalog', ogImage: '/logo.jpeg' });
+
+    const canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    expect(canonical.getAttribute('href')).toBe('https://gmmobilindo.com/katalog');
+    const ogImage = document.querySelector('meta[property="og:image"]') as HTMLMetaElement;
+    expect(ogImage.content).toBe('https://gmmobilindo.com/logo.jpeg');
+    expect(canonicalUrlFor('/')).toBe('https://gmmobilindo.com/');
+  });
+
+  it('menghapus JSON-LD halaman sebelumnya bila halaman baru tidak punya', () => {
+    updateSeoMetadata({ jsonLd: { '@type': 'FAQPage' } });
+    expect(document.getElementById('seo-json-ld')).not.toBeNull();
+    updateSeoMetadata({ title: 'Tentang' });
+    expect(document.getElementById('seo-json-ld')).toBeNull();
+  });
+
+  it('AutoDealer memakai NAP dari CMS dan tidak memakai placeholder', () => {
+    const schema = buildAutoDealerSchema({
+      companyName: 'GM Mobilindo',
+      address: 'Belum diatur',
+      phone: null,
+      whatsappNumber: '6281221642114',
+      operatingHours: [
+        { day: 'MONDAY', isOpen: true, openTime: '08:00', closeTime: '17:00' },
+        { day: 'SUNDAY', isOpen: false, openTime: null, closeTime: null },
+      ],
+      social: { instagram: 'https://instagram.com/gm_mobilindo', facebook: null, tiktok: null, website: null },
+    } as never);
+
+    expect(schema.telephone).toBe('+6281221642114');
+    expect((schema.address as Record<string, unknown>).streetAddress).toBeUndefined();
+    expect(schema.openingHoursSpecification).toEqual([
+      { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Monday', opens: '08:00', closes: '17:00' },
+    ]);
+    expect(schema.sameAs).toEqual(['https://instagram.com/gm_mobilindo']);
+    expect(schema.url).toBe('https://gmmobilindo.com');
+
+    const noPhone = buildAutoDealerSchema({ companyName: 'GM Mobilindo' });
+    expect(noPhone.telephone).toBeUndefined();
+  });
+
+  it('WebSite schema merujuk ke AutoDealer sebagai publisher', () => {
+    const schema = buildWebSiteSchema({ companyName: 'GM Mobilindo' });
+    expect(schema['@type']).toBe('WebSite');
+    expect(schema.name).toBe('GM Mobilindo');
+    expect(schema.url).toBe('https://gmmobilindo.com/');
+    expect(schema.publisher).toEqual({ '@id': 'https://gmmobilindo.com/#showroom' });
   });
 });

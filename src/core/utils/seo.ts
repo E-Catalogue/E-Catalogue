@@ -1,6 +1,26 @@
 import { useEffect } from 'react';
 import type { CatalogDetail, SiteSettings } from '@/features/landing/public.types';
 
+/**
+ * Domain kanonis situs publik. Canonical, og:url, dan JSON-LD selalu memakai domain ini —
+ * bukan `window.location` — supaya akses lewat www/IP/preview tidak dianggap halaman terpisah.
+ */
+export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'https://gmmobilindo.com').replace(/\/+$/, '');
+
+/** Ubah path relatif (`/logo.jpeg`) menjadi URL absolut di domain kanonis. */
+export const absoluteUrl = (pathOrUrl: string) =>
+  /^https?:\/\//i.test(pathOrUrl) ? pathOrUrl : `${SITE_URL}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
+
+/** URL kanonis halaman aktif: domain tetap + pathname, tanpa query string/hash. */
+export const canonicalUrlFor = (pathname?: string) => {
+  const path = pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '/');
+  const normalized = path.length > 1 ? path.replace(/\/+$/, '') : '/';
+  return `${SITE_URL}${normalized}`;
+};
+
+const SHOWROOM_ID = `${SITE_URL}/#showroom`;
+const WEBSITE_ID = `${SITE_URL}/#website`;
+
 export interface SeoMetadata {
   title?: string;
   description?: string;
@@ -35,8 +55,9 @@ export function updateSeoMetadata(meta: SeoMetadata): void {
 
   // Open Graph Image & Twitter Card
   if (meta.ogImage) {
-    setMetaTag('property', 'og:image', meta.ogImage);
-    setMetaTag('name', 'twitter:image', meta.ogImage);
+    const ogImage = absoluteUrl(meta.ogImage);
+    setMetaTag('property', 'og:image', ogImage);
+    setMetaTag('name', 'twitter:image', ogImage);
     setMetaTag('name', 'twitter:card', 'summary_large_image');
   }
 
@@ -45,24 +66,27 @@ export function updateSeoMetadata(meta: SeoMetadata): void {
   setMetaTag('property', 'og:locale', 'id_ID');
 
   // Canonical / URL
-  const currentUrl =
-    meta.canonicalUrl || (typeof window !== 'undefined' ? window.location.href : '');
-  if (currentUrl) {
-    setMetaTag('property', 'og:url', currentUrl);
-    setLinkTag('canonical', currentUrl);
-  }
+  const canonical = meta.canonicalUrl ? absoluteUrl(meta.canonicalUrl) : canonicalUrlFor();
+  setMetaTag('property', 'og:url', canonical);
+  setLinkTag('canonical', canonical);
 
   // Structured Data (JSON-LD)
-  if (meta.jsonLd) {
-    let script = document.getElementById('seo-json-ld') as HTMLScriptElement | null;
-    if (!script) {
-      script = document.createElement('script');
-      script.id = 'seo-json-ld';
-      script.type = 'application/ld+json';
-      document.head.appendChild(script);
-    }
-    script.textContent = JSON.stringify(meta.jsonLd);
+  // JSON-LD per halaman; hapus milik halaman sebelumnya bila halaman ini tidak punya.
+  if (meta.jsonLd) setJsonLd('seo-json-ld', meta.jsonLd);
+  else document.getElementById('seo-json-ld')?.remove();
+}
+
+/** Pasang/ganti satu blok `<script type="application/ld+json">` berdasarkan id. */
+export function setJsonLd(id: string, data: Record<string, unknown> | Array<Record<string, unknown>>): void {
+  if (typeof document === 'undefined') return;
+  let script = document.getElementById(id) as HTMLScriptElement | null;
+  if (!script) {
+    script = document.createElement('script');
+    script.id = id;
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
   }
+  script.textContent = JSON.stringify(data);
 }
 
 function setMetaTag(attrName: 'name' | 'property', attrValue: string, content: string): void {
@@ -92,57 +116,104 @@ export function useSeo(meta: SeoMetadata, deps: unknown[] = []): void {
   }, deps);
 }
 
-export function buildAutoDealerSchema(settings?: Partial<SiteSettings> | null): Record<string, unknown> {
-  const name = settings?.companyName || 'GM Mobilindo';
-  const address = settings?.address || 'Kabupaten Subang, Jawa Barat, Indonesia';
-  const phone = settings?.phone || settings?.whatsappNumber || '+6281234567890';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://gmmobilindo.com';
+/** Nilai CMS yang belum diisi (kosong / "Belum diatur") dianggap tidak ada. */
+const filled = (v?: string | null) => {
+  const t = v?.trim();
+  return t && !/^belum diatur$/i.test(t) ? t : undefined;
+};
 
-  return {
+/** Nomor lokal/62xxx → format internasional `+62…` untuk schema.org. */
+const toE164 = (phone?: string | null) => {
+  const digits = phone?.replace(/\D/g, '');
+  if (!digits) return undefined;
+  if (digits.startsWith('62')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+62${digits.slice(1)}`;
+  return `+${digits}`;
+};
+
+const SCHEMA_DAY: Record<string, string> = {
+  MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
+  FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday',
+};
+
+const compact = <T extends Record<string, unknown>>(obj: T) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0)));
+
+/**
+ * Schema `AutoDealer` (turunan LocalBusiness → Organization). Semua data NAP diambil dari
+ * Site Settings / cabang utama di CMS supaya identik dengan Google Business Profile;
+ * field yang belum diisi di CMS dihilangkan, bukan diisi placeholder.
+ */
+export function buildAutoDealerSchema(
+  settings?: Partial<SiteSettings> | null,
+  logoUrl?: string | null,
+): Record<string, unknown> {
+  const branch = settings?.primaryBranch ?? null;
+  const name = filled(settings?.companyName) || 'GM Mobilindo';
+  const streetAddress = filled(settings?.address) || filled(branch?.lokasi);
+  const phone = toE164(filled(settings?.phone) || filled(branch?.phone) || filled(settings?.whatsappNumber));
+  const lat = settings?.mapLat ?? branch?.mapLat;
+  const lng = settings?.mapLng ?? branch?.mapLng;
+  const hours = (settings?.operatingHours ?? branch?.operatingHours ?? [])
+    .filter((h) => h.isOpen && h.openTime && h.closeTime && SCHEMA_DAY[h.day]);
+  const social = settings?.social;
+  const sameAs = [social?.instagram, social?.facebook, social?.tiktok].filter((u): u is string => !!filled(u));
+  const logo = logoUrl ? absoluteUrl(logoUrl) : `${SITE_URL}/logo.jpeg`;
+
+  return compact({
     '@context': 'https://schema.org',
     '@type': 'AutoDealer',
-    '@id': `${origin}/#showroom`,
+    '@id': SHOWROOM_ID,
     name,
+    alternateName: `${name} Subang`,
     description:
-      settings?.footerDescription ||
+      filled(settings?.footerDescription) ||
       'Pusat jual beli mobil bekas berkualitas dan bergaransi di Subang. Melayani pembelian cash, kredit syariah/konvensional, dan tukar tambah.',
-    url: origin,
+    url: SITE_URL,
+    logo,
+    image: logo,
     telephone: phone,
+    email: filled(settings?.email),
     priceRange: 'Rp 80.000.000 - Rp 500.000.000',
-    address: {
+    address: compact({
       '@type': 'PostalAddress',
-      streetAddress: address,
+      streetAddress,
       addressLocality: 'Subang',
       addressRegion: 'Jawa Barat',
       addressCountry: 'ID',
-    },
-    geo: {
-      '@type': 'GeoCoordinates',
-      latitude: settings?.mapLat ?? -6.5715,
-      longitude: settings?.mapLng ?? 107.7587,
-    },
-    openingHoursSpecification: [
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        opens: '09:00',
-        closes: '18:00',
-      },
-    ],
-    areaServed: [
-      'Subang',
-      'Kalijati',
-      'Pagaden',
-      'Pamanukan',
-      'Purwakarta',
-      'Karawang',
-      'Jawa Barat',
-    ],
+    }),
+    geo: lat != null && lng != null ? { '@type': 'GeoCoordinates', latitude: lat, longitude: lng } : undefined,
+    hasMap: filled(settings?.mapEmbedUrl),
+    openingHoursSpecification: hours.map((h) => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: SCHEMA_DAY[h.day],
+      opens: h.openTime,
+      closes: h.closeTime,
+    })),
+    sameAs,
+    areaServed: ['Subang', 'Kalijati', 'Pagaden', 'Pamanukan', 'Purwakarta', 'Karawang', 'Jawa Barat'],
+  });
+}
+
+/**
+ * Schema `WebSite` — sinyal nama situs ("GM Mobilindo") yang ditampilkan Google di atas
+ * hasil pencarian. Publisher merujuk ke entitas AutoDealer lewat `@id`.
+ */
+export function buildWebSiteSchema(settings?: Partial<SiteSettings> | null): Record<string, unknown> {
+  const name = filled(settings?.companyName) || 'GM Mobilindo';
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': WEBSITE_ID,
+    name,
+    alternateName: [`${name} Subang`, 'gmmobilindo'],
+    url: `${SITE_URL}/`,
+    inLanguage: 'id-ID',
+    publisher: { '@id': SHOWROOM_ID },
   };
 }
 
 export function buildCarSchema(unit: CatalogDetail, imageUrl?: string): Record<string, unknown> {
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://gmmobilindo.com';
   const merekTipe = `${unit.merek?.name ?? ''} ${unit.tipe?.name ?? ''}`.trim();
   const carName = unit.name?.trim() || merekTipe || 'Mobil Bekas';
 
@@ -150,8 +221,9 @@ export function buildCarSchema(unit: CatalogDetail, imageUrl?: string): Record<s
     '@context': 'https://schema.org',
     '@type': 'Car',
     name: carName,
+    url: `${SITE_URL}/katalog/${unit.id}`,
     description: unit.description || `Jual ${carName} tahun ${unit.tahun || ''} bekas berkualitas di Subang. Surat lengkap dan bergaransi mesin.`,
-    image: imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${origin}${imageUrl}`) : undefined,
+    image: imageUrl ? absoluteUrl(imageUrl) : undefined,
     brand: unit.merek?.name ? { '@type': 'Brand', name: unit.merek.name } : undefined,
     model: unit.tipe?.name || undefined,
     vehicleModelDate: unit.tahun ? String(unit.tahun) : undefined,
@@ -170,10 +242,8 @@ export function buildCarSchema(unit: CatalogDetail, imageUrl?: string): Record<s
       price: unit.harga || 0,
       priceCurrency: 'IDR',
       availability: unit.statusUnit === 'TERJUAL' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
-      seller: {
-        '@type': 'AutoDealer',
-        name: 'GM Mobilindo Subang',
-      },
+      url: `${SITE_URL}/katalog/${unit.id}`,
+      seller: { '@type': 'AutoDealer', '@id': SHOWROOM_ID, name: 'GM Mobilindo' },
     },
   };
 }

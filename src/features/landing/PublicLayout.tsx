@@ -4,6 +4,7 @@ import { Car, Phone, MapPin, Mail, Globe } from 'lucide-react';
 import { FaInstagram, FaFacebookF, FaWhatsapp, FaTiktok } from 'react-icons/fa6';
 import { PUBLIC_NAV } from './publicNav';
 import { usePublicSiteSettings, usePublicNavMenus } from './landing.hooks';
+import { setJsonLd, buildWebSiteSchema, buildAutoDealerSchema } from '@/core/utils/seo';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
 import { MobileFloatingNav } from './MobileFloatingNav';
@@ -45,6 +46,12 @@ export const PublicLayout = ({ children }: { children: ReactNode }) => {
   const companyName = s?.companyName || 'GM MOBILINDO';
   const tagline = s?.tagline || 'Used Car Specialist';
   const logoUrl = cmsImageUrl('site', s?.logoFilename);
+
+  // JSON-LD situs (WebSite + AutoDealer) dipasang sekali untuk semua halaman publik;
+  // JSON-LD per halaman (Car, FAQ, dst.) memakai blok terpisah lewat useSeo.
+  useEffect(() => {
+    setJsonLd('seo-json-ld-site', [buildWebSiteSchema(s), buildAutoDealerSchema(s, logoUrl)]);
+  }, [s, logoUrl]);
   const waUrl = buildWhatsAppUrl(s?.whatsappNumber, waMessages.generalContact(s?.companyName));
   const contactLabel = s?.navContactLabel || 'Hubungi Kami';
 

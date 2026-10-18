@@ -26,4 +26,5 @@ Disallow: /branch*
 Disallow: /pembukuan*
 Disallow: /pengaturan*
 
-Sitemap: https://gmmobilindo.com/sitemap.xml
+# Sitemap dinamis (halaman statis + semua unit katalog) di-generate backend.
+Sitemap: https://api.gmmobilindo.com/sitemap.xml

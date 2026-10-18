@@ -78,6 +78,14 @@ export const VisitorLogsTable = ({ period, dateFrom, dateTo }: VisitorLogsTableP
   const [search, setSearch] = useState('');
   const [eventType, setEventType] = useState<string>('ALL');
 
+  // Kembali ke halaman 1 saat periode filter berubah.
+  const periodKey = `${period ?? ''}|${dateFrom ?? ''}|${dateTo ?? ''}`;
+  const [prevPeriodKey, setPrevPeriodKey] = useState(periodKey);
+  if (prevPeriodKey !== periodKey) {
+    setPrevPeriodKey(periodKey);
+    setPage(1);
+  }
+
   const debouncedSearch = useDebouncedValue(search, 350);
 
   const { data, isLoading, isError, refetch } = useCrmAnalyticsLogs({

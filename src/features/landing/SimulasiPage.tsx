@@ -6,6 +6,7 @@ import { SearchableSelect } from '@/shared/components/ui/SearchableSelect';
 import { formatCurrency } from '@/core/utils/format';
 import { useDebouncedValue } from '@/features/master/useDebouncedValue';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
+import { useSeo } from '@/core/utils/seo';
 import { usePublicCatalog, usePublicCreditConfig, usePublicSiteSettings, useCalculateCredit } from './landing.hooks';
 import type { CreditCalcResult } from './public.types';
 import { Reveal } from '@/shared/components/Reveal';
@@ -16,6 +17,17 @@ export const SimulasiPage = () => {
   const { data: settings } = usePublicSiteSettings();
   const calcM = useCalculateCredit();
   const units = useMemo(() => catalog?.data ?? [], [catalog?.data]);
+  const companyName = settings?.companyName || 'GM Mobilindo';
+
+  useSeo(
+    {
+      title: `Simulasi Kredit Mobil Bekas Subang — Hitung DP & Cicilan | ${companyName}`,
+      description: 'Hitung estimasi DP, tenor, dan cicilan bulanan kredit mobil bekas di Subang secara instan. Pilih unit ready stock dan konsultasikan pengajuan kredit via WhatsApp.',
+      keywords: ['simulasi kredit mobil bekas subang', 'kredit mobil bekas dp murah subang', 'cicilan mobil bekas subang'],
+      ogImage: '/logo.jpeg',
+    },
+    [companyName],
+  );
 
   const [unitId, setUnitId] = useState('');
   const selected = units.find((u) => u.id === unitId);

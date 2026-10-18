@@ -17,7 +17,7 @@ import { HeroUnitCarousel } from './HeroUnitCarousel';
 import { resolveHeroSliderUnits } from './heroSliderUnits';
 import { TestimonialCarousel } from './TestimonialCarousel';
 import { FaqSection, SUBANG_CAR_FAQS } from './FaqSection';
-import { useSeo, buildAutoDealerSchema, buildFaqSchema } from '@/core/utils/seo';
+import { useSeo, buildFaqSchema } from '@/core/utils/seo';
 
 export const LandingPage = () => {
   const { data: hp, isLoading, isError, refetch } = usePublicHomepage();
@@ -31,7 +31,6 @@ export const LandingPage = () => {
   const resolveLink = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
   const submitHeroSearch = (event: FormEvent) => { event.preventDefault(); navigate({ to: '/katalog', search: { q: heroSearch.trim() } }); };
 
-  const autoDealerSchema = useMemo(() => buildAutoDealerSchema(site), [site]);
   const faqSchema = useMemo(() => buildFaqSchema(SUBANG_CAR_FAQS), []);
 
   useSeo(
@@ -50,9 +49,9 @@ export const LandingPage = () => {
         'gm mobilindo subang',
       ],
       ogImage: '/logo.jpeg',
-      jsonLd: [autoDealerSchema, faqSchema],
+      jsonLd: faqSchema,
     },
-    [site, autoDealerSchema, faqSchema],
+    [site, faqSchema],
   );
 
   const featuredUnits = useMemo(() => {

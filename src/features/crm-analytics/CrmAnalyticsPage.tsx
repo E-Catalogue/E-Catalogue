@@ -5,51 +5,62 @@ import {
   useCrmAnalyticsTrafficChart,
   useCrmAnalyticsTopUnits,
 } from './crmAnalytics.hooks';
+import type { CrmAnalyticsFilterParams } from './crmAnalytics.types';
 import { AnalyticsKpiCards } from './components/AnalyticsKpiCards';
 import { TrafficActivityChart } from './components/TrafficActivityChart';
 import { DeviceDistributionChart } from './components/DeviceDistributionChart';
 import { TopUnitsSection } from './components/TopUnitsSection';
 import { VisitorLogsTable } from './components/VisitorLogsTable';
 import { StatCardSkeleton } from '@/shared/components/ui/Skeleton';
-import { RefreshCw, Calendar, Sparkles } from 'lucide-react';
+import { RefreshCw, Sparkles, Calendar } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
+import { MonthPickerField, YearPickerField } from '@/shared/components/ui/PeriodPickerFields';
+import { businessMonth, businessToday } from '@/core/utils/businessDate';
 
-type PresetFilter = 'thisMonth' | '7days' | '30days' | 'today';
+type PresetFilter = 'today' | '7days' | '30days';
 
 const PRESET_OPTIONS: { value: PresetFilter; label: string }[] = [
-  { value: 'thisMonth', label: 'Bulan Ini' },
-  { value: '7days', label: '7 Hari Terakhir' },
-  { value: '30days', label: '30 Hari Terakhir' },
   { value: 'today', label: 'Hari Ini' },
+  { value: '7days', label: '7 Hari' },
+  { value: '30days', label: '30 Hari' },
 ];
 
-const getFilterRange = (preset: PresetFilter) => {
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+const PRESET_DAYS: Record<PresetFilter, number> = { today: 0, '7days': 7, '30days': 30 };
 
-  if (preset === 'today') {
-    return { dateFrom: todayStr, dateTo: todayStr, period: undefined };
-  }
-  if (preset === '7days') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 7);
-    return { dateFrom: d.toISOString().split('T')[0], dateTo: todayStr, period: undefined };
-  }
-  if (preset === '30days') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 30);
-    return { dateFrom: d.toISOString().split('T')[0], dateTo: todayStr, period: undefined };
-  }
+/** Geser tanggal kalender `YYYY-MM-DD` sejumlah hari (aritmetika UTC, bebas zona waktu browser). */
+const shiftIsoDate = (iso: string, days: number) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);
+};
 
-  // thisMonth
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  return { period: `${y}-${m}`, dateFrom: undefined, dateTo: undefined };
+const getPresetRange = (preset: PresetFilter) => {
+  const today = businessToday();
+  return { dateFrom: shiftIsoDate(today, PRESET_DAYS[preset]), dateTo: today };
 };
 
 const CrmAnalyticsPageInner = () => {
-  const [preset, setPreset] = useState<PresetFilter>('thisMonth');
-  const filterParams = getFilterRange(preset);
+  const [currentYear, currentMonth] = businessMonth().split('-').map(Number);
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState(currentMonth);
+  // null = filter bulan/tahun yang aktif.
+  const [preset, setPreset] = useState<PresetFilter | null>(null);
+
+  // Bulan setelah bulan berjalan belum punya data — kunci saat tahun = tahun ini.
+  const maxMonth = year === currentYear ? currentMonth : undefined;
+
+  const handleMonthChange = (nextMonth: number) => {
+    setMonth(nextMonth);
+    setPreset(null);
+  };
+
+  const handleYearChange = (nextYear: number) => {
+    setYear(nextYear);
+    setPreset(null);
+    if (nextYear === currentYear && month > currentMonth) setMonth(currentMonth);
+  };
+
+  const period = `${year}-${String(month).padStart(2, '0')}`;
+  const filterParams: CrmAnalyticsFilterParams = preset ? getPresetRange(preset) : { period };
 
   const overviewQuery = useCrmAnalyticsOverview(filterParams);
   const trafficChartQuery = useCrmAnalyticsTrafficChart(filterParams);
@@ -84,14 +95,15 @@ const CrmAnalyticsPageInner = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Preset Switcher */}
-          <div className="flex items-center gap-1 bg-surface-soft p-1 rounded-xl border border-border">
+          <div className="flex items-center gap-1 h-11 bg-surface-soft p-1 rounded-xl border border-border">
             <Calendar size={14} className="text-muted ml-2 mr-1 shrink-0" />
             {PRESET_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
+                aria-pressed={preset === opt.value}
                 onClick={() => setPreset(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                className={`h-full px-3 rounded-lg text-[11px] font-bold transition-all ${
                   preset === opt.value
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-muted hover:text-ink hover:bg-surface'
@@ -101,6 +113,20 @@ const CrmAnalyticsPageInner = () => {
               </button>
             ))}
           </div>
+
+          {/* Filter Bulan & Tahun — redup saat preset aktif, memilih ulang mengaktifkannya kembali */}
+          <MonthPickerField
+            value={month}
+            onChange={handleMonthChange}
+            maxMonth={maxMonth}
+            wrapClass={`w-40 transition-opacity ${preset ? 'opacity-50 hover:opacity-100' : ''}`}
+          />
+          <YearPickerField
+            value={year}
+            onChange={handleYearChange}
+            maxYear={currentYear}
+            wrapClass={`w-28 transition-opacity ${preset ? 'opacity-50 hover:opacity-100' : ''}`}
+          />
 
           <Button
             variant="secondary"
@@ -153,11 +179,7 @@ const CrmAnalyticsPageInner = () => {
       </div>
 
       {/* Visitor Logs Table */}
-      <VisitorLogsTable
-        period={filterParams.period}
-        dateFrom={filterParams.dateFrom}
-        dateTo={filterParams.dateTo}
-      />
+      <VisitorLogsTable {...filterParams} />
     </div>
   );
 };

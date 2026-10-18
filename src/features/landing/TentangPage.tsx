@@ -6,12 +6,24 @@ import { CustomerLoader, CustomerServerError, EmptyCmsState } from './CustomerSt
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { usePublicAbout, usePublicSiteSettings } from './landing.hooks';
 import { buildWhatsAppUrl, waMessages } from '@/core/utils/whatsapp';
+import { useSeo } from '@/core/utils/seo';
 
 export const TentangPage = () => {
   const { data: about, isLoading, isError, refetch } = usePublicAbout();
   const { data: settings } = usePublicSiteSettings();
   const waUrl = buildWhatsAppUrl(settings?.whatsappNumber, waMessages.generalContact(settings?.companyName));
   const resolve = (link?: string) => (link === 'whatsapp' ? waUrl : link || '/katalog');
+  const companyName = settings?.companyName || 'GM Mobilindo';
+
+  useSeo(
+    {
+      title: `Tentang Kami — ${companyName}, Showroom Mobil Bekas Subang Terpercaya`,
+      description: `Kenali ${companyName}: showroom mobil bekas di Subang dengan unit terinspeksi, surat lengkap, garansi mesin, dan layanan cash, kredit, serta tukar tambah.`,
+      keywords: ['tentang gm mobilindo', 'showroom mobil bekas subang', 'dealer mobil bekas terpercaya subang'],
+      ogImage: '/logo.jpeg',
+    },
+    [companyName],
+  );
 
   if (isLoading) return <CustomerLoader />;
   if (isError) return <CustomerServerError onRetry={() => refetch()} waUrl={waUrl} />;
