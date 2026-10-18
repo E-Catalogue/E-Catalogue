@@ -1,5 +1,6 @@
 import { Share2, Gauge, Calendar, GitMerge, Fuel, MapPin, ArrowUpRight, Palette } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from '@tanstack/react-router';
 import { formatCurrency, formatNumber, formatTransmisi } from '@/core/utils/format';
 import { cmsImageUrl } from '@/features/cms/cms.api';
 import { DEFAULT_CAR_IMAGE } from '@/shared/constants';
@@ -56,10 +57,9 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
 
   return (
     <motion.article
-      onClick={() => onView?.(card)}
       whileHover={onView ? { y: -6, transition: { duration: 0.2 } } : {}}
       whileTap={onView ? { scale: 0.98 } : {}}
-      className={`group overflow-hidden rounded-[1.5rem] border border-border/80 bg-surface p-2 shadow-[0_12px_36px_rgba(19,27,46,0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_22px_54px_rgba(19,27,46,0.13)] ${onView ? 'cursor-pointer' : ''}`}
+      className={`group relative overflow-hidden rounded-[1.5rem] border border-border/80 bg-surface p-2 shadow-[0_12px_36px_rgba(19,27,46,0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_22px_54px_rgba(19,27,46,0.13)] ${onView ? 'cursor-pointer' : ''}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-[1.1rem] bg-surface-soft">
         <motion.div
@@ -73,7 +73,7 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
         {/* Bottom gradient overlay for badges readability */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-black/10" />
 
-        <div className="absolute left-3 top-3 z-10"><StatusBadge status={statusKey} label={statusLabel} variant="overlay" /></div>
+        <div className="pointer-events-none absolute left-3 top-3 z-10"><StatusBadge status={statusKey} label={statusLabel} variant="overlay" /></div>
 
         {/* Top-right Share Button */}
         <button
@@ -87,7 +87,7 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
         </button>
 
         {/* Bottom-left Badges (Transmisi & Bahan Bakar) */}
-        <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 z-10">
+        <div className="pointer-events-none absolute bottom-2.5 left-2.5 flex items-center gap-1.5 z-10">
           {transmisiLabel && transmisiLabel !== '-' && (
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold shadow-sm ${
               transmisiLabel === 'Automatic' || transmisiLabel.includes('Auto') ? 'bg-accent-blue text-white' : 'bg-white text-slate-900'
@@ -107,7 +107,22 @@ export const PublicUnitCard = ({ card, onView }: { card: CatalogCard; onView?: (
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-[15px] font-extrabold leading-snug text-ink sm:text-base" title={title}>
-              {title}
+              {onView ? (
+                // Link <a href> sungguhan (bukan onClick) supaya Google bisa mengikuti ke halaman unit;
+                // pseudo-element `after` merentang menutupi seluruh kartu agar area klik tetap sama.
+                <Link
+                  to="/katalog/$id"
+                  params={{ id: card.id }}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                    e.preventDefault();
+                    onView(card);
+                  }}
+                  className="after:absolute after:inset-0 after:z-[5] after:content-[''] focus:outline-none focus-visible:after:rounded-[1.5rem] focus-visible:after:ring-2 focus-visible:after:ring-primary"
+                >
+                  {title}
+                </Link>
+              ) : title}
             </h3>
             {subtitle && <p className="mt-0.5 truncate text-[11px] font-medium text-muted">{subtitle}</p>}
           </div>

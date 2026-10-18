@@ -71,6 +71,8 @@ export const KatalogDetailPage = () => {
   const detailUnit = unit as CatalogDetail | undefined;
   const seoMerekTipe = `${detailUnit?.merek?.name ?? ''} ${detailUnit?.tipe?.name ?? ''}`.trim();
   const carTitle = detailUnit?.name?.trim() || seoMerekTipe || 'Mobil Bekas';
+  // Nama unit sering sudah memuat tahun ("JUKE RX 2011") — jangan ditulis dua kali di judul.
+  const yearSuffix = detailUnit?.tahun && !carTitle.includes(String(detailUnit.tahun)) ? ` ${detailUnit.tahun}` : '';
   const firstImg = (detailUnit?.images?.[0]?.filename
     ? cmsImageUrl('unit', detailUnit.images[0].filename)
     : undefined) ?? undefined;
@@ -82,10 +84,10 @@ export const KatalogDetailPage = () => {
   useSeo(
     {
       title: detailUnit
-        ? `Jual ${carTitle} ${detailUnit.tahun || ''} Bekas Subang — ${formatCurrency(detailUnit.harga)} | ${settings?.companyName || 'GM Mobilindo'}`
+        ? `Jual ${carTitle}${yearSuffix} Bekas Subang — ${formatCurrency(detailUnit.harga)} | ${settings?.companyName || 'GM Mobilindo'}`
         : 'Detail Mobil Bekas Subang | GM Mobilindo',
       description: detailUnit
-        ? `Jual ${carTitle} tahun ${detailUnit.tahun || ''} bekas di Subang. Transmisi ${formatTransmisi(detailUnit.transmisi)}, ${detailUnit.kilometer ? `${formatNumber(detailUnit.kilometer)} km` : 'kondisi istimewa'}, garansi mesin 1 bulan, surat lengkap. Melayani kredit DP minim & cash.`
+        ? `Jual ${carTitle}${yearSuffix ? ` tahun${yearSuffix}` : ''} bekas di Subang. Transmisi ${formatTransmisi(detailUnit.transmisi)}, ${detailUnit.kilometer ? `${formatNumber(detailUnit.kilometer)} km` : 'kondisi istimewa'}, garansi mesin 1 bulan, surat lengkap. Melayani kredit DP minim & cash.`
         : 'Detail mobil bekas berkualitas bergaransi di Subang — GM Mobilindo.',
       ogImage: firstImg,
       ogType: 'product',
@@ -100,7 +102,7 @@ export const KatalogDetailPage = () => {
         : ['mobil bekas subang'],
       jsonLd: carSchema,
     },
-    [detailUnit, carTitle, firstImg, settings?.companyName, carSchema],
+    [detailUnit, carTitle, yearSuffix, firstImg, settings?.companyName, carSchema],
   );
 
   if (isLoading) return <div className="flex items-center justify-center py-40 text-muted"><Loader2 size={30} className="animate-spin" /></div>;
